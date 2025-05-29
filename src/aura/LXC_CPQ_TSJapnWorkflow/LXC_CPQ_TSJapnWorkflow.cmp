@@ -1,0 +1,422 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" access="global"
+    controller="CNT_CPQ_TSJapanWorkflowController">
+    <aura:attribute name="proposalObj" type="Object" />
+    <aura:attribute name="isDisplayCSSForm" type="boolean" default="false" />
+    <aura:attribute name="message" type="String" default="" />
+    <aura:attribute name="header" type="String" default="" />
+    <aura:attribute name="title" type="String" default="" />
+    <aura:attribute name="showConfirmation" type="boolean" default="false"/>
+    <aura:attribute name="messageRoute" type="String" default="onRecall" />
+    <aura:attribute name="confirmationMsg" type="String" default="Are you sure you want to Recall, Recall sets the record to In-Progress?" />
+    <aura:method name="showToast" action="{!c.showToast}">
+        <aura:attribute name="message" type="String" />
+    </aura:method>
+    <aura:attribute name="showApproverComment" type="boolean" default="false"/>
+    <aura:attribute name="showApproverCommentOnReject" type="boolean" default="false"/>
+    <aura:attribute name="comment" type="String" />
+    <aura:attribute name="currentUser" type="String" />
+    <aura:attribute name="setNextApprover" type="boolean" default="false"/>
+    <aura:attribute name="approversIds" type="List"/>
+    <aura:attribute name="multiQC" type="boolean" default="false"/>
+    <aura:attribute name="isApprover" type="boolean" default="false"/>
+    <aura:attribute name="isSubmitter" type="boolean" default="false"/>
+    <aura:attribute name="isAdmin" type="boolean" default="false"/>
+    <aura:attribute name="spinner" type="boolean" default="false" />
+    <aura:attribute name="instanceApprovers" type="List"/>
+    <div style="z-index:50">
+    <aura:if isTrue="{!v.spinner}">
+        <div aura:id="spinnerId" style="z-index:15; background-color:#ffffff; position:fixed"  class="slds-spinner_container">
+            <div style="z-index:15;" class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading...</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    </div>
+    <aura:attribute name="reassignForSubmitter" type="boolean" default="false"/>
+    
+    <force:recordData aura:id="recordLoader" fields="RecordTypeId" recordId="{!v.recordId}"
+        recordUpdated="{!c.getDetails}" />
+    <aura:if isTrue="{!v.proposalObj.isAllowedToEditAction}">
+        <div class="backgroundcolor">
+            <div
+                class="slds-page-header slds-page-header_joined slds-page-header_bleed slds-shrink-none test-headerRegion slds-is-relative slds-page-header-no-border">
+                <h2 class="slds-card__header-title" style="line-height: revert;">
+                    <lightning:icon iconName="standard:actions_and_buttons" size="small" />
+                    <span class="slds-card__header-link baseCard__header-title-container slds-truncate"
+                        style="padding-left: 10px;">Quick Actions</span>
+                </h2>
+            </div>
+            <div class="slds-form--stacked">
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control slds-align_absolute-center">
+                        <div class="blockBorder" style="margin:15px">
+                            <aura:if isTrue="{!and(v.proposalObj.approvalStage == 'Finalized', v.proposalObj.pricingTool == 'TS Japan')}">
+                                <div class="slds"
+                                    style="border-bottom: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                                    <div class="slds-grid slds-grid--align-space">
+                                        <div class="slds-col slds-size--1-of-1">
+                                            <span class="infoText"><b>{!$Label.c.CPQ_Page_Refresh_Info_Message}</b></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aura:if>
+                            <aura:if isTrue="{!and(or(or(v.proposalObj.approvalStage == 'Draft', v.proposalObj.approvalStage == 'In-Progress'), v.proposalObj.approvalStage == 'Finalized'), v.proposalObj.pricingTool == 'OCE')}">
+                                <div class="slds"
+                                    style="border-bottom: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                                    <div class="slds-grid slds-grid--align-space">
+                                        <div class="slds-col slds-size--1-of-1">
+                                            <span class="outputText"><b>{!$Label.c.CPQ_OCE_Quote_Country_Message}</b></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aura:if>
+                            <div class="slds" style="padding:10px;padding-bottom:15px;">
+                                <aura:if isTrue="{!v.proposalObj.isrecordTypeNameTechSolution}">
+                                    <div class="slds-grid slds-grid--align-space">
+                                        <!-- Configure Products action -->
+                                        <aura:if isTrue="{!and(v.proposalObj.isPriceListAttached, 
+                                                         or(v.proposalObj.approvalStage == 'Draft',
+                                                         v.proposalObj.approvalStage == 'In-Progress'))}">
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a onclick="{!c.configureProducts}" class="removeTextDecoration"
+                                                   name='Configure Products' title='Configure Products'>
+                                                    <lightning:icon iconName="standard:webcart" size="medium"
+                                                                    alternativeText="Configure Products" /><br />
+                                                    <span class="outputText">Configure Products</span>
+                                                </a>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a class="disabledIcons">
+                                                        <lightning:icon iconName="standard:webcart" size="medium"
+                                                                        alternativeText="Configure Products" /><br />
+                                                        <span class="outputText">Configure Products</span>
+                                                    </a>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+										
+                                        <!-- Submit for Approval action  -->
+                                        <aura:if isTrue="{!v.proposalObj.approvalStage == 'Finalized'}">
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a onclick="{!c.submitApprovalRequest}" class="removeTextDecoration"
+                                                   title='Submit for Approval'>
+                                                    <lightning:icon iconName="standard:buyer_group" size="medium"
+                                                                    alternativeText="Submit for Approval" /><br />
+                                                    <span class="outputText">Submit for <br/>Approval</span>
+                                                </a>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a class="disabledIcons">
+                                                        <lightning:icon iconName="standard:buyer_group" size="medium"
+                                                                        alternativeText="Submit for Approval" /><br />
+                                                        <span class="outputText">Submit for <br/>Approval</span>
+                                                    </a>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+                                        <!--Generate Proposal -->
+                                        <aura:if isTrue="{!v.proposalObj.pricingTool == 'AMESA'}">
+                                            <aura:if isTrue="{!or (v.proposalObj.approvalStage == 'Finalized',
+                                                             v.proposalObj.approvalStage == 'Pending Approval')}">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a onclick="{!c.previewProposal}" class="removeTextDecoration" title='Preview Document'>
+                                                        <lightning:icon iconName="standard:marketing_actions" size="medium" alternativeText="Preview Document" /><br />
+                                                        <span class="outputText">Preview Document</span>
+                                                    </a>
+                                                </div>
+                                                <aura:set attribute="else">
+                                                    <div class="slds-col slds-size--1-of-4">
+                                                        <a class="disabledIcons">
+                                                            <lightning:icon iconName="standard:marketing_actions" size="medium" alternativeText="Preview Document" /><br />
+                                                            <span class="outputText">Preview Document</span>
+                                                        </a>
+                                                    </div>
+                                                </aura:set>
+                                            </aura:if>
+                                        </aura:if>
+                                        <aura:if isTrue="{!v.proposalObj.pricingTool == 'AMESA'}">
+                                            <aura:if isTrue="{!and (v.proposalObj.approvalStage == 'Approved', v.proposalObj.approvalStatus != 'Document Generated')}">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a onclick="{!c.generateProposal}" class="removeTextDecoration" title='Generate Proposal'>
+                                                        <lightning:icon iconName="standard:attach" size="medium" alternativeText="Generate Proposal" /><br />
+                                                        <span class="outputText">Generate Proposal</span>
+                                                    </a>
+                                                </div>
+                                                <aura:set attribute="else">
+                                                    <div class="slds-col slds-size--1-of-4">
+                                                        <a class="disabledIcons">
+                                                            <lightning:icon iconName="standard:attach" size="medium" alternativeText="Generate Proposal" /><br />
+                                                            <span class="outputText">Generate Proposal</span>
+                                                        </a>
+                                                    </div>
+                                                </aura:set>
+                                            </aura:if>
+                                        </aura:if>
+                                    </div>
+                                    <div class="slds-grid slds-grid--align-space">					  
+                                        <!-- Accept action -->
+                                        <aura:if isTrue="{!v.proposalObj.approvalStage == 'Approved'}">
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a onclick="{!c.acceptAction}" class="removeTextDecoration" name='Accept'
+                                                   title='Proposal is accepted by the Customer'>
+                                                    <lightning:icon iconName="standard:task" size="medium"
+                                                                    alternativeText="Accept" /><br />
+                                                    <span class="outputText">Accept</span>
+                                                </a>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a class="disabledIcons">
+                                                        <lightning:icon iconName="standard:task" size="medium"
+                                                                        alternativeText="Accept" /><br />
+                                                        <span class="outputText">Accept</span>
+                                                    </a>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+                                        
+                                        <!-- Reject action -->
+                                        <aura:if isTrue="{!v.proposalObj.approvalStage == 'Approved'}">
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a onclick="{!c.rejectAction}" class="removeTextDecoration" name='Reject'
+                                                   title='Proposal is rejected by the Customer'>
+                                                    <lightning:icon iconName="standard:return_order_line_item" size="medium"
+                                                                    alternativeText="Reject" /><br />
+                                                    <span class="outputText">Reject</span>
+                                                </a>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a class="disabledIcons">
+                                                        <lightning:icon iconName="standard:return_order_line_item" size="medium"
+                                                                        alternativeText="Reject" /><br />
+                                                        <span class="outputText">Reject</span>
+                                                    </a>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+                                        
+                                        <!-- Sync To Opportunity action -->
+                                        <aura:if isTrue="{!and (or ( or(v.proposalObj.approvalStage == 'Approved',v.proposalObj.approvalStage == 'Accepted'), v.proposalObj.approvalStage == 'In-Progress'), v.proposalObj.pricingTool != 'TS Japan')}">
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a onclick="{!c.syncwithOpportunity}" class="removeTextDecoration"
+                                                   title='Sync To Opportunity'>
+                                                    <lightning:icon iconName="standard:product_transfer" size="medium"
+                                                                    alternativeText="Sync To Opportunity" /><br />
+                                                    <span class="outputText">Sync To <br/>Opportunity</span>
+                                                </a>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a class="disabledIcons">
+                                                        <lightning:icon iconName="standard:product_transfer"
+                                                                        size="medium" alternativeText="Sync To Opportunity" /><br />
+                                                        <span class="outputText">Sync To <br/>Opportunity</span>
+                                                    </a>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+                                        <aura:if isTrue="{!v.proposalObj.pricingTool == 'AMESA'}">
+                                            <aura:if isTrue="{!and(v.proposalObj.approvalStage == 'Accepted', !v.proposalObj.isAgreementCreated)}">
+                                                <div class="slds-col slds-size--1-of-4">
+                                                    <a onclick="{!c.createAgreement}" class="removeTextDecoration" title='Create Contract'>
+                                                        <lightning:icon iconName="standard:record_create" size="medium" alternativeText="Create Agreement"/><br/>
+                                                        <span class="outputText">Create <br/>Agreement</span>
+                                                    </a>
+                                                </div>
+                                                <aura:set attribute="else">
+                                                    <div class="slds-col slds-size--1-of-4">
+                                                        <a class="disabledIcons">
+                                                            <lightning:icon iconName="standard:record_create" size="medium" alternativeText="Create Agreement"/><br/>
+                                                            <span class="outputText">Create <br/>Agreement</span>
+                                                        </a>
+                                                    </div>
+                                                </aura:set>
+                                            </aura:if>
+                                        </aura:if>
+                                    </div>
+                                </aura:if>
+                            </div>
+
+                            <!-- Make as Primary action -->
+                            <aura:if isTrue="{!and(v.proposalObj.isrecordTypeNameTechSolution, !v.proposalObj.isPrimary)}">
+                                <div class="slds"
+                                    style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                                    <div class="slds-grid slds-grid--align-space">
+                                        <div class="slds-col slds-size--1-of-1">
+                                            <a onclick="{!c.makeAsPrimary}" class="removeTextDecoration"
+                                                name='Make as Primary' title='Make as Primary'>
+                                                <lightning:icon iconName="standard:task2" size="medium"
+                                                    alternativeText="Make as Primary" /><br />
+                                                <span class="outputText">Make as Primary</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <aura:set attribute="else">
+                                    <div class="slds"
+                                        style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                                        <div class="slds-grid slds-grid--align-space">
+                                            <div class="slds-col slds-size--1-of-1">
+                                                <a class="disabledIcons">
+                                                    <lightning:icon iconName="standard:task2" size="medium"
+                                                        alternativeText="Make as Primary" /><br />
+                                                    <span class="outputText">Make as Primary</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </aura:set>
+                            </aura:if>
+
+                            <!-- Recall action -->																			  
+                            <div class="slds"
+                                 style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                                <div class="slds-grid slds-grid--align-space">
+                                    <aura:if isTrue="{!and(and(v.proposalObj.isrecordTypeNameTechSolution, or(v.proposalObj.approvalStage == 'Finalized', v.proposalObj.approvalStage == 'Pending Approval')), v.proposalObj.isOwner)}">
+                                        <div class="slds-col slds-size--1-of-4">
+                                            <a onclick="{!c.handleConfirmation}" class="removeTextDecoration"
+                                               title='Move back Proposal to In-Progress'>
+                                                <lightning:icon iconName="standard:return_order" size="medium"
+                                                                alternativeText="Recall" /><br />
+                                                <span class="outputText">Recall</span>
+                                            </a>
+                                        </div>
+                                        <aura:set attribute="else">										  
+                                            <div class="slds-col slds-size--1-of-4">
+                                                <a class="disabledIcons">
+                                                    <lightning:icon iconName="standard:return_order" size="medium"
+                                                                    alternativeText="Recall" /><br />
+                                                    <span class="outputText">Recall</span>
+                                                </a>
+                                            </div>		  
+                                        </aura:set>
+                                    </aura:if>
+                                    <aura:if isTrue="{!and(and(v.proposalObj.isrecordTypeNameTechSolution, v.proposalObj.isApprover), v.proposalObj.approvalStage == 'Pending Approval')}">
+                                        <div class="slds-col slds-size--1-of-4">
+                                            <a onclick="{!c.handleApproverComments}" class="removeTextDecoration"
+                                               title='Approve Request'>
+                                                <lightning:icon iconName="standard:resource_preference" size="medium"
+                                                                alternativeText="Approve" /><br />
+                                                <span class="outputText">Approve</span>
+                                            </a>
+                                        </div>
+
+                                        <div class="slds-col slds-size--1-of-4">
+                                            <a onclick="{!c.handleApproverCommentsForReject}" class="removeTextDecoration"
+                                               title='Approve Request'>
+                                                <lightning:icon iconName="standard:resource_absence" size="medium"
+                                                                alternativeText="Reject" /><br />
+                                                <span class="outputText">Reject</span>
+                                            </a>
+                                        </div>
+                                    </aura:if>
+                                    <aura:if isTrue="{!and(and(v.proposalObj.isrecordTypeNameTechSolution, or(v.proposalObj.isApprover, v.proposalObj.isAdmin)), v.proposalObj.approvalStage == 'Pending Approval')}">
+                                        <div class="slds-col slds-size--1-of-4">
+                                            <a onclick="{!c.handleReassignRequest}" class="removeTextDecoration"
+                                               title='Approve Request'>
+                                                <lightning:icon iconName="standard:assigned_resource" size="medium"
+                                                                alternativeText="Reassign" /><br />
+                                                <span class="outputText">Reassign</span>
+                                            </a>
+                                        </div>
+                                    </aura:if>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+						  
+            <aura:if isTrue="{!v.isDisplayCSSForm}">
+                <c:LXC_CPQ_TSJapanCSSApprovalRequestForm aura:id="functionalReview1" recordId="{!v.recordId}"
+                    header="CSS Approval Request Form" parent="{!this}" />
+            </aura:if>
+            <aura:if isTrue="{!v.showConfirmation}">
+            <div role="dialog" class="slds-modal slds-fade-in-open ">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h1 class="slds-text-heading--medium">Confirmation</h1>
+                    </header>
+                    
+                    <div class="slds-modal__content slds-p-around--medium">
+                        <center><b>{!v.confirmationMsg}</b></center>
+                        </div>
+                        
+                        <footer class="slds-modal__footer">
+                            <lightning:button name='No' label='No' onclick='{!c.handleNoConfirmation}'/>
+                            <lightning:button variant="brand" name='Yes' label='Yes' onclick='{!c.handleYesConfirmation}'/>
+                        </footer>
+                    </div>
+                </div>
+                <div class="slds-backdrop slds-backdrop--open"></div>            
+            </aura:if>
+        </div>
+    </aura:if>
+    <aura:if isTrue="{!v.showApproverComment}">
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Approve Quote/Proposal</h1>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:textarea label="Comments" aura:id="comment" value="{!v.comment}" messageWhenValueMissing="Approver Comments Required"/>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button variant = "neutral" label="Cancel" title="Cancel" name="Cancel" onclick='{!c.handleCancelConfirmation}'/>
+                    <lightning:button variant="brand" label="Save" title="Save" name="Save" onclick='{!c.handleApproveRequest}'/>
+                </footer>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>            
+    </aura:if>
+    <aura:if isTrue="{!v.showApproverCommentOnReject}">
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Reject Quote/Proposal</h1>
+                </header>                
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:textarea label="Comments" aura:id="comment" value="{!v.comment}" messageWhenValueMissing="Approver Comments Required"/>
+                </div>                
+                <footer class="slds-modal__footer">
+                    <lightning:button variant = "neutral" label="Cancel" title="Cancel" name="Cancel" onclick='{!c.handleCancelConfirmation}'/>
+                    <lightning:button variant="brand" label="Save" title="Save" name="Save" onclick='{!c.handleRejectRequest}'/>
+                </footer>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>            
+    </aura:if>
+    <!-- for Dynamic Reassign -->
+    <div style="z-index:10;">
+        <aura:if isTrue="{!v.reassignForSubmitter}">
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small">
+                <div class="slds-modal__container" style="width:30%">
+                    <div class="slds-page-header" role="banner">
+                        <h2 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate slds-text-align_center" title="{!v.title}">
+                            Select Approvers
+                        </h2>
+                    </div>
+                    <div style="z-index:100;" class="slds-modal__content slds-p-around_medium">
+                        <aura:iteration items="{!v.instanceApprovers}" var="approverObj" indexVar="i">
+                            <span class="slds-modal__content slds-p-around_small">
+                                <c:LXC_CPQ_CustomLookup aura:id="'emailAddress'+i" label = "{!('Approver '+ (i+1))}" isRequired="false" objectAPIName="User" searchField="Name" isMultiSelect="False" placeHolder="" displayField="Name" subTextField="Title" IconName="standard:user" selectedRecord="{!approverObj.newUser}" preSelectedValues="{!approverObj.oldUser.recordId}" preSelectedField="Id" whereClause="IsActive = true AND User_License_Type__c = 'Salesforce'"/>
+                            </span>
+                        </aura:iteration>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <div class="slds-text-align_center">
+                            <button class="slds-button slds-button--brand" onclick="{!c.reassignRequestForSubmitter}">Reassign</button>
+                            <button class="slds-button slds-button--brand" onclick="{!c.cancelReassign}">Cancel</button>
+                        </div>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>  
+        </aura:if>
+    </div>
+</aura:component>

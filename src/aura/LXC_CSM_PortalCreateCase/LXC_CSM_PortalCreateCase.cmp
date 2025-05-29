@@ -1,0 +1,864 @@
+<aura:component controller="CNT_CSM_PortalCreateCase"
+    implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId"
+    access="global">
+
+    <!-- PEP varibles to store the design attributes for help text -->
+    <aura:attribute name="communityOrigin" type="String" default="Customer Portal"
+        description="This variable is used to indicate which community portal the latter is being used" />
+    <aura:attribute name="helpText_Product" type="String" />
+    <aura:attribute name="helpText_Subject" type="String" />
+    <aura:attribute name="helpText_Sub-Type" type="String" />
+    <aura:attribute name="helpText_Urgency" type="String"
+        default="Urgency measures the time sensitivity of an incident, problem, or change impact. High: very time sensitive (i.e.outages with financial impact at quarter end) Medium: some time sensitivity, no immediate impact Low: no time sensitivity" />
+    <aura:attribute name="helpText_Impact" type="String"
+        default="Impact measures the effect of an incident,problem, change. Significant: major, negative impact to critical operations. No workaround. Moderate:  delays key business outcomes. Workaround may exist. Low: no material impact. Workaround exists." />
+    <aura:attribute name="helpText_Client_Name" type="String"
+        default="Enter a Client Name. If there is no client, please enter NA." />
+
+    <aura:attribute name="AccountCaseSubtype" type="boolean" default="false" />
+    <aura:attribute name="account" type="Account" />
+    <aura:attribute name="assetIds" type="Object[]" />
+    <aura:attribute name="newCase" type="Object" />
+    <aura:attribute name="simpleNewCase" type="Object" />
+    <aura:attribute name="newCaseError" type="String" />
+    <aura:attribute name="newCaseId" type="String" />
+    <aura:attribute name="isMandatory" type="boolean" default="false" />
+    <aura:attribute name="isDependentTechnoSubTypeDisable" type="boolean" default="true" />
+    <aura:attribute name="isDependentSubType1Disable" type="boolean" default="true" />
+    <aura:attribute name="isDependentSubType2Disable" type="boolean" default="true" />
+    <aura:attribute name="isDependentSubType3Disable" type="boolean" default="true" />
+    <aura:attribute name="showTechnoSubtypes" type="boolean" default="false" />
+    <aura:attribute name="subtypeMandatory" type="boolean" default="false" />
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:attribute name="isLoading2" type="boolean" default="false" />
+    <aura:attribute name="isLoading3" type="boolean" default="false" />
+    <aura:attribute name="productSelectError" type="boolean" default="false" />
+    <aura:attribute name="caseSubTypeSelectError" type="boolean" default="false" />
+    <aura:attribute name="portalCaseTypes" type="String[]" />
+    <aura:attribute name="portalCaseTypeSelectedValue" type="String" />
+    <aura:attribute name="caseSubType3SelectError" type="boolean" default="false" />
+    <aura:attribute name="loggedInUserAccountId" type="String" />
+    <aura:attribute name="ContactUserType" type="String" />
+    <aura:attribute name="prioritytype" type="String[]" />
+    <aura:attribute name="priorityselect" type="String" />
+    <aura:attribute name="urgencyList" type="String[]" />
+    <aura:attribute name="impactList" type="String[]" />
+    <aura:attribute name="environmentList" type="String[]" />
+    <aura:attribute name="environmentIsVisible" type="boolean" default="false" />
+    
+    <aura:attribute name="showEscalationFormFields" type="boolean" default="false" />
+    <aura:attribute name="escalationFormFields" type="Object[]" />
+    <aura:attribute name="deviceList" type="Object[]" />
+    <aura:attribute name="onlineorAppVersionList" type="Object[]" />
+    <aura:attribute name="sltOnlineorAppVersion" type="String" />
+    <aura:attribute name="browserUsedList" type="Object[]" />
+    <aura:attribute name="sltBrowserUsed" type="String" />
+    <aura:attribute name="formIOSVersion" type="String" />
+    <aura:attribute name="affectsVersionList" type="String[]" />
+    <aura:attribute name="formNumberOfUsersImpacted" type="String" />
+    <aura:attribute name="formUsername" type="String" />
+    
+    <aura:attribute name="countryList" type="Object[]" />
+    <aura:attribute name="mailFormatError" type="boolean" default="false" />
+    <aura:attribute name="attachmentMandatory" type="boolean" default="false" />
+    <aura:handler name="change" value="{!v.portalCaseTypeSelectedValue}" action="{!c.portalCaseTypeChange}" />
+    <aura:attribute name="metrics" type="List" />
+    <aura:attribute name="contact" type="Object" />
+    <aura:attribute name="disabledCaseCategories" type="boolean" default="true" />
+    <aura:attribute name="disabledProblem_Type" type="boolean" default="false" />
+    <aura:attribute name="isDisableCSHP1CaseCreation" type="boolean" default="false" />
+    <aura:attribute name="disableCSHP1CaseCreationByAsset" type="boolean" default="false" />
+    <aura:attribute name="isDATAGlobalSupportCSHForm" type="boolean" default="false" />
+    <aura:attribute name="caseCategories" type="Object[]" default="[{'label':'ADMINISTRATION','api':'ADMINISTRATION','pbTypesObj':[{'label':'ACCESS PERMISSION','api':'ACCESS PERMISSION'},
+                                                                                 {'label':'CERTIFICATION','api':'CERTIFICATION'},
+                                                                                 {'label':'DATA DISCLOSURE','api':'DATA DISCLOSURE'},
+                                                                                 {'label':'DESPATCH','api':'DESPATCH'},
+                                                                                 {'label':'FTP ACCESS','api':'FTP ACCESS'},
+                                                                                 {'label':'INFORMATION','api':'INFORMATION'},
+                                                                                 {'label':'MANUFACTURER CHANGE','api':'MANUFACTURER CHANGE'},
+                                                                                 {'label':'REQUEST FOR CHANGE','api':'REQUEST FOR CHANGE'},
+                                                                                 {'label':'SITE AVAILABILITY/LINK ISSUE','api':'SITE AVAILABILITY/LINK ISSUE'},
+                                                                                 {'label':'SECURITY/PERMISSION','api':'SECURITY/PERMISSION'},
+                                                                                 {'label':'SERVICE REPORTS','api':'SERVICE REPORTS'},
+                                                                                 {'label':'TECHNICAL SUPPORT','api':'TECHNICAL SUPPORT'},
+                                                                                 {'label':'THIRD PARTY AGREEMENT','api':'THIRD PARTY AGREEMENT'}
+                                                                                ]},
+                  {'label':'DATA','api':'DATA','pbTypesObj':[{'label':'DATA ACCESS','api':'DATA ACCESS'},
+                                                             {'label':'DATA ACCURACY/QUALITY','api':'DATA ACCURACY/QUALITY'},
+                                                             {'label':'DATA AVAILABILITY','api':'DATA AVAILABILITY'},
+                                                             {'label':'DATA REQUIREMENTS','api':'DATA REQUIREMENTS'},
+                                                             {'label':'DELIVERY LATE','api':'DELIVERY LATE'},
+                                                             {'label':'DELIVERY/RECEIPT','api':'DELIVERY/RECEIPT'},
+                                                             {'label':'DESPATCH','api':'DESPATCH'},
+                                                             {'label':'GENERAL INFORMATION REQUEST','api':'GENERAL INFORMATION REQUEST'},
+                                                             {'label':'GEOGRAPHY UPDATE','api':'GEOGRAPHY UPDATE'},
+                                                             {'label':'HISTORY DATA','api':'HISTORY DATA'},
+                                                             {'label':'IQVIA COMMUNICATION','api':'IQVIA COMMUNICATION'},
+                                                             {'label':'INFORMATION','api':'INFORMATION'},
+                                                             {'label':'MARKET DEFINITIONS','api':'MARKET DEFINITIONS'},
+                                                             {'label':'PRODUCT LAUNCH','api':'PRODUCT LAUNCH'},
+                                                             {'label':'REPORT MAINTENANCE','api':'REPORT MAINTENANCE'},
+                                                             {'label':'TECH &amp; APP','api':'TECH &amp; APP'},
+                                                             {'label':'TOOL ISSUE','api':'TOOL ISSUE'},
+                                                             {'label':'VALIDATION','api':'VALIDATION'}
+                                                            ]},
+                  {'label':'INFORMATION','api':'INFORMATION','pbTypesObj':[{'label':'EDUCATION/TRAINING','api':'EDUCATION/TRAINING'},
+                                                                           {'label':'GENERAL INFORMATION REQUEST','api':'GENERAL INFORMATION REQUEST'}
+                                                                          ]},
+                  {'label':'CLIENT SUPPORT','api':'CLIENT SUPPORT','pbTypesObj':[{'label':'ADVANCED ANALYTICS','api':'ADVANCED ANALYTICS'},
+                                                                           {'label':'BASIC ANALYTICS','api':'BASIC ANALYTICS'},
+                                                                           {'label':'DATA EXTRACTS','api':'DATA EXTRACTS'}
+                                                                          ]}
+                ]" />
+    <aura:attribute name="pbTypesObj" type="Object[]"
+        default="[{'label':'DDD OUTLET VOLUME INVESTIGATION','api':'DDD OUTLET VOLUME INVESTIGATION'},{'label':'DDDMD VOLUME','api':'DDDMD VOLUME'},{'label':'FIA/LAAD INVESTIGATION','api':'FIA/LAAD INVESTIGATION'},{'label':'LOOK-UP PROJECT, ORGANIZATION (COUNT > 601)','api':'LOOK-UP PROJECT, ORGANIZATION (COUNT > 601)'},{'label':'LOOK-UP PROJECT, OUTLET (COUNT > 601)','api':'LOOK-UP PROJECT, OUTLET (COUNT > 601)'},{'label':'LOOK-UP PROJECT, PRESCRIBER (COUNT > 601)','api':'LOOK-UP PROJECT, PRESCRIBER (COUNT > 601)'},{'label':'LOOK-UP, ORGANIZATION (1-20 COUNT)','api':'LOOK-UP, ORGANIZATION (1-20 COUNT)'},{'label':'LOOK-UP, ORGANIZATION (21-50 COUNT)','api':'LOOK-UP, ORGANIZATION (21-50 COUNT)'},{'label':'LOOK-UP, ORGANIZATION (251-600 COUNT)','api':'LOOK-UP, ORGANIZATION (251-600 COUNT)'},{'label':'LOOK-UP, ORGANIZATION (51-250 COUNT)','api':'LOOK-UP, ORGANIZATION (51-250 COUNT)'},{'label':'LOOK-UP, OUTLET (1-20 COUNT)','api':'LOOK-UP, OUTLET (1-20 COUNT)'},{'label':'LOOK-UP, OUTLET (21-50 COUNT)','api':'LOOK-UP, OUTLET (21-50 COUNT)'},{'label':'LOOK-UP, OUTLET (251-600 COUNT)','api':'LOOK-UP, OUTLET (251-600 COUNT)'},{'label':'LOOK-UP, OUTLET (51-250 COUNT)','api':'LOOK-UP, OUTLET (51-250 COUNT)'},{'label':'LOOK-UP, PRESCRIBER (1-20 COUNT)','api':'LOOK-UP, PRESCRIBER (1-20 COUNT)'},{'label':'LOOK-UP, PRESCRIBER (21-50 COUNT)','api':'LOOK-UP, PRESCRIBER (21-50 COUNT)'},{'label':'LOOK-UP, PRESCRIBER (251-600 COUNT)','api':'LOOK-UP, PRESCRIBER (251-600 COUNT)'},{'label':'LOOK-UP, PRESCRIBER (51-250 COUNT)','api':'LOOK-UP, PRESCRIBER (51-250 COUNT)'},{'label':'ZIP/TERRITORY VOLUME/ TREND INVESTIGATION','api':'ZIP/TERRITORY VOLUME/ TREND INVESTIGATION'},{'label':'XPO PLAN VOLUME INVESTIGATION','api':'XPO PLAN VOLUME INVESTIGATION'},{'label':'XPO PRESCRIBER VOLUME INVESTIGATION','api':'XPO PRESCRIBER VOLUME INVESTIGATION'}]" />
+    <!--  <aura:attribute name="pbTypesObj" type="Object[]"
+        default="[{'label':'DDD OUTLET VOLUME INVESTIGATION','api':'OUTLET VOLUME INVESTIGATION'},{'label':'DDDMD VOLUME','api':'ORGANIZATION VOLUME INVESTIGATION'},{'label':'LOOK-UP PROJECT, ORGANIZATION (COUNT > 601)','api':'LOOK-UP PROJECT, ORGANIZATION (COUNT > 601)'},{'label':'LOOK-UP PROJECT, OUTLET (COUNT > 601)','api':'LOOK-UP PROJECT, OUTLET (COUNT > 601)'},{'label':'LOOK-UP PROJECT, PRESCRIBER (COUNT > 601)','api':'LOOK-UP PROJECT, PRESCRIBER (COUNT > 601)'},{'label':'LOOK-UP, ORGANIZATION  (1-20 COUNT)','api':'LOOK-UP, ORGANIZATION  (1-20 COUNT)'},{'label':'LOOK-UP, ORGANIZATION  (21-50 COUNT)','api':'LOOK-UP, ORGANIZATION  (21-50 COUNT)'},{'label':'LOOK-UP, ORGANIZATION  (251- 600 COUNT)','api':'LOOK-UP, ORGANIZATION  (251- 600 COUNT)'},{'label':'LOOK-UP, ORGANIZATION  (51- 250 COUNT)','api':'LOOK-UP, ORGANIZATION  (51- 250 COUNT)'},{'label':'LOOK-UP, OUTLET  (1-20 COUNT)','api':'LOOK-UP, OUTLET  (1-20 COUNT)'},{'label':'LOOK-UP, OUTLET  (21-50 COUNT)','api':'LOOK-UP, OUTLET  (21-50 COUNT)'},{'label':'LOOK-UP, OUTLET  (251- 600 COUNT)','api':'LOOK-UP, OUTLET  (251- 600 COUNT)'},{'label':'LOOK-UP, OUTLET  (51- 250 COUNT)','api':'LOOK-UP, OUTLET  (51- 250 COUNT)'},{'label':'LOOK-UP, PRESCRIBER  (1-20 COUNT)','api':'LOOK-UP, PRESCRIBER  (1-20 COUNT)'},{'label':'LOOK-UP, PRESCRIBER  (21-50 COUNT)','api':'LOOK-UP, PRESCRIBER  (21-50 COUNT)'},{'label':'LOOK-UP, PRESCRIBER  (251- 600 COUNT)','api':'LOOK-UP, PRESCRIBER  (251- 600 COUNT)'},{'label':'LOOK-UP, PRESCRIBER  (51- 250 COUNT)','api':'LOOK-UP, PRESCRIBER  (51- 250 COUNT)'},{'label':'LOOKUP PLAN','api':'LOOKUP PLAN'},{'label':'LOOKUP PRODUCT','api':'LOOKUP PRODUCT'},{'label':'ZIP/TERRITORY VOLUME/ TREND INVESTIGATION','api':'ZIP/TERRITORY VOLUME/ TREND INVESTIGATION'},{'label':'XPO PLAN VOLUME INVESTIGATION','api':'XPO PLAN VOLUME INVESTIGATION'},{'label':'XPO PRESCRIBER VOLUME INVESTIGATION','api':'XPO PRESCRIBER VOLUME INVESTIGATION'}]" /> -->
+    <aura:attribute name="assets" type="List" />
+    <aura:attribute name="assetsName" type="String[]"
+        default="['DDD','DDD MD','MULTI AUDIT','ONEKEY ORGANIZATIONS','ONEKEY PROFESSIONALS','ONEKEY WEB - ORGANIZATIONS','ONEKEY WEB - PROFESSIONALS','XPONENT','XPONENT PLAN TRAK']" />
+    <aura:attribute name="articleDatas" type="Object" />
+    <aura:attribute name="articleColumns" type="List" />
+    <aura:attribute name="locale_language" type="String" />
+    <aura:attribute name="productsAccessingDTMSInformation" type="List"
+        default="['CRA Central','Risk Based Monitoring']" />
+    <aura:attribute name="showDTMSInformation" type="Boolean" default="false" />
+    <aura:attribute name="dataGlobalSupportCategoriesAllValues" type="Object" default="" />
+    <aura:attribute name="dataGlobalSupportCaseCategories" type="Object[]" default="" />
+    <aura:attribute name="dataGlobalSupportPbTypes" type="Object[]" default="" />
+    <aura:attribute name="contentDocumentIds" type="String[]" />
+    <aura:attribute name="showHospitalField" type="Boolean"  default="false" />
+    <aura:attribute name="hospitalOptions" type="List" />
+    <aura:attribute name="selectedHospital" type="String" />
+    <aura:attribute name="showNoPersonalHealthDataCheckbox" type="Boolean"  default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <force:recordData aura:id="caseRecordCreator" layoutType="FULL"
+        fields="['Country_of_the_requester2__c','Urgency__c','Techno_Impact__c','Mail_CC_List__c','Data_Provider_Name__c','Case_CategorizationId__c','OnBehalfOf__c','ContactId','AccountId','AssetId','Origin','PhoneVerification__c','ProductName__c','SubType1__c','SubType2__c','SubType3__c','CaseSubType2__c','CaseSubType3__c','Territory__c','ClientInq__c','Metric__c','Pharma_Product_Name__c','USC_Code__c','IMSDr__c','DEA__c','ZipOutlet__c','CMFProd__c','Priority','CSHSubType__c','ReportName__c','Phone_Number__c','UrgentForCustomer__c','Service_Now_Type__c','DTMS_Sponsors__c','DTMS_Studies__c','Client_Name__c', 'EnvironmentType__c','Device__c','Affects_Version__c','Case_Type__c']"
+        targetRecord="{!v.newCase}" targetFields="{!v.simpleNewCase}" targetError="{!v.newCaseError}" />
+
+    <div class="slds-grid slds-wrap">
+        <!-- left col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3 slds-p-around_small">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <aura:if isTrue="{! v.communityOrigin eq 'Partner Portal'}">
+                        <div class="slds-card__header slds-grid">
+                            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                <div class="slds-media__figure">
+                                    <lightning:icon iconName="standard:case" size="large" alternativeText="new case" />
+                                </div>
+                                <div class="slds-media__body">
+                                    <h2>
+                                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                            title="{!$Label.c.Create_a_new_case}">
+                                            <span class="slds-text-heading_small">{!$Label.c.Create_a_new_case}</span>
+                                        </a>
+                                    </h2>
+                                    <!--PEP Indicates the portal origin-->
+                                    <h3>
+                                        <span>{!v.communityOrigin}</span>
+                                    </h3>
+                                    <p class="slds-text-body_small"></p>
+                                </div>
+                            </header>
+                        </div>
+                    </aura:if>
+                    <div class="slds-card__body">
+                        <aura:if isTrue="{!v.isLoading}">
+                            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                                    <div class="slds-spinner__dot-a"></div>
+                                    <div class="slds-spinner__dot-b"></div>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <!-- Display Lightning Data Service errors -->
+                        <aura:if isTrue="{!not(empty(v.newCaseError))}">
+                            <lightning:notificationsLibrary aura:id="notifLib" />
+                            <div class="recordError">
+                                <ui:message title="{!$Label.c.Error}" severity="error" closable="true">
+                                    {!v.newCaseError}
+                                </ui:message>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{! v.portalCaseTypes.length gt 1 }">
+                            <div class="slds-form slds-form_stacked slds-p-horizontal_x-small">
+                                <lightning:select name="select" label="{!$Label.c.Select_a_Case_type}" required="true"
+                                    value="{!v.portalCaseTypeSelectedValue}"
+                                    title="{!$Label.c.Please_fill_out_the_field}">
+                                    <option value="">{!$Label.c.Please_Specify}</option>
+                                    <aura:iteration items="{!v.portalCaseTypes}" var="type">
+                                        <option value="{!type}" text="{!type}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{! v.portalCaseTypeSelectedValue eq 'Technology Solutions'}">
+                            <!-- Display the new case form for Techono Solutions type-->
+                            <div class="slds-form slds-form_stacked slds-p-horizontal_x-small">
+                                <div aura:id="productSelectFormElement0126A000000hC35QAE" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <ui:inputSelect aura:id="product0126A000000hC35QAE" class="slds-select"
+                                            label="{!$Label.c.Product}" change="{!c.onProductChange}" required="true" />
+                                        <!--PEP Added help text via Design Attribute -->
+                                        <lightning:helptext content="{!v.helpText_Product}" class="popover1" />
+                                        <aura:if isTrue="{!v.productSelectError}">
+                                            <div class="slds-form-element__help" role="alert">
+                                                {!$Label.c.Complete_this_field_by_selecting_a_value}</div>
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <aura:if isTrue="{! v.showTechnoSubtypes }">
+                                    <div aura:id="subType1SelectFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <ui:inputSelect aura:id="subType1" label="{!$Label.c.Sub_Type + '1'}"
+                                                disabled="{!v.isDependentSubType1Disable}" class="slds-select"
+                                                change="{!c.onSubType1Change}" required="true" />
+                                        </div>
+                                    </div>
+                                    <div aura:id="subType2SelectFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <ui:inputSelect aura:id="subType2" label="{!$Label.c.Sub_Type + '2'}"
+                                                disabled="{!v.isDependentSubType2Disable}"
+                                                change="{!c.onSubType2Change}" class="slds-select" required="true" />
+                                        </div>
+                                    </div>
+                                    <div aura:id="subType3SelectFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <ui:inputSelect aura:id="subType3" label="{!$Label.c.Sub_Type + '3'}"
+                                                disabled="{!v.isDependentSubType3Disable}"
+                                                change="{!c.onSubType3Change}" class="slds-select" required="true" />
+                                        </div>
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{!and(v.AccountCaseSubtype, v.ContactUserType eq 'HO User')}">
+                                            <div aura:id="caseSubTypeSelectFormElement" class="slds-form-element">
+                                                <div class="slds-form-element__control">
+                                                    <ui:inputSelect aura:id="caseSubType" label="{!$Label.c.Sub_Type}"
+                                                        disabled="{!v.isDependentTechnoSubTypeDisable}"
+                                                        change="{!c.onTechnoSubTypeChange}" class="slds-select"
+                                                        required="{!v.subtypeMandatory}" />
+                                                    <aura:if isTrue="{!v.caseSubTypeSelectError}">
+                                                        <div class="slds-form-element__help" role="alert">
+                                                            {!$Label.c.Complete_this_field_by_selecting_a_value}</div>
+                                                    </aura:if>
+                                                </div>
+                                            </div>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                                <aura:if isTrue="{! v.showEscalationFormFields }">
+
+                                    <div aura:id="device" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="device" name="selectDevice"
+                                                label="{!$Label.c.Device}" value="{!v.simpleNewCase.Device__c}"
+                                                required="false">
+                                                <!-- required="{! v.showEscalationFormFields }"> -->
+                                                <option value="">Please Specify</option>
+                                                <aura:iteration items="{!v.deviceList}" var="c">
+                                                    <option value="{!c.value}" text="{!c.name}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                    <div aura:id="onlineorAppVersion" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="caseField" name="selectonlineorAppVersion"
+                                                label="{!$Label.c.Online_or_App}" value="{!v.sltOnlineorAppVersion}"
+                                                required="false">
+                                                <option value="">Please Specify</option>
+                                                <aura:iteration items="{!v.onlineorAppVersionList}" var="c">
+                                                    <option value="{!c.value}" text="{!c.name}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                    <aura:if
+                                        isTrue="{! or(v.sltOnlineorAppVersion eq 'Online Version', v.sltOnlineorAppVersion eq 'Both Online and App Version')}">
+                                        <div aura:id="browserUsedList" class="slds-form-element">
+                                            <div class="slds-form-element__control">
+                                                <lightning:select aura:id="caseField" name="selectbrowserUsed"
+                                                    label="{!$Label.c.Browser_Used}" value="{!v.sltBrowserUsed}"
+                                                    required="{! or(v.sltOnlineorAppVersion eq 'Online Version', v.sltOnlineorAppVersion eq 'Both Online and App Version') }">
+                                                    <option value="">Please Specify</option>
+                                                    <aura:iteration items="{!v.browserUsedList}" var="c">
+                                                        <option value="{!c.value}" text="{!c.name}"></option>
+                                                    </aura:iteration>
+                                                </lightning:select>
+                                            </div>
+                                        </div>
+                                    </aura:if>
+
+                                    <aura:if
+                                        isTrue="{! or(v.sltOnlineorAppVersion eq 'App Version', v.sltOnlineorAppVersion eq 'Both Online and App Version')}">
+                                        <lightning:input aura:id="caseField" name="iOSVersion"
+                                            label="{!$Label.c.IOS_Version}" value="{!v.formIOSVersion}"
+                                            required="{! v.showEscalationFormFields }">
+                                            <lightning:helptext content="{!v.helpText_Subject}" class="popover1" />
+                                        </lightning:input>
+                                    </aura:if>
+                                    <div aura:id="caseVersion" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="caseField" name="selectCaseVersion"
+                                                label="{!$Label.c.Version}"
+                                                value="{!v.simpleNewCase.Affects_Version__c}"
+                                                required="{! or(v.sltOnlineorAppVersion eq 'App Version', v.sltOnlineorAppVersion eq 'Both Online and App Version') }">
+                                                <option value="">Please Specify</option>
+                                                <aura:iteration items="{!v.affectsVersionList}" var="c">
+                                                    <option value="{!c}" text="{!c}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                    <lightning:input aura:id="caseField" name="numberOfUsersImpacted"
+                                        label="{!$Label.c.Number_Of_Users_Impacted}"
+                                        value="{!v.formNumberOfUsersImpacted}" required="false">
+                                        <lightning:helptext content="{!v.helpText_Subject}" class="popover1" />
+                                    </lightning:input>
+                                    <lightning:input aura:id="caseField" name="username" label="{!$Label.c.Username}"
+                                        value="{!v.formUsername}" required="false">
+                                        <lightning:helptext content="{!v.helpText_Subject}" class="popover1" />
+                                    </lightning:input>
+                                </aura:if>
+
+                                <!-- <div aura:id="prioritySelectFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select name="priority" label="{!$Label.c.Priority}"
+                                            value="{!v.simpleNewCase.Priority}">
+                                                <aura:iteration items="{!v.prioritytype}" var="type">
+                                                    <option value="{!type}" text="{!type}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div> 
+                                -->
+                                <lightning:input aura:id="caseField" name="subject" label="{!$Label.c.Subject}"
+                                    value="{!v.simpleNewCase.Subject}" required="true"
+                                    title="{!$Label.c.Please_fill_out_the_field}" onblur="{!c.searchArtciles}">
+                                    <!--PEP Added Help Text via Design Attribute-->
+                                    <lightning:helptext content="{!v.helpText_Subject}" class="popover1" />
+                                </lightning:input>
+
+                                <aura:if isTrue="{! v.communityOrigin eq 'Partner Portal'}">
+                                    <lightning:input aura:id="caseField" name="clientName"
+                                        label="{!$Label.c.Client_Name}" value="{!v.simpleNewCase.Client_Name__c}"
+                                        required="true" title="{!$Label.c.Please_fill_out_the_field}"
+                                        fieldLevelHelp="{!v.helpText_Client_Name}" />
+                                </aura:if>
+
+                                <!-- 
+                                <aura:if isTrue="{!not(empty(v.articleDatas))}">
+                                    <div class="alert alert-info fade show" role="alert" style="overflow-y: auto; max-height:25rem">
+                                        <h5 class="alert-heading h5">{! $Label.c.This_articles_could_help_you }</h5>
+                                        <lightning:datatable keyField="id" data="{! v.articleDatas }" columns="{! v.articleColumns }" hideCheckboxColumn="true" />
+                                    </div>
+                                </aura:if>
+                                -->
+                                <div aura:id="urgencySelectFormElement" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="urgency" label="{!$Label.c.Urgency}"
+                                            value="{!v.simpleNewCase.Urgency__c}" onchange="{!c.onImpactUrgencyChange}">
+                                            <aura:iteration items="{!v.urgencyList}" var="type">
+                                                <option value="{!type}" text="{!type}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                        <!--PEP Added Field Help Text via Design Attribute-->
+                                        <aura:if isTrue="{!v.helpText_Urgency}">
+                                            <lightning:helptext
+                                                content="{!$Label.c.Urgency_measures_the_time_sensitivity_of_an_incident_problem_or_change_impact}"
+                                                class="popover1" />
+                                        </aura:if>
+
+                                    </div>
+                                </div>
+                                <div aura:id="urgencySelectFormElement" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="impact" label="{!$Label.c.Impact}"
+                                            value="{!v.simpleNewCase.Techno_Impact__c}"
+                                            onchange="{!c.onImpactUrgencyChange}">
+                                            <aura:iteration items="{!v.impactList}" var="type">
+                                                <option value="{!type}" text="{!type}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                        <!--PEP Added Field Help Text via Design Attribute-->
+                                        <aura:if isTrue="{!v.helpText_Impact}">
+                                            <lightning:helptext
+                                                content="{!$Label.c.Impact_measures_the_effect_of_an_incident_problem_change_Significant_major_n}"
+                                                class="popover1" />
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <aura:if isTrue="{!v.environmentIsVisible}">
+                                    <div aura:id="environmentSelectFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="caseField" name="environment"
+                                                label="{!$Label.c.Environment_Type}"
+                                                value="{!v.simpleNewCase.EnvironmentType__c}" required="true">
+                                                <option value="">{!$Label.c.Please_Specify}</option>
+                                                <aura:iteration items="{!v.environmentList}" var="type">
+                                                    <option value="{!type}" text="{!type}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{!v.ContactUserType eq 'HO User' }">
+                                    <div aura:id="behalfOFFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <c:LXC_CRM_lookup label="{!$Label.c.On_Behalf_of}"
+                                                value="{!v.simpleNewCase.OnBehalfOf__c}" object="Contact"
+                                                searchField="Name" subtitleField="Account.Name"
+                                                placeholder="{!$Label.c.Select_a_contact}" iconName="standard:contact"
+                                                limit="5" loadingMessage="{!$Label.c.Loading}"
+                                                errorMessage="{!$Label.c.Invalid_input}" aura:id="onBehalfOfLookup" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <div aura:id="countryRequester" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select aura:id="caseField" name="selectCountryRequester"
+                                            label="{!$Label.c.Country_of_the_requester}"
+                                            value="{!v.simpleNewCase.Country_of_the_requester2__c}"
+                                            required="{!v.account.Country_of_the_requester__c}">
+                                            <option value="">Please Specify</option>
+                                            <aura:iteration items="{!v.countryList}" var="c">
+                                                <option value="{!c.value}" text="{!c.name}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                                <div aura:id="UrgentforCustomer" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <ui:inputCheckbox aura:id="checkUrgentforCustomer"
+                                            label="{!$Label.c.Urgent_For_Customer}"
+                                            change="{!c.onUrgentforCustomerCheck}" />
+                                    </div>
+                                </div>
+                                <aura:if isTrue="{!v.showDTMSInformation}">
+                                    <div aura:id="sponsorsFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:input name="sponsors" label="{!$Label.c.Sponsors}"
+                                                value="{!v.simpleNewCase.DTMS_Sponsors__c}" />
+                                            <lightning:helptext content="{!$Label.c.SponsorsHelptext}"
+                                                class="popover1" />
+                                        </div>
+                                    </div>
+                                    <div aura:id="studiesFormElement" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:input name="studies" label="{!$Label.c.Studies}"
+                                                value="{!v.simpleNewCase.DTMS_Studies__c}" />
+                                            <lightning:helptext content="{!$Label.c.StudiesHelptext}"
+                                                class="popover1" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{!v.showHospitalField}">
+                                    <div class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="caseField" name="hospital" label="{!$Label.c.Hospital}" value="{!v.selectedHospital}" required="true">
+                                                <aura:iteration items="{!v.hospitalOptions}" var="hospital">
+                                                    <option value="{!hospital.value}">{!hospital.label}</option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <ui:inputTextArea aura:id="caseFieldDes0126A000000hC35QAE"
+                                    placeholder="{!$Label.c.Please_provide_here_information_on_your_request_e_g_device_used_etc}"
+                                    value="{!v.simpleNewCase.Description}" label="{!$Label.c.Description}"
+                                    required="true" />
+                                <div class="slds-col slds-size_12-of-12 slds-m-top_xx-small slds-form-element__control">
+                                    <div class="slds-scoped-notification slds-media slds-media_center slds-theme_success" role="status">
+                                        <div class="slds-media__figure">
+                                            <span class="slds-icon_container custom-icon-container slds-icon-utility-info" title="info">
+                                            <lightning:icon iconName="utility:info" size="small" alternativeText="Info"></lightning:icon>
+                                            <span class="slds-assistive-text">success</span>
+                                          </span>
+                                        </div>
+                                        <div class="slds-media__body">
+                                            <p>{!$Label.c.New_functionality_attachment}</p>
+                                        </div>
+                                    </div>
+                                    <c:lwc_csm_csh_file_upload oncontentdocumentadded="{!c.handleContentDocumentAdded}"
+                                        oncontentdocumentdeleted="{!c.handleContentDocumentDeleted}" required="{! v.attachmentMandatory}" />
+                                </div>
+                                <!--
+                                <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                                    <lightning:icon iconName="utility:attach" size="small" alternativeText="attach"
+                                        class="pr-3" />
+                                    <strong>{!$Label.c.You_will_be_able_to_attach_files_after_clicking_on}&nbsp;{!$Label.c.Save_case}</strong>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>-->
+                                <!-- <lightning:textarea aura:id="caseField" name="description" placeholder="{!$Label.c.Please_provide_here_information_on_your_request_e_g_device_used_etc}" value="{!v.simpleNewCase.Description}" label="{!$Label.c.Description}" required="true"/> -->
+                                <div class="slds-grid slds-wrap slds-form-element"
+                                    aura:id="MailCcFormElement0126A000000hC35QAE">
+                                    <div
+                                        class="slds-col slds-size_12-of-12 slds-m-top_xx-small slds-form-element__control">
+                                        <lightning:textarea aura:id="mailCcList0126A000000hC35QAE" name="mailCcList"
+                                            label="{!$Label.c.Mail_CC_List}" value="{!v.simpleNewCase.Mail_CC_List__c}"
+                                            class="mail-cc_list" maxlength="500"
+                                            placeholder="{!$Label.c.Please_enter_email_addresses_separated_by_semicolon}"
+                                            title="{!$Label.c.Please_enter_email_addresses_separated_by_semicolon}" />
+                                        <aura:if isTrue="{!v.mailFormatError}">
+                                            <div class="slds-form-element__help" role="alert">
+                                                {!$Label.c.Enter_a_valid_format_of_email_address}</div>
+                                        </aura:if>
+                                    </div>
+                                </div>
+
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_6-of-12">
+                                        <lightning:input aura:id="caseField" name="phoneNumber"
+                                            label="{!$Label.c.Phone_Number}" value="{!v.simpleNewCase.Phone_Number__c}"
+                                            type="tel" maxlength="40" />
+                                    </div>
+                                </div>
+                                <aura:if isTrue="{!v.showNoPersonalHealthDataCheckbox}">
+                                    <div class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:input aura:id="caseField" type="checkbox" label="{!$Label.c.No_Personal_Health_Data}" name="noPersonalHealthData" required="true" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <lightning:button label="{!$Label.c.Save_case}" onclick="{!c.handleSaveCase}"
+                                    variant="brand" class="slds-m-top_medium"
+                                    disabled="{!(v.isLoading || v.isLoading2)}" />
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{! v.portalCaseTypeSelectedValue eq 'Information Offering' }">
+                            <!-- Display the new case form for DATA type-->
+                            <div class="slds-form slds-form_stacked slds-p-horizontal_x-small">
+                                <!--
+                                <aura:if isTrue="{! v.account.AccountCountry__c eq 'US' }">
+                                    <lightning:select label="{!$Label.c.Offering}" aura:id="caseField" value="{!v.simpleNewCase.AssetId}" onchange="{!c.onProductChangeUS}" required="true">
+                                        <aura:iteration items="{!v.assets}" var="item">
+                                            <option text="{!item.label}" value="{!item.value}" selected="{!item.selected}" />
+                                        </aura:iteration>
+                                    </lightning:select>
+                                    <aura:set attribute="else">
+                                        <div aura:id="productSelectFormElement0126A000000hC33QAE" class="slds-form-element">
+                                            <div class="slds-form-element__control">
+                                                <ui:inputSelect aura:id="product0126A000000hC33QAE" class="slds-select" label="{!$Label.c.Offering}" change="{!c.onProductChange}" required="true" />
+                                                <aura:if isTrue="{!v.productSelectError}">
+                                                    <div class="slds-form-element__help" role="alert">{!$Label.c.Complete_this_field_by_selecting_a_value}</div>
+                                                </aura:if>
+                                            </div>
+                                        </div>
+                                    </aura:set>
+                                </aura:if>
+                                -->
+                                <div aura:id="productSelectFormElement0126A000000hC33QAE" class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <ui:inputSelect aura:id="product0126A000000hC33QAE" class="slds-select"
+                                            label="{!$Label.c.Offering}" change="{!c.onProductChange}"
+                                            required="true" />
+                                        <aura:if isTrue="{!v.productSelectError}">
+                                            <div class="slds-form-element__help" role="alert">
+                                                {!$Label.c.Complete_this_field_by_selecting_a_value}</div>
+                                        </aura:if>
+                                    </div>
+                                </div>
+
+                                <aura:if isTrue="{!v.isDATAGlobalSupportCSHForm}">
+                                    <lightning:select label="{!$Label.c.Case_Category}" aura:id="caseField"
+                                        value="{!v.simpleNewCase.SubType2__c}" required="true"
+                                        disabled="{! v.disabledCaseCategories}" onchange="{!c.onCaseCategoryChange}">
+                                        <option value="">{!$Label.c.Please_Specify}</option>
+                                        <aura:iteration items="{!v.dataGlobalSupportCaseCategories}" var="item">
+                                            <option text="{!item.label}" value="{!item.api}"
+                                                selected="{!item.selected}" />
+                                        </aura:iteration>
+                                    </lightning:select>
+                                    <lightning:select label="{!$Label.c.Problem_Type}" aura:id="caseField"
+                                        value="{!v.simpleNewCase.SubType3__c}" required="true"
+                                        disabled="{! v.disabledProblem_Type}">
+                                        <option value="">{!$Label.c.Please_Specify}</option>
+                                        <aura:iteration items="{!v.dataGlobalSupportPbTypes}" var="item">
+                                            <option text="{!item.label}" value="{!item.api}"
+                                                selected="{!item.selected}" />
+                                        </aura:iteration>
+                                    </lightning:select>
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! v.account.AccountCountry__c ne 'US' }">
+                                            <lightning:select label="{!$Label.c.Case_Category}" aura:id="caseField"
+                                                value="{!v.simpleNewCase.SubType2__c}" required="true"
+                                                onchange="{!c.onCaseCategoryChange}">
+                                                <option value="">{!$Label.c.Please_Specify}</option>
+                                                <aura:iteration items="{!v.caseCategories}" var="item">
+                                                    <option text="{!item.label}" value="{!item.api}"
+                                                        selected="{!item.selected}" />
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </aura:if>
+                                        <lightning:select label="{!$Label.c.Problem_Type}" aura:id="caseField"
+                                            value="{!v.simpleNewCase.SubType3__c}" required="true"
+                                            disabled="{! v.disabledProblem_Type}">
+                                            <option value="">{!$Label.c.Please_Specify}</option>
+                                            <aura:iteration items="{!v.pbTypesObj}" var="item">
+                                                <option text="{!item.label}" value="{!item.api}"
+                                                    selected="{!item.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </aura:set>
+                                </aura:if>
+
+                                <lightning:input aura:id="caseField" name="subject" label="{!$Label.c.Subject}"
+                                    value="{!v.simpleNewCase.Subject}" required="true" onblur="{!c.searchArtciles}">
+                                    <!--PEP Added Help Text via Design Attribute-->
+                                    <lightning:helptext content="{!v.helpText_Subject}" class="popover1" />
+                                </lightning:input>
+                                <!--
+                                <aura:if isTrue="{!not(empty(v.articleDatas))}">
+                                    <div class="alert alert-info fade show" role="alert" style="overflow-y: auto; max-height:25rem">
+                                        <h5 class="alert-heading h5">{! $Label.c.This_articles_could_help_you }</h5>
+                                        <lightning:datatable keyField="id" data="{! v.articleDatas }" columns="{! v.articleColumns }" hideCheckboxColumn="true" />
+                                    </div>
+                                </aura:if>
+                                -->
+                                <ui:inputTextArea aura:id="caseFieldDes0126A000000hC33QAE"
+                                    placeholder="{!$Label.c.Please_provide_information_on_your_request_here}"
+                                    value="{!v.simpleNewCase.Description}" label="{!$Label.c.Description}"
+                                    required="true" />
+                                <div class="slds-col slds-size_12-of-12 slds-m-top_xx-small slds-form-element__control">
+                                    <div class="slds-scoped-notification slds-media slds-media_center slds-theme_success" role="status">
+                                        <div class="slds-media__figure">
+                                            <span class="slds-icon_container custom-icon-container slds-icon-utility-info" title="info">
+                                            <lightning:icon iconName="utility:info" size="small" alternativeText="Info"></lightning:icon>
+                                            <span class="slds-assistive-text">success</span>
+                                          </span>
+                                        </div>
+                                        <div class="slds-media__body">
+                                          <p>{!$Label.c.New_functionality_attachment}</p>
+                                        </div>
+                                    </div>
+                                    <c:lwc_csm_csh_file_upload oncontentdocumentadded="{!c.handleContentDocumentAdded}"
+                                        oncontentdocumentdeleted="{!c.handleContentDocumentDeleted}" required="{! v.attachmentMandatory}" />
+                                </div>
+                                <!--
+                                <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                                    <lightning:icon iconName="utility:attach" size="small" alternativeText="attach"
+                                        class="pr-3" />
+                                    <strong>{!$Label.c.You_will_be_able_to_attach_files_after_clicking_on}&nbsp;{!$Label.c.Save_case}</strong>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                -->
+                                <!-- <lightning:textarea aura:id="caseField" name="description" placeholder="{!$Label.c.Please_provide_information_on_your_request_here}" value="{!v.simpleNewCase.Description}" label="{!$Label.c.Description}" required="true" /> -->
+                                <aura:if isTrue="{! v.account.AccountCountry__c ne 'US' }">
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="Report Name"
+                                                label="{!$Label.c.Report_Name}" value="{!v.simpleNewCase.ReportName__c}"
+                                                maxlength="75" />
+                                        </div>
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="dataProviderName"
+                                                label="{!$Label.c.Data_Provider_Name}"
+                                                value="{!v.simpleNewCase.Data_Provider_Name__c}" maxlength="75" />
+                                        </div>
+                                    </div>
+                                    <div aura:id="countryRequester" class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:select aura:id="caseField" name="selectCountryRequester"
+                                                label="{!$Label.c.Country_of_the_requester}"
+                                                value="{!v.simpleNewCase.Country_of_the_requester2__c}"
+                                                required="{!v.account.Country_of_the_requester__c}">
+                                                <option value="">Please Specify</option>
+                                                <aura:iteration items="{!v.countryList}" var="c">
+                                                    <option value="{!c.value}" text="{!c.name}"></option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{! v.account.AccountCountry__c eq 'US' }">
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="territory"
+                                                label="{!$Label.c.Territory}" value="{!v.simpleNewCase.Territory__c}"
+                                                maxlength="75" />
+                                        </div>
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="clientInq"
+                                                label="{!$Label.c.Client_Inquiry}"
+                                                value="{!v.simpleNewCase.ClientInq__c}" maxlength="75" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:select label="{!$Label.c.Metric}" aura:id="caseField"
+                                                value="{!v.simpleNewCase.Metric__c}">
+                                                <aura:iteration items="{!v.metrics}" var="item">
+                                                    <option text="{!item.label}" value="{!item.value}"
+                                                        selected="{!item.selected}" />
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="pharmaProductName"
+                                                label="{!$Label.c.Pharma_Product_Name}"
+                                                value="{!v.simpleNewCase.Pharma_Product_Name__c}" maxlength="100" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="USCCode"
+                                                label="{!$Label.c.USC_Code}" value="{!v.simpleNewCase.USC_Code__c}"
+                                                maxlength="75" />
+                                        </div>
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="prescriber"
+                                                label="{!$Label.c.Prescriber}" value="{!v.simpleNewCase.IMSDr__c}"
+                                                maxlength="75" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="DEA" label="{!$Label.c.DEA}"
+                                                value="{!v.simpleNewCase.DEA__c}" maxlength="75" />
+                                        </div>
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="zipOutlet"
+                                                label="{!$Label.c.Zip_Outlet}" value="{!v.simpleNewCase.ZipOutlet__c}"
+                                                maxlength="75" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters">
+                                        <div class="slds-col slds-size_6-of-12">
+                                            <lightning:input aura:id="caseField" name="CMFProd"
+                                                label="{!$Label.c.CMF_Prod}" value="{!v.simpleNewCase.CMFProd__c}"
+                                                maxlength="75" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <div class="slds-grid slds-wrap slds-form-element"
+                                    aura:id="MailCcFormElement0126A000000hC33QAE">
+                                    <div
+                                        class="slds-col slds-size_12-of-12 slds-m-top_xx-small slds-form-element__control">
+                                        <lightning:textarea aura:id="mailCcList0126A000000hC33QAE" name="mailCcList"
+                                            label="{!$Label.c.Mail_CC_List}" value="{!v.simpleNewCase.Mail_CC_List__c}"
+                                            class="mail-cc_list" maxlength="500"
+                                            placeholder="{!$Label.c.Please_enter_email_addresses_separated_by_semicolon}"
+                                            title="{!$Label.c.Please_enter_email_addresses_separated_by_semicolon}" />
+                                        <aura:if isTrue="{!v.mailFormatError}">
+                                            <div class="slds-form-element__help" role="alert">
+                                                {!$Label.c.Enter_a_valid_format_of_email_address}</div>
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <lightning:button label="{!$Label.c.Save_case}" onclick="{!c.handleSaveCase}"
+                                    variant="brand" class="slds-m-top_medium"
+                                    disabled="{! (v.isLoading || v.isLoading2)}" />
+                            </div>
+                        </aura:if>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- right col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3 slds-p-around_small">
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <aura:if isTrue="{!v.isLoading3}">
+                        <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                            <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </aura:if>
+                    <h3 class="card-title h3">{! $Label.c.Recommended_Articles }</h3>
+                    <aura:if isTrue="{!not(empty(v.articleDatas))}">
+                        <div>
+                            <h5 class="alert-heading h5">{! $Label.c.This_articles_could_help_you }</h5>
+                            <lightning:datatable keyField="id" data="{! v.articleDatas }"
+                                columns="{! v.articleColumns }" hideCheckboxColumn="true" />
+                        </div>
+                        <aura:set attribute="else">
+                            <div class="slds-illustration slds-illustration_small">
+                                <img src="/img/search/no-results.png" />
+                                <div class="slds-text-longform">
+                                    <h3 class="slds-text-heading_medium">{! $Label.c.No_articles_in_Knowledge }</h3>
+                                    <p class="slds-text-body_regular">{! $Label.c.The_recommended_articles_are_based_on
+                                        }</p>
+                                </div>
+                            </div>
+                        </aura:set>
+                    </aura:if>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div aura:id="modaldialog_caseCreateAttachment" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <h2 class="slds-text-heading--medium">{!$Label.c.Attachments}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control">
+                        <lightning:fileUpload label="{!$Label.c.Attach_files}" title="{!$Label.c.Upload_files}"
+                            name="fileUploader" multiple="true" recordId="{!v.newCaseId}"
+                            onuploadfinished="{!c.handleUploadFinished}" />
+                    </div>
+                </div>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button variant="neutral" label="{!$Label.c.Close_to_see_your_case}"
+                    onclick="{!c.closeAttachmentForm}" />
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop_caseCreateAttachment"></div>
+    <div aura:id="modaldialog_confirmImpactUrgency" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <h2 class="slds-text-heading--medium">{!$Label.c.Attention_required}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="alert alert-warning" role="alert">
+                    <p>{!$Label.c.Remember_that_an_Urgency_High_is_for_an_issue_when_all_the_users_are_blocked_on}</p>
+                </div>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button variant="neutral" label="{!$Label.c.Agree}"
+                    onclick="{!c.confirmImpactUrgency_agree}" />
+                <lightning:button variant="brand" label="{!$Label.c.Disagree}"
+                    onclick="{!c.confirmImpactUrgency_disagree}" />
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop_confirmImpactUrgency"></div>
+
+    <div aura:id="modaldialog_warningMessageAssetSubtype" role="dialog" tabindex="-1"
+        class="slds-modal slds-fade-in-hide">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <h2 class="slds-text-heading--medium">{!$Label.c.Attention_required}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="alert alert-warning" role="alert">
+                    <p>{!$Label.c.Dear_Client},</p>
+                    <p class="slds-m-top_small">
+                        {!$Label.c.Please_remember_that_every_service_catalog_request_should_refer_to_one_item_per}.</p>
+                    <p class="slds-m-top_small">
+                        {!$Label.c.In_case_you_need_more_than_one_item_to_be_worked_please_raise_a_separated_ticket}.
+                    </p>
+                    <p class="slds-m-top_small">{!$Label.c.Thank_you}</p>
+                </div>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button variant="brand" label="OK" onclick="{!c.closeModalWarningMessageAssetSubtype}" />
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop_warningMessageAssetSubtype"></div>
+</aura:component>

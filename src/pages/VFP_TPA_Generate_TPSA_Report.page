@@ -1,0 +1,325 @@
+<apex:page controller="CNT_TPA_ReportingServices" docType="html-5.0" tabStyle="TPA_Request__c" showHeader="true" sidebar="false" cache="false" lightningStylesheets="true" standardStylesheets="false">
+	<apex:slds />
+    <html>        
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <apex:includeScript value="{!$Resource.AngularJS}" />   <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}" />   <!-- *** Jquery library reference *** -->
+            <apex:includeScript value="{!$Resource.TpaDateTimeFormatter}" />            
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>  <!-- *** JQuery Custom Popup Library reference *** -->
+            
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />   <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" type="text/css" />    <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript" />    <!-- *** JQuery UI Stylesheet reference *** -->
+                        
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.base.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.office.css')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxbuttons.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxscrollbar.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxlistbox.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdropdownlist.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxmenu.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.filter.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.sort.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.grouping.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.selection.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxpanel.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcalendar.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdatetimeinput.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcheckbox.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/globalization/globalize.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.columnsresize.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.export.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.export.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.pager.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxtooltip.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/demos.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/generatedata.js')}" />
+            
+            <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" /> <!-- *** Multi Select Control CSS reference *** -->
+            
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>    <!-- *** Multi Select Control Javascript Library reference *** -->
+            
+            <style type="text/css">
+                .tableWrapper {
+                height: 300px;
+                overflow-x: hidden;
+                }
+                
+                #s2id_ddReqStatuses {
+                float: left;
+                margin-right: 5px !important;
+                }
+                
+                .jqx-icon-close-office {display: none !important;}
+                .ui-datepicker-trigger{vertical-align: text-bottom;}
+                .ui-datepicker, .appriseOverlay {z-index:300 !important;}
+            </style>
+            
+            <!-- ****** AngularJS script Start ****** -->
+            <script type="text/javascript">
+            //*** set apex remote call timeout from visualforce page ***//
+            Visualforce.remoting.timeout = 120000;
+            
+            var myapp = angular.module('TpaReportDashboard', []);
+            var requestStatusesTemp = []; //Added by Neha under CR-11457        
+            var contrl = myapp.controller('controllerPage', ['$scope', '$filter', '$log', '$window', function ($scope, $filter, $log, $window) {
+                $scope.rootObj = {};
+                $scope.$log = $log;
+                $scope.rootObj.getReportValues = '{!$RemoteAction.CNT_TPA_ReportingServices.loadGenerateTPSAReport}';
+                var resultArray = [];
+                $scope.rootObj.reportArray = [];
+                
+                $scope.clearForm = function () {
+                    $('[id$=startDate]').val(null);
+                    $('[id$=toDate]').val(null);
+                }
+                var allConditions = {}
+                $scope.validateformAndLoadReport = function() {
+					var startDateVar = document.querySelector('#startDate').value;
+					var toDateVar = document.querySelector('#toDate').value;
+                    if(startDateVar == null) {
+                        $scope.popupAlert("Please select <b>From Date</b>");
+                        return false;
+                    }
+                    else if(toDateVar == null) {
+                        $scope.popupAlert("Please select <b>To Date</b>");
+                        return false;
+                    }
+                    else if(new Date(startDateVar) > new Date(toDateVar)) {
+                        $scope.popupAlert("Please select <b>From Date</b> prior or equal to <b>To Date</b>");
+                        return false;
+                    }
+                    
+                    allConditions.fromDate = startDateVar;
+                    allConditions.toDate = toDateVar;
+                    allConditions.pageSize = "1000";
+                    $scope.rootObj.reportArray = [];
+                    resultArray = [];
+                    console.log(JSON.stringify(allConditions));
+                    showLoading();
+                    $scope.loadReport(null, JSON.stringify(allConditions));
+                    
+                }
+                
+                $scope.loadReport = function (lastRecordCreatedId, recievedConditions) {
+                    Visualforce.remoting.Manager.invokeAction($scope.rootObj.getReportValues, lastRecordCreatedId, recievedConditions, function(result, event) {
+                        if(event.type == 'exception')
+                        {
+                            $scope.$log.info('Error: ' + event.message);
+                            //$scope.popupAlert('<b>Report Timed Out</b> – Please try later or Try a different browser');
+                            hideLoading();
+                            return false;
+                        }
+                        else {
+                            if (result != null && result.length > 0) {
+                                $.merge(resultArray, result);
+                                $scope.$log.info(JSON.stringify(result));
+                                $scope.$log.info(result[result.length - 1].Id);
+                                $scope.$log.info(result.length);
+                            }
+                            if (result.length == 1000) {
+                                $scope.loadReport(result[result.length - 1].Id,recievedConditions);
+                                return false;
+                            }
+                            $scope.$log.info(JSON.stringify(result));
+                            $scope.tempJson = {};
+                            $scope.rootObj.reportArray = [];                            
+                            var TPSAReportReason = '';
+                            
+                            angular.forEach(resultArray, function (value, key) {
+                                $scope.$log.info('----------------------------------------');
+                                //$scope.$log.info(value);
+                                if (value.Attachments != null) {
+                                    //angular.forEach(value.Attachments, function (aValue, aKey) {                                    
+                                    for(var i=0; i<value.Attachments.length; i++) {
+                                        $scope.$log.info(value.Attachments[i]);
+                                        if(value.Attachments[i].Name.indexOf('{!completedKeyword}') > -1) {
+                                            break;  //Nothing to do as this is a valid record.
+                                        } else if(value.Signature_Under_Validation__c != null) {
+                                            TPSAReportReason = 'Agreement Wet Signed.';
+                                        } else {
+                                            TPSAReportReason = 'Manual Review Required.';
+                                        }   
+                                    }
+                                    
+                                    $scope.tempJson = {};
+                                    $scope.tempJson.tpaRequest = value.Name;
+                                    $scope.tempJson.tpaRequestId = value.Id;
+                                    $scope.tempJson.vendorName = value.Service_Provider_Address__r.Name;
+                                    $scope.tempJson.vendorId = value.Service_Provider_Address__c;
+                                    $scope.tempJson.clientName = value.Client_Full_Name__c;
+                                    $scope.tempJson.clientId = value.Client_Address__c;
+                                    $scope.tempJson.daStartDate = value.Data_Access_Start_Date__c;
+                                    $scope.tempJson.daEndDate = value.Data_Access_End_Date__c;
+                                    $scope.tempJson.inEffectDate = value.In_Effect_Date__c;
+                                    $scope.tempJson.comment = TPSAReportReason;
+                                    $scope.rootObj.reportArray.push($scope.tempJson);                                        
+                                }                            
+                            });
+                            
+                            $scope.applyChanges();
+                            $scope.$log.info('$scope.rootObj.reportArray length: '+$scope.rootObj.reportArray.length);
+                            var source =
+                                {
+                                    localdata: $scope.rootObj.reportArray,
+                                    datatype: "array",
+                                    sortcolumn: 'tpaRequest',
+                                    sortdirection: 'desc',
+                                    datafields:
+                                    [
+                                        { name: 'Id', type: 'string' },
+                                        { name: 'tpaRequest', type: 'string' },
+                                        { name: 'tpaRequestId', type: 'string' },
+                                        { name: 'vendorName', type: 'string' },
+                                        { name: 'vendorId', type: 'string' },
+                                        { name: 'clientName', type: 'string' },
+                                        { name: 'clientId', type: 'string' },
+                                        { name: 'daStartDate', type: 'date' },
+                                        { name: 'daEndDate', type: 'date' },
+                                        { name: 'inEffectDate', type: 'date' },
+                                        { name: 'comment', type: 'string' }, 
+                                    ]
+                                        };
+                                        var dataAdapter = new $.jqx.dataAdapter(source, {
+                                        autoBind: true
+                                        });
+                                        
+                                        $("#jqxgrid").jqxGrid(
+                                        {
+                                        width: '100%',
+                                        source: dataAdapter,
+                                        altrows: false,
+                                        sortable: true,
+                                        groupable: false,
+                                        showfilterrow: false,
+                                        filterable: true,
+                                        selectionmode: 'none',
+                                        pageable: false,
+                                        autoheight: false,
+                                        columnsresize: true,
+                                        enabletooltips: true,
+                                        theme: 'office',
+                                        autorowheight: false,
+                                        pagesizeoptions: ['10', '20', '50', '100', '200'],
+                                    columns: [
+                                        { text: 'TPA#', datafield: 'tpaRequest', filtertype: 'text', filterable: true, sortable: true, groupable: false, cellsrenderer: tooltiprenderer, width: '9%'},
+                                        { text: 'Vendor Name', datafield: 'vendorName', filterable: true, groupable: false},
+                                        { text: 'Client Name', datafield: 'clientName', filterable: true, sortable: false, groupable: false },
+                                        { text: 'Data Access Start Date', datafield: 'daStartDate', filterable: true, sortable: false, filtertype: 'date', cellsformat: 'MM/dd/yyyy', groupable: false, width: '10%' },
+                                        { text: 'Data Access End Date', datafield: 'daEndDate', filterable: true, sortable: false, filtertype: 'date', cellsformat: 'MM/dd/yyyy', groupable: false, width: '10%' },
+                                        { text: 'InEffect Date', datafield: 'inEffectDate', filterable: true, sortable: false, filtertype: 'date', cellsformat: 'MM/dd/yyyy', groupable: false, width: '10%' },
+                                        { text: 'Comment', datafield: 'comment', filterable: true, sortable: false, groupable: false }
+                                    ]  
+                                    //groups: ['comment']
+                                });                            
+                            hideLoading();
+                        }
+                    });
+                }
+                
+                $scope.popupAlert = function (msg, truePart) {
+                    popup(msg, { 'animate': true },
+                          function (r) {
+                              if (r && truePart != null)
+                                  truePart();
+                          });
+                }
+                
+                $scope.applyChanges = function() {
+                    if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                        $scope.$apply();
+                }
+            }]);
+            var allConditionExport = {}
+            $(document).ready(function() {
+                $(".datepicker").datepicker({dateFormat: 'mm/dd/yy',buttonText: "{!$Label.TPA_click_here_to_open_calendar}",changeMonth: true, changeYear: true, yearRange: "2013:c", maxDate: '0', showOn: "button", buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAALdQTFRFMzMyAAAAMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMy////j2KaIAAAADt0Uk5TAAAEgzuRhtCH6aaF09KLFnt66xoGAwLsBw8Mfnj3GDiBNGyCNW19d/YOHw118hlDmj8UAfAuEBuv9eqZZ685AAAAAWJLR0Q8p2phzwAAAAlwSFlzAAAASAAAAEgARslrPgAAALxJREFUGNM9jIcOgkAQBUcseLZDVzwrKtgL9nr//18qqC+ZvGSy+8Ahm+WHA7l8wXWLxZRCPocqlSvVWq36oVIuKZTGq0P9g4dWNISm33J832n5TaSB0bQ7bbrdpLTBCD3bZzCgb3vIWwQMR2PCkPFoSJCKaMJ0yiRKhTCzcxYL5naWvGiWqzUirFfL76hnN2y3bKyXXMTs9geiiMN+R2xQR06Zb04cFefLNb4FWkQHt/h6OXN/PM0/z8f9BT8gFJGascv+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE0LTA4LTA1VDA1OjMwOjQ2LTA0OjAwb0yWxAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNC0wOC0wNVQwNTozMDo0Ni0wNDowMB4RLngAAAAASUVORK5CYII=", buttonImageOnly: true});
+                $("#excelExport").jqxButton();
+                $("#excelExport").click(function () {
+                    var fromDate = document.querySelector('#startDate').value;;
+                    var toDate = document.querySelector('#toDate').value;;
+                    allConditionExport.fromDate = fromDate;
+                    allConditionExport.toDate = toDate;
+                    allConditionExport.pageSize = "1000";
+                    exportData(JSON.stringify(allConditionExport));
+                  
+                });
+            });  
+            
+            function isIE(userAgent) {
+                var ua = window.navigator.userAgent;
+                return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+            }
+            var tooltiprenderer = function (row, columnfield, value, defaulthtml, columnproperties, rowdata) {
+                return '<div style="margin:4px;width:100%;height:100%;" title="' + decodeHtmlCode(value) + '">' + value + '</div>';
+            }
+            function decodeHtmlCode(encodedStr) {
+                return $("<div/>").html(encodedStr).text();
+            }
+            function getParameterByName(name) {
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            </script>
+            <!-- ****** AngularJS script End ****** -->
+        </head>
+        
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <c:VFC_TPA_LoadingImage />
+            <div class="slds-scope" id="ng-app" ng-app="TpaReportDashboard">
+                <div id="controllerPage" ng-controller="controllerPage">
+                    <apex:form styleclass="slds-m-around_medium">
+                        <apex:pageBlock >
+                            <apex:actionFunction action="{!redirectToExportTPSA}" name="exportData" rerender="rrr" >
+                    			<apex:param name="filterParams" value="" />
+                    		</apex:actionFunction>
+                            <apex:pageBlockSection columns="1" title="TPA Generate TPSA Report" collapsible="false">
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="From Date:" />
+                                    <apex:outputPanel >
+                                        <div class = 'requiredInput'>
+                                            <div class="requiredBlock"></div>
+                                            <input type="text" maxlength="255" ng-click="popupAlert('{!$Label.TPA_Click_on_the_calendar_icon_next_to_the_text_box_and_select_the_Date}');" placeholder="Select From Date" readonly="readonly" class="datepicker" id="startDate" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="To Date:" />
+                                    <apex:outputPanel >
+                                        <div class = 'requiredInput'>
+                                            <div class="requiredBlock"></div>
+                                            <input type="text" maxlength="255" ng-click="popupAlert('{!$Label.TPA_Click_on_the_calendar_icon_next_to_the_text_box_and_select_the_Date}');" placeholder="Select To Date" readonly="readonly" class="datepicker" id="toDate" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="" />
+                                    <button class="slds-button slds-button_brand" ng-click="validateformAndLoadReport();" onclick="return false;">Search</button>
+                            		<button class="slds-button slds-button_neutral" ng-click="clearForm();" onclick="return false;">Reset</button>
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                        </apex:pageBlock>
+                        
+                        <div id='jqxWidget' ng-show="" style="font-size: 13px; font-family: Verdana;">
+                            <div style="width:100%;border:1px solid #f3f3f3;margin-top:1%" ng-show="rootObj.reportArray.length > 0">
+                                <button id="excelExport" value="Export to Excel" role="button" class="slds-button slds-button_success slds-m-around_xx-small" aria-disabled="false" >Export to Excel</button>
+                            </div>
+                            <div id="jqxgrid" style="margin-top:0.2%">
+                            </div>
+                        </div>
+                    </apex:form>
+                </div>
+            </div>
+        </body>        
+    </html>
+</apex:page>

@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>52.0</apiVersion>
+    <assignments>
+        <name>myWaitAssignment_myWait_myRule_1</name>
+        <label>myWaitAssignment_myWait_myRule_1</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>cancelWaits</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <stringValue>myWait_myRule_1</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>myDecision</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>myWaitEvent_myWait_myRule_1_event_0_postWaitExecutionAssignment</name>
+        <label>myWaitEvent_myWait_myRule_1_event_0_postWaitExecutionAssignment</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>myWaitEvent_myWait_myRule_1_event_0_postActionExecutionVariable</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>myWait_myRule_1</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <processMetadataValues>
+            <name>index</name>
+            <value>
+                <numberValue>0.0</numberValue>
+            </value>
+        </processMetadataValues>
+        <name>myDecision</name>
+        <label>myDecision</label>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>default</defaultConnectorLabel>
+        <rules>
+            <name>myRule_1</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>formula_myRule_1</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myRule_1_pmetdec</targetReference>
+            </connector>
+            <label>Task Creation Conditions Check</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>myPostWaitDecision_myWaitEvent_myWait_myRule_1_event_0</name>
+        <label>myPostWaitDecision_myWaitEvent_myWait_myRule_1_event_0</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>myWaitEvent_myWait_myRule_1_event_0_postWaitExecutionAssignment</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>default</defaultConnectorLabel>
+        <rules>
+            <name>myPostWaitRule_myWaitEvent_myWait_myRule_1_event_0</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>myVariable_current.Bid_Defense_Date__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myWaitEvent_myWait_myRule_1_event_0_SA1</targetReference>
+            </connector>
+            <label>myPostWaitRule_myWaitEvent_myWait_myRule_1_event_0</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>myPreWaitDecision_myWait_myRule_1</name>
+        <label>myPreWaitDecision_myWait_myRule_1</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>myWaitAssignment_myWait_myRule_1</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>default</defaultConnectorLabel>
+        <rules>
+            <name>myPreWaitRule_myWait_myRule_1</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>formula_myRule_1</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myDecision</targetReference>
+            </connector>
+            <label>myPreWaitRule_myWait_myRule_1</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>myRule_1_pmetdec</name>
+        <label>Previously Met Decision</label>
+        <locationX>100</locationX>
+        <locationY>100</locationY>
+        <defaultConnector>
+            <targetReference>myWait_myRule_1</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Not Previously Met</defaultConnectorLabel>
+        <rules>
+            <name>myRule_1_pmetnullrule</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>myVariable_old</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myWait_myRule_1</targetReference>
+            </connector>
+            <label>Previously Met - Null</label>
+        </rules>
+        <rules>
+            <name>myRule_1_pmetrule</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>formula_myRule_1_pmetrule</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <label>Previously Met - Prev</label>
+        </rules>
+    </decisions>
+    <description>It will create Task based on some conditions and presentation date</description>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>[Opportunity].Bid_Defense_Date__c - 14</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_2_myWaitEvent_myWait_myRule_1_event_0_SA1_1333770484</name>
+        <dataType>Date</dataType>
+        <expression>{!myVariable_current.Bid_Defense_Date__c} - 14</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>&quot;Dear &quot;+[Opportunity].Owner.FirstName+BR()+
+&quot;This opportunity record shows that there is an anticipated bid defense on &quot; + TEXT([Opportunity].Bid_Defense_Date__c) +&quot;.  Please take a moment to review the below presentation fields and update if necessary.&quot;+BR()+BR()+
+&quot;IQVIA Invited to Present?&quot;+BR()+
+&quot;Presentation Date&quot;+BR()+
+&quot;Presentation Country&quot;+BR()+
+&quot;Presentation Date Status&quot;+BR()+BR()+
+&quot;Please note these fields trigger Operational workflows and internal stakeholders rely upon the accuracy of this information to make informed business decisions and to enable current and future workflows designed to support your sales efforts.&quot;+BR()+
+LEFT($Api.Partner_Server_URL_260, FIND( &apos;/services&apos;, $Api.Partner_Server_URL_260))+ [Opportunity].Id</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_3_myWaitEvent_myWait_myRule_1_event_0_SA1_5954017807</name>
+        <dataType>String</dataType>
+        <expression>&quot;Dear &quot;+{!myVariable_current.Owner.FirstName}+BR()+
+&quot;This opportunity record shows that there is an anticipated bid defense on &quot; + TEXT({!myVariable_current.Bid_Defense_Date__c}) +&quot;.  Please take a moment to review the below presentation fields and update if necessary.&quot;+BR()+BR()+
+&quot;IQVIA Invited to Present?&quot;+BR()+
+&quot;Presentation Date&quot;+BR()+
+&quot;Presentation Country&quot;+BR()+
+&quot;Presentation Date Status&quot;+BR()+BR()+
+&quot;Please note these fields trigger Operational workflows and internal stakeholders rely upon the accuracy of this information to make informed business decisions and to enable current and future workflows designed to support your sales efforts.&quot;+BR()+
+LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260}))+ {!myVariable_current.Id}</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>DATETIMEVALUE(TEXT(NOW() +1)) </stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_4_myWaitEvent_myWait_myRule_1_event_0_SA1_4394668294</name>
+        <dataType>DateTime</dataType>
+        <expression>DATETIMEVALUE(TEXT(NOW() +1))</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>&quot;Confirmation of Presentation Fields for &quot;+[Opportunity].Opportunity_Number__c</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_5_myWaitEvent_myWait_myRule_1_event_0_SA1_6154627075</name>
+        <dataType>String</dataType>
+        <expression>&quot;Confirmation of Presentation Fields for &quot;+{!myVariable_current.Opportunity_Number__c}</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>ISPICKVAL([Opportunity].QI_Invited_to_Present__c ,&quot;Yes&quot;) &amp;&amp; 
+((ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Clinical&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Connected Devices&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Data Sciences&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;&apos;Safety &amp; Med Info&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Early Clinical Development&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Regulatory &amp; Drug Development Solutions&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Patient &amp; DCT Solutions&quot;))) &amp;&amp;
+NOT ( ISBLANK ([Opportunity].Bid_Defense_Date__c )) &amp;&amp;
+( ISNEW()|| (NOT(ISNEW()) &amp;&amp; ISBLANK(PRIORVALUE([Opportunity].Bid_Defense_Date__c )))) &amp;&amp; TODAY() &lt;= [Opportunity].Bid_Defense_Date__c  -14</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_myRule_1</name>
+        <dataType>Boolean</dataType>
+        <expression>ISPICKVAL({!myVariable_current.QI_Invited_to_Present__c} ,&quot;Yes&quot;) &amp;&amp; 
+((ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Clinical&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Connected Devices&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Data Sciences&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;&apos;Safety &amp; Med Info&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Early Clinical Development&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Regulatory &amp; Drug Development Solutions&quot;)) ||
+(ISPICKVAL({!myVariable_current.Line_of_Business__c}  ,&quot;Patient &amp; DCT Solutions&quot;))) &amp;&amp;
+ NOT ( ISBLANK ({!myVariable_current.Bid_Defense_Date__c} )) &amp;&amp;
+( ISNEW()|| (NOT(ISNEW()) &amp;&amp; ISBLANK(PRIORVALUE({!myVariable_current.Bid_Defense_Date__c} )))) &amp;&amp; TODAY() &lt;= {!myVariable_current.Bid_Defense_Date__c}  -14</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>ISPICKVAL([Opportunity].QI_Invited_to_Present__c ,&quot;Yes&quot;) &amp;&amp; 
+((ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Clinical&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Connected Devices&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Data Sciences&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;&apos;Safety &amp; Med Info&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Early Clinical Development&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Regulatory &amp; Drug Development Solutions&quot;)) ||
+(ISPICKVAL([Opportunity].Line_of_Business__c  ,&quot;Patient &amp; DCT Solutions&quot;))) &amp;&amp;
+ NOT ( ISBLANK ([Opportunity].Bid_Defense_Date__c )) &amp;&amp;
+( ISNEW()|| (NOT(ISNEW()) &amp;&amp; ISBLANK(PRIORVALUE([Opportunity].Bid_Defense_Date__c )))) &amp;&amp; TODAY() &lt;= [Opportunity].Bid_Defense_Date__c  -14</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_myRule_1_pmetrule</name>
+        <dataType>Boolean</dataType>
+        <expression>ISPICKVAL({!myVariable_old.QI_Invited_to_Present__c} ,&quot;Yes&quot;) &amp;&amp; 
+((ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Clinical&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Connected Devices&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Data Sciences&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;&apos;Safety &amp; Med Info&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Early Clinical Development&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Regulatory &amp; Drug Development Solutions&quot;)) ||
+(ISPICKVAL({!myVariable_old.Line_of_Business__c}  ,&quot;Patient &amp; DCT Solutions&quot;))) &amp;&amp;
+ NOT ( ISBLANK ({!myVariable_old.Bid_Defense_Date__c} )) &amp;&amp;
+( ISNEW()|| (NOT(ISNEW()) &amp;&amp; ISBLANK(PRIORVALUE({!myVariable_old.Bid_Defense_Date__c} )))) &amp;&amp; TODAY() &lt;= {!myVariable_old.Bid_Defense_Date__c}  -14</expression>
+    </formulas>
+    <interviewLabel>Opp_PB03_CRM_Task_Creation_Based_On_Presentation_Date-27_InterviewLabel</interviewLabel>
+    <label>Opp_PB03_CRM_Task_Creation_Based_On_Presentation_Date</label>
+    <processMetadataValues>
+        <name>ObjectType</name>
+        <value>
+            <stringValue>Opportunity</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>ObjectVariable</name>
+        <value>
+            <elementReference>myVariable_current</elementReference>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OldObjectVariable</name>
+        <value>
+            <elementReference>myVariable_old</elementReference>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>TriggerType</name>
+        <value>
+            <stringValue>onAllChanges</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Workflow</processType>
+    <recordCreates>
+        <name>myWaitEvent_myWait_myRule_1_event_0_SA1</name>
+        <label>Task Creation</label>
+        <locationX>100</locationX>
+        <locationY>200</locationY>
+        <connector>
+            <targetReference>myWaitEvent_myWait_myRule_1_event_0_postWaitExecutionAssignment</targetReference>
+        </connector>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>Date</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Due Date Only</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue></stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Formula</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>ActivityDate</field>
+            <value>
+                <elementReference>formula_2_myWaitEvent_myWait_myRule_1_event_0_SA1_1333770484</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>String</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Description</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue></stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Formula</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>Description</field>
+            <value>
+                <elementReference>formula_3_myWaitEvent_myWait_myRule_1_event_0_SA1_5954017807</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>Boolean</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Reminder Set</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue></stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Boolean</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>IsReminderSet</field>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>ID</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Assigned To ID</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Reference</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>OwnerId</field>
+            <value>
+                <elementReference>myVariable_current.OwnerId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>Picklist</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Priority</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Picklist</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>Priority</field>
+            <value>
+                <stringValue>Normal</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>DateTime</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Reminder Date/Time</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue></stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Formula</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>ReminderDateTime</field>
+            <value>
+                <elementReference>formula_4_myWaitEvent_myWait_myRule_1_event_0_SA1_4394668294</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>Picklist</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Status</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Picklist</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>String</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Subject</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue></stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Formula</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>Subject</field>
+            <value>
+                <elementReference>formula_5_myWaitEvent_myWait_myRule_1_event_0_SA1_6154627075</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>ID</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>isRequired</name>
+                <value>
+                    <booleanValue>false</booleanValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideLabel</name>
+                <value>
+                    <stringValue>Related To ID</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>leftHandSideReferenceTo</name>
+                <value>
+                    <stringValue>AMA_Agreement_Detail__c;AMA_Contract_Detail__c;AMA_Contracts_Attachments__c;AMA_Fee_Master__c;Account;Account_Report_Note__c;Address__c;Aggregate_Report__c;Agreement_Contact__c;Agreement_Line_Item__c;Agreement_Line_item_Discount__c;Agreement_Notes__c;Agreement_Products__c;Agreement__c;Announcement__c;Apttus_CMConfig__AgreementAdjustmentLineItem__c;Apttus_CMConfig__AgreementFootnote__c;Apttus_CMConfig__AgreementIncentiveBenefitData__c;Apttus_CMConfig__AgreementIncentiveLimitData__c;Apttus_CMConfig__AgreementProductAttributeValueExt2__c;Apttus_CMConfig__AgreementProductAttributeValueExt3__c;Apttus_CMConfig__AgreementProductAttributeValueExt__c;Apttus_CMConfig__AgreementProductAttributeValue__c;Apttus_CMConfig__AgreementRelatedLineItem__c;Apttus_CMConfig__AgreementRollupData__c;Apttus_CMConfig__AgreementSummaryGroup__c;Apttus_CMConfig__AgreementSummary__c;Apttus_CMConfig__AgreementUsagePriceTier__c;Apttus_Config2__AccountBillingSummary__c;Apttus_Config2__AccountLocation__c;Apttus_Config2__AdHocGroup__c;Apttus_Config2__AdjustmentLineItem__c;Apttus_Config2__AgreementPriceRule__c;Apttus_Config2__AgreementPriceTier__c;Apttus_Config2__AssetAttributeValueExt2__c;Apttus_Config2__AssetAttributeValueExt3__c;Apttus_Config2__AssetAttributeValueExt__c;Apttus_Config2__AssetAttributeValueHistoryExt2__c;Apttus_Config2__AssetAttributeValueHistoryExt3__c;Apttus_Config2__AssetAttributeValueHistoryExt__c;Apttus_Config2__AssetAttributeValueHistory__c;Apttus_Config2__AssetAttributeValue__c;Apttus_Config2__AssetTransactionHistory__c;Apttus_Config2__AssetUsagePriceTierHistory__c;Apttus_Config2__AssetUsagePriceTier__c;Apttus_Config2__AttributeValueMatrix__c;Apttus_Config2__BatchJobParameter__c;Apttus_Config2__BatchJob__c;Apttus_Config2__BillingPlanItem__c;Apttus_Config2__BillingPlanTemplateItem__c;Apttus_Config2__BillingPlanTemplate__c;Apttus_Config2__BillingPlan__c;Apttus_Config2__BillingPreference__c;Apttus_Config2__ChargeGroupMember__c;Apttus_Config2__ChargeGroup__c;Apttus_Config2__ChargeType__c;Apttus_Config2__ClassificationHierarchy__c;Apttus_Config2__ClassificationName__c;Apttus_Config2__CostItem__c;Apttus_Config2__CustomerPOIssueLog__c;Apttus_Config2__CustomerPOItem__c;Apttus_Config2__CustomerPOSalesOrderRelationHistory__c;Apttus_Config2__CustomerPurchaseOrder__c;Apttus_Config2__DataEnrichmentRule__c;Apttus_Config2__DataValidationEnrichmentRuleset__c;Apttus_Config2__DataValidationRule__c;Apttus_Config2__ExternalOrderAdjustmentItem__c;Apttus_Config2__ExternalOrderRollupData__c;Apttus_Config2__ExternalOrderSummaryItem__c;Apttus_Config2__ExternalOrderSummary__c;Apttus_Config2__FeatureSet__c;Apttus_Config2__Feature__c;Apttus_Config2__FieldExpression__c;Apttus_Config2__Footnote__c;Apttus_Config2__FormulaField__c;Apttus_Config2__FrequencyConversionRate__c;Apttus_Config2__GLAccountMapEntry__c;Apttus_Config2__GLAccountMapRule__c;Apttus_Config2__GuidedQuestion__c;Apttus_Config2__GuidedSearchRuleEntry__c;Apttus_Config2__GuidedSearchRuleFilter__c;Apttus_Config2__GuidedSearchRule__c;Apttus_Config2__HelpDoc__c;Apttus_Config2__IncentiveAdjustmentItem__c;Apttus_Config2__IncentiveBenefitData__c;Apttus_Config2__IncentiveExclusion__c;Apttus_Config2__IncentiveGroup__c;Apttus_Config2__IncentiveLimitData__c;Apttus_Config2__IncentiveLimit__c;Apttus_Config2__IncentiveLoyaltyEnrollment__c;Apttus_Config2__Incentive__c;Apttus_Config2__LegalEntity__c;Apttus_Config2__LineItem__c;Apttus_Config2__LoyaltyPointAccrualAdjustmentItem__c;Apttus_Config2__LoyaltyPointAccrualSummary__c;Apttus_Config2__Milestone2__c;Apttus_Config2__MilestoneAdjustmentItem__c;Apttus_Config2__MilestoneTemplate__c;Apttus_Config2__OrderAdjustmentLineItem__c;Apttus_Config2__OrderFulfillment__c;Apttus_Config2__OrderIncentiveBenefitData__c;Apttus_Config2__OrderIncentiveLimitData__c;Apttus_Config2__OrderLineItem__c;Apttus_Config2__OrderLoyaltyPointAccrualItem__c;Apttus_Config2__OrderPocketAdjustmentLineItem__c;Apttus_Config2__OrderProductAttributeValueExt2__c;Apttus_Config2__OrderProductAttributeValueExt3__c;Apttus_Config2__OrderProductAttributeValueExt__c;Apttus_Config2__OrderProductAttributeValue__c;Apttus_Config2__OrderRelatedLineItem__c;Apttus_Config2__OrderRollupData__c;Apttus_Config2__OrderTaxBreakup__c;Apttus_Config2__OrderUsagePriceTier__c;Apttus_Config2__OrderWorkflowRuleEntry__c;Apttus_Config2__OrderWorkflowRule__c;Apttus_Config2__OrderWorkflowRuleset__c;Apttus_Config2__Order__c;Apttus_Config2__PaymentTerm__c;Apttus_Config2__PriceBreakup__c;Apttus_Config2__PriceDimension__c;Apttus_Config2__PriceEscalator__c;Apttus_Config2__PriceListCategory__c;Apttus_Config2__PriceListItem__c;Apttus_Config2__PriceList__c;Apttus_Config2__PriceMatrixEntry__c;Apttus_Config2__PriceMatrix__c;Apttus_Config2__PriceRuleEntry__c;Apttus_Config2__PriceRule__c;Apttus_Config2__PriceRuleset__c;Apttus_Config2__ProductAttributeGroupMember__c;Apttus_Config2__ProductAttributeGroup__c;Apttus_Config2__ProductAttributeValueExt2__c;Apttus_Config2__ProductAttributeValueExt3__c;Apttus_Config2__ProductAttributeValueExt__c;Apttus_Config2__ProductAttributeValue__c;Apttus_Config2__ProductAttribute__c;Apttus_Config2__ProductClassification__c;Apttus_Config2__ProductConfiguration__c;Apttus_Config2__ProductConstraintEntry__c;Apttus_Config2__ProductConstraintView__c;Apttus_Config2__ProductConstraint__c;Apttus_Config2__ProductDefaultRuleFilter__c;Apttus_Config2__ProductDefaultRule__c;Apttus_Config2__ProductDefaultValue__c;Apttus_Config2__ProductFeature__c;Apttus_Config2__ProductFootnote__c;Apttus_Config2__ProductGroupMember__c;Apttus_Config2__ProductGroup__c;Apttus_Config2__ProductHierarchyView__c;Apttus_Config2__ProductInformation__c;Apttus_Config2__ProductOptionComponent__c;Apttus_Config2__ProductOptionGroup__c;Apttus_Config2__ProductOptionPrice__c;Apttus_Config2__RelatedAccountLocation__c;Apttus_Config2__RelatedAssetLineItem__c;Apttus_Config2__RelatedIncentive__c;Apttus_Config2__RelatedLineItem__c;Apttus_Config2__RelatedOpportunityLineItemColl__c;Apttus_Config2__RelatedOpportunityLineItem__c;Apttus_Config2__RelatedPriceListItem__c;Apttus_Config2__RevRecPolicy__c;Apttus_Config2__RevenueSplitPolicy__c;Apttus_Config2__SavedSearch__c;Apttus_Config2__ServiceLocation__c;Apttus_Config2__SummaryGroup__c;Apttus_Config2__TaxBreakup__c;Apttus_Config2__TaxCertificate__c;Apttus_Config2__TaxCode__c;Apttus_Config2__TempIncentiveBenefitData__c;Apttus_Config2__TempIncentiveLimitData__c;Apttus_Config2__TempRollupData__c;Apttus_Config2__UsagePriceTier__c;Apttus_Proposal__Proposal_Document_Output_Format__c;Apttus_Proposal__Proposal_Line_Item__c;Apttus_Proposal__Proposal_Request__c;Apttus_Proposal__Proposal__c;Apttus_QPConfig__ProposalAdjustmentLineItem__c;Apttus_QPConfig__ProposalFootnote__c;Apttus_QPConfig__ProposalIncentiveBenefitData__c;Apttus_QPConfig__ProposalIncentiveLimitData__c;Apttus_QPConfig__ProposalLocation__c;Apttus_QPConfig__ProposalProductAttributeValueExt2__c;Apttus_QPConfig__ProposalProductAttributeValueExt3__c;Apttus_QPConfig__ProposalProductAttributeValueExt__c;Apttus_QPConfig__ProposalProductAttributeValue__c;Apttus_QPConfig__ProposalRelatedLineItem__c;Apttus_QPConfig__ProposalRollupData__c;Apttus_QPConfig__ProposalSummaryGroup__c;Apttus_QPConfig__ProposalSummary__c;Apttus_QPConfig__ProposalUsagePriceTier__c;Apttus__APTS_Admin__c;Apttus__APTS_Agreement__c;Apttus__APTS_Template__c;Apttus__AgreementActionCondition__c;Apttus__AgreementLineItem__c;Apttus__AgreementLock__c;Apttus__Agreement_Clause__c;Apttus__Agreement_Document__c;Apttus__Agreement_Protection__c;Apttus__Agreement_Rule__c;Apttus__Agreement_Term_Exception__c;Apttus__AlternateClause__c;Apttus__ClauseConfiguration__c;Apttus__CycleTimeField__c;Apttus__CycleTimeGroup__c;Apttus__DocAssemblyComponent__c;Apttus__DocAssemblyRule__c;Apttus__DocAssemblyRuleset__c;Apttus__Document_Output_Format__c;Apttus__FormulaField__c;Apttus__IDEJobClauseExtraction__c;Apttus__IDEJobFieldExtraction__c;Apttus__IDEJob__c;Apttus__IDEMapClauseProvision__c;Apttus__IDEMapFieldProvision__c;Apttus__IDEMapProjectRecordType__c;Apttus__IDEMapProvisionRecordType__c;Apttus__IDEProvision__c;Apttus__LiteUserException__c;Apttus__LiteUserSummary__c;Apttus__Locale__c;Apttus__LoginHistory__c;Apttus__MSTeamsDetail__c;Apttus__MergeEventDetail__c;Apttus__MergeEvent__c;Apttus__Obligation__c;Apttus__QueryTemplate__c;Apttus__RetentionPolicy__c;Apttus__ReviewCycle__c;Apttus__Reviewer__c;Apttus__SearchFilter__c;Apttus__TemplateClauseReference__c;Apttus__TemplateDatasourceFilter__c;Apttus__TemplateDynamicSection__c;Apttus__Term_Exception__c;Apttus__WizardInputControl__c;Apttus__WizardStep__c;Apttus__Wizard__c;Asset;AssetRelationship;BNF2__c;Bid_History__c;Billing_Schedule_Item__c;Billing_Schedule__c;CDA_Legal_POC_Cross_Walk__c;CDA_Request__c;CSM_QI_CaseAutomationScheduler__c;CSM_QI_Field_Tracking__c;CSM_QI_Frequency__c;Campaign;Case;ChannelProgram;ChannelProgramLevel;Client_Sat_Survey__c;CommSubscriptionConsent;Competitor__c;ContactRequest;Contact_Address_Crosswalk__c;Contract;ContractLineItem;Contract_In_Out_Log__c;Contract_Milestone__c;Corrective_Action__c;Days_Off__c;DeclinedSurveyApproverGroup__c;DelegatedAccount;Entitlement;IMS_Data_Asset__c;IMS_Legal_Entity__c;IMS_Master_Legal_Entity__c;IMS_TPA_Purpose_Category__c;IMS_Use_Offering_Atypical_Combination__c;IQVIA_Project_Leader__c;Image;Import_Process_Log__c;Investigator_Grant__c;Invoice__c;JBCXM__Alert__c;JBCXM__CSEvent__c;JBCXM__CTAGroup__c;JBCXM__CTA__c;JBCXM__GSNPSTextAnalytics__c;JBCXM__GSRelationshipType__c;JBCXM__GSRelationship__c;JBCXM__JobTracker__c;JBCXM__Milestone__c;JBCXM__SuccessPlanTemplate__c;JBCXM__SurveyResponseTask__c;ListEmail;LiveAgentSession;LiveChatTranscript;Location;MIBNF2__c;MIBNF_Component__c;OCE_Subscription_AddOn__c;Opportunity;Order;PDRI__Data_Set_Field__c;PDRI__Data_Set_Template_Entry__c;PDRI__Data_Set_Template__c;PDRI__Deployment_Activity_Entry__c;PDRI__Deployment_Batch_Result__c;PDRI__Deployment_Data_Set_Result__c;PDRI__Deployment_Record_Result__c;PDRI__Deployment_Result__c;PDRI__Deployment__c;PDRI__Field_Value_Mapping__c;PDRI__Folder__c;PDRI__Managed_Field__c;PDRI__Managed_Object__c;PDRI__Managed_Relationship__c;PDRI__Metadata_Component_Deployment_Result__c;PDRI__Metadata_Deployment_Result__c;PDRI__Query_Filter__c;PDRI__VCS_Branch__c;PDRI__VCS_Repo__c;PDRI__VCS_User__c;PSA_Event__c;PSA_Metric__c;PSSF__c;PV_Agreement__c;Partner_Contact__c;PartyConsent;Pricing_Task__c;Product2;Program__c;Project_Contact__c;Project_Event__c;Project_Log__c;Project_Metric_Actual__c;Project_Metric__c;Quote;Qvidian__QPCO_Shadow__c;RA_Feedback__c;RA_Issue__c;RA_Recommendation__c;RA_Request__c;Reconciliation__c;Report_Country__c;Responsibilities_and_Maintenance__c;SWAT_Intake__c;SalesOrg__c;ServiceContract;Service_Line__c;Service_Target_Change_Request__c;Service__c;Sharepoint_File__c;Solution;TPA_AMA_Client_Vendor_Match__c;TPA_AMA_Client_Vendor_Search_Map__c;TPA_Acknowledgment_Log__c;TPA_Additional_Term__c;TPA_Agreement_Additional_Field__c;TPA_Approval_Region__c;TPA_Assigned_TP_Processor__c;TPA_Data_Asset__c;TPA_Language_Cross_Walk__c;TPA_Master_Extension_Information__c;TPA_Purpose_Category__c;TPA_Purpose__c;TPA_RequestDocument__c;TPA_Request_ATC__c;TPA_Request_Localized__c;TPA_Request__c;TPA_Vendor_Reg_Number_Acknowlegment__c;TRIMDA__TRIMDA_DupeAlertResult__c;Target__c;Template_Selection_Criteria__c;Vendor_Offering_Return_Acknowledgment__c;WorkOrder;WorkOrderLineItem;Workflow_Email_Record__c;dsfs__CustomParameterMap__c;dsfs__DocuSign_Recipient_Status__c;dsfs__DocuSign_Status__c;dsfs__EnvelopeConfiguration__c;fferpcore__BillingDocumentLineItem__c;fferpcore__BillingDocument__c;fferpcore__ProcessRun__c;fferpcore__ProcessUserGroup__c;ffirule__IntegrationRuleAction__c;ffirule__IntegrationRuleButton__c;ffirule__IntegrationRuleJob__c;ffirule__IntegrationRuleMapping__c;ffirule__IntegrationRuleRelationship__c;ffirule__IntegrationRule__c;ffr__DataViewAction__c;ffr__DataViewField__c;ffr__DataViewJoinFilter__c;ffr__DataViewJoin__c;ffr__DataViewTransposeItem__c;ffr__DataView__c;ffr__InquiryTemplateColumn__c;ffr__InquiryTemplateCommonName__c;ffr__InquiryTemplateTransposeDrill__c;ffr__InquiryTemplate__c;ffr__RelatedContentPaneComponent__c;ffr__RelatedContentPaneTab__c;ffr__RelatedContentPane__c;iCSR_Exchange_Timeline__c;pse__Assignment_Daily_Note__c;pse__Assignment__c;pse__Budget__c;pse__Create_Billing_Documents_Batch__c;pse__Forecast_Calculation__c;pse__Forecast_Enhanced_Calculation__c;pse__Generic_Batch_Task__c;pse__Grp__c;pse__Issue__c;pse__Milestone__c;pse__Miscellaneous_Adjustment__c;pse__Practice__c;pse__Proj__c;pse__Project_Task__c;pse__Region__c;pse__Resource_Request__c;pse__Task_Time__c;pse__Work_Calendar__c</stringValue>
+                </value>
+            </processMetadataValues>
+            <processMetadataValues>
+                <name>rightHandSideType</name>
+                <value>
+                    <stringValue>Reference</stringValue>
+                </value>
+            </processMetadataValues>
+            <field>WhatId</field>
+            <value>
+                <elementReference>myVariable_current.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+    </recordCreates>
+    <startElementReference>myPreWaitDecision_myWait_myRule_1</startElementReference>
+    <status>Obsolete</status>
+    <variables>
+        <name>cancelWaits</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>myVariable_current</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Opportunity</objectType>
+    </variables>
+    <variables>
+        <name>myVariable_old</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Opportunity</objectType>
+    </variables>
+    <variables>
+        <name>myWaitEvent_myWait_myRule_1_event_0_postActionExecutionVariable</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+    <waits>
+        <name>myWait_myRule_1</name>
+        <label>myWait_myRule_1</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>defaultLabel</defaultConnectorLabel>
+        <waitEvents>
+            <processMetadataValues>
+                <name>inputParameterType</name>
+                <value>
+                    <stringValue>referenced</stringValue>
+                </value>
+            </processMetadataValues>
+            <name>myWaitEvent_myWait_myRule_1_event_0</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>myWaitEvent_myWait_myRule_1_event_0_postActionExecutionVariable</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myPostWaitDecision_myWaitEvent_myWait_myRule_1_event_0</targetReference>
+            </connector>
+            <eventType>DateRefAlarmEvent</eventType>
+            <inputParameters>
+                <name>TimeTableColumnEnumOrId</name>
+                <value>
+                    <stringValue>Opportunity</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>EntityObjectId</name>
+                <value>
+                    <elementReference>myVariable_current.Id</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>TimeOffsetUnit</name>
+                <value>
+                    <stringValue>Days</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>TimeOffset</name>
+                <value>
+                    <numberValue>-14.0</numberValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>TimeFieldColumnEnumOrId</name>
+                <value>
+                    <stringValue>Bid_Defense_Date__c</stringValue>
+                </value>
+            </inputParameters>
+            <label>myWaitEvent_myWait_myRule_1_event_0</label>
+        </waitEvents>
+    </waits>
+</Flow>

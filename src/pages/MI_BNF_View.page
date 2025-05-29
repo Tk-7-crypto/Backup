@@ -1,0 +1,846 @@
+<apex:page standardController="MIBNF2__c" extensions="MI_BNF_Extension" sidebar="false" id="pg">
+    <apex:includeLightning /> 
+    <c:JQueryBlockUI />
+    <style>
+.bPageBlock .detailList table td,.bPageBlock .detailList table th {
+    border-bottom: 1px solid #E3DEB8;
+}
+.pbSubheader
+{
+background-color: gray;
+}
+.BNF_List
+{
+border:2px solid #79B4CD;
+border-top:1px solid #79B4CD;
+border-bottom:4px solid #79B4CD;
+margin-bottom: 15px;
+border-radius:4px;
+-webkit-border-radius: 8px;
+-moz-border-radius: 8px;
+}
+</style>
+<script>
+function PageBlockSectionCollapse(el)
+{
+   
+    if (typeof twistSection === 'function')
+    {
+        var theTwist = document.getElementById(el);
+        if (theTwist)
+        {
+            twistSection(theTwist.childNodes[0].childNodes[0]);
+        }
+    }
+}
+
+</script>
+<script>          
+
+var lookupwindow=null;
+var MIBNFId;
+ function opendlg(MIBNFID)
+ {
+    
+     var prdids='';
+     var objitem;
+     /*if(window.frames[0].frames[0])
+     {
+        objitem=window.frames[0].frames[0];
+     }
+     else
+        objitem=window.frames[0];*/
+     
+     objitem=window.frames[0];
+     for (var name in objitem)
+     {
+        if(objitem['id']!=null)
+        {
+            objitem=window.frames[0].frames[0];
+        }
+     }
+     
+     if(objitem.document.getElementsByName('prdlist').length==0)
+     {
+         alert('No Product Available');
+         return false;
+     }
+     for(var i=0; i < objitem.document.getElementsByName('prdlist').length; i++)
+     {
+             if(objitem.document.getElementsByName('prdlist')[i].checked)
+             prdids +=objitem.document.getElementsByName('prdlist')[i].value + ','
+     }
+     if(prdids=='')
+     {
+         alert('No Product selected');
+         return false;
+     }
+     else
+     {
+         
+         prdids=prdids.substr(0,(prdids.length-1)); 
+                 
+         var lookUpWindowOpen = false;
+         if(!lookUpWindowOpen)
+         {  
+                 //updated by Ghanshyam Saini - chrome issue in window.open and window.showModalDialog
+                 YUIShowLoading();
+                 lookUpWindowOpen = true;
+                 var windowWidth=750;
+                 var windowHeight=300;
+                 var centerWidth = (window.screen.width - windowWidth) / 2;
+                 var centerHeight = (window.screen.height - windowHeight) / 2;
+                 //lookupwindow = window.showModalDialog('/apex/mi_bnf_add_product?prdids='+ prdids + '&minfid=' + MIBNFID ,'Show Message','dialogWidth:' + windowWidth + 'px;dialogHeight:' + windowHeight + 'px;center:yes;dialogTop:' + centerHeight +';dialogLeft:' + centerWidth + ';'); 
+                 lookupwindow = window.open('/apex/mi_bnf_add_product?prdids='+ prdids + '&minfid=' + MIBNFID ,'ShowMessage','Width=' + windowWidth + 'px,Height=' + windowHeight + 'px,center=yes,scrollbars=yes,Top=' + centerHeight +',Left=' + centerWidth);                 
+         
+         } 
+     
+ }
+ 
+ return false;
+}
+
+ var win = null;       
+      function openPopup(oppId, orgCode) {           
+        var attrs = '';
+        var browserName = navigator.appName;
+        if(navigator.userAgent.toLowerCase().indexOf('chrome') > -1){   
+            if(win == null || win.closed){               
+            win = window.open("/apex/MIBNF_AddBillingSchedule?id=" + oppId + "&salesOrg=" + orgCode, "ABC", "Height= 500, Width= 1000");                                    
+            }                  
+            else{                           
+            win.focus();
+            }               
+        }
+        else if(browserName=="Microsoft Internet Explorer"){
+        window.showModalDialog("/apex/MIBNF_AddBillingSchedule_IE?id=" + oppId + "&salesOrg=" + orgCode, attrs, "dialogHeight: 500px; dialogWidth: 1000px;");
+        }
+        else{
+        window.showModalDialog("/apex/MIBNF_AddBillingSchedule?id=" + oppId + "&salesOrg=" + orgCode, attrs, "dialogHeight: 500px; dialogWidth: 1000px;");
+        }
+        
+    }
+
+function parent_disable() {
+if(lookupWindow && !lookupWindow.closed)
+lookupWindow.focus();
+}
+
+function ConfirmDelete(MIBNFCompId)
+{
+   
+    var isConfirm = confirm("Click OK to delete Invoice or click Cancel to go back");
+    if (isConfirm)
+    {
+       YUIShowLoading();
+       DeleteInvoice(MIBNFCompId);
+       return true;
+    }
+    return false;
+    
+}
+
+var timeout = 100;
+var closetimer  = 0;
+var ddmenuitem  = 0;
+
+// open hidden layer
+function mopen(id,thisid,mibnfid,cmpid)
+{   
+    MIBNFId = id;
+    // cancel close timer
+    mcancelclosetime();
+    var toppos=GetTopLeft(thisid);
+    // close old layer
+    if(ddmenuitem) ddmenuitem.style.visibility = 'hidden';
+
+    // get new layer and show it
+    ddmenuitem = document.getElementById(id);
+    ddmenuitem.style.visibility = 'visible';
+    ddmenuitem.style.top =(parseInt(toppos.Top)-90) + 'px';
+    
+    hideLink(id);
+    btnLink(id,mibnfid);
+    btnLink(id,mibnfid);
+      
+    //Recall Approval Button
+    if( id.length >= 1 && id.indexOf('rel') == 0){
+        var historyElem = document.getElementById(id);
+        modifyApprovalHistory(historyElem, id.substring(3));
+    }
+           
+    //file attachment button modification code
+    if(id.indexOf('note') == 0) {
+        var attachElem = document.getElementById(id);
+        modifyAttachmentLink(attachElem, cmpid);  
+        
+        //override showmore behaviour
+        var proxied = showMoreList;
+        showMoreList = function() {
+                           var x = proxied.apply(this, arguments);
+                           setTimeout(function() {
+                                modifyAttachmentLink(attachElem, cmpid);
+                            }, 3000);
+                           return x;   
+                   };      
+    }
+}
+
+// close showed layer
+function mclose()
+{
+    if(ddmenuitem) ddmenuitem.style.visibility = 'hidden';
+}
+
+// go close timer
+function mclosetime()
+{
+    closetimer = window.setTimeout(mclose, timeout);
+}
+
+// cancel close timer
+function mcancelclosetime()
+{
+    if(closetimer)
+    {
+        window.clearTimeout(closetimer);
+        closetimer = null;
+    }
+}
+
+// close layer when click-out
+//document.onclick = mclose; 
+
+function GetTopLeft(elm)
+{
+
+var y = 0;
+//set y to elm?s offsetTop
+y = elm.offsetTop;
+//set elm to its offsetParent
+elm = elm.offsetParent;
+while(elm != null)
+{
+y = parseInt(y) + parseInt(elm.offsetTop);
+elm = elm.offsetParent;
+}
+return {Top:y};
+}
+
+
+function hideLink(elmid) {
+        var historyElem = document.getElementById(elmid); 
+     	var mapJSON = {!mibnfCompIdtoisOwnerQueueMapJSON};
+        var aryClassElements = getElementsByClassName( 'actionLink', historyElem );   
+        if(aryClassElements) {
+            for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemHref = aryClassElements[i].getAttribute('href') ;
+                if(elemHref && elemHref != '' && (elemHref.indexOf('ProcessInstanceWorkitemWizardStageManager') != -1) ){
+                    aryClassElements[i].href='/apex/MI_BNF_Approval?id=' + elmid.substring(3);
+                }
+                //updated by dheeraj kumar 24 Nov Issue-09972
+                else if(elemHref && elemHref != '' && (elemHref.indexOf('REASSIGN') != -1) ){
+                	if(mapJSON[elmid.substring(3)]) {
+                		aryClassElements[i].style.display = 'none';
+                        aryClassElements[i].parentElement.childNodes[1].textContent = '';
+                	} else {
+                	    aryClassElements[i].href='/apex/MIBNF_Reassign?id=' + elmid.substring(3);
+                	}
+                    
+               }
+            }
+        }    
+}
+
+function btnLink(elmid,mibnfid) {
+        var historyElem = document.getElementById(elmid); 
+        var aryClassElements = getElementsByClassName('btn', historyElem );  
+        if(aryClassElements) {
+             for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemtitle = aryClassElements[i].getAttribute('title') ;
+                var elemclick = aryClassElements[i].getAttribute('onclick') ;
+               
+                if(elemtitle=='Submit for Approval')
+                {
+                
+                   var popupmsg="if((Modal.confirm && Modal.confirm('Once you submit this record for approval, you might not be able to edit it or recall it from the approval process depending on your settings. Continue?')) || (!Modal.confirm && window.confirm('Once you submit this record for approval, you might not be able to edit it or recall it from the approval process depending on your settings. Continue?'))){ navigateToUrl('/apex/MI_BNF_Comp_Submit_Approval?id=" + elmid.substring(3) + "',null,'piSubmit');}";
+                   aryClassElements[i].setAttribute("onclick",popupmsg);
+                   aryClassElements[i].style.display = 'none';
+                
+             
+            }
+        } 
+     
+    }   
+}
+function submitApproval(bnfid, revenueAnalyst)
+{
+        if(revenueAnalyst != null && revenueAnalyst.length > 0){
+            var isConfirm = confirm("Once you submit this record for approval, you might not be able to edit it or recall it from the approval process depending on your settings. Continue?");
+            if(isConfirm)
+            {
+                window.parent.location='/apex/MI_BNF_Comp_Submit_Approval?id=' + bnfid;
+                return false;
+            }   
+        } else {
+            revenueAnalystField();
+            window.scrollTo(0, 0);
+            return false;
+        }
+    return false;            
+}
+
+function ExtractBNF(compid,mibnfid)
+{
+    
+    return false;
+
+}
+    //Method to add custom VF page on Recall Approval Process Button
+    function modifyApprovalHistory(approvalElem, id){
+        var APPROVAL_HISTORY_DIV_ID = id+'_RelatedProcessHistoryList';  
+        if(!approvalElem)
+            var approvalElem =  document.getElementById(APPROVAL_HISTORY_DIV_ID);
+        
+        var aryClassElements = getElementsByClassName( 'btn', approvalElem ); 
+        var aryClassElementsLength = aryClassElements.length;
+        if(aryClassElementsLength >=1) {
+            for ( var i = 0; i < aryClassElementsLength; i++ ) {
+                if(aryClassElements &&  aryClassElements[i].attributes[2].nodeValue == 'piRemove'){
+                    console.log('aryClassElements 2' + aryClassElements[i].attributes[2].nodeValue);
+                    var x = function(){                                                  
+                        window.location.href = '/apex/VFP_CRM_Recall_Approval_Request?id=' + id;
+                    };
+                    if (aryClassElements[i].addEventListener)
+                        aryClassElements[i].addEventListener ('click',x,false);                
+                    aryClassElements[i].setAttribute('onclick',  x);
+                }
+            }
+        }  
+    }
+    
+    /*
+   *JS Function to modify 'Attach File' button on Notes & Attachment related list.
+   */
+    function modifyAttachmentLink(notesElem, compid){
+        var uiTheme = '{!$User.UIThemeDisplayed }';
+        var NOTES_DIV_ID = 'pg:notes';//'{!id}_RelatedNoteList';//a067000000iE49p_RelatedNoteList;
+        if(!notesElem)
+            notesElem = document.getElementById(NOTES_DIV_ID); 
+        var anchorElements = notesElem.getElementsByTagName('a');       
+        var aryClassActionElements = getElementsByClassName( 'actionLink', notesElem );
+        var aryClassActionElementspShowMoref = getElementsByClassName( 'actionLink', notesElem );
+        var aryClassElements = getElementsByClassName( 'btn', notesElem ); 
+        if(aryClassElements) {
+            for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemOnclick = aryClassElements[i].getAttribute('onclick').toString();
+                if(elemOnclick && elemOnclick != '' && (elemOnclick.indexOf('NoteAttach') != -1) && (elemOnclick.indexOf('navigateToUrl') != -1) ){
+                    var x = function(){ 
+                        if(compid) {
+                            window.location.href = '/apex/MIBNFComponent_Attachment?id=' + compid + '&returl=' + '{!id}'; 
+                        } else {
+                            window.location.href = '/apex/MIBNF_Attachment?id=' + '{!id}' + '&returl=' + '{!id}';  
+                        }  
+                    };
+                    if (aryClassElements[i].addEventListener)
+                        aryClassElements[i].addEventListener ('click',x,false);
+                    else if (aryClassElements[i].attachEvent)
+                        aryClassElements[i].attachEvent ('onclick',x);
+                    aryClassElements[i].setAttribute('onclick',  x);
+                    /* This code is not working in IE 7 and 8 - something to do with circular ref
+                    aryClassElements[i].onclick = function(){                                                  
+                                                  window.location.href = '/apex/MIBNF_Attachment?id=' + '{!id}';
+                                                  return false;
+                                                };//*/
+                    
+                }
+                else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('ViewAllNotesPage') != -1) {
+                    aryClassElements[i].style.display = 'none';
+                }
+            } 
+        }
+        if(aryClassActionElements) {
+           for ( var i = 0; i < aryClassActionElements.length; i++ ) {
+               if(aryClassActionElements[i].innerHTML == 'Edit') {
+                   aryClassActionElements[i].style.display = 'none';
+                   aryClassActionElements[i].parentNode.removeChild(aryClassActionElements[i].nextSibling);
+               }
+           }
+       }
+        if(uiTheme =='Theme4d') {
+            for ( var i = 0; i < anchorElements.length; i++) {
+                if(anchorElements[i].text && anchorElements[i].text.includes('Show more')) {
+                       anchorElements[i].style.display = 'none';
+                       anchorElements[i].parentNode.removeChild(anchorElements[i].nextSibling);
+                }
+                if(anchorElements[i].text && anchorElements[i].text.includes('Go to list')) {
+                    anchorElements[i].href = 'javascript:void(0)';
+                    var x = function(){ 
+                        //window.location.href = '/lightning/r/'+  '{!id}' + '/related/CombinedAttachments/view';
+                        window.location.href = '/apex/VFP_CRM_Attachment?parentId=' + '{!id}';
+                    }
+                    if (anchorElements[i].addEventListener)
+                        anchorElements[i].addEventListener ('click',x,false);
+                    else if (anchorElements[i].attachEvent)
+                        anchorElements[i].attachEvent ('onclick',x);
+                    anchorElements[i].setAttribute('onclick',  x);
+                    break;
+                };
+            }
+        }
+   }
+
+</script>
+        <apex:repeat id="CompRelatedList" value="{!itemlist}" var="Comprel">
+        <div id="rel{!Comprel.id}" style="position:absolute;visibility:hidden;width:70%;margin-left:20px;z-index:1500;" onmouseover="mcancelclosetime()" 
+            onmouseout="mclosetime()">
+        <apex:relatedList list="ProcessSteps" rendered="true" subject="{!Comprel.id}"/>
+        </div>
+            
+        <div id="noteonly{!Comprel.id}" style="position:absolute;visibility:hidden;width:70%;margin-left:20px;z-index:1500;" onmouseover="mcancelclosetime()" 
+            onmouseout="mclosetime()">
+            alert({!Comprel.id});
+             <apex:relatedList list="Notes__r" rendered="true" subject="{!Comprel.id}"/>
+        </div>
+        
+         <div id="note{!Comprel.id}" style="position:absolute;visibility:hidden;width:70%;margin-left:20px;z-index:1500;" onmouseover="mcancelclosetime()" 
+            onmouseout="mclosetime()">
+             <apex:relatedList list="CombinedAttachments" rendered="true" subject="{!Comprel.id}"/>
+        </div>
+        
+        <div id="activity{!Comprel.id}" style="position:absolute;visibility:hidden;width:70%;margin-left:20px;z-index:1500;" onmouseover="mcancelclosetime()" 
+            onmouseout="mclosetime()">
+             <apex:relatedList list="ActivityHistories" rendered="true" subject="{!Comprel.id}"/>
+        </div>
+        
+         <div id="openactivity{!Comprel.id}" style="position:absolute;visibility:hidden;width:70%;margin-left:20px;z-index:1500;" onmouseover="mcancelclosetime()" 
+            onmouseout="mclosetime()">
+             <apex:relatedList list="OpenActivities" rendered="true" subject="{!Comprel.id}"/>
+        </div>
+                
+    </apex:repeat>
+  
+    
+    <apex:form id="MI_BNF_Form" >
+        <apex:actionFunction name="DeleteInvoice" action="{!DeleteInvoice}"
+            status="MyStatus" rerender="ChildBNFDetails,errorMessages"
+            oncomplete="YUIHideLoading();window.scrollTo(0,0);">
+            <apex:param id="CompID" name="CompID" assignTo="{!DeleteMIBNFCompID}"
+                value="" />
+        </apex:actionFunction>
+        <apex:actionStatus startText=""
+            id="MyStatus" startStyle="color:red;font-weight:bold"></apex:actionStatus>
+
+        <!-------------------------------------------------------------------->
+        <!-----------  BEGIN pageblock to display MBNF header ---------------->
+        <!-------------------------------------------------------------------->
+        <apex:sectionHeader title="{!$ObjectType.MIBNF2__c.label} Detail"
+            subtitle="{!MIBNF2__c.name}" />
+
+        <apex:outputPanel id="HeaderDetailsPanel">
+            <apex:pageBlock id="MBNF_Header" mode="maindetail">
+            
+            <!-- Updated by Anshita Issue-10862 : removed rendered = "{!isError}" -->
+            <apex:pageMessages id="errorMessages" escape="false" />  
+                    <apex:pageBlockButtons location="top">
+                    <apex:commandButton action="{!Edit}" value="Edit" />
+                    <apex:commandButton action="{!DeleteMIBNF}" value="Delete" />
+                  <!--   <apex:commandButton action="{!URLFOR('/apex/MI_BNF_Submit_Approval' & '?id=' & MIBNF2__c.id)}"
+                        value="Submit all BNF's For Approval" />
+                  -->
+                    <apex:commandButton action="{!NewCBNF}" value="Create New BNF"
+                        id="theButton" />
+                    <apex:commandButton onclick="openMassUpdateDlg();return false;" value="Mass Update" id="massUpdateButton" /> 
+                <!-- 
+                    <apex:commandButton onClick="window.open('/apex/MI_BNF_PDF?id={!MIBNF2__c.id}','mywindow','width=900,height=600,toolbar=no,
+                    location=no,directories=yes,status=no,menubar=no,scrollbars=yes,copyhistory=yes,
+                    resizable=yes')" value="Extract MIBNF" />
+                -->
+                   
+                </apex:pageBlockButtons>
+
+
+
+
+                 <apex:pageBlockSection columns="1" showHeader="true" title="Purchase Information">
+
+                        <apex:pageBlockSection columns="2" showHeader="false">
+                            <apex:outputField value="{!MIBNF2__c.Opportunity__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Revenue_Analyst__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Opportunity_Number__c}" />
+                            <apex:outputField value="{!MIBNF2__c.SAP_PC_Code__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Client__c}" />
+                             <apex:outputField value="{!MIBNF2__c.Original_Prior_Opportunity__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Therapy_Area__c}" />
+                           
+                            <apex:outputField value="{!MIBNF2__c.Contract_Value__c}" />
+                           
+                           
+                            <apex:outputField value="{!MIBNF2__c.IMS_Sales_Org__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Fair_Value_Type__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Sales_Org_Code__c}" />
+                            <apex:outputField value="{!MIBNF2__c.SAP_Master_Contract__c}" />
+                           
+                            <apex:outputField value="{!MIBNF2__c.Billing_Currency__c}" />
+                            <apex:outputText >&nbsp;</apex:outputText>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel value="Opportunity Currency"></apex:outputLabel>
+                                <apex:outputText value="{!MIBNF2__c.CurrencyIsoCode}"/>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputlabel value="Last Modified By"></apex:outputlabel>
+                                <apex:outputPanel >
+                                    <apex:outputField value="{!MIBNF2__c.LastModifiedById}"/>,&nbsp;<apex:outputField value="{!MIBNF2__c.LastModifiedDate}"/>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:outputField value="{!MIBNF2__c.Renewal__c}" />
+                            <apex:outputField value="{!MIBNF2__c.Has_Pricing_Configuration__c}" />
+                            <apex:pageBlockSectionItem >
+                                <apex:outputlabel value="Created By"></apex:outputlabel>
+                                <apex:outputPanel >
+                                    <apex:outputField value="{!MIBNF2__c.CreatedById}"/>,&nbsp;<apex:outputField value="{!MIBNF2__c.CreatedDate}"/>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                           
+                         </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" showheader="true" title="Multi Invoice/Billing Information" id="MIBNFBillingInfo">
+                              
+                            
+                                    <apex:pageBlockSection columns="2" showheader="false">
+                                        <apex:outputField value="{!MIBNF2__c.Opportunity__c}" />
+                                         <apex:outputField value="{!MIBNF2__c.Contract_Start_Date__c}" />
+                                       
+                                         <apex:outputField value="{!MIBNF2__c.Comments__c}" />
+                                           <apex:outputField value="{!MIBNF2__c.Contract_End_Date__c}" />
+                                        <apex:outputField value="{!MIBNF2__c.Additional_Billing_Date_Information__c}" />
+                                         <apex:outputField value="{!MIBNF2__c.Contract_Term__c}" />
+                                        <apex:outputField value="{!MIBNF2__c.Payment_Terms__c}" />
+                                                                      
+                                        <apex:outputField value="{!MIBNF2__c.Invoice_Default_Day__c}" />
+                                       <apex:outputtext ><script>
+                                    PageBlockSectionCollapse('{!$Component.MIBNFBillingInfo}');
+                              </script></apex:outputtext>
+                                         <apex:outputField value="{!MIBNF2__c.Contract_Type__c}" />
+                                           
+                                    </apex:pageBlockSection>
+                           </apex:pageBlockSection>
+                
+                           
+                    </apex:pageblockSection>
+            </apex:pageBlock> 
+        </apex:outputPanel>
+
+        <!--------------------------------------------------------------------> 
+        <!-----------  BEGIN pageblock to display BNF  ------------->
+        <!-------------------------------------------------------------------->
+        <apex:outputpanel id="Deloptpanel1"></apex:outputpanel>
+        <apex:panelGrid id="panelGridNo1" columns="7" rendered="{!displayPagination}">
+            <!--<apex:commandButton status="fetchStatus1" reRender="ChildBNFDetails,panelGridNo1" value="Go to Top" action="{!first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>-->
+            <apex:commandButton status="fetchStatus1" reRender="ChildBNFDetails,panelGridNo1" value="Previous" action="{!previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+            <apex:commandButton status="fetchStatus1" reRender="ChildBNFDetails,panelGridNo1" value="Next" action="{!next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+            <!--<apex:commandButton status="fetchStatu1s" reRender="ChildBNFDetails,panelGridNo1" value=">|" action="{!last}" disabled="{!!setCon.hasNext}" title="Last Page"/>-->
+            <apex:outputText >{!(setCon.pageNumber * size)+1-size}-{!IF((setCon.pageNumber * size)>noOfRecords, noOfRecords,(setCon.pageNumber * size))} of {!noOfRecords}</apex:outputText>
+            <apex:commandButton status="fetchStatus1" reRender="ChildBNFDetails,panelGridNo1" value="Refresh" action="{!refresh}" title="Refresh Page"/>
+            <apex:outputPanel style="color:#4AA02C;font-weight:bold">
+                <apex:actionStatus id="fetchStatus1" startText="Fetching..." stopText=""/>
+            </apex:outputPanel>
+        </apex:panelGrid>
+        <apex:outputPanel id="ChildBNFDetails">
+            <apex:pageBlock title="BNF List" id="OppBNFList" mode="maindetail">
+                <apex:outputPanel styleClass="BNF_List" layout="block">
+                    <apex:actionFunction action="{!revenueAnalystField}" name="revenueAnalystField" rerender="errorMessages"></apex:actionFunction>
+                <apex:repeat id="ddd" value="{!itemlist}" var="oc">
+                    <a id="lnk{!oc.id}" name="lnk{!oc.id}"></a>
+                    <apex:pageBlockSection title="{!oc.Name}" columns="1">
+                          
+                         <apex:outputPanel layout="block" style="margin-top: -29px;z-index:1500;" id="btndiv">
+                                    <apex:pageBlockSection columns="3" id="theGrid" showHeader="false">
+                                        <Apex:pageBlockSectionItem > &nbsp;</Apex:pageBlockSectionItem>
+                                        <Apex:pageBlockSectionItem >
+                                            <apex:outputPanel layout="block" style="position:absolute !important;margin-left: -80px;" >
+                                                <apex:commandButton value="Edit BNF" id="Editbtn"
+                                                    action="{!URLFOR('/apex/mi_bnf_wiz_step2?id=' & oc.Id)}" />
+                                                <apex:commandButton onclick="ConfirmDelete('{!oc.id}');GoToTop=true;return false;"
+                                                    value="Delete BNF" id="Delbtn" rerender="errorMessages"/>
+                                                <apex:commandButton action="{!URLFOR(EditProductPageUrl & '?compid=' & oc.id )}"
+                                                    value="Edit Products" id="editinvoicebtn" rerender="optPnl"/>
+                                                <apex:commandButton value="Edit Address/Contact Details" id="addressbtn2"
+                                                    action="{!urlFor($Page.MIBNF_Address_Selector, null, [id=oc.id])}" />  
+                                                <apex:commandButton value="Edit Billing Schedule" id="BillingScheduleBtn" rendered="{!ShowBillingScheduleButton}"
+                                                    onclick="javascript:openPopup('{!oc.id}' , '{!oc.Sales_Org_Code__c}');return false;" />  
+                                               <apex:commandButton rendered="{!IF(oc.BNF_Status__c == 'New' || oc.BNF_Status__c == 'Rejected' || oc.BNF_Status__c == 'LO Rejected' || oc.BNF_Status__c == 'RA Rejected', true, false)}"
+                                                  
+                                                  onclick="return submitApproval('{!oc.id}','{!oc.Revenue_Analyst__c}');return false;"
+                                                    value="Submit For Approval" id="submitapprovalbtn"/>
+                                               <apex:commandButton action="{!URLFOR('/apex/mi_bnf_wiz_step2?id=' & oc.Id & '&revised=1' & '&mibnfid=' & MIBNF2__c.id)}"
+                                                    value="Create Revised BNF" id="submitrevisedbtn"/>                                                
+                                                <apex:commandButton action="{!URLFOR('/apex/mi_bnf_wiz_step2?id=' & oc.Id & '&revised=1' & '&mibnfid=' & MIBNF2__c.id & '&IsRevisedBNFWithDoc=true')}"
+                                                    value="Create Revised BNF with Documents" id="submitrevisedbtn2"/>
+                                                <br/>
+                                               <apex:commandButton value="Extract BNF as PDF" onclick="javascript:window.open('/apex/MI_BNF_Comp_Changes_PDF?id={!oc.id}&mibnfid={!MIBNF2__c.id}', 'PDF','location=1,status=1,scrollbars=1, width=900,height=800');return false;"/>
+                                               <apex:commandButton value="Extract BNF as Excel" onclick="javascript:window.open('/apex/MI_BNF_Comp_Changes_Excel?id={!oc.id}&mibnfid={!MIBNF2__c.id}', 'EXCEL','location=1,status=1,scrollbars=1, width=900,height=800');return false;"/>
+                                            </apex:outputPanel>
+                                        </Apex:pageBlockSectionItem>
+                                        <Apex:pageBlockSectionItem ></Apex:pageBlockSectionItem>
+                                       
+                                    </apex:pageBlockSection>
+                            </apex:outputPanel>
+                            <br/>
+                          <c:MIBNF_CompInfoMessage AddressWrapperMap="{!MapAddressWrapper[oc.id]}"  attProcessInstanceWorkitemMap="{!ProcessInstanceWorkitemMap[oc.id]}" attMIBNFLineItemList="{!MIBNFLineItemList}" attOLIItemList="{!OLIItemList}" attUser="{!CurrentUser}" attMIBNF_CompObj="{!oc}" ></c:MIBNF_CompInfoMessage> 
+                          
+                           
+                            <apex:outputPanel layout="block" style="margin-top:0 px;z-index:1500;" id="reldiv">
+                                    <apex:pageBlockSection columns="4" id="theGrid1" showHeader="false">
+                                        <Apex:pageBlockSectionItem > &nbsp;</Apex:pageBlockSectionItem>
+                                        <Apex:pageBlockSectionItem >
+                                            <apex:outputPanel layout="block" style="position:absolute !important;" >
+                                              <apex:outputLink value="/apex/MI_BNF_Comp_Detail?id={!oc.id}#history" id="theLink" onmouseout="mclosetime();" onmouseover="mopen('rel{!oc.id}',this,'{!MIBNF2__c.id}')">Approval History</apex:outputLink> &nbsp;|&nbsp;&nbsp;
+                                              <apex:outputLink value="/apex/MI_BNF_Comp_Detail?id={!oc.id}#history" id="theLink3" onmouseout="mclosetime();" onmouseover="mopen('openactivity{!oc.id}',this,'{!MIBNF2__c.id}')">Open Activities</apex:outputLink>&nbsp;|&nbsp;&nbsp;
+                                              <apex:outputLink value="/apex/MI_BNF_Comp_Detail?id={!oc.id}#history" id="theLink2" onmouseout="mclosetime();" onmouseover="mopen('activity{!oc.id}',this,'{!MIBNF2__c.id}')">Activity History</apex:outputLink>&nbsp;|&nbsp;&nbsp;
+                                              <apex:outputLink value="/apex/MI_BNF_Comp_Detail?id={!oc.id}#history" id="theLink1" onmouseout="mclosetime();" onmouseover="mopen('note{!oc.id}',this,'{!MIBNF2__c.id}', '{!oc.id}')">Notes &amp; Attachment</apex:outputLink>&nbsp;|&nbsp;&nbsp;
+                                           	  <apex:outputLink value="/apex/MI_BNF_Comp_Detail?id={!oc.id}#history" id="theLink4" onmouseout="mclosetime();" onmouseover="mopen('noteonly{!oc.id}',this,'{!MIBNF2__c.id}', '{!oc.id}')">Notes</apex:outputLink>
+                                            </apex:outputPanel>
+                                        </Apex:pageBlockSectionItem>
+                                        <Apex:pageBlockSectionItem ></Apex:pageBlockSectionItem>
+                                        <Apex:pageBlockSectionItem ></Apex:pageBlockSectionItem>
+                                    </apex:pageBlockSection>
+                            </apex:outputPanel>
+                            
+                            
+                            
+                            
+                           <apex:pageBlockSection columns="2" showheader="false" title="Information">
+                                        <apex:outputfield value="{!oc.BNF_Status__c}" />
+                                        <apex:outputfield value="{!oc.Client_PO_Number__c}" />
+                                        <apex:pageBlockSectionItem rendered="{!CONTAINS(UPPER(oc.BNF_Status__c),'REJECTED')}">
+                                            <apex:outputLabel value="Rejection Comments"></apex:outputLabel>
+                                            <apex:outputText value="{!oc.SAP_SD_Error_Message__c}"></apex:outputText>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:outputText rendered="{!CONTAINS(UPPER(oc.BNF_Status__c),'REJECTED')}">&nbsp;</apex:outputText>
+                                        <apex:pageBlockSectionItem >
+                                        <apex:outputLabel >{!$ObjectType.MIBNF_Component__c.fields.name.label}</apex:outputLabel>
+                                        <apex:outputpanel >
+                                            <a href="/{!oc.Id}" id="{!oc.Id}" onblur="LookupHoverDetail.getHover('{!oc.Id}').hide();" onfocus="LookupHoverDetail.getHover('{!oc.Id}', '/{!oc.Id}/m?retURL=%2F{!oc.Id}&isAjaxRequest=1').show();" onmouseout="LookupHoverDetail.getHover('{!oc.Id}').hide();" onmouseover="LookupHoverDetail.getHover('{!oc.Id}', '/{!oc.Id}/m?retURL=%2F{!oc.Id}&isAjaxRequest=1').show();">{!oc.Name}</a>
+                                       
+                                        </apex:outputpanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:outputfield value="{!oc.Is_PO_Required__c}" />
+                                        <apex:outputfield value="{!oc.BNF_Description__c}" />
+                                        <apex:outputfield value="{!oc.SAP_Contract__c}" />
+                                        <apex:outputfield value="{!oc.Billing_Currency__c}" />
+                                        <apex:outputfield value="{!oc.Contract_Value__c}" />
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Opportunity Currency"></apex:outputLabel>
+                                            <apex:outputText value="{!MIBNF2__c.CurrencyIsoCode}"/>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:outputfield value="{!oc.Addendum__c}" rendered="{!oc.Addendum__c}" />
+                                        <apex:outputtext rendered="{!!oc.Addendum__c}">&nbsp;</apex:outputtext>
+                                        <apex:outputfield value="{!oc.Manual_Handling_in_SAP__c}"/>
+                                        <apex:outputfield value="{!oc.Revised_BNF_Reason__c}" rendered="{!oc.Addendum__c}" />
+                                        <apex:outputtext rendered="{!!oc.Addendum__c}">&nbsp;</apex:outputtext>
+                                        <apex:outputfield value="{!oc.No_Pricing_Date_Update__c}"/>
+                                        <apex:outputfield value="{!oc.Revised_BNF_Comment__c}" rendered="{!oc.Addendum__c}" />
+                                        <apex:outputtext rendered="{!!oc.Addendum__c}">&nbsp;</apex:outputtext>
+                                        <apex:outputfield value="{!oc.Urgent_Handling__c}"/>
+                                        <apex:outputfield value="{!oc.Revised_BNF_Date__c}" rendered="{!oc.Addendum__c}" />
+                                        <apex:outputtext rendered="{!!oc.Addendum__c}">&nbsp;</apex:outputtext>
+                                        <apex:outputfield value="{!oc.Local_Printing__c}"/>
+                                        <apex:outputtext >&nbsp;</apex:outputtext>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputlabel value="Last Modified By"></apex:outputlabel>
+                                            <apex:outputPanel >
+                                                <apex:outputField value="{!oc.LastModifiedById}"/>,&nbsp;<apex:outputField value="{!oc.LastModifiedDate}"/>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:outputtext rendered="{!!oc.Addendum__c}">&nbsp;</apex:outputtext>  
+                                         <apex:outputtext rendered="{!oc.Addendum__c}">&nbsp;</apex:outputtext>  
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputlabel value="Created By"></apex:outputlabel>
+                                            <apex:outputPanel >
+                                                <apex:outputField value="{!oc.CreatedById}"/>,&nbsp;<apex:outputField value="{!oc.CreatedDate}"/>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                      
+                                       
+                                       
+                                       
+                                      
+                                       
+                            </apex:pageBlockSection>
+                      
+                       <apex:pageblockSection columns="1" showheader="true" title="Address/Billing & Product Information" id="addbillinfoetc">
+                           <script>
+                                    PageBlockSectionCollapse('{!$Component.addbillinfoetc}');
+                            </script>
+                      
+                                          
+                                <apex:pageBlockSection columns="2" showheader="true" title="Address Details" id="AddressSection">
+                                                <apex:outputPanel layout="block">
+                                                     <apex:pageBlockSection columns="2" id="addgrid" showHeader="false">
+                                                            <Apex:pageBlockSectionItem > &nbsp;</Apex:pageBlockSectionItem>
+                                                            <Apex:pageBlockSectionItem >
+                                                                <apex:outputPanel layout="block" style="position:absolute;margin-left: 100px;margin-top:-29px;z-index:1000;">
+                                                                 <apex:commandButton value="Edit Address/Contact Details" id="addressbtn"
+                                                    action="{!urlFor($Page.MIBNF_Address_Selector, null, [id=oc.id])}" />      
+                                                                </apex:outputPanel>
+                                                            </Apex:pageBlockSectionItem>
+                                                       
+                                                    </apex:pageBlockSection>
+                                                </apex:outputPanel>
+                                                
+                                                
+                                                <apex:outputText >&nbsp;</apex:outputText>
+                                                <apex:outputfield id="Bill_TO" value="{!oc.Bill_To__c}" />
+                                                <apex:outputfield id="Ship_TO" value="{!oc.Ship_To__c}" />
+                                                <!-- Added by : Himanshu Parashar : MIS-Issue : 01769 -->
+                                                <apex:outputfield value="{!oc.Bill_To_Local__c}" />
+                                                <apex:outputfield value="{!oc.Ship_To_Local__c}" />
+                                                <apex:outputfield value="{!oc.Bill_To_SAP_Base_Code__c}" />
+                                                <apex:outputfield value="{!oc.Ship_To_SAP_Base_Code__c}" />
+                                                <apex:outputfield value="{!oc.Enabled_PaymentTerms_Bill_To__c}" />
+                                                <br/>
+                                                <apex:outputfield value="{!oc.Bill_To_SAP_Contact__c}" />
+                                                <apex:outputfield value="{!oc.Ship_To_SAP_Contact__c}" />
+                                                 <!-- Added by : Himanshu Parashar : MIS-Issue : 01769 -->
+                                                <apex:outputfield value="{!oc.Bill_To_SAP_Contact_Local__c}" />
+                                                <apex:outputfield value="{!oc.Ship_To_SAP_Contact_Local__c}" />
+                                                <apex:outputfield value="{!oc.Sold_To__c}" />
+                                                <br/>
+                                                <apex:outputfield value="{!oc.Sold_To_Local__c}" />
+                                                <br/>
+                                                <apex:outputfield value="{!oc.Sold_To_SAP_Base_Code__c}" />
+                                                <br/>                                                
+                                                                                           
+                                                <apex:outputfield value="{!oc.X2nd_Copy__c}" />
+                                                <apex:outputfield value="{!oc.Cover_Sheet__c}" />
+                                                 <!-- Added by : Himanshu Parashar : MIS-Issue : 01769 -->
+                                                <apex:outputfield value="{!oc.X2nd_Copy_Local__c}" />
+                                                <apex:outputfield value="{!oc.Cover_Sheet_Local__c}" />
+                    
+                                                <apex:outputfield value="{!oc.X2nd_Copy_SAP_Base_Code__c}" />
+                                                <apex:outputfield value="{!oc.Cover_Sheet_SAP_Base_Code__c}" />
+                    
+                                                <apex:outputfield value="{!oc.X2nd_Copy_SAP_Contact__c}" />
+                                                <apex:outputfield value="{!oc.Cover_Sheet_SAP_Contact__c}" />
+                                                 <!-- Added by : Himanshu Parashar : MIS-Issue : 01769 -->
+                                                <apex:outputfield value="{!oc.X2nd_Copy_SAP_Contact_Local__c}" />
+                                                <apex:outputfield value="{!oc.Cover_Sheet_SAP_Contact_Local__c}" />
+                                                <apex:outputfield value="{!oc.Carbon_Copy__c}" />
+                                                <apex:outputtext ><script>PageBlockSectionCollapse('{!$Component.AddressSection}');</script></apex:outputtext>
+                                                 <!-- Added by : Himanshu Parashar : MIS-Issue : 01769 -->
+                                                <apex:outputfield value="{!oc.Carbon_Copy_Local__c}" />
+                                                <apex:outputText >&nbsp;</apex:outputText>
+                                                <apex:outputfield value="{!oc.Carbon_Copy_SAP_Base_Code__c}" />
+                                                <apex:outputText >&nbsp;</apex:outputText>
+                                                <apex:outputfield value="{!oc.Carbon_Copy_SAP_Contact__c}" />
+                                    </apex:pageBlockSection>
+                               
+                                <apex:pageBlockSection columns="2" showheader="true" title="Invoice/Billing Information" id="InvoiceSection">
+                                      <script>
+                                        PageBlockSectionCollapse('{!$Component.InvoiceSection}');
+                                      </script>
+                                           <apex:outputtext >&nbsp;</apex:outputtext>
+                                           <apex:outputField value="{!MIBNF2__c.Opportunity__c}" />
+                                           <apex:outputField value="{!oc.Additional_Delivery_Date_Information__c}" />
+                                           <apex:outputField value="{!oc.Comments__c}" />
+                                           <apex:outputfield value="{!oc.Contract_Value__c}" />
+                                           <apex:outputField value="{!oc.Additional_Billing_Date_Information__c}" />
+                                           <apex:outputField value="{!oc.Payment_Terms__c}" />
+                                           <apex:outputfield value="{!oc.Invoice_Default_Day__c}" />
+                                           <apex:outputtext >&nbsp;</apex:outputtext>
+                                           <apex:outputfield value="{!oc.Invoice_Header_Text__c}" />
+                                       </apex:pageBlockSection>
+                              
+                                 <c:MIBNF_CompProductList MIBNF_CompId1="{!oc.id}" MIBNFLineItemList1="{!MIBNFLineItemList}" OLIItemList1="{!OLIItemList}"
+                                            MIBNF_Status1="{!oc.BNF_Status__c}" Revised_Status1="{!oc.Addendum__c}" 
+                                            MIBNF_SalesOrgCode1="{!MIBNF2__c.Sales_Org_Code__c}" />                         
+                                       
+                        </apex:pageblockSection>       
+                       
+                            
+                       
+                    </apex:pageBlockSection>
+                   
+                </apex:repeat>
+                </apex:outputPanel>
+                <apex:outputpanel id="Deloptpanel"></apex:outputpanel>
+                    <apex:panelGrid id="panelGridNo" columns="7" rendered="{!displayPagination}">
+                        <apex:commandButton status="fetchStatus" reRender="ChildBNFDetails,panelGridNo" value="Go to Top" action="{!first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>
+                        <apex:commandButton status="fetchStatus" reRender="ChildBNFDetails,panelGridNo" value="Previous" action="{!previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+                        <apex:commandButton status="fetchStatus" reRender="ChildBNFDetails,panelGridNo" value="Next" action="{!next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+                        <!--   <apex:commandButton status="fetchStatus" reRender="ChildBNFDetails,panelGridNo" value=">|" action="{!last}" disabled="{!!setCon.hasNext}" title="Last Page"/>-->
+                        <apex:outputText >{!(setCon.pageNumber * size)+1-size}-{!IF((setCon.pageNumber * size)>noOfRecords, noOfRecords,(setCon.pageNumber * size))} of {!noOfRecords}</apex:outputText>
+                        <apex:commandButton status="fetchStatus" reRender="ChildBNFDetails,panelGridNo" value="Refresh" action="{!refresh}" title="Refresh Page"/>
+                        <apex:outputPanel style="color:#4AA02C;font-weight:bold">
+                            <apex:actionStatus id="fetchStatus" startText="Fetching..." stopText=""/>
+                        </apex:outputPanel>
+                    </apex:panelGrid>
+            </apex:pageBlock>
+
+
+            
+        </apex:outputPanel>
+        <!-------------------------------------------------------------------->
+        <!-----------  END pageblock to display BNF  --------------->
+        <!-------------------------------------------------------------------->
+
+<apex:outputPanel >
+                
+                <apex:pageBlock title="Product List" id="OppprgList"
+                                rendered="{!(oppAvailableProductsList.size>0)}">
+                    <apex:pageBlockButtons location="top">
+                        <!--
+<apex:commandButton action="{!cancel}"
+rendered="{!itemList.size>0}" value="Add to BNF"
+id="btnaddproduct" onclick="return opendlg('{!MIBNF2__c.id}');" />
+</apex:pageBlockButtons>
+-->
+                        <!-- updated by Ghanshyam Saini  --> 
+                        <apex:commandButton rendered="{!itemList.size > 0}" value="Add to BNF" 
+                                            id="btnaddproduct" onclick="opendlg('{!MIBNF2__c.id}');return false;" />
+                    </apex:pageBlockButtons> 
+                    <apex:pageBlockSection title="Available Product List" columns="1" collapsible="true">
+                        <iframe frameborder="0" height="200px;" width="100%" src="/apex/MI_BNF_AvailableProductList?id={!MIBNF2__c.id}" scrolling="true" name="productiframe"/>
+                    </apex:pageBlockSection>
+                    
+                </apex:pageBlock> 
+            </apex:outputPanel>
+
+    </apex:form>
+    <apex:relatedList list="Notes__r" id="notesonly"></apex:relatedList>
+    <apex:relatedList list="CombinedAttachments" id="notes"></apex:relatedList>
+    <apex:relatedList list="OpenActivities" title="Open Activities"
+        id="activities" />
+    <apex:relatedList list="ActivityHistories" title="Activity History"
+        id="activity" />
+
+    <script>
+        modifyAttachmentLink();    
+        //override showmore behaviour
+        var proxied = showMoreList;
+        showMoreList = function() {
+            console.log('show ' + MIBNFId);
+                       var x = proxied.apply(this, arguments);
+                           setTimeout(modifyAttachmentLink,2000); 
+                            setTimeout(function() {
+                                hideLink(MIBNFId);
+                            }, 3000);
+                            setTimeout(function() {
+                                modifyApprovalHistory('', MIBNFId.substring(3));
+                            }, 3000); 
+                             setTimeout(function() {
+                                hideLink(MIBNFId);
+                            }, 5000);
+                            setTimeout(function() {
+                                modifyApprovalHistory('', MIBNFId.substring(3));
+                            }, 5000); 
+                           
+                           return x;   
+               };     
+        function openMassUpdateDlg(){
+            window.open("/apex/MassUpdateMIBNF?id={!id}","Popup","status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1");
+            return false;
+        }
+
+    </script>
+</apex:page>

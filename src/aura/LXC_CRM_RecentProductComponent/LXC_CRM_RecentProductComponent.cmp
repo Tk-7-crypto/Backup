@@ -1,0 +1,148 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="flexipage:availableForAllPageTypes,force:hasRecordId">
+    <aura:attribute name="favoriteResultWrapper" type="LIST" />
+    <aura:attribute name="SearchResultWrapper" type="LIST" />
+    <aura:attribute name="resultObjectWrapper" type="Object[]" />
+    <aura:attribute name="isAddProduct" type="boolean" default="true"/>
+    <aura:attribute name="isFavoriteProduct" type="boolean" default="false"/>
+    <aura:attribute name="quantityWrapper" type="Map"/>
+    <aura:attribute name="name" type="String" default="Search Result"/>
+    <aura:attribute name="headerList" type="List" required="true" default=",Quantity,Name,Billing System,Description,Product Code,PSA Project Required,Favorite"/>
+    <aura:attribute name="headerApiList" type="List"  default="Id,Quantity,Name,Billing_System__c,Description,ProductCode,Id"/>
+    <aura:attribute name="selectedValues" type="Object[]"/>
+    <aura:attribute name="timeStamp" type="Integer"/>
+    <aura:attribute name="territory" type="String"/>
+    <aura:attribute name="showResult" type="Boolean" default="false"/>
+    <aura:attribute name="isCommentModalOpen" type="boolean" default="false"/>
+    <aura:attribute name="favProductSelected" type="id"/>
+    <aura:attribute name="favProductComment" type="String"/>
+    <aura:attribute name="favProductCategory" type="String"/>
+    <aura:attribute name="source" type="String"/>
+    <aura:handler event="c:LXE_CRM_RecentProductResultEvent" action="{!c.callEvent}"/>
+    <aura:handler event="c:LXE_CRM_ReloadEvent" action="{!c.callReloadEvent}"/>
+    <div id="search-result">
+        <article class="slds-card slds-m-vertical_medium">            
+            <div class="slds-card__body slds-card__body_inner"> 
+                <div class="slds-grid">
+                    <span>&nbsp;</span>
+                </div>
+                
+                <div class="slds-no-flex slds-float_right">
+                    <button aura:id="addProduct-btn" class="slds-button slds-button_neutral" type="button" onclick="{!c.addProduct}" disabled="{!v.isAddProduct}"> Add Product</button>
+                </div>
+                
+                <div class="slds-grid">
+                    <span>&nbsp;</span>
+                </div>
+                <aura:if isTrue="{!and(v.showResult, v.resultObjectWrapper.length > 0) }">                                        
+                    <table class="slds-table slds-table_bordered slds-table--header-fixed" role="grid">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <aura:iteration items="{!v.headerList}" var="headerItem" >
+                                    <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                        <div class="slds-text-title_caps slds-th__action slds-text-link_reset">
+                                            <span class="slds-assistive-text">Sort</span>
+                                            <span class="slds-truncate" title="{!headerItem}">{!headerItem}</span>
+                                            <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                        </div>
+                                    </th>
+                                </aura:iteration>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.resultObjectWrapper}" var="productItem" indexVar="i">
+                                <tr class="slds-hint-parent">
+                                    <aura:iteration items="{!productItem.dataColumns}" var="productData" indexVar="j">
+                                        <aura:if isTrue="{!j == 0}">
+                                            <td role="gridcell" class="slds-text-align_right" style="width: 3.25rem;">
+                                                <div class="slds-checkbox_add-button">
+                                                    <input type="checkbox" aura:id="checkbox-input" class="slds-assistive-text" id="{!productData.data + '-search' + v.timeStamp}"/>
+                                                    <label for="{!productData.data + '-search' + v.timeStamp}" class="slds-checkbox_faux">
+                                                        <span class="slds-assistive-text">Add product</span>
+                                                    </label>
+                                                </div>
+                                            </td>
+                                            <aura:set attribute="else">
+                                                <aura:if isTrue="{!j == 1}">
+                                                    <td role="gridcell" class="slds-text-align_right" style="width: 3.25rem;">
+                                                        <lightning:input type="number" step="1" name="quantity" label="{!productItem.id}" maxlength="10" variant="label-hidden" aura:id="quantity" value="{!productItem.quantity}" onchange="{!c.setQuantityValue}"/>
+                                                    </td>
+                                                    <aura:set attribute="else">
+                                                        <aura:if isTrue="{!j == 6}">
+                                                            <td role="gridcell" class="slds-text-align_center" style="width: 3.25rem;">
+                                                                <lightning:input type="checkbox" label="PSA Project Required" name="PSA Project Required" checked="{!productItem.isZREPProduct}" variant="label-hidden" disabled="true"/>
+                                                            </td>
+                                                            <aura:if isTrue="{!productItem.isFavorite}">
+                                                                <td role="gridcell" style="text-align:center;">
+                                                                    <lightning:buttonIcon iconName="utility:favorite" variant="bare" alternativeText="favorite" iconClass="favoriteIconSelected slds-button__icon_large" onclick="{!c.deleteFavoriteProduct}" value="{!productData.data}"/>
+                                                                </td>
+                                                                <aura:set attribute="else">
+                                                                    <td role="gridcell" style="text-align:center;">
+                                                                        <lightning:buttonIcon iconName="utility:favorite" variant="bare" alternativeText="favorite" iconClass="favoriteIcon slds-button__icon_large" onclick="{!c.openCommentModel}" value="{!productData.data}"/>
+                                                                    </td>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                            <aura:set attribute="else">
+                                                                <td role="gridcell">
+                                                                    <div class="slds-truncate setMaxWith" title="{!productData.data}">{!productData.data}</div>
+                                                                </td>
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </aura:set>
+                                                </aura:if>
+                                            </aura:set>
+                                        </aura:if>
+                                    </aura:iteration>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                    <aura:set attribute="else">
+                        <tr class="slds-hint-parent">
+                            <td colspan="{!v.headerList.length}" role="gridcell" class="slds-is-sortable slds-p-top_x-small" scope="row">
+                                <div class="slds-text slds-text-heading_small line-height-heading" >No Recent Product record found.</div>
+                            </td>
+                        </tr>
+                    </aura:set>
+                </aura:if>
+            </div>
+            <footer class="slds-card__footer">
+                <div class="slds-grid slds-grid_align-end">
+                    <button aura:id="addProduct-btn" class="slds-button slds-button_neutral" type="button" onclick="{!c.addProduct}" disabled="{!v.isAddProduct}"> Add Product</button>
+                </div>
+            </footer>
+        </article>
+    </div>
+    
+    <aura:if isTrue="{!v.isCommentModalOpen}">
+        
+        <!-- Modal/Popup Box for fav Comment starts here-->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeCommentModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Comments</h2>
+                </header>
+                <!--Modal/Popup Box Body Starts here-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:input type='text' label="Category" name="favProductCategory" placeholder="type your category here..." value="{!v.favProductCategory}" maxlength="55"/>
+                    <br/>
+                    <label for="Comments">Comments</label>&nbsp;
+                    <lightning:helptext content="Users are responsible for maintaining comments against their favorite products."/>
+                    <lightning:textarea name="favProductComments" placeholder="type your comments here..." value="{!v.favProductComment}" maxlength="255" id="Comments"/>
+                </div>
+                <!--Modal/Popup Box Footer Starts here-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" label="Cancel" title="Cancel" onclick="{! c.closeCommentModel }"/>
+                    <!--lightning:buttonIcon iconName="utility:favorite" variant="bare" alternativeText="favorite" iconClass="favoriteIcon slds-button__icon_large" class="slds-p-left_medium slds-p-top_small" onclick="{!c.addFavoriteProduct}" value="{!favProductSelected}"/-->
+                    <lightning:button variant="brand" label="Favorite" title="Favorite" onclick="{!c.addFavoriteProduct}" value="{!favProductSelected}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

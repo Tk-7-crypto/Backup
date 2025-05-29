@@ -1,0 +1,449 @@
+<apex:page controller="CNT_CRM_AddNewBNF" showHeader="false" sidebar="false">
+    <html> 
+        <head>             
+            <!-- Author: Matt Yeoh, salesforce.com --> 
+            <!-- Date: 10/03/2007 Deployed --> 
+            <!-- Description: Override the Edit button the Opportunity --> 
+            <!-- Modified by Stuart Bernstein, salesforce.com --> 
+            <!-- Date: 8/027/2008 --> 
+            <!-- Description: Override the related list button to purchase a bnf --> 
+            <!-- Modified to default the sales org and sales org id --> 
+            
+            <script> 
+            var previousOnload = window.onload; 
+            window.onload = function() { 
+                if (previousOnload) { 
+                    previousOnload(); 
+                }
+            var bnfPrefix = '{!bnfPrefix}';
+            var Opportunity = JSON.parse('{!JSENCODE(opportunityJSONString)}');
+            var vOpptyId = Opportunity.Id; 
+            var vOpptyName = Opportunity.Name;
+            var multiBillingCountry = Opportunity.Multi_Country_Billing__c;   
+            /*
+            var isIQVIAGB80 = false;
+            var IQVIALtd = Opportunity.IQVIA_Ltd_GB80_Engagement__c;
+            if(IQVIALtd) {
+                isIQVIAGB80 = true;  
+            }*/
+            var vAccount = '{!JSENCODE(accountRecord.Name)}'; 
+            var vAccountId = Opportunity.AccountId; 
+            var vOpptyNumber = Opportunity.Opportunity_Number__c; 
+            var vPriorOpptyId = ""; 
+            var vOpptyLeadSource = Opportunity.LeadSource; 
+            var vTherapyArea = Opportunity.Therapy_Area__c; 
+            var vTotalContractVal = Opportunity.Amount;
+            var vOpptyType = Opportunity.Type; 
+            var vOpptyCurrency = Opportunity.CurrencyIsoCode; 
+            var vProjectName = ""; 
+            var vLineDesc = ""; 
+            var vAddLine=""; 
+            var vAddContact=""; 
+            var url; 
+            // var vContactURL="&isIQVIAGB80=" + isIQVIAGB80; 
+            var vContactURL = "&multiBillingCountry=" + multiBillingCountry;
+            var vSalesOrg="{!currentUser.Sales_Org__c}"; 
+            var vSalesOrgId="{!currentUser.Sales_Org_Code__c}"; 
+            var vprofileName = "{!$Profile.Name}";
+            <!--var isMDMUser = "{!$Setup.User_Permissions__c.MDM_User__c}";-->
+            var isNonMDMUser = {!isNonMDMUser};
+            var fieldApiToIdMapJSONString = '{!fieldApiToIdMapJSONString}';
+            var fieldApiToIdMap = JSON.parse(fieldApiToIdMapJSONString);   
+            
+            
+            var vContractNo = ""; 
+            var vMasterContractNo = ""; 
+            var vContractTerm=""; 
+            var vContractType=""; 
+
+            var qrMIBNF = '{!mibnfJSONString}';
+            if(qrMIBNF != '') 
+            { 
+                alert("A Multi Invoice BNF already exists for this opportunity. BNF cannot be created."); 
+                url = "/" + vOpptyId; 
+                if('{!$User.UITheme}'== 'Theme4t' && (sforce != undefined && sforce != null && sforce.one != undefined)){
+                    sforce.one.navigateToURL(url);
+                }else{
+                    window.parent.location.href = url;
+                }
+                return false; 
+            }
+            vOpptyName = encodeURIComponent(vOpptyName); 
+            vAccount = encodeURIComponent(vAccount);  
+            
+            
+            var vContractNo = isNull(Opportunity.SAP_Contract__c);
+            var vMasterContractNo = isNull(Opportunity.SAP_Master_Contract__c);
+            var vContractTerm = isNull(Opportunity.Contract_Term__c); 
+            var vContractType = encodeURIComponent(isNull(Opportunity.Contract_Type__c)); 
+            
+            var vOppRecordTypeId = Opportunity.RecordTypeId; 
+            var vContractEndDate = ""; 
+            if (Opportunity.Contract_End_Date__c != null) 
+            { 
+            vContractEndDate = '{!oppContractEndDate}'; 
+            } 
+            var vContractStartDate= ""; 
+            if (Opportunity.Contract_Start_Date__c != null) 
+            { 
+            vContractStartDate = '{!oppContractStartDate}'; 
+            }
+			
+			var vLocaleSid = "{!currentUser.LocaleSidKey}"; 
+            
+            var vUserCountry= "{!currentUser.User_Country__c}"; 
+            var tempEnd = ""; 
+            var tempStart = ""; 
+            
+            if (vContractEndDate != "") 
+            { 
+            tempEnd = vContractEndDate; 
+            } 
+            
+            
+            if (vContractStartDate != "") 
+            { 
+            tempStart = vContractStartDate; 
+            } 
+            
+            var vPriorOpptyId =isNull(Opportunity.Parent_Opportunity__c); 
+            
+            vProjectName = "&" + fieldApiToIdMap["Project_Name__c"] + "=" + vOpptyName; 
+            
+            var isQuickOpp=false; 
+            var vquickRecordTypeId= "{!quickOppRecordTypeId}"
+            
+			if(vOppRecordTypeId == vquickRecordTypeId) 
+                isQuickOpp=true; 
+            else 
+                isQuickOpp=false;   
+            if(vAccount != null){ 
+            vAddLine = "&" + fieldApiToIdMap["BRS_Code__c"] + "=" + "{!accountRecord.BRS_Code__c}" + "&" + fieldApiToIdMap["SAP_PC_Code__c"] + "=" + "{!accountRecord.SAP_PC_Code__c}"; 
+            } 
+            
+            <!--var qrBothOpptyRole = sforce.connection.query(sOpptyBothContactRoleSOQL); -->
+            var sqrBoth =  '{!JSENCODE(shipToBillToContactRoleJSONString)}';
+            if(sqrBoth != '') {
+            sqrBoth = sqrBoth.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqrBoth = sqrBoth.replace(/'/g, '');
+            sqrBoth = sqrBoth.replace(/#/g, '');
+            var rBothOpptyContact = JSON.parse(sqrBoth);
+                
+            vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "_lkid=" + isNull(rBothOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.Name)); 
+            
+            if(rBothOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF"+ fieldApiToIdMap["Bill_To_Company__c"] + "_lkid=" + isNull(rBothOpptyContact[0].Contact.AccountId);
+                vContactURL += "&CF"+ fieldApiToIdMap["Bill_To_Company__c"] +"=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.Account.Name)); 
+                vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "_lkid=" + isNull(rBothOpptyContact[0].Contact.AccountId); 
+                vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.Account.Name));
+            }
+                
+            vContactURL += "&Bill_To_Address__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&Bill_To_City__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&Bill_To_State_Province__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Bill_To_Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Bill_To_Country__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingCountry)); 
+            
+            vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] +"_lkid=" + isNull(rBothOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.Name)); 
+            
+             
+			
+			
+            vContactURL += "&Address__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&City__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&State_Province__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Country__c" + "=" + encodeURIComponent(isNull(rBothOpptyContact[0].Contact.MailingCountry)); 
+
+            
+            
+            
+            } else {
+            
+            var sqrBT = '{!JSENCODE(billToContactRoleJSONString)}';
+            if(sqrBT != ''){
+            sqrBT = sqrBT.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqrBT = sqrBT.replace(/'/g, '');
+            sqrBT = sqrBT.replace(/#/g, '');
+            var rOpptyContact = JSON.parse(sqrBT);
+            vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "_lkid=" + isNull(rOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.Name)); 
+            if(rOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "_lkid=" + isNull(rOpptyContact[0].Contact.AccountId);
+                vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] +"=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.Account.Name));  
+            }
+            vContactURL += "&Bill_To_Address__c" + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&Bill_To_City__c" + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&Bill_To_State_Province__c" + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Bill_To_Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Bill_To_Country__c" + "=" + encodeURIComponent(isNull(rOpptyContact[0].Contact.MailingCountry)); 
+            
+            }
+            
+            var sqrST = '{!JSENCODE(shipToContactRoleJSONString)}';
+            if(sqrST != ''){
+            sqrST = sqrST.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqrST = sqrST.replace(/'/g, '');
+            sqrST = sqrST.replace(/#/g, '');
+            var rSTOpptyContact = JSON.parse(sqrST); 
+            vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "_lkid=" + isNull(rSTOpptyContact[0].ContactId); 
+            vContactURL += "&CF"+ fieldApiToIdMap["Delivery_Contact__c"] + "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.Name)); 
+            if(rSTOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "_lkid=" + isNull(rSTOpptyContact[0].Contact.AccountId);
+                vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.Account.Name));
+            }
+            vContactURL += "&Address__c" + "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&City__c" + "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&State_Province__c" +"=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Country__c"+ "=" + encodeURIComponent(isNull(rSTOpptyContact[0].Contact.MailingCountry)); 
+            
+            
+            } 
+            
+            } 
+
+            var sqrCS = '{!JSENCODE(coverSheetContactRoleJSONString)}'; 
+            
+            if(sqrCS != ''){
+            sqrCS = sqrCS.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqrCS = sqrCS.replace(/'/g, '');
+            sqrCS = sqrCS.replace(/#/g, '');
+            var rCSOpptyContact = JSON.parse(sqrCS); 
+            
+            vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Contact__c"] + "_lkid=" + isNull(rCSOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Contact__c"] + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.Name));
+            
+            if(rCSOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Company__c"] + "_lkid=" + isNull(rCSOpptyContact[0].Contact.AccountId); 
+                vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Company__c"] + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.Account.Name));
+            }
+            vContactURL += "&Cover_Sheet_Address__c" + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&Cover_Sheet_City__c" + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&Cover_Sheet_State_Province__c" + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Cover_Sheet_Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Cover_Sheet_Country__c" + "=" + encodeURIComponent(isNull(rCSOpptyContact[0].Contact.MailingCountry)); 
+            
+            } 
+            
+            var sqrCC = '{!JSENCODE(carbonCopyContactRoleJSONString)}'; 
+            
+            if(sqrCC != ''){
+            sqrCC = sqrCC.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqrCC = sqrCC.replace(/'/g, '');
+            sqrCC = sqrCC.replace(/#/g, '');
+            var rCCOpptyContact = JSON.parse(sqrCC); 
+            
+            vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Contact__c"] + "_lkid=" + isNull(rCCOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Contact__c"] + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.Name));
+            if(rCCOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF"+ fieldApiToIdMap["Carbon_Copy_Company__c"] +"_lkid=" + isNull(rCCOpptyContact[0].Contact.AccountId);
+                vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Company__c"] + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.Account.Name)); 
+            }
+            vContactURL += "&Carbon_Copy_Address__c" + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&Carbon_Copy_City__c" + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&Carbon_Copy_State_Province__c" + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&Carbon_Copy_Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&Carbon_Copy_Country__c" + "=" + encodeURIComponent(isNull(rCCOpptyContact[0].Contact.MailingCountry)); 
+            
+            } 
+            
+            
+            
+            var sqr2nd = '{!JSENCODE(secondCopyContactRoleJSONString)}'; 
+            
+            if(sqr2nd != ''){
+            sqr2nd = sqr2nd.replace(/(?:\\[rn]|[\r\n]+)+/g, " ");
+            sqr2nd = sqr2nd.replace(/'/g, '');
+            sqr2nd = sqr2nd.replace(/#/g, '');
+            var r2ndOpptyContact = JSON.parse(sqr2nd); 
+            vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Contact__c"] + "_lkid=" + isNull(r2ndOpptyContact[0].ContactId); 
+            vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Contact__c"] + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.Name));
+            if(r2ndOpptyContact[0].Contact.AccountId != undefined) {
+                vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Company__c"] + "_lkid=" + isNull(r2ndOpptyContact[0].Contact.AccountId);
+                vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Company__c"] + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.Account.Name));
+            }
+            
+            
+            vContactURL += "&X2nd_Email__c" +  "=" + isNull(r2ndOpptyContact[0].Contact.Email); 
+            
+            vContactURL += "&X2nd_Address__c" + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.MailingStreet)); 
+            vContactURL += "&X2nd_City__c" + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.MailingCity)); 
+            vContactURL += "&X2nd_State_Province__c" + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.MailingState)); 
+            vContactURL += "&X2nd_Zip_Postal_Code__c" + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.MailingPostalCode)); 
+            vContactURL += "&X2nd_Country__c" + "=" + encodeURIComponent(isNull(r2ndOpptyContact[0].Contact.MailingCountry)); 
+            
+            } 
+                //vContactURL = encodeURI(vContactURL);
+            url = "/" + bnfPrefix + "/e?retURL=%2F" + vOpptyId + "&ic=1" ; 
+            url += "&saveURL=/apex/BNFOpptyList?id=" + vOpptyId +"%26ic=1"; 
+            url += "&CF" + fieldApiToIdMap["Opportunity__c"] + "_lkid=" + vOpptyId;
+                
+            var PriorOppty = '{!JSENCODE(priorOppJSONString)}';
+            var vPriorOpptyNumber = ""; 
+            var vPriorOpptyName = ""; 
+            
+            if(PriorOppty != '') 
+            { 
+            var rPriorOppty = JSON.parse(PriorOppty);
+            vPriorOpptyNumber = rPriorOppty[0].Opportunity_Number__c; 
+            
+            vPriorOpptyName =encodeURIComponent(rPriorOppty[0].Name); 
+            } 
+            
+            url += "&CF" + fieldApiToIdMap["Client__c"] +"_lkid=" + vAccountId 
+            + "&CF" + fieldApiToIdMap["Client__c"] + "=" + vAccount 
+            + "&" + fieldApiToIdMap["Opportunity_Number__c"] + "=" + vOpptyNumber 
+            + vAddLine + vContactURL + 
+            "&"+ fieldApiToIdMap["Therapy_Area__c"] +"=" + vTherapyArea +
+            "&"+ fieldApiToIdMap["Opportunity_Type__c"] + "=" + vOpptyType + 
+            "&" + fieldApiToIdMap["Contract_Value__c"] + "=" + vTotalContractVal + 
+            "&CurrencyIsoCode=" + vOpptyCurrency + 
+            "&" + fieldApiToIdMap["Billing_Currency__c"] + "=" + vOpptyCurrency + 
+            "&" + fieldApiToIdMap["Contract_Type__c"] + "=" + vContractType + 
+            "&" + fieldApiToIdMap["Contract_Term__c"] + "=" + vContractTerm + 
+            "&"+ fieldApiToIdMap["Contract_Start_Date__c"] + "=" + tempStart+ 
+            "&" + fieldApiToIdMap["Contract_End_Date__c"] + "=" + tempEnd+ 
+            "&"+ fieldApiToIdMap["SAP_Contract__c"]  +"=" + vContractNo+
+            "&"+ fieldApiToIdMap["SAP_Master_Contract__c"] + "=" + vMasterContractNo+
+            "&" + fieldApiToIdMap["Original_Prior_Opportunity_Id__c"] + "=" + vPriorOpptyNumber+ 
+            "&CF" + fieldApiToIdMap["Original_Prior_Opportunity__c"] + "_lkid=" +vPriorOpptyId+ 
+            "&CF" + fieldApiToIdMap["Original_Prior_Opportunity__c"] + "=" +vPriorOpptyName; 
+            vDefaultdata="Default Material Master Data"; 
+            vInvoiceHeaderText="Rechnungstext:Lieferdatum:"; 
+            vFairValue="Stand Alone"; 
+            
+            if(isQuickOpp) 
+            { 
+            
+            url += encodeURI("&" + fieldApiToIdMap["Fair_Value_Type__c"] + "=" + vFairValue + "&" + fieldApiToIdMap["Invoice_Default_Day__c"] + "=" + vDefaultdata); 
+            
+            if(vUserCountry=='Germany') 
+            url += encodeURI("&" + fieldApiToIdMap["Invoice_Header_Text__c"] + "=" + vInvoiceHeaderText); 
+            } 
+            
+            url += "&CF" + fieldApiToIdMap["Opportunity__c"] + "=" + vOpptyName + vProjectName; 
+            if (vOpptyLeadSource == "Extension to In Hand opportunity" || vOpptyLeadSource == "I&A Master Contract Renewal") 
+            { 
+            var PriorOppty = '{!JSENCODE(priorOppJSONString)}';
+            var vPriorOpptyNumber = ""; 
+            if(PriorOppty != '') 
+            { 
+            var rPriorOppty = JSON.parse(PriorOppty); 
+            vPriorOpptyNumber = rPriorOppty[0].Opportunity_Number__c; 
+            } 
+            url += "&" + fieldApiToIdMap["Original_Prior_Opportunity_Id__c"] + "=" + vPriorOpptyNumber ; 
+            } 
+            url += "&" + fieldApiToIdMap["IMS_Sales_Org__c"] + "=" + encodeURIComponent(vSalesOrg);
+            
+            if(!isNonMDMUser) 
+            {
+            var urlParams = url.substring(url.indexOf("?")+1, url.length); 
+            var redirectionParameters = "/apex/BNF_Sales_Org_Selector?OpportunityId=" + vOpptyId + "&AccountId=" + vAccountId + "&" + urlParams;
+            <!-- window.parent.location.href = redirectionParameters; -->
+                if('{!$User.UITheme}'== 'Theme4t' && (sforce != undefined && sforce != null && sforce.one != undefined)){
+                    sforce.one.navigateToURL('/apex/SCM_BNFEditRedirect?newURL=' + redirectionParameters);
+                }else{
+                    window.parent.location.href = "/apex/SCM_BNFEditRedirect?newURL=" + redirectionParameters;
+                }
+            } 
+            else
+            {
+                if('{!$User.UITheme}'== 'Theme4t' && (sforce != undefined && sforce != null && sforce.one != undefined)){
+                    sforce.one.navigateToURL('/apex/SCM_BNFEditRedirect?newURL=' + url);
+                }else{
+                    window.parent.location.href = "/apex/SCM_BNFEditRedirect?newURL=" + url;
+                }
+            <!--window.parent.location.href = url;-->
+            }
+            } 
+            function trimCurr(vAmount){ 
+            
+            var Amount = "0.00"; 
+            if(vAmount != ""){ 
+            
+            var mysplitarray=vAmount.split(" "); 
+            
+            Amount = mysplitarray[1]; 
+            
+            } 
+            return Amount; 
+            }
+
+
+			
+            function isNull(sVal){ 
+            var sReturnNull; 
+            
+            if(sVal == null){ 
+            
+            sReturnNull=""; 
+            
+            }else{ 
+            
+            sReturnNull = sVal; 
+            } 
+            
+            return sReturnNull; 
+            
+            } 
+            
+            function checkSpecialCharacters(StringVal) 
+            { 
+            
+            
+            var sOldString = ""; 
+            var sCorrectedString = ""; 
+            var sCorrectedString2 = ""; 
+            
+            
+            var sChar = ""; 
+            for (var i=0; i< StringVal.length; i++) 
+            { 
+            sChar = StringVal.charAt(i);  
+            
+            if (sChar == "%") 
+            { 
+            sCorrectedString = sCorrectedString + "%25"; 
+            } 
+            else if (sChar == "&") 
+            { 
+            sCorrectedString = sCorrectedString + "%26"; 
+            } 
+            else if (sChar == "#") 
+            { 
+            sCorrectedString = sCorrectedString + "%23"; 
+            } 
+            else if (sChar == "\"") 
+            { 
+            sCorrectedString = sCorrectedString + "%22"; 
+            } 
+            else if (sChar == "\n") 
+            { 
+            sCorrectedString = sCorrectedString + "%0A"; 
+            } 
+            else if (sChar == "\r") 
+            { 
+            sCorrectedString = sCorrectedString + "%0D"; 
+            } 
+            else 
+            { 
+            sCorrectedString = sCorrectedString + sChar; 
+            } 
+            } 
+            
+            return sCorrectedString; 
+            } 
+            
+            function IsProfileNewBnf(profileName) 
+            { 
+            return true; 
+            } 
+            </script>
+        </head> 
+        <body> 
+        </body> 
+    </html>
+</apex:page>

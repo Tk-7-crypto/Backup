@@ -1,0 +1,100 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner alternative-text="Loading......" size="large" variant="brand"></lightning-spinner>
+    </template>
+    <lightning-modal-header label="Cloning Options"></lightning-modal-header>
+    <lightning-modal-body>
+        <div if:true={showError} class="slds-notify slds-notify_alert slds-alert_error errorBlock">
+            <template for:each={errorMessage} for:item="error" for:index="index">
+                <h2 key={error} title={error}>{error}</h2>
+            </template>
+        </div>
+        <div class="slds-p-horizontal_small slds-form slds-grid slds-wrap childPaddingRight">
+            <lightning-radio-group class="slds-size_4-of-12" data-id="cloning_status" label="Clone Option" type="radio"
+                variant="label-inline" options={optionCloning} onchange={handleCloneOptionChange}>
+            </lightning-radio-group>
+            <lightning-combobox class="slds-size_4-of-12" data-id="noRenewComment" label="No Renew Comment"
+                options={optionOppComment} value="" onchange={handleNoRenewCommentChange}>
+            </lightning-combobox>
+            <div class="slds-size_4-of-12"></div>
+            <lightning-input class="slds-size_4-of-12" data-id="closeDate" label="Expected Close Date" type="date"
+                value={renewalTask.closeDate} required>
+            </lightning-input>
+            <lightning-combobox class="slds-size_4-of-12" data-id="dataPeriodShift" label="Data Period Shift"
+                options={optionDataPeriodShift} value={renewalTask.dataPeriodShift}> </lightning-combobox>
+            <lightning-input class="slds-size_2-of-12" data-id="price_inc" label="% Price Increment" type="number"
+                value={renewalTask.price_inc} max-length="3" step="0.01" required> </lightning-input>
+            <lightning-input class="slds-size_2-of-12" data-id="roundup_action" label="Round Up" type="checkbox"
+                checked={renewalTask.roundup_action} variant="label-stacked"> </lightning-input>
+        </div>
+        </br></br>
+        <div id="containerDiv" style="overflow: auto; min-height: 20rem;"
+            class="slds-table_header-fixed_container slds-border_right slds-border_left slds-border_top">
+            <table
+                class="slds-table slds-table_bordered slds-table_header-fixed slds-table_fixed-layout slds-table_striped">
+                <thead class="slds-line-height_reset" style="font-weight:bold">
+                    <template for:each={headerCol} for:item="header" for:index="index">
+                        <th key={header.label} scope="col" style={header.iniStyle} title={header.label}>
+                            <div class="slds-cell-fixed" style={header.iniStyle}>
+                                <a class="slds-th__action slds-text-link--reset">
+                                    <span class="slds-truncate slds-grid"> {header.label}</span>
+                                </a>
+                            </div>
+                        </th>
+                    </template>
+                </thead>
+                <tbody>
+                    <template for:each={olis} for:item="opptyLineItem" for:index="index">
+                        <tr class="slds-hint-parent" key={opptyLineItem.id} style="vertical-align: top;">
+                            <td data-label="Clone" class="slds-truncate">
+                                <lightning-input data-index={index} variant="label-hidden" data-type="checkbox"
+                                    onchange={handleOliCloneCheckbox} data-id={opptyLineItem.id} type="checkbox"
+                                    checked={opptyLineItem.cloneCheckBox}> </lightning-input>
+                            </td>
+                            <td data-label="Comments" class="slds-truncate">
+                                <lightning-combobox if:false={opptyLineItem.cloneCheckBox} data-index={index}
+                                    data-id="droppedReason" value={opptyLineItem.comment} options={optionOliComment}
+                                    variant="label-hidden" style="text-wrap: auto;" required></lightning-combobox>
+                            </td>
+                            <td data-label="SAP Code" class="slds-truncate" title={opptyLineItem.sapCode}>
+                                {opptyLineItem.sapCode} </td>
+                            <td data-label="Product Name" class="slds-truncate" title={opptyLineItem.productName}>
+                                {opptyLineItem.productName} </td>
+                            <td data-label="Business Type" class="slds-truncate" title={opptyLineItem.businessType}>
+                                {opptyLineItem.businessType} </td>
+                            <td data-label="Data Period Start" class="slds-truncate"
+                                title={opptyLineItem.dataPeriodStart}>
+                                {opptyLineItem.dataPeriodStart} </td>
+                            <td data-label="Data Period End" class="slds-truncate" title={opptyLineItem.dataPeriodEnd}>
+                                {opptyLineItem.dataPeriodEnd} </td>
+                            <td data-label="Sale Type" class="slds-truncate" title={opptyLineItem.saleType}>
+                                {opptyLineItem.saleType} </td>
+                            <td data-label="Revenue Type" class="slds-truncate" title={opptyLineItem.revenueType}>
+                                {opptyLineItem.revenueType} </td>
+                            <td data-label="Delivery Country" class="slds-truncate" title={opptyLineItem.delivery_cnty}>
+                                {opptyLineItem.delivery_cnty} </td>
+                            <td data-label="Total Price" class="slds-truncate" title={opptyLineItem.value}>
+                                <lightning-formatted-number value={opptyLineItem.value} format-style="currency"
+                                    currency-code={currencyIsoCode} currency-display-as="code">
+                                </lightning-formatted-number>
+                            </td>
+                        </tr>
+                    </template>
+                    <template if:true={zeroOlis}>
+                        <tr>
+                            <td colspan="100">
+                                <center>No product availble for cloning...</center>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-modal-body>
+    <lightning-modal-footer>
+        <lightning-button class="buttonCss" label="Cancel" onclick={handleCloseClick} disabled={disableClose}>
+        </lightning-button>
+        <lightning-button class="buttonCss" label="Submit" onclick={handleSaveClick} disabled={disableClose}
+            variant="brand"></lightning-button>
+    </lightning-modal-footer>
+</template>

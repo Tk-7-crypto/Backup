@@ -1,0 +1,41 @@
+<apex:page controller="CNT_GBL_ViewSharepointFile">
+    <apex:slds />
+    <apex:form >
+        <apex:actionFunction name="loadAttachment" action="{!loadAttachment}" rerender="out" status="myStatus"/>
+    </apex:form>
+    <apex:outputPanel id="out" >
+        <a download="{!fileName}" href="data:{!contentType};content-disposition:attachment;filename={!fileName};base64,{!base64Value}" id="downloadLink" target="_blank"></a>
+        <apex:actionStatus id="myStatus">
+            <apex:facet name="start">
+                <div class="slds-spinner_container" style="position: fixed;" >
+                    <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </apex:facet>
+            <apex:facet name="stop">
+                <script>
+                if({!isCallCompleted}){
+                    if('{!parentName}' != ''){
+                        sforce.one.navigateToObjectHome("{!parentname}");
+                    }else{
+                        var timeout = 2000;
+                        if (navigator.appVersion.toString().indexOf('.NET') > 0){
+                            var b = b64toBlob("data:{!contentType};base64,{!base64Value}", "{!contentType}");
+                            window.navigator.msSaveBlob(b, "{!fileName}");
+                            timeout = 5000;
+                        } else {
+                            document.getElementById('downloadLink').click();
+                        }
+                        window.setTimeout(history.back(), timeout);
+                    }
+                }   
+                </script>
+            </apex:facet>
+        </apex:actionStatus>
+    </apex:outputPanel>
+    <script>
+    	window.setTimeout(loadAttachment,1000);
+    </script>
+</apex:page>

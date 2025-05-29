@@ -1,0 +1,550 @@
+<aura:component controller="CNT_CSM_EmailMessageController" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickActionWithoutHeader" access="global">
+    <ltng:require scripts="{! $Resource.jquery3_4_1_min}" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="emailMessageRecord" type="EmailMessage" />
+    <aura:attribute name="isLoading" type="boolean" default="true" />
+    <aura:attribute name="caseRecordTypeId" type="String" />
+    <aura:attribute name="caseId" type="String" />
+    <aura:attribute name="caseNumber" type="String" />
+    <aura:attribute name="caseUrl" type="String" />
+    <aura:attribute name="subject" type="String" />
+    <aura:attribute name="bodyText" type="String" />
+    <aura:attribute name="fromAddresses" type="List" />
+    <aura:attribute name="los" type="String" />
+    <aura:attribute name="recordTypeId" type="String" />
+    <aura:attribute name="currentQueue" type="String" />
+    <aura:attribute name="toAddress" type="String" />
+    <aura:attribute name="fromAddress" type="String" />
+    <aura:attribute name="ccAddress" type="String" />
+    <aura:attribute name="bccAddress" type="String" />
+    <aura:attribute name="isPreviewOpen" type="boolean" default="false" />
+    <aura:attribute name="isAttachmentOpen" type="boolean" default="false" />
+    <aura:attribute name="isTemplateOpen" type="boolean" default="false" />
+    <aura:attribute name="attachmentFiles" type="Object[]" />
+    <aura:attribute name="fetchAttachData" type="String" />
+    <aura:attribute name="attachmentIds" type="List" />
+    <aura:attribute name="attachmentsList" type="List" />
+    <aura:attribute name="emailAttachmentsList" type="List" />
+    <aura:attribute name="showAttachmentList" type="boolean" default="false" />
+    <aura:attribute name="showNoAttachment" type="boolean" default="false" />
+    <aura:attribute name="showFilePills" type="boolean" default="false" />
+    <aura:attribute name="isTemplateContent" type="boolean" default="false" />
+    <aura:attribute name="templateAvailable" type="boolean" default="false" />
+    <aura:attribute name="templateList" type="List" />
+    <aura:attribute name="templateType" type="String" />
+    <aura:attribute name="templateFolder" type="String" />
+    <aura:attribute name="templateFolders" type="List" />
+    <aura:attribute name="userContactList" type="List" />
+    <lightning:workspaceAPI aura:id="workspace"/>
+    <aura:attribute name="userInfo" type="User"/>
+    <aura:attribute name="fromEmailToCase" type="String" />
+    
+    <div class="slds-modal__content slds-size_1-of-1 slds-is-relative modalbodyCls" aura:id="modalbody">
+        <div class="mailHeader">
+            <div class="slds-media slds-media--center slds-has-flexi-truncate" style="margin-top: 4px;">
+                <div class="slds-media__figure slds-m-right--x-small">
+                    <lightning:icon iconName="utility:email" class="mailIcons" />
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="panelTitle slds-truncate" title="Forward">Forward</h2>
+                </div>
+            </div>
+        </div>
+        <div class="slds-card__body" id="mailBodyContentDiv">
+            <aura:if isTrue="{!v.isLoading}">
+                <div class="slds-spinner_container slds-spinner--brand" aura:id="spinner">
+                    <div class="slds-spinner slds-spinner--medium slds-spinner_brand" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+        </div>
+        <div class="mail-scrollable_y">
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <lightning:select label="From" value="{!v.fromAddress}" aura:id="fromAddress" onchange="{!c.setFromAddress}">
+                        <aura:iteration items="{!v.fromAddresses}" var="address">
+                            <option value="{!address.label}">{!address.label}</option>
+                        </aura:iteration>
+                    </lightning:select>
+                </div>
+            </div>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <span onkeyup="{!c.searchToAddressRelatedUserContactRecord}">
+                        <lightning:input placeholder="Enter recipient's email address" label="To" aura:id="toAddress" value="{!v.toAddress}" />
+                    </span>
+                    <div class="undefined lookup__menu invisible uiAbstractList uiAutocompleteList uiInput uiAutocomplete uiPillContainerAutoComplete uiInput--default uiInput--lookup" role="listbox">
+                        <div class="listContent">
+                            <ul class="lookup__list" role="presentation">
+                                <aura:iteration items="{!v.userContactList}" var="userRecord">
+                                    <li class="lookup__item default uiAutoCompleteOption emailuiRecipientAutocompleteOption" role="presentation" onclick="{!c.setEmailAddressInToAddressField}">
+                                        <div class="contactIconBlock">
+                                            <lightning:icon iconName="{!userRecord.Type}" />
+                                        </div>
+                                        <div class="contactDetailsBlock">
+                                            <div class="contactNameBlock">
+                                                <span>{!userRecord.Name}</span>
+                                            </div>
+                                            <div class="contactEmailBlock">
+                                                <span>{!userRecord.Email}</span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </aura:iteration>
+                            </ul>
+                            <div class="loadingIndicator">
+                                <div class="background"></div>
+                                <span class="label">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <span onkeyup="{!c.searchCcAddressRelatedUserContactRecord}">
+                        <lightning:input placeholder="Enter Cc email address" label="Cc" aura:id="ccAddress" value="{!v.ccAddress}" />
+                    </span>
+                    <div class="undefined lookup__menu invisible uiAbstractList uiAutocompleteList uiInput uiAutocomplete uiPillContainerAutoComplete uiInput--default uiInput--lookup" role="listbox">
+                        <div class="listContent">
+                            <ul class="lookup__list" role="presentation">
+                                <aura:iteration items="{!v.userContactList}" var="userRecord">
+                                    <li class="lookup__item default uiAutoCompleteOption emailuiRecipientAutocompleteOption" role="presentation" onclick="{!c.setEmailAddressInCcAddressField}">
+                                        <div class="contactIconBlock">
+                                            <lightning:icon iconName="{!userRecord.Type}" />
+                                        </div>
+                                        <div class="contactDetailsBlock">
+                                            <div class="contactNameBlock">
+                                                <span>{!userRecord.Name}</span>
+                                            </div>
+                                            <div class="contactEmailBlock">
+                                                <span>{!userRecord.Email}</span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </aura:iteration>
+                            </ul>
+                            <div class="loadingIndicator">
+                                <div class="background"></div>
+                                <span class="label">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <span onkeyup="{!c.searchBccAddressRelatedUserContactRecord}">
+                        <lightning:input placeholder="Enter Bcc email address" label="Bcc" aura:id="bccAddress" value="{!v.bccAddress}" />
+                    </span>
+                    <div class="undefined lookup__menu invisible uiAbstractList uiAutocompleteList uiInput uiAutocomplete uiPillContainerAutoComplete uiInput--default uiInput--lookup" role="listbox">
+                        <div class="listContent">
+                            <ul class="lookup__list" role="presentation">
+                                <aura:iteration items="{!v.userContactList}" var="userRecord">
+                                    <li class="lookup__item default uiAutoCompleteOption emailuiRecipientAutocompleteOption" role="presentation" onclick="{!c.setEmailAddressInBccAddressField}">
+                                        <div class="contactIconBlock">
+                                            <lightning:icon iconName="{!userRecord.Type}" />
+                                        </div>
+                                        <div class="contactDetailsBlock">
+                                            <div class="contactNameBlock">
+                                                <span>{!userRecord.Name}</span>
+                                            </div>
+                                            <div class="contactEmailBlock">
+                                                <span>{!userRecord.Email}</span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </aura:iteration>
+                            </ul>
+                            <div class="loadingIndicator">
+                                <div class="background"></div>
+                                <span class="label">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <lightning:input placeholder="Enter subject for mail" label="Subject" aura:id="subject" value="{!v.subject}" />
+                </div>
+            </div>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col">
+                    <lightning:inputRichText placeholder="Enter mail body" aura:id="bodyText" value="{!v.bodyText}" />
+                </div>
+            </div>
+            <div class="slds-m-horizontal--xxx-small slds-var-m-vertical--x-small supportSendEmailQuickAction" style="margin-top: 1rem;">
+                <ul class="contentAttachmentPills" id="mailAttachmentPills">
+                    <aura:if isTrue="{!v.showFilePills}">
+                        <aura:iteration items="{!v.attachmentsList}" var="attachRecord">
+                            <li>
+                                <div class='emailAttachmentPreview feedFilePreviewContainer previewEnabled'>
+                                    <div class='previewContainer forceChatterFeedContentFilePreview'>
+                                        <div class='slds-grid slds-p-around--x-small slds-align--absolute-center forceChatterSelectedFileBadge'>
+                                            <div class='slds-grid slds-size--1-of-1 slds-no-space slds-p-right--x-large'>
+                                                <div class='slds-avatar slds-avatar--x-small slds-pill__icon_container slds-p-right--large'>
+                                                    <div>
+                                                        <span>
+                                                            <lightning:icon iconName='{!attachRecord.FileIcon}' />
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class='slds-col slds-truncate'>
+                                                    <a rel='theater' title='View File'>
+                                                        <span class='slds-pill__label uiOutputText attachmentsPillContainer' title='Preview file' data-document-id='{!attachRecord.DocumentId}'>{!attachRecord.FileName}</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class='right'>
+                                                <lightning:button class="slds-button slds-button--neutral contentPostFileRemove slds-p-horizontal_small uiButton" title="Remove file" onclick="{!c.removeAttachmentFromMail}">
+                                                    <span class="assistiveText">Remove file {!attachRecord.FileName}</span>
+                                                    <lightning:icon iconName='utility:close' class="slds-button__icon slds-icon-utility-close slds-icon_container forceIcon" />
+                                                </lightning:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </aura:iteration>
+                    </aura:if>
+                </ul>
+            </div>
+            
+            <div class="attachment_popover uiMenuList uiMenuList--default" id="template-dialog-box">
+                <div class="menu">
+                    <ul class="scrollable" role="presentation">
+                        <li role="presentation" class="uiMenuItem" onclick="{!c.openTemplateModal}">
+                            <a href="javascript:void(0);" role="menuitem" tabindex="0" aria-disabled="false" title="Insert a template...">Insert a template...</a>
+                        </li>
+                        <li role="presentation" class="uiMenuItem">
+                            <a href="javascript:void(0);" role="menuitem" tabindex="-1" aria-disabled="true" title="Save as new template...">Save as new template...</a>
+                        </li>
+                        <li role="presentation" class="uiMenuItem">
+                            <a href="javascript:void(0);" role="menuitem" tabindex="-1" aria-disabled="true" title="Save template...">Save template...</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+        </div>
+        <div class="modal-footer slds-size_1-of-1">
+            <div class="slds-grid">	
+                <div class="bottomBarLeftSide slds-col">
+                    <div class="slds-grid">
+                        <div class="slds-col">
+                            <div class="emailIconToolbar">
+                                <ul class="cuf-iconsList">
+                                    <li class="cuf-iconsItem">
+                                        <div class="uiTooltipItem">
+                                            <lightning:button class="slds-button attach_button" onclick="{!c.openAttachmentModal}">
+                                                <div class="cuf-Icon">
+                                                    <lightning:icon iconName="utility:attach" alternativeText="Attach file" />
+                                                </div>
+                                            </lightning:button>
+                                        </div>
+                                    </li>
+                                    <li class="cuf-iconsItem">
+                                        <div class="uiTooltipItem">
+                                            <lightning:button class="slds-button attach_button" onclick="{!c.showTemplateBox}">
+                                                <div class="cuf-Icon">
+                                                    <lightning:icon iconName="utility:insert_template" alternativeText="Insert, create or update template" />
+                                                </div>
+                                            </lightning:button>
+                                        </div>
+                                    </li>
+                                    <li class="cuf-iconsItem">
+                                        <div class="uiTooltipItem">
+                                            <lightning:button class="slds-button attach_button" onclick="{!c.openPreviewModal}" aura:id="attachmentIcon">
+                                                <div class="cuf-Icon">
+                                                    <lightning:icon iconName="utility:preview" alternativeText="Preview email" />
+                                                </div>
+                                            </lightning:button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-grid">
+                        <div class="slds-col">
+                            <div class="slds-size_11-of-12">
+                                <div class="extraSmallIcon bottomBarCaseIcon">
+                                    <span class="uiImageIcon">
+                                        <img src="/img/icon/t4v35/standard/case_120.png" class="icon" alt="Case" title="Case" />
+                                    </span>
+                                </div>
+                                <a class="slds-truncate" data-refid="recordId" data-navigable="true" href="{!v.caseUrl}" 
+                                   data-recordid="{!v.caseId}" target="_blank" title="{!v.caseNumber}">{!v.caseNumber}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bottomBarRightSide send_btn">
+                    <lightning:button variant="brand" label="Send" title="Forward mail" onclick="{!c.forwardMail}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <aura:if isTrue="{!v.isPreviewOpen}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container mail_previewContainer">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{!c.closePreviewModal}" alternativeText="close" variant="bare-inverse" class="slds-modal__close" />
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Preview email</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="previewmailcontent">
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral uiButton--brand" onclick="{!c.closePreviewModal}">Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    <aura:if isTrue="{!v.isAttachmentOpen}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true" aria-describedby="modal-content-id-2" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container attachmentContainer">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{!c.closeAttachmentModal}" alternativeText="close" variant="bare-inverse" class="slds-modal__close" />
+                    <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Select Files</h2>
+                </header>
+                <div class="modal-body scrollable slds-modal__content slds-p-around--none">
+                    <div class="fileContainer desktop forceContentFilePicker">
+                        <div class="fileLeftPanel">
+                            <div class="desktop">
+                                <div class="topPane">
+                                    <div class="tooltip-trigger uiTooltip" tabindex="-1">
+                                        <div id="lightningFileUploadContainer">
+                                            <lightning:fileUpload aura:id="fileUploader" title="Upload files" name="fileUploader" multiple="true" 
+                                                                  recordId="{!v.caseId}" onuploadfinished="{! c.handleFileUploadFinished }"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bottomPane">
+                                    <div class="slds-grid slds-grid--vertical slds-navigation-list--vertical">
+                                        <ul id="bottomPaneMenuItem">
+                                            <li class="fileSourceItem slds-is-active" onclick="{!c.setActiveClassAndFetchData}" data-files="owned"><a class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncates" href="javascript:void(0);">Owned by Me</a></li>
+                                            <li class="fileSourceItem" onclick="{!c.setActiveClassAndFetchData}" data-files="shared"><a class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncates" href="javascript:void(0);">Shared with Me</a></li>
+                                            <li class="fileSourceItem" onclick="{!c.setActiveClassAndFetchData}" data-files="recent"><a class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncates" href="javascript:void(0);">Recent</a></li>
+                                            <li class="fileSourceItem" onclick="{!c.setActiveClassAndFetchData}" data-files="following"><a class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncates" href="javascript:void(0);">Following</a></li>
+                                            <li class="fileSourceItem" onclick="{!c.setActiveClassAndFetchData}" data-files="library"><a class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncates" href="javascript:void(0);">Libraries</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-border_left"></div>
+                        <div class="fileRightPanel">
+                            <div class="slds-p-around--medium search_top">
+                                <lightning:input name="enter-search" placeholder="Search Files..." type="search" />
+                            </div>
+                            <div class="bottomPanel">
+                                <div class="searchScroller uiScroller scroller-wrapper scroll-bidirectional native" tabindex="-1" id="attachmentResultContainer">
+                                    <aura:if isTrue="{!v.showAttachmentList}">
+                                        <div class="scroller">
+                                            <div class="results uiAbstractList">
+                                                <div class="listContent">
+                                                    <ul class="results">
+                                                        <aura:iteration items="{!v.attachmentsList}" var="attachmentRecord">
+                                                            <li class="slds-var-p-horizontal_medium slds-var-p-vertical_xx-small forceContentVirtualRelatedListStencil forceRecordLayout">
+                                                                <a role="radio" aria-checked="false">
+                                                                    <div class="filerow" onclick="{!c.setRecordChecked}">
+                                                                        <div class="slds-checkbox checkBoxContainer">
+                                                                            <label class="uiLabel" for="attach1">
+                                                                                <span class="assistiveText">{!attachmentRecord.Title}</span>
+                                                                                <input type="checkbox" id="attach1" class="uiInputCheckbox uiInput uiInputCheckbox uiInput--default uiInput--checkbox" data-checked="false" />
+                                                                                <span class="slds-checkbox--faux"></span>
+                                                                            </label>
+                                                                        </div>
+                                                                        <div class="slds-size_12-of-12 slds-grid slds-nowrap">
+                                                                            <div class="slds-show_inline-block slds-float_left slds-align-middle thumbnailImg medium">
+                                                                                <div>
+                                                                                    <span>
+                                                                                        <lightning:icon iconName="{!attachmentRecord.FileIcon}"/>
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="slds-show_inline-block slds-float_left slds-p-left--x-small slds-truncate slds-m-right_x-small">
+                                                                                <span class="itemTitle slds-text-body--regular uiOutputText uiAttachDocContainer" data-document-id="{!attachmentRecord.Id}">{!attachmentRecord.Title}</span>
+                                                                                <p class="slds-m-around--none secondaryFields slds-text-body--small slds-truncate">
+                                                                                    <span class="uiOutputDateTime">{!attachmentRecord.CreatedDate}</span>
+                                                                                    <span>
+                                                                                        <span class="fileSizeAmount uiOutputNumber">{!attachmentRecord.ContentSize}</span>
+                                                                                        <span class="fileSizeUnits uiOutputText">{!attachmentRecord.ContentSizeString}</span>
+                                                                                    </span>
+                                                                                    <span class="itemLabel slds-truncate uiOutputText">{!attachmentRecord.FileExtension}</span>
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </li>
+                                                        </aura:iteration>
+                                                    </ul>
+                                                    <div class="emptyListContent">
+                                                        <span class="hideElement">Your search term must have 2 or more characters.</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                    <aura:if isTrue="{!v.showNoAttachment}">
+                                        <div class='emptyListContent'>
+                                            <div class='noresults slds-p-around--medium'>
+                                                <div>You don't have any files here. Try a different filter, or upload a file.</div>
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <div class="footerCmps">
+                        <h2 class="infoMsg slds-text-body--small slds-float--left slds-p-top--x-small header" id="filesCountHeader">0 of 10 files selected</h2>
+                    </div>
+                    <button class="slds-button slds-button--neutral cancel uiButton--default uiButton--neutral uiButton" onclick="{!c.closeAttachmentModal}">Cancel</button>
+                    <button class="slds-button slds-button_neutral uiButton--brand" id="addAttachmentButton" onclick="{!c.addAttachmentInMail}" disabled="disabled">Add</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    <aura:if isTrue="{!v.isTemplateOpen}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-03" aria-modal="true" aria-describedby="modal-content-id-3" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container mail_tempateContainer">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{!c.closeTemplateModal}" alternativeText="close" variant="bare-inverse" class="slds-modal__close" />
+                    <h2 id="modal-heading-03" class="slds-text-heading_medium slds-hyphenate">Insert Email Template</h2>
+                    <span class="slds-list_inline slds-wrap slds-m-top_medium">
+                        <div class="slds-text-align_center slds-p-right_x-small">Select a template for: </div>
+                        <div class="slds-icon--x-small forceEntityIcon" style="background-color: #A094ED;">
+                            <span class="uiImage">
+                                <img src="/img/icon/t4v35/standard/contact_120.png" class="icon" alt="Contacts" title="Contacts" />
+                            </span>
+                        </div>
+                        <span class="slds-p-left_x-small slds-p-right_small">Contacts</span>
+                        <div class="slds-icon--x-small forceEntityIcon" style="background-color: #F88962;">
+                            <span class="uiImage">
+                                <img src="/img/icon/t4v35/standard/lead_120.png" class="icon" alt="Leads" title="Leads" />
+                            </span>
+                        </div>
+                        <span class="slds-p-left_x-small slds-p-right_small">Leads</span>
+                        <div class="slds-icon--x-small forceEntityIcon" style="background-color: #F2CF5B;">
+                            <span class="uiImage mailTempateIconCase">
+                                <img src="/img/icon/t4v35/standard/case_120.png" class="icon" alt="Cases" title="Cases" />
+                            </span>
+                        </div>
+                        <span class="slds-p-left_x-small slds-p-right_small">Cases</span>
+                    </span>
+                </header>
+                <div class="modal-body scrollable slds-modal__content slds-p-around--medium" style="overflow-y: auto !important">
+                    <div class="filters emailTemplateUiDailog">
+                        <div style="margin-right: 1.25px">
+                            <div class="uiInput uiInputSelect uiInput--default uiInput--select">
+                                <label class="uiLabel-top form-element__label uiLabel">
+                                    <span title="Templates">Templates</span>
+                                </label>
+                                <select class="templateInputs select" id="templateType" size="1" onchange="{!c.loadTemplatesBasedOnType}" style="height: 36px;" value="{!v.templateType}">
+                                    <option label="My Templates" value="MyLightning">My Templates</option>
+                                    <option label="All Templates" value="AllLightning">All Templates</option>
+                                    <option label="Classic Email Templates" value="Classic">Classic Email Templates</option>
+                                    <option label="Sample Lightning Templates" value="SampleLightning">Sample Lightning Templates</option>
+                                </select>
+                            </div>
+                            <div class="slds-text-align--left slds-hide" id="classicTemplateMessage">Manage classic email templates in Setup.</div>
+                        </div>
+                        <div class="slds-list__item slds-m-right--large slds-truncate_container--20">
+                            <div class="uiInput uiInputSelect uiInput--default uiInput--select">
+                                <label class="uiLabel-top form-element__label uiLabel">
+                                    <span title="Folder">Folder</span>
+                                </label>
+                                <select class="templateInputs select" id="templateFolder" size="1" onchange="{!c.loadTemplatesBasedOnFolder}" style="height: 36px;" value="{!v.templateFolder}">
+                                    <aura:iteration items="{!v.templateFolders}" var="folder">
+                                        <option class="slds-m-left--xx-small uiInputSelectOption" value="{!folder.value}">{!folder.label}</option>
+                                    </aura:iteration>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="uiInput uiInputSearch uiInput--default uiInput--input">
+                                <label class="uiLabel-top form-element__label uiLabel">
+                                    <span title="Search templates...">Search</span>
+                                </label>
+                                <div>
+                                    <input type="search" class="templateSearch input" size="30" placeholder="Search templates..." onkeyup="{!c.filterTemplateName}" id="templateSearch" />
+                                    <button class="slds-button slds-button--neutral hide clear uiButton" type="button" aria-live="off" onclick="{!c.clearTemplateSearch}">
+                                        <span class="assistiveText">clear</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="emailTemplateUiDailog">
+                        <div class="dataGridContainer emailuiEmailTemplateDataGrid">
+                            <div class="scrollable uiScroller scroller-wrapper scroll-vertical native" tabindex="1">
+                                <div class="scroller">
+                                    <table class="uiVirtualDataGrid--default uiVirtualDataGrid">
+                                        <thead>
+                                            <tr>
+                                                <th class="name sortable" scope="col">Name</th>
+                                                <th class="slds-size--3-of-8" scope="col">Description</th>
+                                                <th class="slds-size--1-of-7" scope="col">Folder</th>
+                                                <th class="createdByCreatedDate sortable" scope="col">Created By</th>
+                                                <th class="createdByCreatedDate sortable descending" scope="col">Created Date</th>
+                                                <th class="slds-size_1-of-8" scope="col">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="templateResultsTable">
+                                            <aura:if isTrue="{!v.templateAvailable}">
+                                                <aura:iteration items="{!v.templateList}" var="emailRecord">
+                                                    <tr>
+                                                        <th scope="row">
+                                                            <a class="uiOutputURL" dir="ltr" title="{!emailRecord.Name}" data-template-id="{!emailRecord.Id}" ondblclick="{!c.addTemplateInMail}">{!emailRecord.Name}</a>
+                                                        </th>
+                                                        <td>
+                                                            <span>{!emailRecord.Description}</span>
+                                                        </td>
+                                                        <td>
+                                                            <span title="{!emailRecord.FolderName}" class="uiOutputText">{!emailRecord.FolderName}</span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="uiOutputText">{!emailRecord.CreatedBy.Name}</span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="uiOutputDate">{!emailRecord.CreatedDate}</span>
+                                                        </td>
+                                                        <td>
+                                                            <a dir="ltr" title="Delete" class="uiOutputURL">Delete</a>
+                                                        </td>
+                                                    </tr>
+                                                </aura:iteration>
+                                            </aura:if>
+                                        </tbody>
+                                    </table>
+                                    <aura:if isTrue="{!v.isTemplateContent}">
+                                        <div class="emptyList">
+                                            You don't have any email templates yet.
+                                            <br/>
+                                            Select a different template filter or click cancel to go back and create a new email template.
+                                        </div>
+                                    </aura:if>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral uiButton--brand" onclick="{!c.closeTemplateModal}">Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    
+</aura:component>

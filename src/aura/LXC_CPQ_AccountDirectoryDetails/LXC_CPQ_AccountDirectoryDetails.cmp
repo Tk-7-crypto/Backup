@@ -1,0 +1,198 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="global"  controller="CNT_CPQ_AccountDirectoryDetail">
+    <aura:attribute name="AccountDirectoryWrapperList" type="Object" />  
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name = "isDeleteButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name = "isSaveButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    <aura:attribute name="openPopupForAddRecord" type="boolean" default="false"/>
+    <aura:attribute name = "objInfo" type = "Account_Directory__c" default = "{sobjectType : 'Account_Directory__c','Account__c': '',
+		'Approver_Name__c': '',Role__c :''}"/>
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner/>
+    </aura:if>
+    <h3 class="slds-page-header slds-section__title slds-text-title_caps"> Account Directory </h3>
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Customer</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="account" class="slds-select" />
+        </div>
+    </div>
+    
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Role</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="role" class="slds-select" />
+        </div>
+    </div>
+    
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Approver Name</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="customerName" class="slds-select" />
+        </div>
+    </div>
+    <br/>
+    <div class="slds-align_absolute-left" >
+        <lightning:button variant="brand" class="slds-m-right_medium" label="Submit" onclick="{!c.getAccountDirectoryList}"  aura:id="submitButtonId"/>
+        <lightning:button variant="brand" label="Cancel" onclick="{!c.handleCancelClick}"/>  
+    </div>
+    <br/>
+    
+    <aura:if isTrue="{!v.AccountDirectoryWrapperList}">
+        <div class="slds-align_absolute-center" >
+            <aura:if isTrue="{!not(empty(v.AccountDirectoryWrapperList))}">
+                <lightning:button variant="success" class="slds-m-right_medium" label="Save" title="Save" onclick="{!c.saveMap}"
+					disabled="{!v.isSaveButtonDisable}" aura:id="saveButtonId" />
+                <lightning:button variant="destructive" class="slds-m-right_medium" label="Delete" title="Delete" onclick="{!c.deleteMap}"
+					disabled="{!v.isDeleteButtonDisable}" aura:id="deleteButtonId"/>
+            </aura:if>
+            <lightning:button class="slds-p-left_large" variant="brand" label="Add New" onclick="{!c.addRecord}" name=""/>
+        </div>
+        <br/>
+        <table class="Table_Layout slds-table slds-table--bordered slds-table--striped">
+            <thead>
+                <tr>
+                    <th scope="col"><span class="slds-truncate">Customer</span></th>
+                    <th scope="col"><span class="slds-truncate">Managing Director</span></th>
+                    <th scope="col"><span class="slds-truncate">Global Key Account Manager</span></th>
+                    <th scope="col"><span class="slds-truncate">Global Account Director</span></th>
+                    <th scope="col"><span class="slds-truncate">Delivery Head</span></th>
+                    <th scope="col"><span class="slds-truncate">Demand Head</span></th>
+                    <th scope="col"><span class="slds-truncate">Additional</span></th>
+                    <th scope="col"><span class="slds-truncate">BAM</span></th>
+                    <th scope="col"><span class="slds-truncate"></span></th>
+                    <th scope="col"><span class="slds-truncate"></span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.AccountDirectoryWrapperList}" var="record" indexVar="index">      
+                    <tr>
+                        <td>{!record.account}</td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">  
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Managing Director'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input1"
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Global Key Account Manager'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input2" 
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">    
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Global Account Director'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input3"
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">    
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Delivery Head'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input4" 
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">    
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Demand Head'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input5" 
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">    
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'Additional'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input6" 
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.accDirectoryCustomerWrapperList}" var="item" indexVar="index">    
+                                <aura:if isTrue="{!item.accountDirectory.Role__c == 'BAM'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.accountDirectory.Name}" aura:id="input7" 
+											value="{!item.accountDirectory.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.accountDirectory.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td><lightning:input class="{!record.account + ' '}" type="checkbox" label="Edit"
+								name="input1" checked="{!record.isEdit}" onchange="{!c.isEditable}" aura:id="editCheckbox"/></td>
+                        <td><lightning:input class="{!record.account + ' '}" type="checkbox" label="Delete"
+                                name="input2" checked="{!record.isDelete}" onchange="{!c.isDeleteable}" aura:id="deleteCheckbox" /></td>
+                        
+                    </tr>
+                </aura:iteration>            
+            </tbody>
+        </table>
+    </aura:if>
+    <!--Add new Popup-->
+    <aura:if isTrue = "{!v.openPopupForAddRecord}">
+        <section role = "dialog" tabindex = "-1" aria-labelledby = "modal-heading-01" aria-modal = "true" aria-describedby =
+                 "modal-content-id-1" class = "slds-modal slds-fade-in-open">
+            <div class = "slds-modal__container" >
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class = "slds-modal__header" >
+                    <h2 id = "modal-heading-01" class = "slds-text-heading_medium slds-hyphenate">Create New Account Directory Record</h2>
+                </header>
+                <div class = "slds-modal__content slds-p-around_medium" id = "modal-content-id-1">
+                    <lightning:recordEditForm objectApiName="Account_Directory__c" aura:id="newAccountForm" onsuccess="{!c.handleSuccess}" onerror = "{!c.handleError}">
+                        <lightning:inputField fieldName="Role__c" aura:id = "selectRole"/>
+                        <lightning:inputField fieldName="Account__c" aura:id = "selectAccount"/>
+                        <lightning:inputField fieldName="Approver_Name__c" aura:id="selectCustomerName"/>
+                        <lightning:inputField fieldName="Approver_Email__c" aura:id="selectCustomerEmail"/>
+                        <div class="slds-align_absolute-center" >
+                            <lightning:button variant="brand" type="submit" label="Save"/>
+                            <lightning:button variant="brand" label="Cancel" onclick="{!c.closeModel}" />
+                        </div>
+                    </lightning:recordEditForm>
+                </div>
+            </div>
+        </section>
+    </aura:if>
+    <br/><br/><br/>
+    
+</aura:component>

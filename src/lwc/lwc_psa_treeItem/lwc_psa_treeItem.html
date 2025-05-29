@@ -1,0 +1,137 @@
+<template>
+  <div>
+    <template if:true={items}>
+      <div class="slds-tree_container">
+        <ul class="slds-tree" role="tree">
+          <template for:each={items} for:item="item">
+            <li if:false={item.invisible} aria-expanded="true" aria-label={item.label} aria-level={nextLevel} role="treeitem" key={item.key}
+              class={item.currentClassName}>
+
+              <div class="slds-tree__item xslds-border_bottom" data-value={item.key}  onclick={toggleItem}>
+                  <div class="slds-media">
+                    <div class="slds-media__figure tree-item-arrows">
+                      <button class="slds-button slds-button_icon" aria-hidden="true" tabindex="-1" title={item.label}
+                        if:true={item.items}>
+                        <!-- icon when not expanded -->
+                        <lightning-icon if:false={item.expanded} icon-name="utility:chevronright" size="x-small"
+                          alternative-text="Expand Tree Item">
+                        </lightning-icon>
+
+                        <!-- icon when is expanded -->
+                        <lightning-icon if:true={item.expanded} icon-name="utility:chevrondown" size="x-small"
+                          alternative-text="Collapse Tree Item">
+                        </lightning-icon>
+                      </button>
+                    </div>
+                    <div class="slds-media__body">
+                      <span class="slds-has-flexi-truncate">
+                        <div class="slds-media">
+                          <div class="slds-media__figure">
+                            <lightning-icon if:true={item.icon} icon-name={item.icon} size="small"></lightning-icon>
+                          </div>
+
+                          <div class="slds-media__body">
+                            <span class="">
+
+                              <span class="slds-dropdown-trigger"
+                                data-record-id={item.recordId}
+                                onmouseover={handleMouseOver}>
+
+                                <span class="slds-tree__item-label">
+                                  <a href={item.href}
+                                    data-record-id={item.recordId}
+                                    onclick={handleClick}
+                                    data-value={item.key}
+                                    class="tree-link">
+                                    {item.label}
+                                  </a>
+                                </span>
+
+                                <span class="slds-tree__item-label slds-truncate">
+                                  <a href={item.href} data-record-id={item.recordId} onclick={handleClick} data-value={item.key} class="tree-link"> {item.metatext} </a>
+                                </span>
+
+                                <!--
+                                  custom for
+                                  percent complete!
+                                -->
+                                <div class="slds-tree__item-label" if:true={item.hasPercentComplete}>
+                                  <!-- percent complete SVG bar / rect -->
+                                  <!-- <svg class="chart" width="215" height="20" aria-labelledby="% Complete" role="img">
+                                    <g class="bar">
+                                      <rect width={item.percentCompleteWidth} height="16" fill={item.percentCompleteFill}
+                                        style="fill-opacity:.7;">
+                                      </rect>
+                                      <text x={item.percentCompleteTextX} y="9.5" dy=".35em"
+                                        style="font-size: 12px;font-style: italic;">
+                                        {item.percentComplete}% Complete
+                                      </text>
+                                    </g>
+                                  </svg> -->
+                                  <!-- small !-->
+                                  <svg class="chart" width="220" height="10" aria-labelledby="% Complete" role="img">
+                                    <g class="bar">
+                                      <rect width={item.percentCompleteWidth} height="10" fill={item.percentCompleteFill}
+                                        style="fill-opacity:.7;">
+                                      </rect>
+                                      <text x={item.percentCompleteTextX} y="4.5" dy=".35em"
+                                        style="font-size:.75rem;font-style: italic;">
+                                        {item.percentComplete}% Complete
+                                      </text>
+                                    </g>
+                                  </svg>
+                                </div>
+
+                                <!-- drop down content -->
+                                <div class="slds-dropdown slds-text-align_center slds-nubbin_top slds-theme_shade item-popover"
+                                  if:true={item.recordId}>
+                                  <span if:true={item.objectApiName}>
+                                    <div class="slds-m-top_xx-small slds-p-left_small slds-p-right_small slds-p-bottom_xx-small "
+                                    if:true={item.showPopover}>
+                                      <div class="slds-media">
+                                        <div class="slds-media__figure">
+                                          <lightning-icon if:true={item.icon} icon-name={item.icon} size="small"></lightning-icon>
+                                        </div>
+                                        <div class="slds-media__body slds-theme_default slds-p-around_medium">
+                                          <lightning-record-form
+                                              record-id={item.recordId}
+                                              object-api-name={item.objectApiName}
+                                              layout-type="Compact"
+                                              columns="1"
+                                              mode="readonly">
+                                          </lightning-record-form>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </span>
+                                </div>
+                                <!-- end drop down content -->
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </span>
+                    </div>
+                  </div>
+              </div>
+
+              <!-- render the children items!-->
+              <template if:true={item.items}>
+                <span class={item.key}>
+                  <ul role="group" class="">
+                    <li key={item.key} class="">
+                      <div class="child-item-container">
+                        <c-lwc_psa_tree-item current-record-id={currentRecordId} level={nextLevel} items={item.items}></c-lwc_psa_tree-item>
+                      </div>
+                    </li>
+                  </ul>
+                </span>
+              </template>
+
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+  </div>
+</template>

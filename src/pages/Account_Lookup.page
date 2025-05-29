@@ -1,0 +1,96 @@
+<apex:page showHeader="false" sidebar="false" controller="AccountLookup" id="pgLookup" cache="true" lightningStylesheets="true">
+    <apex:slds /> 
+    <script language="JavaScript" type="text/JavaScript"> 
+        //handle enter key press event
+        function EnterKeyPress(e)
+            {
+                var keycode;  
+                if (window.event)  
+                    {  
+                       keycode = window.event.keyCode;  
+                    }  
+                else if (e)  
+                    {  
+                       keycode = e.which;
+                    }
+                if(keycode == 13)
+                    {
+                        
+                        filterAccount();
+                        return false;
+                    }
+                else
+                    return true;
+            } 
+            
+        //call action function to fetch filtered data        
+        window.returnValue = null;
+        var returnedArray = new Array();
+        function filterAccount() 
+            {
+                jsFilterAccount();
+                return false;
+            }
+        var calledParent = false;
+        //return value to the calling window
+        function callParent(accountId,accountName) 
+            {
+                //Commented By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+                /*window.returnValue = null;
+                
+                returnedArray[0] = accountId;
+                returnedArray[1] = accountName;
+                window.returnValue = returnedArray;
+                window.close();
+                return false;*/
+                //Added By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+                calledParent = true;
+                window.opener.SetAccount(accountId,accountName);
+                window.close();
+                return false;
+                //Ended By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+            }
+
+        window.onunload = function() {
+            if(!calledParent)
+                window.opener.SetAccountNull();
+        }
+    </script>
+    <apex:form id="frmLookup" onkeypress="return EnterKeyPress(event);"  >
+        <apex:pageMessages id="pgMsg"></apex:pageMessages>
+        <apex:actionFunction immediate="false"  action="{!getListBySearchText}" name="jsFilterAccount" oncomplete="" rerender="pgMsg,pbLookup">
+        </apex:actionFunction>
+        <apex:pageBlock id="pbLookup" mode="edit">
+            <apex:sectionHeader id="shLookup" title="Account Lookup"/>
+            <apex:outputPanel >
+                <apex:outputLabel style="font-weight:bold;" value="Search"></apex:outputLabel>&nbsp;<br/>
+                <apex:inputText id="txtSearch" value="{!SearchText}" />&nbsp;<br/>
+                <!-- updated by: Sunil kumar Sharma Date: 13-4-2012 -->
+                <apex:outputLabel style="font-weight:bold;" value="Country"></apex:outputLabel>&nbsp;<br/>
+                <apex:selectList value="{!country}" size="1">
+                <apex:selectOptions value="{!SelectCountry}"></apex:selectOptions> 
+                </apex:selectList>
+                <apex:commandButton id="btnGo" value="Go" onclick="return filterAccount();" action="{!getListBySearchText}"/>
+                <br />
+                <apex:outputLabel value="You can use '*' as a wildcard next to other characters to improve your search results. For example, 'ad*' returns all records with a word in one of the searched fields that begins with 'ad'." />
+                <br />
+                <br />
+            </apex:outputPanel>
+            
+            <apex:pageBlockSection columns="1">
+                <!-- updated by: Sunil kumar Sharma Date: 13-4-2012 -->
+                <apex:pageBlockTable rendered="{!If(listAccount.size >0,true,false)}" value="{!listAccount}" var="subItem">
+                    <apex:column headervalue="Account Name">
+                        <apex:commandLink value="{!subItem.Name}" onclick="javascript:callParent('{!subItem.Id}','{!JSENCODE(subItem.Name)}');return false;window.close();"/>
+                    </apex:column>
+                    <apex:column headerValue="Local Name" value="{!subItem.NameLocal}"/>
+                </apex:pageBlockTable>
+                <!-- updated by: Sunil kumar Sharma Date: 13-4-2012 -->
+                <apex:pageBlockSectionItem rendered="{!If(listAccount.size == 0,true,false)}" >
+                <apex:outputLabel style="color:red;" value="No results found"></apex:outputLabel>
+                </apex:pageBlockSectionItem> 
+            </apex:pageBlockSection> 
+               
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,334 @@
+<apex:page controller="CNT_TPA_AllTPA_Country_Workbook" id="pageId" title="All TPA Country Workbook"  tabStyle="TPA_Request__c" readOnly="true" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.jqGrid.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/grid.locale-en.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/ui.jqgrid.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.base.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.office.css')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.js')}"/>
+    
+    <!-- *** JQuery UI Library reference *** -->
+    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+    <!-- *** JQuery UI Library reference *** -->
+    
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" />
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    <!-- *** Multi Select Control CSS reference *** -->
+	<link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+	<!-- *** Multi Select Control CSS reference *** -->
+            
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    
+    <script type="text/javascript">
+
+        function parseHTML(value) {
+            var t = document.createElement('template');
+            t.innerHTML = value;
+            return t.innerHTML;
+        }
+      
+        function showGrid(jsonData) 
+        {
+            if( jsonData.length == 0 )
+            {
+                showPopup('There are no offering available for selected Country.',function (){});
+                hideLoading();
+                return;
+            }
+			$("#jqGrid").jqGrid( 
+                {
+                    data: jsonData,
+                    datatype: 'local',
+                    headertitles: true, 
+                    colModel: [
+                        {label : 'TP Processor', name: 'TPProcessorName', index: 'TPProcessorName',cellattr: 'title ="TP pr"'},
+                        { label: 'Country Code', name: 'offCountry', index: 'offCountry'},
+                        { label: 'Category of Offering', name: 'offCategory',index: 'offCategory'},
+                        { label: 'Offering Primary Level Display Name', name: 'priOffName',index: 'priOffName'},
+                        { label: 'Offering Secondary Level Display Name', name: 'SecOffName',index: 'SecOffName'},
+                        { label: 'Description Text of Offering (if applicable)', name: 'descriptionText',index: 'descriptionText'},
+                        { label: 'Offering IQVIA Legal Name', name: 'iqviaLegalName',index: 'iqviaLegalName'},
+                        { label: 'IQVIA Legal Entity Contracted Under', name: 'legalEntityUnder',index: 'legalEntityUnder'},
+                        { label: 'IQVIA Legal Entity Address', name: 'legalEntityAddress',index: 'legalEntityAddress'},
+                        { label: 'Authorized Signer', name: 'authorizeSigner',index: 'authorizeSigner'},
+                        { label: 'Commercial Manager', name: 'comManagerName',index: 'comManagerName'},
+                        { label: 'Commercial Manager Email Address', name: 'comManagerEmail',index: 'comManagerEmail'},
+                        { label: 'Secondary Commercial Owner Name', name: 'secondaryCommOwner',index: 'secondaryCommOwner'},
+                        { label: 'Secondary Commercial Owner Email', name: 'secondaryCommEmail',index: 'secondaryCommEmail'},
+                        { label: 'Does the provisioning of the offer required an Additional external lisence or data supplier confirmation?', name: 'isExtLicReq',index: 'isExtLicReq'},
+                        { label: 'AMA License Required?', name: 'isAMARequired',index: 'isAMARequired'},
+                        { label: 'Is there a fee associated with Third Party Access?', name: 'isfeeAssociated',index: 'isfeeAssociated'},
+                        { label: 'Required Manual Review?', name: 'isManualReviewRequired',index: 'isManualReviewRequired'},
+                        { label: 'Does this offering required additional data protection terms of the 3rd party?', name: 'isDataProtectionRequired',index: 'isDataProtectionRequired'},
+                        { label: 'Offering Additional Term', name: 'additionalTerm',index: 'additionalTerm'},
+                        { label: 'Does this offering require additional information to be captured and/or displayed on the TLLA?', name: 'isaddInfoOnTLLA',index: 'isaddInfoOnTLLA'},
+                        { label: 'if yes, provide the question, the answer format,valid values(if limited), and reason', name: 'Comments',index: '' }
+                    ],
+                    loadonce: false,
+                    viewrecords: true,
+                    autowidth: true,
+                    height: 420,
+                    rowNum: 20,
+                    gridView: true,
+                    rowList : [20,30,50],
+                    sortname: 'offCountry',
+                    pager: "#jqGridPager",
+                    footerrow: true,
+                    userDataOnFooter: true,
+                    grouping: true,
+                    loadComplete: function() {
+                        var ids = $("#jqGrid").jqGrid('getDataIDs');
+                        for (var i=0;i<ids.length;i++) {
+                            var id = ids[i];
+                            
+                            var newValue = parseHTML($("#jqGrid").jqGrid('getCell',id,'additionalTerm'));
+                            $("#jqGrid").jqGrid('setCell', id, 'additionalTerm', newValue);
+                            $("#jqGrid").jqGrid('getLocalRow', id).additionalTerm = newValue;
+                            
+                            newValue = parseHTML($("#jqGrid").jqGrid('getCell',id,'descriptionText'));
+                            $("#jqGrid").jqGrid('setCell', id, 'descriptionText', newValue);
+                            $("#jqGrid").jqGrid('getLocalRow', id).descriptionText = newValue; 
+                        }
+                    }
+
+                });
+            $("#jqGrid").jqGrid(
+                "navGrid","#jqGridPager",{edit:false,add:false,del:false},{},{},{},{sopt:['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc']}
+            ).navButtonAdd('#jqGridPager', { caption: "Export All", buttonicon: "ui-icon-disk",
+                                            onClickButton: function () {
+                                            	exportGrid();
+                                            },
+                                            position: "last"
+                                           });
+			hideLoading();            
+        } 
+    	    
+    function reloadGrid(data){
+        if( data.length == 0 )
+        {
+        	showPopup('There are no offering available for selected Country.',function (){});
+            hideLoading();
+            return;
+        }
+        var grid = $('#jqGrid');
+    	grid.jqGrid("clearGridData", true); 
+        grid.jqGrid('setGridParam',{data:data}).trigger("reloadGrid", [{current: true}] ); 
+        hideLoading();
+    }
+    
+    function sortResults(arrayObj, prop, asc) {
+        arrayObj = arrayObj.sort(function(a, b) {
+            if($.isNumeric(a[prop]) && $.isNumeric(b[prop])) {
+                a[prop] = parseInt(a[prop]);
+                b[prop] = parseInt(b[prop]);
+            }
+            if (asc) {
+                return (a[prop] > b[prop]) ? 1 : ((a[prop] < b[prop]) ? -1 : 0);
+            } else {
+                return (b[prop] > a[prop]) ? 1 : ((b[prop] < a[prop]) ? -1 : 0);
+            }
+        });
+    }
+    
+    function exportGrid(){
+        var selectedCountry = $('#RequestingCountry').select2('data');
+        var finalRequestingCountry = '';
+        var finalProcessors = '';
+        
+        if(selectedCountry != null && selectedCountry.length > 0){
+            $.each(selectedCountry,function(value,index) {
+                finalRequestingCountry+= ((index.text) + ';');
+            });
+        }
+        if($('#RequestedTPPro').select2('data') != null && $('#RequestedTPPro').select2('data').length > 0){
+            $.each($('#RequestedTPPro').select2('data'),function(value,index) {
+                finalProcessors+= ((index.text) + ';');
+            });
+        }
+        exportData(finalRequestingCountry,finalProcessors);
+    }
+    
+    function showPopup(msg, truePart){
+        popup(msg, {'animate':true}, function(r)
+        {
+            if(r)
+        		truePart();
+    	});
+    }
+    
+    
+    var remoteCallCounter = 0;
+    var resultList = [];
+    var showGridFirstTime = true;
+    function validate()
+    {
+        resultList = [];
+        document.getElementById("tableSection").style.display="none";
+        var selectedCountry = $('#RequestingCountry').select2('data');
+        var finalRequestingCountry = '';
+        var selectedProcessors = '';
+        
+        if(selectedCountry != null && selectedCountry.length > 0){
+            $.each(selectedCountry,function(value,index) {
+                finalRequestingCountry+= ((index.text) + ';');
+            });
+        }
+        if($('#RequestedTPPro').select2('data') != null && $('#RequestedTPPro').select2('data').length > 0){
+            $.each($('#RequestedTPPro').select2('data'),function(value,index) {
+                selectedProcessors+= ((index.text) + ';');
+            });
+        }
+        /*if(finalRequestingCountry == '' || finalRequestingCountry == null){
+            showPopup('Please select a Country', function(){});
+            return;
+        }*/
+        showLoading();
+        fetchRecords(null,finalRequestingCountry,selectedProcessors);
+    }
+    	function fetchRecords(lastRecordCreatedId,countries,processors){
+            Visualforce.remoting.Manager.invokeAction(
+            	'{!$RemoteAction.CNT_TPA_AllTPA_Country_Workbook.searchData}',
+                lastRecordCreatedId,
+                countries +':'+ processors,
+                function(result, event){
+                    if(event.type == 'exception')
+                	{
+                    	hideLoading();
+                        showPopup('<b>Report Timed Out</b> - Please try with specific country filter',function (){});
+                    	return false;                                    
+                	}
+                	else
+                	{	if(result != null)
+                    		resultList = resultList.concat(result);
+                    	if(result.length == 2000)
+                    	{
+                    		remoteCallCounter++;
+                            fetchRecords(result[result.length - 1].Id,countries,processors);
+                        	return false;
+                  		}else if(result == null || result == '' || result.length == 0){
+                            showPopup('There are no offering available for selected Country.',function (){});
+                            hideLoading();
+                            return false;
+                        }else{
+                            document.getElementById("tableSection").style.display="block";
+                            if(showGridFirstTime){
+                    			showGrid(resultList);
+                                showGridFirstTime = false;
+                            }
+                            else{
+                            	reloadGrid(resultList);
+                            }
+                    	}
+               		}
+                },
+                {escape: true}
+            );
+        }
+		$(document).ready(function() {
+			var tempCategory = "{!listCountries}";
+			var submittingCountries = tempCategory.toString().slice(1,-2).split("~,");
+			$('#RequestingCountry').select2({placeholder: "Select Country", width: '50%', closeOnSelect:false});
+			$.each(submittingCountries,function(k,v){
+				if(k != null )
+					$('#RequestingCountry').append($("<option></option>").attr("value",v.trim()).text(v.trim()));
+				
+			});
+            var tpProcessors = "{!listOfProcessorName}";
+            $('#RequestedTPPro').select2({placeholder: "Select TP Processors", width: '50%', closeOnSelect:false});
+			$.each(tpProcessors.toString().slice(1,-2).split("~,"),function(k,v){
+				if(k != null )
+					$('#RequestedTPPro').append($("<option></option>").attr("value",v.trim()).text(v.trim()));
+				
+			});
+        }); 
+    </script>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <apex:form id="formId" styleclass="slds-m-around_small">
+        <c:VFC_TPA_LoadingImage />
+ 
+            <apex:outputPanel id="tableSection" >
+                <apex:pageBlock title="All TPA Country Workbook"  id="tableBlock" >
+                    <apex:actionFunction action="{!redirectToExport}" name="exportData" reRender="r">
+                    	<apex:param name="filteredCountries" value=""/>
+                        <apex:param name="filteredProcessors" value=""/>
+                    </apex:actionFunction>
+                    <apex:pageBlockSection >
+                    	<apex:pageBlockSectionItem id="subCountry" >
+                            <apex:outputLabel value="Select Countries: " />
+                            <apex:outputPanel >
+                                 <div>
+                                    
+                                    <select id="RequestingCountry" multiple="multiple"></select>   
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem id="tpProcessors" >
+                            <apex:outputLabel value="Select TP-Processors: " />
+                            <apex:outputPanel >
+                                 <div>
+                                    <select id="RequestedTPPro" multiple="multiple"></select>   
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    <input style="margin-left:50%" onClick="validate();" type="button" id="runReport" value="Run Report" role="button" class="slds-align_absolute-center slds-button slds-button_outline-brand" aria-disabled="false"  />
+                    <div id="tableSection" style="display:none;">
+                    <apex:pageBlockSection columns="1" >
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel >
+                                <table id="jqGrid"></table>
+                                <div id="jqGridPager"></div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection> 
+                    </div>
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+    <style>
+        .ui-jqgrid tr.jqgrow td
+        {
+            white-space: normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        .ui-jqgrid tr.jqfoot td
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        .ui-jqgrid .ui-jqgrid-hbox {
+		    float: none;
+		    padding-right: 0 !;
+		}
+		body .list, body .list table, body .detailList, body .detailList table, body .listViewport table, body .listViewport table table, .slds-vf-scope .list, .slds-vf-scope .list table, .slds-vf-scope .detailList, .slds-vf-scope .detailList table, .slds-vf-scope .listViewport table, .slds-vf-scope .listViewport table table {
+		    min-width: auto;
+		}
+		body .list thead tr, body .detailList thead tr, body .listViewport table thead tr, .slds-vf-scope .list thead tr, .slds-vf-scope .detailList thead tr, .slds-vf-scope .listViewport table thead tr {
+		    letter-spacing: 0;
+		}
+		.fm-button {
+    		height: auto;
+    		display: initial;
+    		margin: auto;
+    	}
+    	.ui-pg-selbox{
+    		color: black !important;
+    	}
+    	.ui-jqdialog .ui-jqdialog-titlebar {
+		    padding: inherit;
+		    height: auto;
+		}
+    </style>
+</apex:page>

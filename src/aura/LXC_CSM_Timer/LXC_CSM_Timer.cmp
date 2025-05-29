@@ -1,0 +1,187 @@
+<aura:component controller="CNT_CSM_Timer" implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,force:lightningQuickAction,force:hasSObjectName" access="global" >
+    <!-- <ltng:require styles="/resource/bootstrapcssmin" afterScriptsLoaded="{!c.doScriptLoad}"/> -->
+    <aura:attribute name="tabId" type="String" default="one"/>
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="preRecordId" type="String" />
+    <aura:attribute name="isFirst" type="boolean" />
+    <aura:attribute name="changeName" type="String" />
+    <aura:attribute name="path" type="String" />
+    <aura:attribute name="start" type="String"/>
+    <aura:attribute name="stop" type="String"/>
+    <aura:attribute name="sObj" type="String"/>
+    <aura:attribute name="field" type="String"/>
+    <aura:attribute name="stopwatch" type="Object"/>
+    <aura:attribute name="timeSheet" type="TimeSheet__c"/>
+    <aura:attribute name="startAt" type="Integer"/>
+    <aura:attribute name="lapTime" type="Integer"/>
+    <aura:attribute name="timeinHours" type="Double"/>
+    <aura:attribute name="caseVolume" type="Integer"/>
+    <aura:attribute name="comment" type="String"/>
+    <aura:attribute name="sltTimeType" type="String"/>
+    <aura:attribute name="TimeTypeList" type="Object[]" />
+    <aura:attribute name="AssignmentAndProject" type="Object[]" />
+	<aura:attribute name="ProjectList" type="Object[]" />
+	<aura:attribute name="AssignmentList" type="Object[]" />
+	<aura:attribute name="MilestonetList" type="Object[]" />     
+    <aura:attribute name="sltAssignment" type="String"/>
+    <aura:attribute name="sltProject" type="String"/>
+    <aura:attribute name="sltMilestone" type="String"/>
+	<aura:attribute name="showPSAFields" type="boolean"/>
+    
+       
+    <aura:attribute name="sltTimeTypeManual" type="String"/>
+    <aura:attribute name="TimeTypeListManual" type="Object[]" />
+	<aura:attribute name="ProjectListManual" type="Object[]" />
+	<aura:attribute name="AssignmentListManual" type="Object[]" />
+	<aura:attribute name="MilestonetListManual" type="Object[]" /> 
+    <aura:attribute name="sltAssignmentManual" type="String"/>
+    <aura:attribute name="sltProjectManual" type="String"/>
+    <aura:attribute name="sltMilestoneManual" type="String"/>
+    
+    <aura:attribute name="ProjectRecord" type="Object"/>    
+    <aura:attribute name="updateValidation" type="Boolean" />
+    <aura:attribute name="isTimeType" type="Boolean" default="false"/>
+    <aura:attribute name="caseRecord" type="Object" />
+    <aura:attribute name="recordLoadError" type="String"/>
+    <aura:attribute name="spinner" type="boolean" default="false" description="It is used to store spinner value.if the value is true spinner will show and false spinner will hide"/>
+    <!-- Handle component initialization in a client-side controller -->
+    <!--  <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>  -->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <!--<aura:handler event="force:refreshView" action="{!c.doRefrishInit}"/>-->
+    <aura:handler event="force:showToast" action="{!c.doRefrishInit}" />
+    <aura:handler event="lightning:tabClosed" action="{! c.doCloseCase }"/>
+    <aura:handler event="aura:locationChange" action="{!c.onLocationChange}"/>
+    <aura:unescapedHtml value="{!v.cssStyle}"/>
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <force:recordData aura:id="recordLoader" recordId="{!v.recordId}" fields="Status,IsClosed,RecordTypeName__c" targetFields="{!v.caseRecord}" recordUpdated="{!c.recordUpdated}" targetError="{!v.recordLoadError}"/>
+    <article class="slds-card">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon size="small" iconName="standard:timesheet" />
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Time Sheet">
+                            <span class="slds-text-heading_small">Time Sheet</span>
+                        </a>
+                    </h2>
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <lightning:tabset selectedTabId="{!v.tabId}">
+                <aura:if isTrue="{!not(v.caseRecord.RecordTypeName__c == 'DATACreateService')}">
+                <lightning:tab label="Auto Timer" id="one">
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-col slds-size_4-of-12"/>
+                        <div class="slds-col slds-size_8-of-12">
+                            <div class="slds-col slds-size_12-of-12">
+                                <div aura:id="time" idcase="{!v.recordId}" class="slds-size_12-of-12" style="font-weight: bold;">
+                                    Time: 00:00:00
+                                </div>
+                            </div> 
+                            <!-- <div class="slds-col slds-size_12-of-12">
+                        <lightning:button aura:id="start" label="Start" title="Start" onclick="{! c.onClick }" />
+                        <lightning:button aura:id="stop"  label="Stop" title="Stop" onclick="{! c.onClick }" />
+                    </div> -->
+                        </div>
+                        <div class="slds-col slds-size_12-of-12">
+                            <lightning:select aura:id="selectTimeType" name="selectTimeType" label="Time Type" required="false" value="{!v.sltTimeType}">
+                                <option value="">Please Specify</option>
+                                <aura:iteration items="{!v.TimeTypeList}" var="timeType">
+                                    <option value="{!timeType.value}" text="{!timeType.label}" selected="{!timeType.checked}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                        <aura:if isTrue="{!v.showPSAFields}">
+                        <div class="slds-col slds-size_12-of-12">
+                            <lightning:select aura:id="selectProject" name="selectProject" label="PSA Project" required="false" value="{!v.sltProject}" onchange="{!c.onChange}">
+                                <option value="">Please Specify</option>
+                                <aura:iteration items="{!v.ProjectList}" var="project">
+                                    <option value="{!project.Id}" text="{!project.Name}" selected="{!project.Checked}" ></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                        <div class="slds-col slds-size_12-of-12">
+                            <lightning:select aura:id="selectAssignment" name="selectAssignment" label="PSA Assignment" value="{!v.sltAssignment}">
+                                <option value="">Please Specify</option>
+                                <aura:iteration items="{!v.AssignmentList}" var="assignment">
+                                    <option value="{!assignment.Id}" text="{!assignment.Name}" selected="{!assignment.Checked}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                         <div class="slds-col slds-size_12-of-12">
+                            <lightning:select aura:id="selectMilestone" name="selectMilestone" label="PSA Milestone"  value="{!v.sltMilestone}">
+                                <option value="">Please Specify</option>
+                                <aura:iteration items="{!v.MilestonetList}" var="milestone">
+                                    <option value="{!milestone.Id}" text="{!milestone.Name}" selected="{!milestone.Checked}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                        </aura:if>
+                        <div class="slds-col slds-size_12-of-12"/><br></br>
+                        <div class="slds-col slds-size_10-of-12"/>
+                        <div class="slds-col slds-size_2-of-12">
+                            <aura:if isTrue="{!not(v.caseRecord.IsClosed)}">
+                                <lightning:button aura:id="update"  label="Update" title="Update" onclick="{! c.onUpdateTimeType }" />
+                            </aura:if>
+                        </div>
+                    </div>
+                </lightning:tab>
+                </aura:if>
+                <lightning:tab label="Manual" id="two">
+                    <div class="slds-col slds-size_12-of-12">
+                        <aura:if isTrue="{!not(v.caseRecord.RecordTypeName__c == 'DATACreateService')}">
+                            <lightning:input type="number" name="TimeinHours" value="{!v.timeinHours}" required="true" label="Time (in Hours)" step="0.01"/>
+                        </aura:if>
+                        <aura:if isTrue="{!(v.caseRecord.RecordTypeName__c == 'DATACreateService')}">
+                            <lightning:input type="number" name="TimeinHours" value="{!v.timeinHours}" required="true" label="Time (in Minutes)"/>
+                        </aura:if>
+                    </div>
+                    <lightning:select aura:id="selectTimeType" name="selectTimeType" label="Time Type" required="{!v.isTimeType}" value="{!v.sltTimeTypeManual}"  onchange="{!c.handleTimeType}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.TimeTypeListManual}" var="timeType">
+                            <option value="{!timeType.value}" text="{!timeType.label}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                    
+                    <aura:if isTrue="{!v.sltTimeTypeManual == 'Case Completion Effort'}">
+                    <lightning:input type="number" name="CaseVolume" value="{!v.caseVolume}" required="true" label="Case Volume"/>
+                    </aura:if>
+                    
+                    <lightning:textarea name="comment"  value="{!v.comment}" label="Comment" />
+                        <aura:if isTrue="{!v.showPSAFields}">
+                    <lightning:select aura:id="selectProject1" name="selectProjectManual" label="PSA Project" required="false" value="{!v.sltProjectManual}" onchange="{!c.onChangeManual}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.ProjectListManual}" var="project">
+                            <option value="{!project.Id}" text="{!project.Name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                    <lightning:select aura:id="selectAssignment1" name="selectAssignmentManual" label="PSA Assignment" value="{!v.sltAssignmentManual}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.AssignmentListManual}" var="assignment">
+                            <option value="{!assignment.Id}" text="{!assignment.Name}" selected="{!assignment.Checked}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                    <lightning:select aura:id="selectMilestone1" name="selectMilestoneManual" label="PSA Milestone"  value="{!v.sltMilestoneManual}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.MilestonetListManual}" var="milestone">
+                            <option value="{!milestone.Id}" text="{!milestone.Name}" selected="{!milestone.Checked}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                    </aura:if>
+                    <div class="slds-col slds-size_2-of-12">
+                    <aura:if isTrue="{!not(v.caseRecord.IsClosed)}">
+                        <lightning:button aura:id="save" label="Save" title="Save" onclick="{! c.save }" />
+                    </aura:if>
+                    </div>
+                </lightning:tab>
+            </lightning:tabset>
+        </div>
+        <aura:if isTrue="{!v.spinner}">
+            <lightning:spinner variant="brand" aura:id="loadingSpinner" />
+        </aura:if>
+    </article>
+</aura:component>

@@ -1,0 +1,238 @@
+<apex:page controller="CNT_TPA_VendorOfferingReturnAck" renderAs="pdf" title="Renewal Notification" cache="false"  standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false" sidebar="false" showHeader="false" >
+    <html >
+        <head>
+            <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+            <style>
+                *{
+                margin: 0;
+                padding: 0;
+                }
+                
+                div.header
+                {
+                padding: 10px;
+                position: running(header);
+                }
+                
+                div.footer
+                {
+                padding: 0px;
+                display:block;
+                position: running(footer);
+                }
+                
+                .pagenumber:before {
+                content: counter(page);
+                }
+                
+                .pagecount:before {
+                content: counter(pages);
+                }
+                
+                .page-break
+                {
+                display:block;
+                page-break-after:always;
+                }
+                
+                body
+                {
+                font-family: Arial Unicode MS;font-size:80%; 
+                }
+                
+                .headings
+                {
+                font-weight:bolder;
+                font-size:13px;
+                }
+                
+                .content
+                {
+                font-size:11px;
+                }
+                .pbSubheader
+                {
+                padding:10px;
+                background-color: rgb(249, 249, 250);
+                font-size: 1rem !important;
+                margin-top: 10px;
+                }
+                
+                body .bPageBlock .pbBody .blueHeader{
+                padding:5px;
+                }
+                
+                .contentStyle .labelCol{ 
+                font-size: 14px !important;
+                color: #4a4a56 !important;
+                padding: 12px;
+                }
+                
+                .labelCol{ 
+                font-size: 12px !important;
+                padding: 12px  !important;
+                }
+                
+                .dataCol
+                {
+                font-size: 12px !important;
+                color: #4a4a56 !important;
+                }
+                
+                .list {
+                width:300px;border: 1px solid #e0e3e5;
+                margin-top: 10px!important ;
+                border-spacing: 0px;!important}
+                
+                td.bcollapse, th.bcollapse{
+                padding-left:10px;
+                padding-top:10px;
+                padding-bottom:10px;
+                border-left: 1px solid rgb(217, 219, 221);
+                border-right: 1px solid rgb(217, 219, 221);
+                border-bottom: 1px solid rgb(217, 219, 221);
+                }
+                
+                tr.headerRow th{background: none repeat scroll 0 0 #f2f3f3;color:#333;}
+                tr.dataRow td:hover{background-color:#e3f3ff;}
+                tr.dataRow td a{color:#333; border-top: 1px solid rgb(217, 219, 221);}
+                
+                table td { word-wrap:break-word}
+                
+                .dataCell {
+                border-top: 1px solid rgb(217, 219, 221);
+                padding: .5rem;
+                }
+            </style>
+        </head>
+        
+        <body>
+            <div id="header" style="text-align: right;">
+                <apex:image width="" style="width: 172px;height:49px;" value="{!$Resource.IMS_Logo}" alt="{!$Label.TPA_IQVIA_Keyword} logo"/>
+            </div>
+            <apex:pageBlock >
+                <apex:pageBlockSection columns="2" title="{!$Label.TPA_Third_Party_Limited_License_Agreement_Information}" collapsible="false" >  
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_IQVIA_Request_Number}" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_AMA_Contract_Type_Provided}" />    
+                        <apex:outputPanel >
+                            <span>{!amaAgreementDetail.Contract_Type__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_Agreement_Start_Date}" />   
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!amaAgreementDetail.Agreement_Start_Date__c}" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_Agreement_Final_End_Date}" /> 
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!amaAgreementDetail.Agreement_End_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_Data_Access_Start_Date}" />    
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!tpaRequestToEdit.Data_Access_Start_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Data_Access_End_Date}" /> 
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!tpaRequestToEdit.Data_Access_End_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+				<div >
+                    <p style="margin-top: 2%;margin-bottom: 2%; padding: inherit;font-size:0.9em;">
+                        <apex:outputText escape="false" value="{!note}">
+                        </apex:outputText>
+                    </p>
+                </div>
+                
+                <apex:pageBlockSection title="On Behalf of Client" collapsible="false" > 
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Client Company Name" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Client_Address__r.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+                <apex:pageBlockSection columns="2" title="Third Party Vendor Return or Destroy Confirmation" collapsible="false" >  
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Third Party Vendor Name" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Service_Provider_Address__r.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_First_Name}" />    
+                        <apex:outputPanel >
+                            <span>{!VORAObj.Vendor_Destruction_Confirmation_FName__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Last_Name}" />    
+                        <apex:outputPanel >
+                            <span>{!VORAObj.Vendor_Destruction_Confirmation_LName__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Title}" />    
+                        <apex:outputPanel >
+                            <span>{!VORAObj.Vendor_Destruction_Confirmation_Title__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Email}" />    
+                        <apex:outputPanel >
+                            <span>{!VORAObj.Vendor_Destruction_Confirmation_Email__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+                <div style = "font-size:4.8125rem;">
+                    <ul style="list-style-type:none">
+                        <li style = "margin-top:10px;margin-left:10px; ">
+                            <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!$Label.TPA_In_my_above_role_with_Vendor_I_am_able_and_authorized_to_make_this_certif}</p>
+                        </li>
+                        <li style = "margin-top:10px;margin-left:10px;">
+                            <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!$Label.TPA_After_reasonable_investigation_the_foregoing_is_true_and_correct_to_the_b}</p>
+                        </li>
+                    </ul>
+                </div>
+                
+                <apex:pageBlockSection columns="1"  collapsible="false" > 
+                    <br/>
+                    <br/>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Reason" />    
+                        <apex:outputPanel >
+                            <span>Project Ended</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Action Taken" />    
+                        <apex:outputPanel >
+                            <span>{!VORAObj.ActionTaken__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Dated:" /> 
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!VORAObj.Vendor_Destruction_Confirmation_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+       </body>
+    </html>
+</apex:page>

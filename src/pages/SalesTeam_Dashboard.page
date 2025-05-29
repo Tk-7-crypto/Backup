@@ -1,0 +1,682 @@
+<apex:page id="STDashboard" standardController="Sales_Revenue__c"
+    extensions="SalesTeam_DashboardController" readOnly="true" cache="false">
+
+    <!-- <c:JQueryBlockUI />  -->  
+    
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/jquery.min.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.JQueryUI, 'jqueryUI/js/jquery-ui-1.8.6.custom.min.js')}"/> 
+    <apex:stylesheet value="{!URLFOR($Resource.JQueryUI, 'jqueryUI/css/ui-lightness/jquery-ui-1.8.6.custom.css')}"/>
+    
+    <apex:outputPanel rendered="{!Or((filterOptions.userDesignation == OpsUser),(filterOptions.userDesignation == Gkam),(filterOptions.userDesignation == Ekam))}">
+        <apex:includeScript value="{!URLFOR($Resource.DynaTree, 'jquery/jquery-ui.custom.min.js' )}" />   
+        <apex:includeScript value="{!URLFOR($Resource.DynaTree, 'jquery/jquery.cookie.js' )}" />  
+        <apex:includeScript value="{!URLFOR($Resource.DynaTree, 'src/jquery.dynatree.min.js' )}" />    
+        <apex:stylesheet value="{!URLFOR($Resource.DynaTree, 'src/skin/ui.dynatree.css')}" />
+    </apex:outputPanel>
+    
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/excanvas.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/jquery.jqplot.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/plugins/jqplot.barRenderer.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/plugins/jqplot.highlighter.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/plugins/jqplot.categoryAxisRenderer.min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/jquery.jqplot.min.css')}" />      
+
+    
+    
+    <script>   
+    
+        //Update by: Sneha Date: 17 August, 2012 - Creating custom Screen Blocker
+        function YUIShowLoading()
+        {
+            document.getElementById('loading').className = 'loading-visible';
+        }
+        
+        function YUIHideLoading()
+        {
+            document.getElementById('loading').className = 'loading-invisible';
+        }
+    
+        // Script used to hide Flash Component whenever Jquery Widget blocks the UI 
+        /*function hideFlash() 
+        {
+           if(document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboard}') != null)
+            {
+              document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboard}').style.visibility='hidden';
+            }  
+            if(document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboardFC}') != null)
+            {
+              document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboardFC}').style.visibility='hidden';
+            }        
+        }
+         
+        // Script used to show Flash Component whenever Jquery Widget blocks the UI 
+        function showFlash()
+        {
+            if(document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboard}') != null)
+            {
+              document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboard}').style.visibility='visible';
+            }
+            if(document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboardFC}') != null)
+            {
+              document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.dataDashboard.Dash.flashDashboardFC}').style.visibility='visible';
+            }
+        }
+        */
+        
+       
+        //script used to collapse Page Block Section
+         function PageBlockSectionCollapse(el) {
+                if (typeof twistSection === 'function') {
+                    var theTwist = document.getElementById(el);
+                    if (theTwist) {
+                        twistSection(theTwist.childNodes[0].childNodes[0]);
+                    }
+                }
+            }
+        
+        //function to clear all the filters list 
+        function clearAllFilters()
+        {
+            var elemTimePeriod = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiTimePeriod.TimePeriodPBS}');
+            if(elemTimePeriod ) elemTimePeriod.selectedIndex = 0;
+            var elemOffGrp = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiOffGrp.OffGrpPBS}');
+            if(elemOffGrp ) elemOffGrp.selectedIndex = -1;
+            var elemOffSeg = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsOffSeg.OffSegPBS}');
+            if(elemOffSeg ) elemOffSeg.selectedIndex = -1;
+            var elemOffType = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiOffType.OffTypePBS}');
+            if(elemOffType ) elemOffType.selectedIndex = -1;
+            var elemCOENm = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiCoeNm.COEnmPBS}');
+            if(elemCOENm ) elemCOENm.selectedIndex = -1;
+            var elemAccount = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiAcc.AccPBS}');
+            if(elemAccount ) elemAccount.selectedIndex = -1;
+            var elemAccount1 = document.getElementById('{!$Component.STDashboard:SalesDashboardForm:Dashboard:customComp:Impersonateblk:filterBlock:pbsServiceLine:ServiceLinePBS}');
+            if(elemAccount1 ) elemAccount1.selectedIndex = -1;
+            var elemAccount2 = document.getElementById('{!$Component.STDashboard:SalesDashboardForm:Dashboard:customComp:Impersonateblk:filterBlock:pbsServiceLineGrp:ServiceLineGrpPBS}');
+            if(elemAccount2 ) elemAccount2.selectedIndex = -1;  
+            //Update by: Sneha Date: 17 August, 2012 -- Global Product removed for now
+            var elemAccount3 = document.getElementById('{!$Component.STDashboard:SalesDashboardForm:Dashboard:customComp:Impersonateblk:filterBlock:pbsGlobalProduct:GlobalProductPBS}');
+            if(elemAccount3 ) elemAccount3.selectedIndex = -1;   
+        }
+             
+    </script>
+    
+    <head>
+    <style>
+        #tree { width: 250px; height: 75px;  padding: 0.5em; background-color:white; border-style:dotted;}
+        ul.dynatree-container {border-style:none;}
+        div.ui-resizable-se
+        {
+            right: 0px;
+            bottom: 0px;
+        }
+        
+        div.ui-wrapper
+        {
+            padding-right: 1px !important; 
+            padding-bottom: 1px !important;
+        }
+        
+        table.jqplot-table-legend 
+        {
+            margin-left: 35px !important;
+            margin-bottom: 25px !important;
+            font-size: 12px !important;
+            border: 2px solid !important;
+            font-weight: normal !important;
+            width: 254px !important;
+            right: -24px !important;
+            top: 0px !important;
+            //display: block;
+            overflow-y: auto;
+        }
+        
+        div.jqplot-highlighter-tooltip {
+            font-size: 16px;
+            color: black;
+        }
+        
+        div.jqplot-yaxis-tick {
+            color: black;
+            font-weight: normal;
+        }
+        
+        div.jqplot-xaxis-tick {
+            color: black;
+            font-weight: normal;
+        }
+        
+        td.jqplot-table-legend-label {
+            text-align:left;
+        }
+        
+        div.loading-invisible
+        {
+            display:none;
+        }
+        
+        div.loading-visible
+        {
+           z-index: 1000; 
+           border: medium none; 
+           margin: 0px; 
+           padding: 0px; 
+           width: 100%; 
+           height: 100%; 
+           top: 0px; 
+           left: 0px; 
+           background-color: rgb(0, 0, 0); 
+           opacity: 0.6; 
+           filter: alpha(opacity = 60); /* for IE */
+           cursor: wait; 
+           position: fixed; 
+           display: block;
+        }
+    </style>
+    
+    </head>
+
+ <apex:form id="SalesDashboardForm"> 
+     <div style="text-align: right;">
+         <apex:outputPanel rendered="{!if(contains($Profile.Name,'System Administrator'),true,false)}">
+             <apex:outputLabel value="Run As User Id : "></apex:outputLabel>
+             <apex:inputText value="{!userId}"/>
+             <apex:commandButton title="Go" value="Go" action="{!updateRunAsUser}" />
+         </apex:outputPanel>
+     </div>
+ 
+ <div id="loading" class="loading-invisible">
+ <div style="z-index: 1001; position: fixed; padding: 15px; margin: 0px; width: 30%; top: 40%; left: 35%; text-align: center; color: rgb(255, 255, 255); border: medium none; background-color: rgb(0, 0, 0); cursor: wait; opacity: 0.5;">
+  <h1>&nbsp;Please Wait... &nbsp;</h1> </div>
+</div>
+
+
+ 
+ <apex:variable var="haveOpsAccess" value="{!Or((filterOptions.userDesignation == OpsUser),(filterOptions.userDesignation == Gkam),(filterOptions.userDesignation == Ekam))}" />
+      
+        <apex:inputHidden id="selectedKeys" value="{!selectedOpsProfitCenter}" /> 
+        <apex:actionFunction name="pcChanged" action="{!profitCentreChanged}" reRender="HierarchyList,proceedBtn,vpLabel,VPPanel,vpSpace,tmLabel,TeamPanel,tmSpace,empLabel,AEPanel" status="waitStatus"/> 
+        <apex:actionStatus id="waitStatus" onstart="YUIShowLoading(); " onstop="YUIHideLoading(); " />
+
+        <!-- Update by: Sneha Date: 21 Nov, 2012 - Links added to page -->
+        <!-- Section to display current user's name-->
+        <!-- <apex:OutputPanel id="STopsUser">
+            <apex:sectionHeader title="My Dashboard for Sales"
+                subtitle="{!UserName}"
+                rendered="{!Or(And(filterOptions.userDesignation != AeUser), And(multipleHierarchiesExists, filterOptions.userDesignation == AeUser))}" />
+        </apex:OutputPanel> -->
+        <!-- end of section -->
+
+        <apex:outputPanel id="STopsUser" rendered="{!Or(And(filterOptions.userDesignation != AeUser), And(multipleHierarchiesExists, filterOptions.userDesignation == AeUser))}" >
+        <table width="100%">
+        <tr>
+            <td width="60%">
+                <apex:OutputPanel >
+                    <apex:sectionHeader title="My Dashboard for Sales"
+                        subtitle="{!UserName}"/>
+                </apex:OutputPanel>
+            </td>
+        </tr>
+        </table>
+        </apex:outputPanel>
+        
+        
+
+
+        <!-- Section displays Profit center(only for Ops user) / team / Account Executives picklists for User if he/she is Ops User/ VP or Sales Team Leader  -->
+        <apex:actionRegion >
+           <apex:outputPanel id="selectionPanel">
+                <apex:pageBlock rendered="{!And(Not(And(Not(multipleHierarchiesExists),filterOptions.userDesignation == AeUser)), Not(And(Not(multipleHierarchiesExists),filterOptions.userDesignation == OpsUser)))}">
+                        <apex:pageBlockSection title="Please Select" columns="3">
+
+                            <apex:Outputlabel value="Select Profit Center:"
+                                rendered="{!haveOpsAccess}" />
+                            <apex:pageBlockSectionItem rendered="{!haveOpsAccess}" >
+                            
+                                <div id="tree" class="ui-widget-content"> </div> 
+                                 <script type="text/javascript">   
+                                        var $q1 = jQuery.noConflict();
+                                        jQuery(document).ready(function($q1) {  
+                                            // Attach the dynatree widget to an existing <div id="tree"> element  
+                                            // and pass the tree options as an argument to the dynatree() function:  
+                                            if($q1("#tree").length > 0) {
+                                            
+                                            $q1(function() {
+                                                    $q1( "#tree" ).resizable({minHeight: 40, minWidth: 250});
+                                            });
+                                            
+                                            $q1("#tree").dynatree({  
+                                                onActivate: function(node) {  
+                                                    // A DynaTreeNode object is passed to the activation handler  
+                                                    // Note: we also get this event, if persistence is on, and the page is reloaded.  
+                                                },  
+                                                persist: false,  
+                                                checkbox: true,  
+                                                generateIds: false,
+                                                autoCollapse: false,
+                                               classNames: {  
+                                                    checkbox: "dynatree-radio",  
+                                                    expanded: "dynatree-expanded" 
+                                                },  
+                                                selectMode: 1,  
+                                                children: {!pcJsonString}, 
+                                                onSelect: function(select, node) {  
+                                                   if(select == true)
+                                                        jQuery(document.getElementById('STDashboard:SalesDashboardForm:selectedKeys')).val(node.data.key); 
+                                                    else
+                                                        jQuery(document.getElementById('STDashboard:SalesDashboardForm:selectedKeys')).val('None');
+                                                    pcChanged();
+                                                }
+                                            });  }
+                                        });     
+                            </script>   
+                                
+                            </apex:pageBlockSectionItem>
+                            <apex:outputPanel rendered="{!haveOpsAccess}">
+                                <apex:outputText > &nbsp; </apex:outputText>
+                            </apex:outputPanel>
+
+
+                            <apex:outputLabel value="Select Hierarchy"
+                                rendered="{!multipleHierarchiesExists}" />
+                            <apex:outputPanel rendered="{!multipleHierarchiesExists}">
+                                <apex:selectList value="{!querySalesTeamStr}" id="HierarchyList"
+                                    size="1" disabled="{!And((filterOptions.userDesignation == OpsUser), selectedOpsProfitCenter == 'None')}">
+                                    <apex:selectOptions value="{!hierarchyList}" />
+                                    <apex:actionSupport event="onchange"
+                                        reRender="vpLabel,VPPanel,vpSpace, tmLabel,TeamPanel,tmSpace,empLabel,AEPanel"
+                                        onsubmit="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); "
+                                        action="{!salesHierarchyChanged}" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!multipleHierarchiesExists}">
+                                <apex:outputText > &nbsp; </apex:outputText>
+                            </apex:outputPanel>
+                            
+                            <!-- VP Selector BEGIN -->
+                            <apex:outputPanel id="vpLabel" > 
+                                <apex:Outputlabel value="{!vpLabel}" rendered="{!And(
+                                                                  OR(filterOptions.userDesignation = OpsUser, filterOptions.userDesignation = Gkam, filterOptions.userDesignation = Ekam),
+                                                                  Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist'))}"> &nbsp;
+                                &nbsp;
+                            </apex:Outputlabel> </apex:outputPanel>
+                            <apex:outputPanel id="VPPanel" > 
+                                <apex:selectList value="{!selectedVP}" size="1"  rendered="{!And(
+                                                                                            OR(filterOptions.userDesignation = OpsUser, filterOptions.userDesignation = Gkam, filterOptions.userDesignation = Ekam),
+                                                                                            Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' ))}">
+                                    <apex:selectOptions value="{!VPs}" />
+                                    <apex:actionSupport event="onchange" reRender="tmLabel,TeamPanel,tmSpace,empLabel,AEPanel"
+                                        onsubmit="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); "
+                                        action="{!vpChanged}" />
+                                </apex:selectList> 
+                                
+                                <apex:outputPanel rendered="{!Not(And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' )))}">
+                                &nbsp; </apex:outputPanel>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="vpSpace" > 
+                                 <apex:outputText rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' ))}"> &nbsp; </apex:outputText>
+                            </apex:outputPanel>
+
+                            <!-- VP Selector END -->
+                            <apex:outputPanel id="tmLabel" > 
+                                <apex:Outputlabel value="{!teamLabel}" rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist'))}"> &nbsp;
+                                &nbsp;
+                            </apex:Outputlabel> </apex:outputPanel>
+                            <apex:outputPanel id="TeamPanel" > 
+                                <apex:selectList value="{!selectedTeam}" size="1"  rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' ))}">
+                                    <apex:selectOptions value="{!Teams}" />
+                                    <apex:actionSupport event="onchange" reRender="AEPanel"
+                                        onsubmit="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); "
+                                        action="{!teamChanged}" />
+                                </apex:selectList> 
+                                
+                                <apex:outputPanel rendered="{!Not(And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' )))}">
+                                &nbsp; </apex:outputPanel>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="tmSpace" > 
+                                 <apex:outputText rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist' ))}"> &nbsp; </apex:outputText>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel id="empLabel" > &nbsp;
+                            <apex:Outputlabel value="{!EmpLabel}" rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist'))}">
+                            </apex:Outputlabel> </apex:outputPanel>
+                            <apex:outputPanel id="AEPanel" > 
+                                <apex:selectList value="{!selectedAccountExecutive}" size="1" rendered="{!And(filterOptions.userDesignation != AeUser,Or(querySalesTeamStr == 'Sales Team', querySalesTeamStr == 'Sales Specialist', querySalesTeamStr == 'I&A Specialist'))}">
+                                    <apex:selectOptions value="{!AccountExecutive}" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+
+ 
+                            <apex:commandButton id="proceedBtn" value="Proceed" rendered="{!And(filterOptions.userDesignation != AeUser)}" action="{!userFlow}" disabled="{!And(haveOpsAccess,  selectedOpsProfitCenter == 'None')}"
+                                reRender="NameHeader,AccessOrDataError,DataBlock,IdTargetOp"
+                                onClick="javascript:YUIShowLoading(); "
+                                onComplete="YUIHideLoading(); ">
+                            </apex:commandButton>
+                            
+                            <apex:commandButton id="proceedAEBtn" value="Proceed" rendered="{!And(filterOptions.userDesignation == AeUser)}" action="{!normalUserFlow}" 
+                                reRender="NameHeader,AccessOrDataError,DataBlock,IdTargetOp"
+                                onClick="javascript:YUIShowLoading(); "
+                                onComplete="YUIHideLoading(); ">
+                            </apex:commandButton>
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+
+                </apex:outputPanel>
+
+        </apex:actionRegion>
+        <!-- end of Picklists section -->
+        
+        <!-- Update by: Sneha Date: 21 Nov, 2012 -- Links added to page -->
+        <!-- Section displays name of the User/Team(s) whose dashboard is been viewed -->
+   <!--  <apex:OutputPanel id="NameHeader">
+            <apex:sectionHeader title="My Dashboard - {!IF(querySalesTeamStr == 'Sales Team', 'Account Executive' ,querySalesTeamStr)}"
+                subtitle="{!viewLevelName}"
+                rendered="{!And(showDashboard, Not(And(multipleHierarchiesExists, filterOptions.userDesignation == AeUser)))}" />
+        </apex:OutputPanel>    -->
+        <!-- end of name section -->
+        
+         <apex:outputPanel id="NameHeader"  >
+        <apex:outputPanel rendered="{!And(showDashboard, Not(And(multipleHierarchiesExists, filterOptions.userDesignation == AeUser)))}">
+        <table width="100%">
+        <tr>
+            <td width="60%">
+                <apex:OutputPanel >
+                    <apex:sectionHeader title="My Dashboard - {!IF(querySalesTeamStr == 'Sales Team', 'Account Executive' ,querySalesTeamStr)}"
+                subtitle="{!viewLevelName}" />
+                </apex:OutputPanel>
+                
+            </td>
+        </tr> 
+        </table>  
+        </apex:outputPanel>
+        </apex:outputPanel> 
+
+        <!-- Section displayed if any error message is added to page - if Ops user do not have access / VP do not have any Teams under him/her or AE do not have data against his/her user -->
+        <apex:outputPanel id="AccessOrDataError">
+            <apex:pageMessages id="STHNonMember1" escape="false" />
+        </apex:outputPanel>
+        <!-- end of error section -->
+
+        <!-- Div added to collapse filters block -->
+        <div style="display: none;"><apex:pageBlock >
+            <apex:pageBlockSection id="tempPgBlkSection"></apex:pageBlockSection>
+        </apex:pageBlock></div>
+
+        <!-- end of error section -->
+
+        <!-- This section adds the DashboardDisplay component to show dashboard for team(s) / executive, if no error is present   -->
+        <apex:outputPanel id="DataBlock">
+            <apex:outputPanel id="dashboardComponentPanel"
+                rendered="{!And(showDashboard, haveSalesData)}">
+                <c:DashboardDisplay id="Dashboard" FilterData="{!filterOptions}">
+
+                    <!-- Filters passed as component body -->
+                    <apex:pageBlockSection title="Filter Criteria" columns="2"
+                        collapsible="True" id="filterBlock">
+
+                        <apex:pageBlockSectionItem helpText="All Time Periods refer to Current Year"
+                            id="pbsiTimePeriod">
+                            <apex:outputLabel value="Time Period : " />
+                            <apex:selectList value="{!filterOptions.Quarter}" size="2"
+                                id="TimePeriodPBS" multiselect="true" style="width:70px; height:50px;">
+                                <apex:selectOptions value="{!QuarterList}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem id="pbsiOffGrp" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="Offering Group : " />
+                            <apex:selectList value="{!filterOptions.OfferingGroup}" size="3"
+                                multiselect="true" id="OffGrpPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!OfferingGroupList}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem id="pbsOffSeg" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="Offering Segment : " />
+                            <apex:selectList value="{!filterOptions.OfferingSegment}"
+                                size="3" multiselect="true" id="OffSegPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!OfferingSegmentList}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem id="pbsiOffType" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="Offering Type :" />
+                            <apex:selectList value="{!filterOptions.OfferingType}" size="3"
+                                multiselect="true" id="OffTypePBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!OfferingTypeList}" />
+                            </apex:selectList>
+                       </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem id="pbsiCoeNm" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="COE Name :" />
+                            <apex:selectList value="{!filterOptions.COEName}" size="3"
+                                multiselect="true" id="COEnmPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!CoeNameList}" />
+                            </apex:selectList>
+                           </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem id="pbsiAcc" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="Account : " />
+                            <apex:selectList value="{!filterOptions.ParentAccount}" size="3"
+                                multiselect="true" id="AccPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!ParentAccountList}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem id="pbsServiceLine" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <!-- <apex:outputLabel value="Unit : " />  -->
+                            <apex:outputLabel value="Product Group : " />
+                            <apex:selectList value="{!filterOptions.ServiceLine}" size="3"
+                                multiselect="true" id="ServiceLinePBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!ServiceLineList}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem> 
+                        
+                        <apex:pageBlockSectionItem id="pbsServiceLineGrp" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                            <apex:outputLabel value="Unit : " />
+                            <apex:selectList value="{!filterOptions.ServiceLineGroup}" size="3"
+                                multiselect="true" id="ServiceLineGrpPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!ServiceLineGroupList}" />
+                            </apex:selectList> 
+                        </apex:pageBlockSectionItem>
+                         
+                        <apex:pageBlockSectionItem id="pbsGlobalProduct" rendered="{!filterOptions.planVsCurrentSelectedOptn 
+                                                                               != filterOptions.ADJ_TARGET}">
+                         <apex:outputLabel value="Global Product: " />
+                         <apex:selectList value="{!filterOptions.GlobalProduct}" size="3"
+                                multiselect="true" id="GlobalProductPBS" style="width:175px; height:50px;">
+                                <apex:selectOptions value="{!GlobalProductLst}" />
+                            </apex:selectList>
+                        </apex:pageBlockSectionItem> 
+                        
+                        <apex:pageBlockSectionItem >&nbsp;</apex:pageBlockSectionItem> 
+                         <apex:pageBlockSectionItem >&nbsp;</apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem >
+                            <apex:commandButton value="Go!" action="{!go}"
+                                reRender="AccPBS,detailOp,dataDashboard,TimePeriodPBS,filterBlock"
+                                onClick="javascript:YUIShowLoading(); removeResize();"
+                                onComplete="addResize(); YUIHideLoading(); ">
+
+
+                                <apex:commandButton value="Clear All"
+                                    rerender="TimePeriodPBS,OffGrpPBS,OffSegPBS,OffTypePBS,COEnmPBS,AccPBS"
+                                    onClick="javascript:YUIShowLoading(); removeAllResize(); clearAllFilters();" 
+                                    onComplete="YUIHideLoading();addAllResize();   "
+                                    />
+
+                            </apex:commandButton>
+
+                        </apex:pageBlockSectionItem>
+                        
+                        <script>
+                        
+                        var $q3 = jQuery.noConflict();
+                        jQuery(document).ready(function($q3) {  
+                            $q3(function() {
+                                addAllResize();
+                            });
+                        });
+                        
+                        function addAllResize()
+                        {
+                            
+                            var lstElem = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiTimePeriod\\:TimePeriodPBS");
+                            if(lstElem)
+                                lstElem.resizable({minHeight: 50, minWidth: 70});
+                            lstElem1 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiOffGrp\\:OffGrpPBS");
+                            if(lstElem1)
+                                lstElem1.resizable({minHeight: 50, minWidth: 175});
+                            lstElem2 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsOffSeg\\:OffSegPBS");
+                            if(lstElem2)
+                                lstElem2.resizable({minHeight: 50, minWidth: 175});
+                            lstElem3 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiOffType\\:OffTypePBS");
+                            if(lstElem3)
+                                lstElem3.resizable({minHeight: 50, minWidth: 175});
+                            lstElem4 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiCoeNm\\:COEnmPBS");
+                            if(lstElem4)
+                                lstElem4.resizable({minHeight: 50, minWidth: 175});
+                            
+                            lstElem5 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiAcc\\:AccPBS");
+                            if(lstElem5) lstElem5.resizable({minHeight: 50, minWidth: 175});
+                            lstElem6 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsServiceLine\\:ServiceLinePBS");
+                            if(lstElem6) lstElem6.resizable({minHeight: 50, minWidth: 175});
+                            lstElem7 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsServiceLineGrp\\:ServiceLineGrpPBS");
+                            if(lstElem7) lstElem7.resizable({minHeight: 50, minWidth: 175});
+                            lstElem8 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsGlobalProduct\\:GlobalProductPBS");
+                            if(lstElem8) lstElem8.resizable({minHeight: 50, minWidth: 175});
+                            
+                        }
+                        
+                        //Issue - 00767
+                        var heightTimePeriod = 0;
+                        var heightAccount = 0;
+                        var widthTimePeriod = 0;
+                        var widthAccount = 0;
+                        
+                        function addResize()
+                        {
+                            lstElem1 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiTimePeriod.TimePeriodPBS}');
+                            //if(lstElem1) lstElem1.style.height = heightTimePeriod;
+                            lstElem2 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiTimePeriod.TimePeriodPBS}');
+                            //if(lstElem2) lstElem2.style.width = widthTimePeriod; 
+                            lstElem3 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiTimePeriod\\:TimePeriodPBS");
+                            if(lstElem3) lstElem3.resizable({minHeight: 50, minWidth: 70});
+                            
+                            lstElem4 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiAcc.AccPBS}');
+                            //if(lstElem4) lstElem4.style.height = heightAccount;
+                            lstElem5 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiAcc.AccPBS}');
+                            //if(lstElem5) lstElem5.style.width = widthAccount;
+                            lstElem6 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiAcc\\:AccPBS");
+                            if(lstElem6) lstElem6.resizable({minHeight: 50, minWidth: 175});
+                        }
+                        
+                        function removeResize()
+                        {
+                            lstElem1 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiTimePeriod.TimePeriodPBS}');
+                            if(lstElem1) heightTimePeriod = lstElem1.style.height;
+                            lstElem2 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiTimePeriod.TimePeriodPBS}');
+                            if(lstElem2) widthTimePeriod = lstElem2.style.width;
+                            lstElem3 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiTimePeriod\\:TimePeriodPBS")
+                            if(lstElem3) lstElem3.resizable( "destroy" );
+                            lstElem4 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiAcc.AccPBS}');
+                            if(lstElem4) heightAccount = lstElem4.style.height;
+                            lstElem5 = document.getElementById('{!$Component.STDashboard.SalesDashboardForm.Dashboard.customComp.Impersonateblk.filterBlock.pbsiAcc.AccPBS}');
+                            if(lstElem5) widthAccount = lstElem5.style.width;
+                            lstElem6 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiAcc\\:AccPBS");
+                            if(lstElem6) lstElem6.resizable( "destroy" );
+                        }
+                        
+                        function removeAllResize()
+                        {
+                            lstelem1 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiTimePeriod\\:TimePeriodPBS");
+                            if(lstelem1) lstelem1.resizable( "destroy" );
+                            lstelem2 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiOffGrp\\:OffGrpPBS");
+                            if(lstelem2) lstelem2.resizable( "destroy" );
+                            lstelem3 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsOffSeg\\:OffSegPBS");
+                            if(lstelem3) lstelem3.resizable( "destroy" );
+                            lstelem4 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiOffType\\:OffTypePBS");
+                            if(lstelem4) lstelem4.resizable( "destroy" );
+                            lstelem5 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiCoeNm\\:COEnmPBS");
+                            if(lstelem5) lstelem5.resizable( "destroy" );
+                            lstelem6 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsiAcc\\:AccPBS");
+                            if(lstelem6) lstelem6.resizable( "destroy" );
+                            lstelem7 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsServiceLine\\:ServiceLinePBS");
+                            if(lstelem7) lstelem7.resizable( "destroy" );
+                            lstelem8 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsServiceLineGrp\\:ServiceLineGrpPBS");
+                            if(lstelem8) lstelem8.resizable( "destroy" );
+                            lstelem9 = $q3("#STDashboard\\:SalesDashboardForm\\:Dashboard\\:customComp\\:Impersonateblk\\:filterBlock\\:pbsGlobalProduct\\:GlobalProductPBS");
+                            if(lstelem9) lstelem9.resizable( "destroy" );
+                        }
+            
+            </script>
+                        
+                        <script>PageBlockSectionCollapse('{!$Component.filterBlock}');</script>
+                    </apex:pageBlockSection>
+                    
+                </c:DashboardDisplay>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- end of dashboard section -->
+
+        <!--  Update by: Sneha Date: 08 Dec, 2011 - Target Section added if AE view and target data exists in its user and he/she have sales revenue data  -->
+        <apex:outputPanel id="IdTargetOp">
+            <apex:pageBlock id="IdTargetpb"
+                rendered="{!And(haveSalesData, targetDataExists)}">
+
+                <apex:pageBlockSection id="IdTarget" title="Local Targets"
+                    collapsible="true" columns="1">
+
+                    <apex:outputPanel id="IdTargetPanel">
+                        <apex:pageBlockTable id="TableTarget" value="{!targetData}"
+                            var="targt">
+
+                            <apex:column >
+                                <apex:outputText value="{!targt.colNm}" />
+                            </apex:column>
+                            <apex:column headerValue="Q1">
+                                <apex:outputField value="{!targt.quarterData.Gross_Q1_Value__c}" />
+                            </apex:column>
+                            <apex:column headerValue="Q2">
+                                <apex:outputField value="{!targt.quarterData.Gross_Q2_Value__c}" />
+                            </apex:column>
+                            <apex:column headerValue="Q3">
+                                <apex:outputField value="{!targt.quarterData.Gross_Q3_Value__c}" />
+                            </apex:column>
+                            <apex:column headerValue="Q4">
+                                <apex:outputField value="{!targt.quarterData.Gross_Q4_Value__c}" />
+                            </apex:column>
+                            <apex:column headerValue="FY">
+                                <apex:outputField value="{!targt.FYData.Gross_Q1_Value__c}" />
+                            </apex:column>
+
+
+                        </apex:pageBlockTable>
+                    </apex:outputPanel>
+
+
+                    <apex:outputLabel >*Note: Target figures are at Account Executive level only and do not reflect any filters applied to the dashboard data.</apex:outputLabel>
+                    <script>
+                    PageBlockSectionCollapse('{!$Component.IdTarget}');
+                </script>
+                </apex:pageBlockSection>
+
+            </apex:pageBlock>
+
+        </apex:outputPanel>
+        <!-- end of target Section -->
+
+        <!-- Disclaimer added as component  -->
+        
+
+    </apex:form>    
+</apex:page>

@@ -1,0 +1,218 @@
+<apex:page controller="SAP_Address_MDM_Extension" showHeader="{!ShowHeader}" sidebar="{!ShowSidebar}" tabStyle="Address__c" lightningStylesheets="true">
+ <c:JQueryBlockUI />
+    <style type="text/css">
+        .message {
+            justify-content: left !important;
+        }
+        #showMsg{
+        	display : none;
+        	color : red;
+        	font-weight: bold;
+        	text-align: center;
+        	font-size: 15px;
+        }
+    </style>
+	<script type="text/javascript">
+        function SubmitAddress() {
+            var paymentTerm;
+            var listpaymentTerm = document.getElementsByClassName("listPaymentTerm");
+            if(listpaymentTerm != null) {
+                paymentTerm = listpaymentTerm[0].value;
+            }
+            var arrPaymentTerm =["ZGR1", "ZB45", "ZB60", "ZB90", "Z120"];
+            if(arrPaymentTerm.indexOf(paymentTerm) > -1) {
+                alert('Payment Terms higher than 30 days require MSA to be provided to MDM');
+            }
+            YUIShowLoading();
+        }
+    
+        function SetPaymentTermDefault(val) {
+            var selectedSalesOrg = "[DE50] IQVIA Commercial GmbH & Co. OHG";
+            if(val != null && selectedSalesOrg.trim() === val.trim()){
+                document.getElementsByClassName("listPaymentTerm")[0].value = "ZB97";   
+            }              
+        }
+    
+        function setLanguage(data){
+            if(data != null && data === "[SA01] IMS Saudi Arabia Limited"){
+                document.getElementsByClassName("listLanguage")[0].value = "AR";
+            }
+        }
+    function disableOther(data) {
+        if(data.value=='Yes'){
+            var msg = document.querySelector("[id$='showMsg']");
+            msg.style.display = 'block';
+            msg.scrollIntoView();
+        }
+        else{
+            var msg = document.querySelector("[id$='showMsg']");
+            msg.style.display = 'none';
+        }
+        return false;
+    }
+    </script>
+   <apex:form id="NewAddressRequestForm">
+   <apex:sectionHeader title="New Address Request for Account {!Account.Name}" /> 
+   <apex:outputPanel id="SubmitPanel">
+   <apex:outputPanel rendered="{!NOT(RequestSubmitted)}">
+   <apex:pageBlock title="Submit New Address Request" rendered="{!NOT(RequestSubmitted)}">
+   <apex:pageBlockButtons location="top">
+        <apex:commandButton value="Add SAP Contact Request" action="{!SaveAddress}" rerender="SubmitPanel,SAPContactPanel" onclick="javascript:SubmitAddress();" oncomplete="javascript:YUIHideLoading();">
+            <apex:param name="deleteAddress" value="true" assignTo="{!cParam}"> </apex:param>
+        </apex:commandButton>
+        <apex:commandButton value="Submit Address Request now" id="submitAddress" action="{!SendNewAddressRequestNotificationEmail}" rerender="SubmitPanel,SAPContactPanel" onclick="javascript:SubmitAddress();" oncomplete="javascript:YUIHideLoading();"/>
+        <apex:commandButton action="{!ReturnToBnf}" value="Cancel" rendered="{!RequestSent && ShowHeader}"/> 
+        <apex:commandButton value="Cancel" onClick="if({!NOT(ShowHeader)}){window.top.close();}" action="{!ReturnToBnf}" immediate="true"/>
+   </apex:pageBlockButtons>
+       <div id="showMsg" >
+           Please make sure you are submitting Contact email address as well.
+       </div>										 
+    <apex:pageMessages escape="false" id="UserMessages"></apex:pageMessages>       
+    <apex:pageBlockSection columns="2" title="Customer Details">
+   <!-- <apex:outputField value="{!Account.Name}"/>
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem> -->
+    
+    <apex:inputField value="{!Address.Name}" required="true"/>
+    <apex:inputField value="{!Address.New_Sales_Org__c}" required="true" html-oninput="SetPaymentTermDefault(this.value);setLanguage(this.value);"/>
+    <apex:inputField value="{!Address.Additional_Name__c}"/>
+    <apex:inputField value="{!Address.Phone__c}"/>
+    <apex:inputField value="{!Address.Address_Line_1__c}"/>
+    <apex:inputField value="{!Address.Email__c}"/> 
+    <apex:inputField value="{!Address.Address_Line_2__c}"/>
+    <apex:inputField value="{!Address.Enabled_for_Email_invoicing__c}" onchange="return disableOther(this);"/>
+    <apex:inputField value="{!Address.Address_Line_3__c}"/>  
+    <apex:inputField value="{!Address.House_Number__c}"/>    
+    <apex:inputField value="{!Address.City__c}" required="true"/> 
+    <apex:inputField value="{!Address.Building_Number__c}"/>   
+    <apex:inputField value="{!Address.State__c}"/>
+    <apex:inputField value="{!Address.Address_Line_4__c}"/>
+    <apex:inputField value="{!Address.PostalCode__c}" required="true"/>
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>   
+    <apex:inputField value="{!Address.PO_Box__c}" />
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.PO_BOX_Post_Code__c}" />
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.Country__c}" required="true" />
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.Description__c}" />    
+    </apex:pageBlockSection>
+   
+    <apex:pageBlockSection id="LocalLanguagePBS" columns="2" title="Customer Details (Local)" rendered="{!$Setup.User_Permissions__c.Is_Local_Language__c}">
+   <!-- <apex:commandLink action="{!DoNothing}" value="Test" reRender="debugPanel,LocalLanguagePBS,UserMessages" status="statusxxx"/>
+     <apex:actionstatus id="statusxxx" startText="Starting" stoptext="Stopped"/> -->
+    
+    <apex:pageBlockSectionItem >   
+    <apex:outputLabel value="Language"></apex:outputLabel>
+    <apex:actionRegion >
+    <apex:inputField value="{!Address.Language__c}" StyleClass="listLanguage">
+    <apex:actionStatus id="ShowLocalLanguageFieldsStatus">
+                        <apex:facet name="start" >
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet> 
+    </apex:actionStatus>  
+    <apex:actionSupport event="onchange" reRender="LocalLanguagePBS,debug,UserMessages" action="{!DoNothing}" status="ShowLocalLanguageFieldsStatus" />
+    </apex:inputField>
+    </apex:actionRegion>
+    </apex:pageBlockSectionItem>
+    
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.International_Name__c}" required="true" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.House_Number_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.Additional_Name_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.Building_Number_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.Address_Line_1_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.Address_Line_4_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:inputField value="{!Address.Address_Line_2_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:pageBlockSectionItem rendered="{!Address.Language__c != null}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.Address_Line_3_Local__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:pageBlockSectionItem rendered="{!Address.Language__c != null}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.International_City__c}" rendered="{!Address.Language__c != null}" required="true"/>
+    <apex:pageBlockSectionItem rendered="{!Address.Language__c != null}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!Address.International_State__c}" rendered="{!Address.Language__c != null}"/>
+    <apex:pageBlockSectionItem rendered="{!Address.Language__c != null}"></apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+        
+    <apex:pageBlockSection columns="2" title="Financial Details">
+    <!-- <apex:inputField value="{!Address.Payment_Terms__c}" required="true"/>  --> 
+        <apex:pageBlockSectionItem >
+            <span class="helpButton" id="divPaymentTerm-_help">
+                <label>Payment Terms</label>
+                <img src="/s.gif"  Class="helpOrb"/>
+                <script>sfdcPage.setHelp('divPaymentTerm', '{!$ObjectType.Address__c.fields.Payment_Terms__c.inlineHelpText}');</script>
+            </span>
+            <apex:selectList value="{!Address.Payment_Terms__c}" size="1" StyleClass="listPaymentTerm">
+                <apex:selectOptions value="{!paymentTerm}"/>
+            </apex:selectList>
+        </apex:pageBlockSectionItem>  
+    <apex:inputField value="{!Address.Taxation_Status__c}" required="true"/>
+
+    <apex:inputField value="{!Address.PO_Required__c}"/>
+    <apex:inputField value="{!Address.Tax_Number_1__c}"/>
+    <apex:inputField value="{!Address.VAT_Registration_Number__c}" />
+    <apex:inputField value="{!Address.Tax_Number_2__c}"/>
+    <apex:inputField value="{!Address.Tax_Authority__c}"/>
+    <apex:inputField value="{!Address.Tax_Number_3__c}"/>
+    <apex:inputField value="{!Address.Tax_Number_Type__c}"/>
+    <apex:inputField value="{!Address.DIR_Code_Spain_Only__c}"/>
+    <apex:inputField value="{!Address.Tax_Type__c}"/>
+    </apex:pageBlockSection>
+   </apex:pageBlock>
+   </apex:outputPanel>
+   </apex:outputPanel> 
+ 
+       <apex:outputPanel id="SAPContactPanel">
+       
+           <apex:pageBlock title="Submit New SAP Contact Request" rendered="{!RequestSubmitted}">
+           <apex:pageBlockButtons location="top">
+                    <apex:commandButton value="Add another Contact" action="{!AddSAPContact}" reRender="SAPContactPanel,resultpanel" rendered="{!!RequestSent}" onclick="javascript:YUIShowLoading();" oncomplete="javascript:YUIHideLoading();"/>
+                    <apex:commandButton value="Finish and Submit Request" action="{!SendNewRequestNotificationEmail}" reRender="resultpanel,SAPContactPanel" rendered="{!(!RequestSent)}" onclick="javascript:YUIShowLoading();" oncomplete="javascript:YUIHideLoading();"/>
+                    <apex:commandButton value="Cancel" onClick="if({!NOT(ShowHeader)}){window.top.close();}" action="{!GoBack}" immediate="true" reRender="resultpanel,SAPContactPanel"/>
+                    <apex:commandButton action="{!ReturnToBnf}" value="OK" rendered="{!RequestSent && ShowHeader}"/> 
+                    <apex:commandButton onClick="if({!NOT(ShowHeader)}){window.top.close();}" value="Ok" rendered="{!(NOT(ShowHeader) && RequestSent)}"/>
+            
+           </apex:pageBlockButtons>
+             
+            <apex:pageMessages escape="false" id="UserMessages"></apex:pageMessages>       
+            <apex:pageBlockSection columns="2" title="Contact Details" rendered="{!!Requestsent}">
+            <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Title"></apex:outputLabel>
+            <apex:selectList value="{!SAP_Contact.Title__c}" size="1"><apex:selectOptions value="{!Titles}"></apex:selectOptions></apex:selectList>
+            </apex:pageBlockSectionItem>
+            <br/>
+            <apex:inputField value="{!SAP_Contact.Academic_Title__c}"/>
+            <apex:inputField value="{!SAP_Contact.Language__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.First_Name__c}" />
+            <apex:inputField value="{!SAP_Contact.Title_Local__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.Last_Name__c}" required="true"/>    
+            <apex:inputField value="{!SAP_Contact.First_Name_Local__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.Department__c}"/>    
+            <apex:inputField value="{!SAP_Contact.Last_Name_Local__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.Function__c}"/>    
+            <apex:inputField value="{!SAP_Contact.Department_Local__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.Email__c}" required="true"/>
+            <apex:inputField value="{!SAP_Contact.Function_Local__c}" rendered="{!Address.International_Name__c != null}"/>
+            <apex:pageBlockSectionItem rendered="{!Address.International_Name__c == null}"></apex:pageBlockSectionItem>
+            <apex:inputField value="{!SAP_Contact.Description__c}"/>       
+            <apex:pageBlockSectionItem />
+            <apex:outputField value="{!Address.Name}"/>
+            </apex:pageBlockSection>
+           </apex:pageBlock>
+        </apex:outputPanel>
+        <apex:outputpanel id="resultpanel">
+            <apex:dataTable style="width:100%;" border="0" value="{!SAPContactList}" var="oli" id="theTable" cellspacing="3" cellpadding="6" bgcolor="#DCDCDC" rendered="{!(SAPContactList.size>0 && NOT(RequestSent))}">
+                <apex:column headerValue="Title">{!oli.Title__c}</apex:column>
+                <apex:column headerValue="First Name"><apex:outputText value="{!oli.First_Name__c}"></apex:outputText></apex:column>
+                <apex:column headerValue="First Name (Local)" rendered="{!Address.International_Name__c!=null}"><apex:outputText value="{!oli.First_Name_Local__c}"></apex:outputText></apex:column>
+                <apex:column headerValue="Last Name">{!oli.Last_Name__c}</apex:column>
+                <apex:column headerValue="Last Name (Local)" rendered="{!Address.International_Name__c!=null}"><apex:outputText value="{!oli.Last_Name_Local__c}"></apex:outputText></apex:column>
+                <apex:column headerValue="Description">{!oli.Description__c}</apex:column>
+                
+            </apex:dataTable>
+     </apex:outputpanel>
+   </apex:form>
+</apex:page>

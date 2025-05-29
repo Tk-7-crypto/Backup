@@ -1,0 +1,191 @@
+<aura:component controller="CNT_CSM_PortalThemeLayout"
+    implements="forceCommunity:themeLayout,lightning:isUrlAddressable" access="global"
+    description="Sample Custom Theme Layout">
+    <aura:attribute name="search" type="Aura.Component[]" required="false" />
+    <aura:attribute name="profileMenu" type="Aura.Component[]" required="false" />
+    <aura:attribute name="navBar" type="Aura.Component[]" required="false" />
+    <aura:attribute name="newHeader" type="Aura.Component[]" required="false" />
+    <aura:attribute name="newContentHeader" type="Aura.Component[]" required="false" />
+    <aura:attribute name="base_url" type="String" default="/support/s/" />
+    <aura:attribute name="pageReference" type="Object" />
+    <aura:attribute name="contact" type="Contact" />
+    <aura:attribute name="userId" type="String" />
+    <aura:attribute name="majorIncident" type="Object" />
+    <aura:attribute name="alertTheme" type="String" default="slds-theme_success" />
+    <aura:attribute name="isTPAAccess" type="boolean" default="false" />
+    <aura:attribute name="tpaAppPermissionSets" type="List"
+        default="['TPA Customer Community Plus Login User','CSM Customer Community Plus Login User','Customer Community Plus Login User','Super User Profile CCP','TPA Processor Profile CCP','US TP Processor Profile CCP']" />
+    <aura:attribute name="copyright_date" type="String" />
+    <aura:attribute name="currentUser" type="User" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <lightning:navigation aura:id="navService" />
+    <c:LXC_CSM_PortalPrompt aura:id="cPrompt" headerText="{! v.majorIncident.Major_Incident_Subject__c}"
+        bodyText="{! v.majorIncident.Major_Incident_Customer_Communication__c}" theme="{! v.alertTheme}"
+        btnCloseLabel="OK" />
+    <div class="fixed-top ">
+        <aura:if isTrue="{! not(empty (v.majorIncident))}">
+            <div class="{! 'slds-notify slds-notify_alert slds-theme_alert-texture ' + v.alertTheme}" role="alert">
+                <span class="slds-assistive-text">Incident</span>
+                <span class="slds-icon_container slds-icon-utility-offline slds-m-right_x-small"
+                    title="Description of icon when needed"> </span>
+
+                <aura:if isTrue="{!v.majorIncident.Status__c eq 'Resolved'}">
+                    <h2>
+                        {!$Label.c.Major_Incident_is_resolved}&nbsp;
+                        <a href="javascript:void(0);" onclick="{!c.openIncidentDetails}"> {!$Label.c.Click_h}</a>
+                        &nbsp;{!$Label.c.to_consult_details}
+                    </h2>
+                    <aura:set attribute="else">
+                        <h2>
+                            {!$Label.c. Major_Incident_is_currently_ongoing} &nbsp;
+                            <a href="javascript:void(0);" onclick="{!c.openIncidentDetails}">{!$Label.c.Click_h}</a>
+                            &nbsp;{!$Label.c.to_consult_details}
+                        </h2>
+                    </aura:set>
+                </aura:if>
+
+                <button class="slds-button slds-button_icon slds-notify__close slds-button_icon-inverse" title="Close">
+                    <span class="slds-assistive-text">{!$Label.c.Close}</span>
+                </button>
+            </div>
+        </aura:if>
+        <div class="slds-grid slds-no-space" style="background-color: white;">
+            <aura:if isTrue="{!v.isTPAAccess}">
+                <div class="slds-col slds-grow-none">
+                    <div class="slds-align_absolute-center slds-p-top_x-small"
+                        style="border-bottom: 3px solid #11194f; height: 54px; padding-right: 1px; padding-left: 15px;">
+                        <forceCommunity:appLauncher />
+                    </div>
+                </div>
+            </aura:if>
+            <div class="slds-col">
+                <c:lwc_csm_csh_menu></c:lwc_csm_csh_menu>
+            </div>
+        </div>
+        <!---
+        <nav class="navbar navbar-expand-lg cHeaderPanel">
+            <div class="container-fluid">
+                <aura:if isTrue="{!v.isTPAAccess}">
+                    <div class="nav-item mr-3 nav-link">
+                        <forceCommunity:appLauncher />
+                    </div>
+                </aura:if>
+                <a class="navbar-brand slds-global-header__logo" href="{! $Site.siteUrlPrefix }"></a>
+                <button class="navbar-toggler custom-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <aura:if isTrue="{! (v.currentUser.Profile.Name == 'Service User' || v.currentUser.Profile.Name == 'System Administrator' || v.currentUser.Profile.Name == 'System Administrator Module' || v.currentUser.Profile.Name == 'System Administrator Package Support' || v.currentUser.Profile.Name == 'System Administrator Integration' || v.currentUser.Profile.Name == 'IQVIA Salesforce Platform Support')}">
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! $Site.siteUrlPrefix }" data-toggle="collapse" data-target=".navbar-collapse.show">
+                                    <lightning:icon iconName="utility:home" size="small" variant="inverse" alternativeText="Home" />
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! $Site.siteUrlPrefix +'/group/CollaborationGroup'}" data-toggle="collapse" data-target=".navbar-collapse.show">Group</a>
+                            </li>
+                        </ul>
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {! v.currentUser.Name }
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="{! $Site.siteUrlPrefix +'/profile/' + v.userId}">{!$Label.c.Profile}</a>
+                                <a class="dropdown-item" href="{! $Site.siteUrlPrefix +'/settings/' + v.userId}">{!$Label.c.Settings}</a>
+                                <a class="dropdown-item" href="{! $Site.Prefix + '/support/secur/logout.jsp'}">{!$Label.site.logout}</a>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+                
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{! $Site.siteUrlPrefix }" data-toggle="collapse" data-target=".navbar-collapse.show">
+                                <lightning:icon iconName="utility:home" size="small" variant="inverse" alternativeText="Home" />
+                            </a>
+                        </li>
+                        <aura:if isTrue="{! not(v.contact.Remove_KB_Access__c) }">
+                            <li class="nav-item">
+                                <a class="nav-link"  href="{! $Site.siteUrlPrefix +'/products'}" data-target=".navbar-collapse.show">{!$Label.c.Knowlegde}</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{! v.contact.Portal_Case_Type__c ne 'R&amp;D'}">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! $Site.siteUrlPrefix +'/cases'}" data-target=".navbar-collapse.show">{!$Label.c.Cases}</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{! and((v.contact.Contact_User_Type__c ne 'Rep User'),not(v.contact.Remove_Dashboard_Access__c)) }">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! $Site.siteUrlPrefix +'/dashboards'}" data-target=".navbar-collapse.show">{!$Label.c.Dashboards}</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{! v.contact.Portal_Case_Type__c ne 'R&amp;D'}">
+                            <aura:if isTrue="{! v.contact.Contact_User_Type__c ne 'Rep User'}">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{! $Site.siteUrlPrefix +'/shared-folder'}" data-target=".navbar-collapse.show">{!$Label.c.Shared_Folder}</a>
+                                </li>
+                            </aura:if>
+                        </aura:if>
+                        <aura:if isTrue="{! and( (v.contact.Portal_Case_Type__c ne 'R&amp;D'), not(v.contact.Remove_Case_Creation__c) )}">
+                            <li class="nav-item">
+                                <a class="nav-link btn btn-primary mr-md-4 ml-md-4 pr-4 pl-4" href="{! $Site.siteUrlPrefix +'/contactsupport'}" data-target=".navbar-collapse.show" role="button">{!$Label.c.Create_a_new_case}</a>
+                            </li>
+                        </aura:if>
+                    </ul>
+                    <aura:if isTrue="{! not(v.contact.Remove_KB_Access__c) }">
+                        <div class="form-inline my-2 my-lg-0">
+                            <div class="searchRegion" style="width: 100%;">{!v.search}</div>
+                        </div>
+                    </aura:if>
+                    <div class="nav-item" id="userGuideBtn">
+                        <a class="nav-link btn btn-primary mr-md-4 ml-md-4 pr-4 pl-4" onclick="{! c.openIQVIADoc }" role="button">{!$Label.c.Download_The_User_Guide}</a>
+                    </div>
+                    <aura:if isTrue="{! not(empty(v.contact))}">
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {! v.contact.Name }
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="{! $Site.siteUrlPrefix +'/profile/' + v.userId}">{!$Label.c.Profile}</a>
+                                <a class="dropdown-item" href="{! $Site.siteUrlPrefix +'/settings/' + v.userId}">{!$Label.c.Settings}</a>
+                                <a class="dropdown-item" href="{! $Site.siteUrlPrefix +'/announcements'}">{!$Label.c.Announcements}</a>
+                                <a class="dropdown-item" href="{! $Site.Prefix + '/support/secur/logout.jsp'}">{!$Label.site.logout}</a>
+                            </div>
+                        </div>
+                        <aura:set attribute="else">
+                            <div class="nav-item">
+                                <a class="nav-link" href="{! $Site.Prefix + '/support/login'}">Login</a>
+                            </div>
+                        </aura:set>
+                    </aura:if>
+                </div>
+               
+            </div>
+        </nav>
+    -->
+        <aura:if isTrue="{!v.isTPAAccess}">
+            <section aria-label="Dialog title" aura:id="TPAPopover" style="margin-top: -10px;
+                background-color: #0c7bc0;
+                color: white;
+                font-size: 16px;
+                border: 2px solid #0c7bc0 !important;" aria-describedby="popover-body-id"
+                class="slds-popover slds-nubbin_top-left slds-popover_small" role="dialog">
+                <lightning:icon class="slds-button_icon-small slds-float_right slds-popover__close"
+                    iconName="utility:close" style="cursor: pointer;" size="small" variant="inverse"
+                    alternativeText="Close" onclick="{!c.closeTPAPopover}" />
+                <div id="popover-body-id" class="slds-popover__body">
+                    <p>{!$Label.c.Click_here_to_navigate_to_TPA_services}</p>
+                </div>
+            </section>
+        </aura:if>
+    </div>
+    <div id="body" style="margin-top: 54px;">{!v.body}</div>
+    <footer class="page-footer font-small blue pt-4">
+        <div class="footer-copyright text-center py-3">© {!v.copyright_date}
+            Copyright:&nbsp;{!$Label.c.Learn_More_About}
+            <a href="https://www.iqvia.com"> IQVIA™</a>
+        </div>
+    </footer>
+</aura:component>

@@ -1,0 +1,142 @@
+<template>
+    <lightning-quick-action-panel>
+        <div class="slds-page-header slds-page-header_record-home divPageHeader">
+            <template lwc:if={showSpinner}>
+                <lightning-spinner alternative-text="Loading" variant="brand" size="medium"></lightning-spinner>
+            </template>
+            <div class="slds-page-header__row slds-m-bottom_small">
+                <div class="slds-page-header__col-title">
+                    <div class="slds-media">
+                        <div class="slds-media__figure bidHistoryIcon">
+                            <lightning-icon icon-name="custom:custom18" size="medium"></lightning-icon>
+                        </div>
+                        <div class="slds-media__body">
+                            <div class="slds-page-header__name">
+                                <div class="slds-page-header__name-title">
+                                    <h1>
+                                        <span class="slds-page-header__title slds-truncate">Awarded Bid Histories</span>
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <template lwc:if={isAnyBidHistoriesRelatedToOpportunity}>
+                    <div class="slds-page-header__col-actions">
+                        <div class="slds-page-header__controls">
+                            <div class="slds-page-header__control">
+                                <template lwc:if={isAnyBidHistoryAwarded}>
+                                    <div class="informationMessage">
+                                        <p>
+                                            <strong>Bid number {awardedBidHistoryNumber} has been awarded</strong>
+                                        </p>
+                                        <p class="viaTicketInformation">To change the awarded bid please create a via
+                                            ticket.</p>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <template lwc:if={isRelatedQuoteStatusInvalidForAwarded}>
+                                        <div class="informationMessage">
+                                            <p>&#9432; You can't award this bid without an associated quote, please
+                                                connect with PD.</p>
+                                        </div>
+                                    </template>
+                                    <template lwc:else>
+                                        <lightning-button variant="brand" label="Mark as Awarded"
+                                            title="Mark as Awarded" disabled={disableMarkAsAwardedButton}
+                                            onclick={confirmMarkAsAwarded}
+                                            class="slds-m-left_x-small"></lightning-button>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <template lwc:if={isAnyBidHistoriesRelatedToOpportunity}>
+                <div
+                    class="dataTable slds-border_top slds-border_left slds-border_right slds-border_bottom dataTableCustom">
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered"
+                        aria-label="Example table of Opportunities with vertical borders">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <template lwc:if={isAllBidHistoriesNotAwarded}>
+                                    <th class="slds-truncate" scope="col"></th>
+                                </template>
+                                <template for:each={columns} for:item="column">
+                                    <th class="slds-truncate slds-text-align_center" scope="col" key={column.fieldName}>
+                                        {column.label}
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template class="datatable" for:each={bidHistoryRecordsForDataTable} for:item="row"
+                                for:index="index">
+                                <tr class="slds-hint-parent" key={row.id}>
+                                    <template lwc:if={isAllBidHistoriesNotAwarded}>
+                                        <td scope="row">
+                                            <div class="slds-truncate slds-m-right_small">
+                                                <lightning-input type="radio" name="selectRow" data-index={index}
+                                                    onchange={handleRowSelection} variant="label-hidden">
+                                                </lightning-input>
+                                            </div>
+                                        </td>
+                                    </template>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.awarded}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.relatedQuoteStatus}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        <div>{row.bidType}</div>
+                                    </td>
+                                    <td class="tdLongText slds-text-align_center">
+                                        <a href={row.bidHistoryRecordUrl} target="_blank"
+                                            tabindex="-1">{row.bidHistoryName}</a>
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.totalValue}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.bidNumber}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.scenarioNumber}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.scenario}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.numberOfScenarios}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.bidDueDate}
+                                    </td>
+                                    <td class="slds-truncate slds-text-align_center">
+                                        {row.bidSentDate}
+                                    </td>
+                                    <td>
+                                        <template lwc:if={row.isCommentsEditable}>
+                                            <lightning-textarea class="tdLongText slds-text-align_left"
+                                                variant="label-hidden" type="text" data-index={index}
+                                                value={row.comments}
+                                                onchange={handleCommentChange}></lightning-textarea>
+                                        </template>
+                                        <template lwc:else>
+                                            <div class="tdLongText" data-index={index}>{row.comments}</div>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+            <template lwc:if={noBidHistoryRelatedToOpportunity}>
+                <p>There are no Clinical Bid Histories related to this Opportunity.</p>
+            </template>
+        </div>
+    </lightning-quick-action-panel>
+</template>

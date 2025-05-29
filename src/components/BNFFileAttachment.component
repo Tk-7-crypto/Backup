@@ -1,0 +1,76 @@
+<apex:component controller="BNFAttachmentController" allowDML="true" id="cmp">
+  <apex:form id="theForm">
+        <apex:pageBlock id="pb">
+            <apex:pageMessages />
+            <apex:pageBlockSection columns="2">
+               <apex:pageBlockSectionItem >
+                    <apex:outputpanel >
+                        <b>1.  Select a file</b><br/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem />
+                <apex:pageBlockSectionItem >
+                    <apex:outputlabel value="Select a File " for="fileip"/>
+                    <apex:outputPanel >
+                        <div class="requiredInput">
+                        <div class="requiredBlock"/>
+                            <apex:inputFile value="{!fileContent}" filename="{!fileName }" contentType="{!fileContentType }" fileSize="{!fileSize}"  id="fileip"/>                                               
+                        </div>
+                    </apex:outputPanel>
+                    
+                    
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputlabel value="Select Doc Type " for="docType"/>
+                    <apex:outputPanel >
+                        <div class="requiredInput">
+                        <div class="requiredBlock"/>
+                            <apex:selectList value="{!selDocType}" size="1" id="docType">
+                                <apex:selectOptions value="{!docTypeOptions }"/>
+                            </apex:selectList>
+                        </div>
+                    </apex:outputPanel>                    
+                </apex:pageBlockSectionItem>
+                                
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="2" id="pbs">
+                <apex:pageBlockSectionItem id="pbsi" >
+                    <apex:outputpanel id="op">
+                        <b>2.  Click the "Attach File" button.</b><br/>
+                        Repeat steps 1 and 2 to attach multiple files.<br/>
+                        ( When the upload is complete the file information will appear below. ) <p/>
+                        <apex:commandButton value="Attach File" action="{!save}" status="status"
+                                   onclick="document.getElementById('pg:pcmp:cmp:theForm:pb:pbs:pbsi:img').style.display = 'inline';"/> 
+                         <apex:outputPanel id="img" style="box-shadow: 10px 10px 5px #888888;display:none;margin:3px;" styleClass="wpCellMiddleLeft"> 
+                             &nbsp;Uploading...<img src="/img/loading32.gif" width="16" height="16"/>&nbsp;
+                         </apex:outputPanel>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem />
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection columns="2">
+                <apex:pageBlockSectionItem >
+                    <apex:outputpanel >
+                        <b>3.  Click the Done button to return to the previous page.</b><br/>
+                        (This will cancel an in-progress upload.) <p/>
+                        <apex:outputLink value="/{!IF(AND (!ISNULL(retUrl), !ISBLANK(retUrl)), retUrl, bnfId)}" styleClass="btn" style="text-decoration:none;">Done</apex:outputLink>                        
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem />
+            </apex:pageBlockSection><p/> 
+            
+            <apex:pageBlockTable var="f" value="{!fileList}" id="tbl" rendered="{!NOT(ISNULL(fileList))}">
+                <apex:facet name="header">
+                    You have just uploaded the following files:
+                </apex:facet>
+                   <!-- You have just uploaded the following files -->
+                   <apex:column value="{!f.fileName }" headerValue="File"/>
+                   <apex:column value="{!f.fileType }" headerValue="Document Type"/>
+            </apex:pageBlockTable>
+             
+        </apex:pageBlock>
+    </apex:form>
+</apex:component>

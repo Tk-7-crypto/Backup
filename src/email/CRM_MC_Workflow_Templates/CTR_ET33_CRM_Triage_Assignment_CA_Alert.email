@@ -1,0 +1,71 @@
+<messaging:emailTemplate subject="New Contract Assignment: {!RelatedTo.Account.Name} #{!RelatedTo.ContractNumber} / {!RelatedTo.Opportunity_Number__c}" recipientType="User"  relatedToType="Contract">
+<messaging:htmlEmailBody >
+<html>
+   <body>
+       Dear {!RelatedTo.Owner.FirstName}<br/><br/>
+       You have been assigned a new contract request. <br/><br/>
+       
+       <table Style = "border: 2px solid black;
+                       border-collapse: collapse;">
+          <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Type of Request : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!RelatedTo.Requested_Contract_Type__c} </td>
+          </tr>
+           <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Agreement/Quote Name : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!RelatedTo.Name} </td>
+          </tr>
+           <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Line of Business : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!RelatedTo.Opportunity__r.Line_of_Business__c} </td>
+          </tr>
+           <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> CRM Triage Number : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!RelatedTo.ContractNumber} </td>
+          </tr>
+          <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Customer Name : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!RelatedTo.Account.Name} </td>
+          </tr>
+          <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Opportunity Name : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> <a href = "{!$Setup.Account_Setting__c.SFDC_Instance_URL__c}/{!RelatedTo.Opportunity__c}"> {!RelatedTo.Opportunity__r.Name} </a> </td>
+          </tr>
+          <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Link to Triage record : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> {!$Setup.Account_Setting__c.SFDC_Instance_URL__c}/{!RelatedTo.Id} </td>
+          </tr>
+          <tr>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;"> Date Tracking Started  : </td>
+             <td Style = "padding: 15px; border: 2px solid black; text-align: center; border-collapse: collapse;">  <apex:outputText value="{0,date,MMM dd,yyyy}">
+                                    <apex:param value="{!RelatedTo.Date_Tracking_started__c}" /> 
+                            </apex:outputText></td>
+          </tr>
+       </table>
+       <br/>
+       <b style = "background: Yellow; color : red; font-size: 16pt;">*ATTENTION <u style = "color: red">CONTRACT ANALYST</u>*</b><br/>
+       <div style="display: {!IF(RelatedTo.Opportunity__r.Line_of_Business__c != 'Outcome' && RelatedTo.Opportunity__r.Line_of_Business__c != 'RWLP' && RelatedTo.Opportunity__r.Line_of_Business__c != 'Medical Affairs', '' , 'none')}" >
+       NB:   Please note that these instructions <b>EXCLUDE all RWE and LRA requests</b> until further notice.<br/>
+       <ul>
+       <li style="padding-left:0.5em" >Assignment for: <b>CHANGE ORDER, CNF &amp; BALLPARKS:</b><b style = "color: red"> ACTION: </b>Please ensure you create an associated <b>QUOTE/PROPOSAL</b> record <u style = "color: red"><span style = "color: red">before proceeding</span></u>!</li>
+       <li style="padding-left:0.5em; padding-top:1em">Assignment for: <b>PRELIMINARY AGREEMENT AMENDMENT:</b><b style ="color: red"> ACTION: </b> Please <span style ="color: red">ensure you <b>AMEND</b> (via the Actions) the previous CLM Agreement</span> .  Once the Preliminary Agreement Amendment is created, you can, <i style = "color: red">ONLY THEN </i>– Create a <b>QUOTE</b> <u> from the awarded Clinical Bid</u> (Under BID HISTORIES Quick Link tab in the Opportunity).</li>
+       </ul>
+       <span style = "background: Yellow; font-weight: normal; font-size: 12pt; background-color: #87FF2A">Step by Step guidelines can be found <a href =" {!$Label.CRM_Email_Template_URL}">here</a> </span> <br/><br/>
+       </div>
+       <apex:outputPanel rendered="{!RelatedTo.Opportunity__r.Line_of_Business__c = 'Outcome' || RelatedTo.Opportunity__r.Line_of_Business__c = 'RWLP' ||  RelatedTo.Opportunity__r.Line_of_Business__c = 'Medical Affairs'}">
+       NB:   Please note that these instructions apply only to <b>all RWLP (Line of Business = Outcome) requests</b> until further notice.<br/>
+       <ul>
+       <li style="padding-left:0.5em" >Assignment for: <b>CHANGE ORDER</b><b style = "color: red"> ACTION: </b>Click on Opportunity link above, navigate to the latest agreement (WO/GSA or previous CO), and click Amend (via the Action Panel).</li>
+       <li style="padding-left:0.5em; padding-top:1em">Assignment for: <b>CNF/CNF Log &amp; BALLPARKS:</b><b style ="color: red"> ACTION: </b> Click on <b>‘Create CNF Quote’</b></li>
+       <li style="padding-left:0.5em; padding-top:1em">Assignment for: <b>ATP/SUWO AMENDMENT:</b><b style ="color: red"> ACTION: </b><span style ="color: red">Please ensure you <b>AMEND</b> (via the Actions) the latest Agreement (ATP/SUWO or previous Amendment).</span></li>
+       </ul>
+       </apex:outputPanel>
+       <b>IMPORTANT: </b> Please create an execution plan under this contract to begin tracking of contract lifecycle and available allocation.<br/><br/>                                                                                                                                                                                                                                                                                                                                                                       
+       <b style = "background: Yellow; color: red; font-size: 16pt"> 
+         *ATTENTION <u style = "color: red">REQUESTOR/PROJECT LEADER</u>*:</b> <b> The “Date Tracking Started” referred to in this communication is the actual start date the GBO resource (CA/PD/BA) will begin working on this request. Please do not reach out to the resource until said date. The resource will reach out to you when they are ready to discuss realistic timelines and expectations. 
+       </b><br/><br/>
+       <br/>
+   </body>
+</html>
+</messaging:htmlEmailBody>
+</messaging:emailTemplate>

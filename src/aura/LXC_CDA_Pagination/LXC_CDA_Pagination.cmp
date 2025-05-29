@@ -1,0 +1,55 @@
+<aura:component controller="CNT_CDA_CustomLandingComnt">
+    <aura:attribute name="pageInfo" type="UTL_CDA_PaginationWrapper" /><!-- Wrapper class instanse for pagination information -->
+    <aura:attribute name="currentPagesCount" type="string" default="10" />
+    <aura:attribute name="searchFieldsMap" type="Map" />
+    <aura:attribute name="isNegotiatorTab" type="Boolean" />
+    
+    <aura:registerEvent name="pagesCountChange" type="c:LXE_CDA_PaginationPageTotalChange" />
+    <aura:registerEvent name="goToPage" type="c:LXE_CDA_PaginationPageChangeEvt"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />   
+    <aura:handler event="c:LXE_CDA_PaginationPageChangeEvt" action="{!c.pageChange}" />
+    <aura:handler event="c:LXE_CDA_LandingPageSearchEvt" action="{!c.searchRequests}" />
+    
+	<footer class="pageFooter">
+    	<div class="slds-global-header slds-grid slds-grid_align-spread">
+            <div class="slds-global-header__item slds-form slds-form_inline">
+                <lightning:select name="selectItem" aura:id="selectItem" label="Records" variant="label-hidden" onchange="{!c.changeRecordNumber}">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </lightning:select>
+                <span>Records per page</span>
+            </div>
+             
+            <div class="slds-button-group" role="group">
+            	<lightning:buttonIcon iconName="utility:left" disabled="{!v.pageInfo.currentPageNumber == 1}" variant="border" alternativeText="Left" iconClass="dark" onclick="{!c.goPreNextPage}" />
+				
+                <aura:iteration items="{!v.pageInfo.pageCounter}" var="pgn">
+                	<lightning:button variant="{!pgn == v.pageInfo.currentPageNumber ? 'brand' : 'neutral' }" label="{!pgn}" onclick="{!c.openthePage}" />
+                </aura:iteration>
+                
+                <lightning:buttonIcon iconName="utility:right" variant="border" alternativeText="Right" iconClass="dark" onclick="{!c.goPreNextPage}" disabled="{!v.pageInfo.currentPageNumber == v.pageInfo.totalPages}" />
+            </div>
+            <div class="slds-global-header__item">
+            	<legend class="slds-form-element__label slds-text-title">
+                    <aura:if isTrue="{!!v.pageInfo.totalRecords > 0}">
+                        showing 0 - {!v.pageInfo.totalRecords} of {!v.pageInfo.totalRecords} total records
+                        <aura:set attribute="else">
+                            <aura:if isTrue="{!v.pageInfo.currentPageNumber == v.pageInfo.totalPages}">
+                                showing {!(v.pageInfo.currentPageNumber * v.currentPagesCount) - (v.currentPagesCount - 1)} - {!v.pageInfo.totalRecords} of {!v.pageInfo.totalRecords} total records
+                                <aura:set attribute="else">
+                                    showing {!(v.pageInfo.currentPageNumber * v.currentPagesCount) - (v.currentPagesCount - 1)} - {!(v.pageInfo.currentPageNumber * v.currentPagesCount)} of {!v.pageInfo.totalRecords} total records
+                                </aura:set>
+                            </aura:if>
+                        </aura:set>
+                    </aura:if>
+                </legend>
+            </div>
+            <!-- <div class="slds-global-header__item">
+            	<legend class="slds-form-element__label slds-text-title_caps">{!v.pageInfo.currentPageNumber} of Total {!v.pageInfo.totalRecords} Pages</legend>
+            </div> -->
+        </div>
+    </footer>
+</aura:component>

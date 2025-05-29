@@ -1,0 +1,1367 @@
+<apex:page language="{!language}" controller="CNT_TPA_VendorOfferingReturnAck"  action="{!requestValidateOnLoad}" showHeader="false" sidebar="false" cache="false" id="pg" lightningStylesheets="true" standardStylesheets="false">
+    <apex:slds />
+    <!-- Added for site to community logic submission start -->
+    <script type="text/javascript">
+        console.log('currentLoggedInUserProfile0 in VFP_TPA_VendorOfferingReturnAck::::'+'{!currentUserProfileName}');
+        function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+		}
+        //console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+        if('{!currentUserProfileName}' == 'tpa Profile') {
+            var qryString = '';
+            var urlParams = getUrlVars();
+            for(var key in urlParams) {
+                if(urlParams.hasOwnProperty(key)) {
+                    var val = urlParams[key];
+                    qryString += key + '=' + val + '&';
+                }
+            }
+            console.log('quryString-1:::'+JSON.stringify(urlParams));
+            console.log('quryString:::'+qryString);
+            qryString = qryString.slice(0, -1);
+            console.log('quryString0:::'+qryString);
+            console.log('quryString1:::'+'{!tpaCommunityUrl}');
+            window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_VendorOfferingReturnAck&' + qryString;
+        }
+    </script>
+    <apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+    <!-- Added for site to community logic submission end-->  
+        <html>
+            <head>
+                <meta http-equiv="X-UA-Compatible" content="IE=9" />
+                <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+
+                <!-- *** Angular-JS Library reference ** -->
+                <apex:includeScript value="{!$Resource.AngularJS}"/>
+                <!-- *** Angular-JS Library reference ** -->
+
+                <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+                <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+                <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+
+                <!-- *** Jquery library reference *** -->
+                <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+                <!-- *** Jquery library reference *** -->
+
+                <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+
+                <!-- *** JQuery UI Library reference *** -->
+                <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+                <!-- *** JQuery UI Library reference *** -->
+
+                <!-- *** JQuery Custom Popup Library reference *** -->
+                <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+                <!-- *** JQuery Custom Popup Library reference *** -->
+
+                <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+                <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+                <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+
+                <!-- *** Bootstrap Javascript Library reference *** -->
+                <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+                <!-- *** Bootstrap Javascript Library reference *** -->
+
+                <link href="{!$Resource.TPA_Multilingual_CSS}" rel="stylesheet" type="text/css" />
+
+                <!-- ****** AngularJS script Start ****** -->
+                <style>
+                    #reqNo::-webkit-input-placeholder { color: #13D7E1;  }
+                    #reqNo:-moz-placeholder { /* Firefox 18- */
+                    color: #13D7E1;
+                    }
+                    #reqNo::-moz-placeholder {  /* Firefox 19+ */
+                    color: #13D7E1;
+                    }
+                    #reqNo:-ms-input-placeholder {
+                    color: #13D7E1;
+                    }
+                </style>
+
+                <!-- ****** AngularJS script Start ****** -->
+                <script type="text/javascript">
+                    <!-- Angular JS Application Name -->
+                    var myapp = angular.module('TpaAccessRequest', ['ui.bootstrap']);
+
+                    <!-- Page Controller Start -->
+                    var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$modal', '$log', '$window', function ($scope, $filter, $modal, $log, $window)
+                    {
+                        <!-- Initialize Services -->
+                        $scope.$log = $log;
+                        <!-- Initialize Services -->
+
+                        <!-- Initialize Model Variables -->
+                        //****** tpa request models start ******//
+                        $scope.tpaObj = {};
+                        $scope.tpaObj.clientProjectName = '';
+                        $scope.tpaObj.clientName = '';
+                        $scope.tpaObj.clientContactName = '';
+                        $scope.tpaObj.vendorContactFName = '';
+                        $scope.tpaObj.vendorContactLName = '';
+                        $scope.tpaObj.vendorContactEmail = '';
+                        $scope.tpaObj.vendorTitle = '';
+                        $scope.tpaObj.authSignerFName = '';
+                        $scope.tpaObj.authSignerLName = '';
+                        $scope.tpaObj.authSignerTitle = '';
+                        $scope.tpaObj.authSignerEmail = '';
+                        $scope.tpaObj.authSignerEmail = '';
+
+                        $scope.tpaObj.daysSinceTLLAExpired = '';
+
+                        $scope.vendorDesConfirmatioObj = {};
+                        $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationFName = '';
+                        $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationLName = '';
+                        $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationTitle = '';
+                        $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationEmail = '';
+
+                        $scope.vendorActionList = [];
+                        $scope.renewOptionName = '';
+
+                        $scope.tpaRequest = [];
+                        $scope.tpaReqId = '{!tpaRequestId}';
+                        $scope.objTpaRequestToEdit = {};
+                        $scope.allObjects = [];
+
+                        $scope.todayDate = new Date();
+                        $scope.SelectedDescMap;
+                        $scope.tpaObj.isAuthorisedSigner = '{!isAuthorisedSigner}';
+
+                        //*** Error Flags ***//
+                        $scope.isError = false;
+                        $scope.isVendorDestructionConfirmationFNameError = false;
+                        $scope.isVendorDestructionConfirmationLNameError = false;
+                        $scope.isVendorDestructionConfirmationTitleError = false;
+                        $scope.isVendorDestructionConfirmationEmailError = false;
+                        $scope.isDdnAckError = false;
+                        $scope.isVendorDestructionConfirmationActionTakenError = false;
+
+                        $scope.validateForm = function()
+                        {
+                            $scope.errorMsg = '';
+                            if($scope.vendorDesConfirmatioObj.VendorDestructionConfirmationFName == null || $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationFName.trim().length == 0)
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Vendor_Destruction_Confirmation_First_Name_must_not_be_empty}</li>';
+                                $scope.isVendorDestructionConfirmationFNameError = true;
+                            }
+                            else
+                                $scope.isVendorDestructionConfirmationFNameError = false;
+                            if($scope.vendorDesConfirmatioObj.VendorDestructionConfirmationLName == null || $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationLName.trim().length == 0)
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Vendor_Destruction_Confirmation_Last_Name_must_not_be_empty}</li>';
+                                $scope.isVendorDestructionConfirmationLNameError = true;
+                            }
+                            else
+                                $scope.isVendorDestructionConfirmationLNameError = false;
+                            if($scope.vendorDesConfirmatioObj.VendorDestructionConfirmationTitle == null || $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationTitle.trim().length == 0)
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Vendor_Destruction_Confirmation_Title_must_not_be_empty}</li>';
+                                $scope.isVendorDestructionConfirmationTitleError = true;
+                            }
+                            else
+                                $scope.isVendorDestructionConfirmationTitleError = false;
+                            
+                            if($scope.vendorDesConfirmatioObj.VendorDestructionActionTaken == '--None--')
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Action_Taken_by_Client_must_not_be_empty}</li>';
+                                $scope.isVendorDestructionConfirmationActionTakenError = true;
+                            }
+                            else if($scope.vendorDesConfirmatioObj.VendorDestructionActionTaken.indexOf('Executed New') > -1 && !$scope.isValidRequestNo($scope.renewOptionName))
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Please_Provide_5_digit_TPA_Request_Number}</li>';
+                                $scope.isVendorDestructionConfirmationActionTakenError = true;
+                            }
+                            else if($scope.vendorDesConfirmatioObj.VendorDestructionActionTaken.indexOf('The Above Referenced Excluded Offerings') > -1 && !$scope.isValidRequestNo($scope.renewOptionName))
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Please_enter_New_Modified_5_or_7_digit_signed_TPA_Request_Number}</li>';
+                                $scope.isVendorDestructionConfirmationActionTakenError = true;
+                            }
+                            else
+                                $scope.isVendorDestructionConfirmationActionTakenError = false;
+                            if($scope.vendorDesConfirmatioObj.VendorDestructionConfirmationEmail == null || $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationEmail.trim().length == 0)
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Vendor_Destruction_Confirmation_Email_must_not_be_empty}</li>';
+                                $scope.isVendorDestructionConfirmationEmailError = true;
+                            }
+                            else if(!$scope.isValidEmail($scope.vendorDesConfirmatioObj.VendorDestructionConfirmationEmail))
+                            {
+                                $scope.errorMsg += '<li>{!$Label.TPA_Vendor_Destruction_Confirmation_Email_Invalid_Email_Address}</li>';
+                                $scope.isVendorDestructionConfirmationEmailError = true;
+                            }
+                            else
+                                $scope.isVendorDestructionConfirmationEmailError = false;
+							
+                            if(!$scope.tpaObj.ddnAck1 || !$scope.tpaObj.ddnAck4){
+                            	$scope.errorMsg += '<li>{!$Label.TPA_Please_select_all_the_required_checkboxes_before_submitting_the_form}</li>';
+                                $scope.isDdnAckError = true;
+                            }
+                            
+                            else if($scope.showCheckBoxForRenew($scope.vendorDesConfirmatioObj.VendorDestructionActionTaken) && !$scope.tpaObj.ddnAck2Renew){
+                            	$scope.errorMsg += '<li>{!$Label.TPA_Please_select_all_the_required_checkboxes_before_submitting_the_form}</li>';
+                                $scope.isDdnAckError = true;
+                            }
+			    else if($scope.showCheckBox($scope.vendorDesConfirmatioObj.VendorDestructionActionTaken) && (!$scope.tpaObj.ddnAck2 || !$scope.tpaObj.ddnAck3) ){
+                            	$scope.errorMsg += '<li>{!$Label.TPA_Please_select_all_the_required_checkboxes_before_submitting_the_form}</li>';
+                                $scope.isDdnAckError = true;
+                            }
+                            else
+                                $scope.isDdnAckError = false;
+                            
+
+                            if($scope.errorMsg.trim().length > 0)
+                            {
+                                $scope.isError = true;
+                                $scope.errorMsg = '<ul>' + $scope.errorMsg + '</ul>';
+                                window.scrollTo(0,0);
+                            }
+                            else
+                            {
+                                $scope.errorMsg = '';
+                                $scope.isError = false;
+                            }
+                            $scope.applyChanges();
+                            return $scope.isError;
+                        }
+
+                        //****** tpa request events start ******//
+
+                        //*** loadForm function invokes when page loads (As Constructor) start ***//
+                        $scope.loadForm = function() {
+                            
+                            //Shut down popup code start
+                            var isPermanentDown = {!isTPAPermanentDown};
+                            var isRestrictedUser = {!isRestrictedUser};
+                            var portalDownMessage = '{!Message}';
+                            $(document).ready(function(){
+                                if(isPermanentDown)
+                                {
+                                    popupAlert(portalDownMessage);
+                                        $('.customPopupFooter .aButtons').css("display","none");
+                                        $('#backWhiteOverlay').css("display", "");
+                                        $('#pageBody').keydown(function(objEvent) {
+                                            if (objEvent.keyCode == 9) {  //tab pressed
+                                                objEvent.preventDefault(); // stops its action
+                                            }
+                                            if (objEvent.keyCode == 13) {  //enter pressed
+                                                objEvent.preventDefault(); // stops its action
+                                            }
+                                        });
+                                }
+                            });
+                            //shut down popup code end
+
+                            $scope.$log.info($scope.tpaReqId);
+
+                            if(getParameterByName('id').trim().length > 0)
+                            {
+                                $scope.objTpaRequestToEdit = {!ObjectTpaRequestToEdit};
+                                $scope.SelectedDescMap = {!ObjectpurposeIdDataAssetMap};
+
+                                $scope.$log.info('selected map'+$scope.SelectedDescMap);
+                                $scope.$log.info(JSON.stringify($scope.objTpaRequestToEdit));
+
+                                if($scope.objTpaRequestToEdit == null)
+                                    return false;
+
+                                $scope.tpaObj.clientProjectName = $scope.objTpaRequestToEdit.Client_Project_Name__c;
+                                $scope.tpaObj.clientName = $scope.objTpaRequestToEdit.Client_Address__r.Name;
+                                $scope.tpaObj.clientContactName = $scope.objTpaRequestToEdit.ClientContact__r.Name;
+                                $scope.attMsg = 'Attention: By entering your name, email address, and title you acknowledge that you are authorized to confirm compliance with the terms and conditions agreed to in the Third Party Limited License Agreement outlined above and that you hereby confirm that {!$Label.TPA_IQVIA_Keyword} Health Intellectual Property associated with this agreement has been 1) destroyed or 2) returned except for insubstantial amounts of {!$Label.TPA_IQVIA_Keyword} Health Data that were extracted from the original data set and incorporated into the client deliverables or the work product to create the client deliverables, 3) Access to client-managed licensed offerings has been revoked, or 4) Renewed with '+$scope.tpaObj.clientName+' and is In Effect.';
+                                $scope.tpaObj.vendorContactFName = angular.copy($scope.objTpaRequestToEdit.Vendor_First_Name__c);
+                                $scope.tpaObj.vendorContactLName = angular.copy($scope.objTpaRequestToEdit.Vendor_Contact_Last_Name__c);
+                                $scope.tpaObj.vendorContactEmail = angular.copy($scope.objTpaRequestToEdit.Vendor_e_mail__c);
+                                $scope.tpaObj.vendorTitle = $scope.objTpaRequestToEdit.Vendor_Contact_Title__c;
+                                $scope.tpaObj.authSignerFName = $scope.objTpaRequestToEdit.Authorized_Signer_First_Name__c;
+                                $scope.tpaObj.authSignerLName = $scope.objTpaRequestToEdit.Authorized_Signer_Last_Name__c;
+                                $scope.tpaObj.authSignerTitle = $scope.objTpaRequestToEdit.Authorized_Signer_Title__c;
+                                $scope.tpaObj.authSignerEmail = $scope.objTpaRequestToEdit.Authorized_Signer_Email__c;
+                                $scope.tpaObj.daysSinceTLLAExpired = $scope.objTpaRequestToEdit.Days_since_TLLA_has_expired__c;
+                                $scope.tpaObj.vendorName = $scope.objTpaRequestToEdit.Service_Provider_Address__r.Name;
+                                $scope.tpaObj.requestName = $scope.objTpaRequestToEdit.Name;
+                                if($scope.objTpaRequestToEdit.Renewed_Type__c != null){
+                                    $scope.tpaObj.renewedType = $scope.objTpaRequestToEdit.Renewed_Type__c;
+                                }
+                                if($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.objTpaRequestToEdit.Renewed_As__r.Is_Partially_Renewed__c && $scope.objTpaRequestToEdit.Renewed_As__r.Request_Status__c != 'Cancelled'){
+                                    $scope.tpaObj.renewedTPA = $scope.objTpaRequestToEdit.Renewed_As__r.Name;
+                                    $scope.tpaObj.isPartialRenewed = $scope.objTpaRequestToEdit.Renewed_As__r.Is_Partially_Renewed__c;
+                                    $scope.tpaObj.ExcludedOfferingDeatails = {!ExcludedOfferingDetail};
+                                    console.log('$scope.tpaObj.isPartialRenewed'+$scope.tpaObj.isPartialRenewed);
+                                }
+                                else {
+                                    $scope.tpaObj.isPartialRenewed = false;
+                                    console.log('$scope.tpaObj.isPartialRenewed1'+$scope.tpaObj.isPartialRenewed);
+                                }
+                                
+                                
+                                var renewedOptionNameTemp = '{!$Label.TPA_Renewed_with}';
+                                var renewedOptionName = renewedOptionNameTemp.replace('ClientCompanyNameStr', $scope.tpaObj.clientName) ;
+                                var actionOption = {};
+                                actionOption = {'lbl' : '{!$Label.TPA_None}','lblVal' : '--None--'};
+                                $scope.vendorActionList.push(actionOption);
+                                if($scope.objTpaRequestToEdit.Renewed_As__c == null || ($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed == false)){
+                                    actionOption = {'lbl' : '{!$Label.TPA_Returned}','lblVal' : 'Returned'};
+                                    $scope.vendorActionList.push(actionOption);
+                                    actionOption = {'lbl' : '{!$Label.TPA_Destroyed}','lblVal' : 'Destroyed'};
+                                    $scope.vendorActionList.push(actionOption);
+                                }
+                                if($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed == true ){
+                                    actionOption = {'lbl' : '{!$Label.TPA_Renewed_Returned}','lblVal' : 'Renewed & Returned'};
+                                    $scope.vendorActionList.push(actionOption);
+                                    actionOption = {'lbl' : '{!$Label.TPA_Renewed_Destroyed}','lblVal' : 'Renewed & Destroyed'};
+                                    $scope.vendorActionList.push(actionOption);
+                                }
+                                actionOption = {'lbl' : '{!$Label.TPA_Access_Revoked}','lblVal' : 'Access Revoked'};
+                                $scope.vendorActionList.push(actionOption);
+                                actionOption = {'lbl' : '{!$Label.TPA_Vendor_Never_Received_Access}','lblVal' : 'Vendor Never Received Access'};
+                                $scope.vendorActionList.push(actionOption);
+                                if($scope.objTpaRequestToEdit.Renewed_As__c == null || ($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed == false)){
+                                    actionOption = {'lbl' : renewedOptionName,'lblVal' : 'Executed New (Modified) TPA with '+ $scope.tpaObj.clientName};
+                                	$scope.vendorActionList.push(actionOption);
+                                }
+                                if($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed == true){
+                                    actionOption = {'lbl' : '{!$Label.TPA_a_modified_new_signed_TPA_is_In_Effect}','lblVal' : 'The Above Referenced Excluded Offerings Are Included in a Different In Effect TPA'};
+                                	$scope.vendorActionList.push(actionOption);
+                                }
+                                $scope.vendorDesConfirmatioObj.VendorDestructionActionTaken = $scope.vendorActionList[0].lblVal;
+
+                                $scope.vendorOfferingReturnFNameTemp = '{!$Label.TPA_First_Name_of_the_Vendor_contact_who_is_confirming_the_IMS_intellectual_prop}';
+                                $scope.vendorOfferingReturnFName = $scope.vendorOfferingReturnFNameTemp.replace('ClientCompanyNameStr',$scope.tpaObj.clientName);
+
+                                //Vendor Offering Return Acknowledgement Last Name helptext
+                                $scope.vendorOfferingReturnLNameTemp = '{!$Label.TPA_Last_Name_of_the_Vendor_contact_who_is_confirming_the_IMS_intellectual_prop}';
+                                $scope.vendorOfferingReturnLName = $scope.vendorOfferingReturnLNameTemp.replace('ClientCompanyNameStr',$scope.tpaObj.clientName);
+
+                                //Vendor Offering Return Acknowledgement Title helptext
+                                $scope.vendorOfferingReturnTitleTemp = '{!$Label.TPA_Title_of_the_Vendor_contact_who_is_confirming_the_IMS_intellectual_property}';
+                                $scope.vendorOfferingReturnTitle = $scope.vendorOfferingReturnTitleTemp.replace('ClientCompanyNameStr',$scope.tpaObj.clientName);
+
+                                //Vendor Offering Return Acknowledgement Email helptext
+                                $scope.vendorOfferingReturnEmailTemp = '{!$Label.TPA_Email_Address_of_the_Vendor_contact_who_is_confirming_the_IMS_intellectual_p}';
+                                $scope.vendorOfferingReturnEmail = $scope.vendorOfferingReturnEmailTemp.replace('ClientCompanyNameStr',$scope.tpaObj.clientName);
+
+                                if($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed == true ){
+                                    $scope.vendorDesConfirmationPopupMsg = '{!$Label.TPA_Click_OK_to_proceed_with_the_Offering_Return_Acknowledgement_for_new_VORA}';
+                                }
+                                else {
+                                    $scope.vendorDesConfirmationPopupMsgTemp = '{!$Label.TPA_Click_OK_to_proceed_with_the_Offering_Return_Acknowledgement_the_applicable}';
+                                    $scope.vendorDesConfirmationPopupMsg = $scope.vendorDesConfirmationPopupMsgTemp.replace('ClientCompanyNameStr',$scope.tpaObj.clientName);
+                                }
+                                
+                                $scope.selectedUsesandOfferingLabelTemp = '{!$Label.TPA_Selected_Uses_and_Offerings_for_VORA}';
+                                $scope.selectedUsesandOfferingLabel = $scope.selectedUsesandOfferingLabelTemp.replace('tpanumber',$scope.tpaObj.requestName);
+                                
+                                if($scope.objTpaRequestToEdit.Renewed_As__c != null && $scope.tpaObj.isPartialRenewed){
+                                    $scope.asaMatterofComplianceTemp = '{!$Label.TPA_As_a_matter_of_compliance_based_on_the_expired_tpanumber_the_following_off}';
+                                    $scope.asaMatterofCompliance = $scope.asaMatterofComplianceTemp.replace('tpanumber',$scope.tpaObj.requestName);
+                                    $scope.asaMatterofComplianceLabel = $scope.asaMatterofCompliance.replace('renewedtpa',$scope.tpaObj.renewedTPA);
+                                }
+
+                            }
+                        }
+
+                        $scope.postSubmitActivity = function(redirectionURL)
+                        {
+                            window.location.href = redirectionURL;
+                        }
+
+                        $scope.closeTabOnCancel = function(redirectionURL)
+                        {
+                            hideLoading();
+                            $scope.$log.info('inside');
+                            window.location.href = redirectionURL;
+                        }
+
+                        //*** function to submit request ***//
+                        $scope.submitForm = function()
+                        {
+                            $scope.applyChanges();
+                            if($scope.validateForm())
+                                return false;
+                            $scope.vendorDesConfirmatioSubmitObj = {};
+                            $scope.vendorDesConfirmatioSubmitObj.Vendor_Destruction_Confirmation_FName__c = $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationFName;
+                            $scope.vendorDesConfirmatioSubmitObj.Vendor_Destruction_Confirmation_LName__c = $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationLName;
+                            $scope.vendorDesConfirmatioSubmitObj.Vendor_Destruction_Confirmation_Title__c = $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationTitle;
+                            $scope.vendorDesConfirmatioSubmitObj.Vendor_Destruction_Confirmation_Email__c = $scope.vendorDesConfirmatioObj.VendorDestructionConfirmationEmail;
+                            $scope.vendorDesConfirmatioSubmitObj.ActionTaken__c = $scope.vendorDesConfirmatioObj.VendorDestructionActionTaken + ' ' + $scope.renewOptionName;
+                            $scope.vendorDesConfirmatioSubmitObj.Vendor_Destruction_Confirmation_Date__c = $scope.todayDate;
+                            $scope.vendorDesConfirmatioSubmitObj.TPA_Request__c = $scope.tpaReqId;
+
+                            $scope.$log.info(JSON.stringify($scope.vendorDesConfirmatioSubmitObj));
+
+                            $scope.popupConfirm($scope.vendorDesConfirmationPopupMsg,   //Updated by Vikram Singh under ER-3221
+                                                function(){
+                                                    showLoading();
+                                                    CNT_TPA_VendorOfferingReturnAck.saveRequest(JSON.stringify($scope.vendorDesConfirmatioSubmitObj).replace(/null/i, "\"\""), function(result, event)
+                                                    {
+                                                        $scope.$log.warn(result);
+                                                        if(event.type == 'exception')
+                                                        {
+                                                            hideLoading();
+                                                            $scope.$log.info('Error: ' + event.message);
+                                                            $scope.submitStatus = 'error';
+                                                            return false;
+                                                        }
+                                                        if(result.indexOf('success') > -1)
+                                                            $scope.postSubmitActivity(result.split('~')[1]);
+                                                        else if(result.indexOf('Invalid Renewed Request') > -1) {
+                                                            hideLoading();
+                                                            $scope.$log.info('Error: ' + result);
+                                                            $scope.submitStatus = 'error';
+                                                            $scope.isError = true;
+                                                            $scope.errorMsg = '<ul><li>' + 'Please provide a valid Modified New TPA Request number' + '</li></ul>';
+                                                            window.scrollTo(0,0);
+                                                            $scope.applyChanges();
+                                                            return false;
+                                                        }else if(result.indexOf('Please enter a valid In Effect TPA number that covers the ‘excluded offering(s)’ referenced within the body of the notification form. If you do not know the valid TPA #, please reach back to your Client Contact.') > -1) {
+                                                            hideLoading();
+                                                            $scope.$log.info('Error: ' + result);
+                                                            $scope.submitStatus = 'error';
+                                                            $scope.isError = true;
+                                                            $scope.errorMsg = '<ul><li>' + '{!$Label.TPA_Please_enter_New_Modified_5_or_7_digit_signed_TPA_Request_Number}' + '</li></ul>';
+                                                            window.scrollTo(0,0);
+                                                            $scope.applyChanges();
+                                                            return false;
+                                                        } else {
+                                                            hideLoading();
+                                                            $scope.$log.info('Error: ' + event.message);
+                                                            $scope.submitStatus = 'error';
+                                                            return false;
+                                                        }
+                                                    });
+                                                },
+                                                function(){},
+                                                true);
+
+                        }
+                        //****** tpa request events end ******//
+
+                        //****** Validation models start ******//
+                        $scope.isError = false;
+                        $scope.errorMsg = '';
+                        //****** Validation models end ******//
+
+                        //****** Angular Apply All Changes Event Start ******//
+                        //*** function triggers and applies all angular scope changes explicitly ***//
+                        $scope.applyChanges = function()
+                        {
+                            if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                                $scope.$apply();
+                        }
+                        //****** Angular Apply All Changes Event End ******//
+
+                        $scope.renderBootstrapTooltip = function()
+                        {
+                            applyBootstrapTooltip('right', '.rightTooltip');
+                            applyBootstrapTooltip('left', '.leftTooltip');
+                            applyBootstrapTooltip('bottom', '.bottomTooltip');
+                            applyBootstrapTooltip('top', '.topTooltip');
+                        }
+
+                        //****** Utility Events Start ******//
+
+                        //*** utility function to validate Email Pattern. ***//
+                        $scope.isValidEmail = function(sEmail)
+                        {
+                            var filter = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                            var diacriticscharacterfilter = /([\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+/g;
+                    
+                            if (filter.test(sEmail) && !diacriticscharacterfilter.test(sEmail)) { 
+                                return true;
+                            }
+                            else
+                                return false;
+                        }
+                        $scope.isValidRequestNo = function(sReqNum)
+                        {
+                            var filter = /^([0-9]{5}|[0-9]{7})$/;
+                            if (filter.test(sReqNum)) {
+                                return true;
+                            }
+                            else
+                                return false;
+                        }
+                        $scope.popupAlert = function(msg, truePart)
+                        {
+                            popup(msg, {'animate':true},
+                            function(r)
+                            {
+                                if(r && truePart != null)
+                                    truePart();
+                            });
+                        }
+
+                        $scope.showInputbox = function(lblValue)
+                        {
+                            if(lblValue.indexOf('Executed New') > -1)
+                            {
+                                return true;
+                            }
+                        }
+                        
+                        $scope.showInputbox1 = function(lblValue)
+                        {
+                            if(lblValue.indexOf('The Above Referenced Excluded Offerings') > -1)
+                            {
+                                return true;
+                            }
+                        }
+                        
+						$scope.showCheckBox = function(lblValue)
+                        {
+							if(lblValue.indexOf('Executed New') > -1)
+                            {
+                                return false;
+                            }
+                            return true;
+                        }
+                        
+                        $scope.showCheckBoxForRenew = function(lblValue){
+                            if(lblValue.indexOf('Executed New') > -1)
+                            {
+                                return true;
+                            }                        
+                        }
+
+                        $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                        {
+                            if(isYesNo)
+                                popup(msg, {'verify':true, 'animate':true}, function(r)
+                                {
+                                    if(r)
+                                        truePart();
+                                    else
+                                        falsePart();
+                                    haltScreen = false;
+                                    $scope.applyChanges();
+                                });
+                            else
+                                popup(msg, {'confirm':true, 'animate':true}, function(r)
+                                {
+                                    if(r)
+                                        truePart();
+                                    else
+                                        falsePart();
+                                    haltScreen = false;
+                                    $scope.applyChanges();
+                                });
+                            $('.aButtons button').each(function(){
+                                if($(this).attr('value') == 'cancel')
+                                    $(this).html('{!$Label.TPA_Return}');
+                                if($(this).attr('value') == 'ok')
+                                    $(this).html('{!$Label.TPA_OK}');
+                            });
+                        }
+                        //****** Utility Events End ******//
+                        $scope.loadForm();
+                    }]);
+                    <!-- Page Controller End -->
+
+                //****** Controller directives Start ******//
+                //*** directive to show confirm box ***//
+                myapp.directive('ngConfirmClick', [
+                    function(){
+                        return {
+                            link: function (scope, element, attr) {
+                                var msg = attr.ngConfirmClick || "{!$Label.TPA_Are_you_sure}?";
+                                var clickAction = attr.confirmedClick;
+                                element.bind('click',function (event) {
+                                    popup(msg, {'verify':true, 'animate':true}, function(r)
+                                    {
+                                        if(r) {
+                                            scope.$eval(clickAction);
+                                        }
+                                    });
+                                });
+                            }
+                        };
+                    }]);
+                    
+                    //Shut down popup code
+                    var popupAlert = function(msg, truePart)
+                    {
+                    popup(msg, {'animate':true}, 
+                    function(r)
+                    {
+                        if(r && truePart != null)
+                            truePart();                    
+                    });
+                    //  $(".aButtons button").html('{!$Label.TPA_OK}');
+                    }
+                    
+                    //****** Controller directives End ******//
+
+                    //*** function to Load Bootstrap Balloon tool tip Start ***//
+                    function applyBootstrapTooltip(pos, cssName)
+                    {
+                        $(cssName).tooltip({
+                                placement : pos,
+                                html : true
+                            });
+                    }
+                    //*** function to Load Bootstrap Balloon tool tip End ***//
+
+                    //*** function to read Query strings Start ***//
+                    function getParameterByName(name)
+                    {
+                        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                        return results == null ? "" : results[1].replace(/\+/g, " ");
+                    }
+                    //*** function to read Query strings End ***//
+
+                    function onActionClick()
+                    {
+                        showLoading();
+                    }
+
+                    var childWindow;
+                    var winClosed;
+                    //*** function disables parent window when child window opens Start ***//
+                    function parent_disable()
+                    {
+                        if(childWindow != null && !childWindow.closed)
+                        {
+                            childWindow.focus();
+                            return false;
+                        }
+                        return true;
+                    }
+                    //*** function disables parent window when child window opens End ***//
+
+                    $(document).ready(function() {
+
+                        $('.sfdcBody').focus(parent_disable);
+                        $('.sfdcBody').click(parent_disable);
+
+                        //*** Bootstrap Tooltip Load Script Start ***//
+                        applyBootstrapTooltip('right', '.rightTooltip');
+                        applyBootstrapTooltip('top', '.topTooltip');
+                        applyBootstrapTooltip('bottom', '.bottomTooltip');
+                        //*** Bootstrap Tooltip Load Script End ***//
+                    });
+                </script>
+                    <!-- ****** AngularJS script End ****** -->
+
+                <style type="text/css">
+
+                    /**** Common Page Style Start ****/
+                    .list {width:100%;border: 1px solid #e0e3e5;}
+
+                    tr.headerRow th{background: none repeat scroll 0 0 #f2f3f3;color:#333;}
+                    tr.dataRow td:hover{background-color:#e3f3ff;}
+                    tr.dataRow td a{color:#333;}
+
+                    .helpOrb:hover
+                    {
+                        background-position: right top;
+                    }
+                    .imsheader
+                    {
+                        bgcolor: #1793EC !important;
+                        color: #000 !important;
+                    }
+
+                    .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader h3
+                    {
+                    color: #000 !important;
+                    }
+                    .labelDiv
+                    {
+                        float:left;
+                        width:30%;
+                        word-wrap: break-word;
+                    }
+
+                    .valueDiv
+                    {
+                        margin-right:5%;
+                        float:right;
+                        width:50%;
+                        position:relative;
+                        display:inline;
+                    }
+
+                    h1, h2, h3, h4, h5, h6
+                    {
+                        font-weight: bold;
+                    }
+
+                    .detailList .labelCol
+                    {
+                        width:18%;
+                    }
+
+                    .lbl
+                    {
+                        color:#4a4a56;
+                        font-size: 12px;
+                        text-align:justify;
+                    }
+
+                    .bPageBlock, .brdPalette
+                    {
+                        border-top-color: #10a6f0 !important;
+                    }
+
+                    .zen-mbm, .menuButtonRounded, .pageMsg
+                    {
+                        font-size: 12px !important;
+                    }
+
+                    .messageTable, .panelText, .message
+                    {
+                        font-size: 12px !important;
+                        margin-top:5px !important;
+                    }
+
+                    label, .labelCol, .data2Col, .btn, .dataCol
+                    {
+                        font-size: 12px !important;
+                        color: #4a4a56 !important;
+                    }
+
+                    .pbSubheader
+                    {
+                        font-size:12px !important;
+                        padding:4px 16px !important;
+                    }
+
+                    .pbHeader
+                    {
+                        display:none !important;
+                    }
+
+                    .pbBody
+                    {
+                        margin-top:0px !important;
+                    }
+
+                    *,.noOutline
+                    {
+                        outline:none !important;
+                    }
+
+                    .tooltip-inner
+                    {
+                        min-width:100px;
+                        max-width:400px;
+                        white-space:pre-wrap;
+                        text-align:left;
+                    }
+
+                    .modal-dialog
+                    {
+                        margin: 10% auto;
+                    }
+
+                    .modal
+                    {
+                        overflow: inherit !important;
+                    }
+
+                    .select2-results li
+                    {
+                        margin-left:0px;
+                    }
+
+                    .select2-highlighted
+                    {
+                        color: #000 !important;
+                        background-color:#ccc !important;
+                    }
+
+                    .select2-search-field input
+                    {
+                        padding: 2px 5px !important;
+                    }
+                    /**** Common Page Style End ****/
+
+                    /**** Error Message Style Start ****/
+                    .message .messageText h4
+                    {
+                        font-size:13px;
+                        margin-left: 30px;
+                        margin-top: 0px;
+                    }
+                    
+                    ul li{
+                        font-size:13px;
+                    }
+
+                    .message ul li
+                    {
+                        list-style:disc;
+                    }
+
+                    .message ul
+                    {
+                        margin-left: 40px;
+                        margin-top: 20px;
+                    }
+                    /**** Error Message Style End ****/
+                </style>
+            </head>
+            <body id="pageBody" oncontextmenu="return false;" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+                <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+                <apex:form html-class="slds-form slds-form_horizontal">
+                    <div id="ng-app" class="slds-p-around_small slds-m-around_small" ng-app="TpaAccessRequest" style="background-color:white">
+                        <div id="controllerPage" ng-controller="controllerPage">
+                            <c:VFC_TPA_LoadingImage />
+                            <!-- Error Message Box Start -->
+                                <div ng-show="isError" class="slds-theme_error" role="alert" style="display:none;">
+                                    <div class="message errorM3 slds-notify__content " role="alert">
+                                        <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <h2 class="slds-text-heading_small">
+                                                            <div class="messageText">
+                                                                <span><h4>Error</h4></span>
+                                                            </div>
+                                                        </h2>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5">
+                                                        <span ng-bind-html-unsafe="errorMsg"></span>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Error Message Box End -->
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{!$Label.TPA_Client_Contact_Information}"><b>{!$Label.TPA_Client_Contact_Information}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <div class="slds-form" role="list">
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Contact_Name}"><b>{!$Label.TPA_Contact_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Contact_Name}">{{tpaObj.clientContactName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Client_Company_Name}"><b>{!$Label.TPA_Client_Company_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Client_Company_Name}">{{tpaObj.clientName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Client_Project_Name}"><b>{!$Label.TPA_Client_Project_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Client_Project_Name}">{{tpaObj.clientProjectName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id=""></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{!$Label.TPA_Vendor_Contact_Information}"><b>{!$Label.TPA_Vendor_Contact_Information}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <div class="slds-form" role="list">
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Vendor_Contact_Name}"><b>{!$Label.TPA_Vendor_Contact_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Vendor_Contact_Name}">{{tpaObj.vendorContactFName}}&nbsp;{{tpaObj.vendorContactLName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Vendor_Title}"><b>{!$Label.TPA_Vendor_Title}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Vendor_Title}">{{tpaObj.vendorTitle}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Vendor_Contact_Email}"><b>{!$Label.TPA_Vendor_Contact_Email}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Vendor_Contact_Email}">{{tpaObj.vendorContactEmail}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id=""></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-section slds-is-open" ng-show="tpaObj.isAuthorisedSigner == 'No'">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{!$Label.TPA_Authorized_Signer_Information}"><b>{!$Label.TPA_Authorized_Signer_Information}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <div class="slds-form" role="list">
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Authorized_Signer_Name}"><b>{!$Label.TPA_Authorized_Signer_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Authorized_Signer_Name}">{{tpaObj.authSignerFName}}&nbsp;{{tpaObj.authSignerLName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Authorized_Signer_Title}"><b>{!$Label.TPA_Authorized_Signer_Title}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Authorized_Signer_Title}">{{tpaObj.authSignerTitle}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Authorized_Signer_Email_Address}"><b>{!$Label.TPA_Authorized_Signer_Email_Address}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Authorized_Signer_Email_Address}">{{tpaObj.authSignerEmail}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id=""></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{{selectedUsesandOfferingLabel}}"><b>{{selectedUsesandOfferingLabel}}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <table class="list slds-table slds-table_bordered slds-table_col-bordered">
+                                        <tr class="headerRow">
+                                            <th>{!$Label.TPA_Use_Name}</th>
+                                            <th>{!$Label.TPA_Offerings}</th>
+                                            <th>{!$Label.TPA_Region}</th>
+                                        </tr>
+                                        <tr class="dataRow" ng-repeat="(k,v) in SelectedDescMap track by $index" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                            <td class="dataCell">
+                                                {{k.split('~')[1]}}
+                                            </td>
+                                            
+                                            <td class="dataCell">
+                                                {{v}}
+                                            </td>
+                                            <td class="dataCell">{{k.split('~')[0]}}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{!$Label.TPA_Third_Party_Limited_License_Agreement_Information}"><b>{!$Label.TPA_Third_Party_Limited_License_Agreement_Information}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <div class="slds-form" role="list">
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Client_Request_Number}"><b>{!$Label.TPA_Client_Request_Number}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Client_Request_Number}" ng-bind="objTpaRequestToEdit.Name"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""><b></b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id=""></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Data_Access_Start_Date}"><b>{!$Label.TPA_Data_Access_Start_Date}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Data_Access_Start_Date}" ng-bind="objTpaRequestToEdit.Data_Access_Start_Date__c | date:'MM/dd/yyyy'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Data_Access_End_Date}"><b>{!$Label.TPA_Data_Access_End_Date}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Data_Access_End_Date}" ng-bind="objTpaRequestToEdit.Data_Access_End_Date__c | date:'MM/dd/yyyy'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for="{!$Label.TPA_Days_since_TLLA_has_expired}"><b>{!$Label.TPA_Days_since_TLLA_has_expired}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span id="{!$Label.TPA_Days_since_TLLA_has_expired}" >{{tpaObj.daysSinceTLLAExpired}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>                                                                             
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-form-element_horizontal" ng-if="tpaObj.isPartialRenewed == true">
+                                <div class="slds-form-element slds-form-element_horizontal">
+                                    <label ><b><span >{{asaMatterofComplianceLabel}}</span> </b></label>
+                                </div>
+                            </div>
+                            <div class="slds-form__row" ng-if="tpaObj.isPartialRenewed == true">
+                                <p class="panelText slds-m-around_small" style="padding: inherit;font-size:0.9em;text-align: justify;">
+                                    <apex:outputLabel value="{!excludedOfferingsDetail}" escape="false"/>
+                                </p>
+                            </div>
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                    <span class="slds-truncate" title="{!$Label.TPA_Vendor_Offering_Return_Confirmation_Information}"><b>{!$Label.TPA_Vendor_Offering_Return_Confirmation_Information}</b></span>
+                                </h3>
+                                <div aria-hidden="false" class="slds-section__content">
+                                    <div class="slds-form" role="list">
+                                        <div class="slds-form__row">
+                                            <p class="panelText slds-m-around_small" style="padding: inherit;font-size:0.9em;text-align: justify;">
+                                                <apex:outputText escape="false" value="{!$Label.TPA_Attention_By_entering_your_name_email_address_and_title_you_acknowledge}">
+                                                </apex:outputText>
+                                            </p>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label"><b>{!$Label.TPA_Vendor_Name}</b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span >{{tpaObj.vendorName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label">
+                                                        <abbr class="slds-required" title="required">* </abbr><b>{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_First_Name}</b>
+                                                    </label>
+                                                    <c:VFC_TPA_LightningHelpText cHlpTxt="{{vendorOfferingReturnFName}}"/>
+                                                    <div id="opPanel" class="slds-form-element__control">
+                                                        <input class="slds-input" type="text" maxlength="255" ng-model="vendorDesConfirmatioObj.VendorDestructionConfirmationFName" 
+                                                            ng-class="{'errStyle':isVendorDestructionConfirmationFNameError,'':!isVendorDestructionConfirmationFNameError}" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label">
+                                                        <abbr class="slds-required" title="required">* </abbr><b>{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Last_Name}</b>
+                                                    </label>
+                                                    <c:VFC_TPA_LightningHelpText cHlpTxt="{{vendorOfferingReturnLName}}"/>
+                                                    <div id="opPanel" class="slds-form-element__control">
+                                                        <div>
+                                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorDesConfirmatioObj.VendorDestructionConfirmationLName" 
+                                                                ng-class="{'errStyle':isVendorDestructionConfirmationLNameError,'':!isVendorDestructionConfirmationLNameError}" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label">
+                                                        <abbr class="slds-required" title="required">* </abbr><b>{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Title}</b>
+                                                    </label>
+                                                    <c:VFC_TPA_LightningHelpText cHlpTxt="{{vendorOfferingReturnTitle}}"/>
+                                                    <div id="opPanel" class="slds-form-element__control">
+                                                        <div>
+                                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorDesConfirmatioObj.VendorDestructionConfirmationTitle" alphanumeric-Only="alphanumeric-Only" 
+                                                                ng-class="{'errStyle':isVendorDestructionConfirmationTitleError,'':!isVendorDestructionConfirmationTitleError}" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label">
+                                                        <abbr class="slds-required" title="required">* </abbr><b>{!$Label.TPA_Vendor_Offering_Return_Acknowledgement_Email}</b>
+                                                    </label>
+                                                    <c:VFC_TPA_LightningHelpText cHlpTxt="{{vendorOfferingReturnEmail}}"/>
+                                                    <div id="opPanel" class="slds-form-element__control">
+                                                        <div>
+                                                            <input class="slds-input" type="text" maxlength="80" ng-model="vendorDesConfirmatioObj.VendorDestructionConfirmationEmail" 
+                                                                ng-class="{'errStyle':isVendorDestructionConfirmationEmailError,'':!isVendorDestructionConfirmationEmailError}" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <p class="panelText slds-m-around_small" style="padding: inherit;font-size:0.9em;text-align: justify;">
+                                                <span >{!$Label.TPA_IQVIA_Third_Party_Access_Limited_License_Agreement_TPA_Agreement}</span>
+                                            </p>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label"><b>{!$Label.TPA_Effective_date}: </b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ng-bind="objTpaRequestToEdit.Agreement_Effective_Date__c | date:'MM/dd/yyyy'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label"><b>{!$Label.TPA_Related_Client}: </b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span >{{tpaObj.clientName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label"><b>{!$Label.TPA_Related_TPA_Request}: </b></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span >{{tpaObj.requestName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div style="margin-left: 10px;width: 60%;">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label">
+                                                        <abbr class="slds-required" title="required">* </abbr><b>{!$Label.TPA_Action_Taken}</b>
+                                                    </label>
+                                                    <c:VFC_TPA_LightningHelpText cHlpTxt="{!$Label.TPA_Mandatory_Confirm_the_action_taken_If_an_IMS_TPA_was_renewed_please_note}"/>
+                                                    <div id="opPanel" style="margin-left:0.3em;" class="slds-form-element__control">
+                                                        <div style="margin-left: -10%;">
+                                                            <select class="slds-select" id="ddRegion" ng-model="vendorDesConfirmatioObj.VendorDestructionActionTaken"  ng-options="v.lblVal as v.lbl for v in vendorActionList">
+                                                            </select>
+                                                        </div>
+                                                        <div class="requiredInput" style="margin-left: -10%;">
+                                                            <div class="requiredBlock"></div>
+                                                            <input class="slds-input" type="text" id="reqNo" placeholder="{!$Label.TPA_Provide_5_digit_number_only}" 
+                                                                ng-show="showInputbox(vendorDesConfirmatioObj.VendorDestructionActionTaken)" ng-model = "renewOptionName" 
+                                                                ng-class="{'errStyle':isVendorDestructionConfirmationActionTakenError,'':!isVendorDestructionConfirmationActionTakenError}"/>
+                                                            <input class="slds-input" type="text" id="reqNo" placeholder="Enter In Effect TPA number" 
+                                                                ng-show="showInputbox1(vendorDesConfirmatioObj.VendorDestructionActionTaken)" ng-model = "renewOptionName" 
+                                                                ng-class="{'errStyle':isVendorDestructionConfirmationActionTakenError,'':!isVendorDestructionConfirmationActionTakenError}"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div style="margin-top:10px;margin-left:10px;">         
+                                                    <div class="slds-checkbox">
+                                                        <input style="margin-left:0.3em;float:left;" type="checkbox" id="ddnAck1" ng-model="tpaObj.ddnAck1"
+                                                               ng-class="{'errStyle':isDdnAck1Error,'':!isDdnAck1Error}" /> 
+                                                        <label class="slds-checkbox__label" for="ddnAck1">
+                                                            <span class="slds-checkbox_faux "></span>
+                                                            <span class="slds-form-element__label "> &nbsp;&nbsp;{!$Label.TPA_In_my_above_role_with_Vendor_I_am_able_and_authorized_to_make_this_certif} </span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row" ng-show="showCheckBoxForRenew(vendorDesConfirmatioObj.VendorDestructionActionTaken)" >
+                                            <div class="slds-form__item" role="listitem">
+                                                <div style="margin-top:10px;margin-left:10px;">
+                                                    <div class="slds-checkbox">
+                                                        <input style="margin-left:0.3em;float:left;" type="checkbox" id="ddnAck2Renew" ng-model="tpaObj.ddnAck2Renew"/>
+                                                        <label class="slds-checkbox__label" for="ddnAck2Renew">
+                                                            <span class="slds-checkbox_faux "></span>
+                                                            <p class="slds-form-element__label " > 
+                                                                &nbsp;&nbsp;{!$Label.To_the_extent_the_IQVIA_Data_Offerings_identified_in_this_expired_TPA_are_not_co}
+                                                                <p>
+                                                                    <ul style="list-style-type:circle;padding-left: 45px;">
+                                                                        <li > {!$Label.TPA_Excluding_Retained_Data_Vendor_has_no_further_access_to_or_has_returned_t} </li>
+                                                                        <li > {!$Label.TPA_Vendor_shall_restrict_access_use_and_dissemination_of_Retained_Data} </li>
+                                                                    </ul>
+                                                                </p>
+                                                            </p>
+                                                        </label>
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row" ng-show="showCheckBox(vendorDesConfirmatioObj.VendorDestructionActionTaken)" >
+                                            <div class="slds-form__item" role="listitem">
+                                                <div style="margin-top:10px;margin-left:10px;">
+                                                    <div class="slds-checkbox">
+                                                        <input style="margin-left:0.3em;float:left;" type="checkbox" id="ddnAck2" ng-model="tpaObj.ddnAck2"
+                                                               ng-class="{'errStyle':isDdnAckError,'':!isDdnAckError}" />
+                                                        <label class="slds-checkbox__label" for="ddnAck2">
+                                                            <span class="slds-checkbox_faux "></span>
+                                                            <span class="slds-form-element__label " > &nbsp;&nbsp;{!$Label.TPA_Excluding_Retained_Data_Vendor_has_no_further_access_to_or_has_returned_t} </span>
+                                                        </label>
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row" ng-show="showCheckBox(vendorDesConfirmatioObj.VendorDestructionActionTaken)">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div style="margin-top:10px;margin-left:10px;">         
+                                                    <div class="slds-checkbox">
+                                                        <input style="margin-left:0.3em;float:left;" type="checkbox" id="ddnAck3" ng-model="tpaObj.ddnAck3"
+                                                               ng-class="{'errStyle':isDdnAckError,'':!isDdnAckError}" /> 
+                                                        <label class="slds-checkbox__label" for="ddnAck3">
+                                                            <span class="slds-checkbox_faux "></span>
+                                                            <span class="slds-form-element__label "> &nbsp;&nbsp;{!$Label.TPA_Vendor_shall_restrict_access_use_and_dissemination_of_Retained_Data} </span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form__item" role="listitem">
+                                                <div class="slds-form-element slds-form-element_horizontal">
+                                                    <label class="slds-form-element__label" for=""></label>
+                                                    <div class="slds-form-element__control">
+                                                        <span ></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__row">
+                                            <div class="slds-form__item" role="listitem">
+                                                <div style="margin-top:10px;margin-left:10px;">
+                                                    <div class="slds-checkbox">
+                                                        <input style="margin-left:0.3em;float:left;" type="checkbox" id="ddnAck4" ng-model="tpaObj.ddnAck4"
+                                                               ng-class="{'errStyle':isDdnAckError,'':!isDdnAckError}" />
+                                                        <label class="slds-checkbox__label" for="ddnAck4">
+                                                            <span class="slds-checkbox_faux "></span>
+                                                            <span class="slds-form-element__label " > &nbsp;&nbsp;{!$Label.TPA_After_reasonable_investigation_the_foregoing_is_true_and_correct_to_the_b} </span>
+                                                        </label>
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                        </div>  
+                                        <div class="slds-form__row">
+                                            <p style="margin-top: 2%;margin-bottom: 2%; padding: inherit;font-size:0.9em;text-align: justify;">
+                                                <apex:outputText escape="false" value="{!$Label.TPA_Retained_Data_includes_a_IQVIA_Data_that_is_contained_in_an_archived_com}">
+                                                </apex:outputText>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-float_right">
+                                <button  class="slds-button slds-button_brand" onclick="return false;" ng-click="submitForm();">
+                                    {!$Label.TPA_Confirmation}
+                                </button>
+                                <button class="slds-button slds-button_brand" onclick="return false;" 
+                                        ng-click="onActionClick();closeTabOnCancel('VFP_TPA_Page_Status?type=venOfferingReturnCancelled');">
+                                    {!$Label.TPA_Cancel}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </apex:form>
+            </body>
+        </html>
+    </apex:outputPanel><!-- Added for site to community logic submission-->
+</apex:page>

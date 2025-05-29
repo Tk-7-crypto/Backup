@@ -1,0 +1,417 @@
+<apex:page controller="CNT_TPA_ManualTriggerReport" id="pageId" tabStyle="TPA_Request__c" title="Manual Trigger Statistics Report" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.jqGrid.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/grid.locale-en.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/jquery-ui.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/ui.jqgrid.css')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcalendar.js')}" />
+    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript" />
+    <apex:includeScript value="{!$Resource.AngularJS}"/>
+    <!-- *** Multi Select Control CSS reference *** -->
+    <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+    <!-- *** Multi Select Control CSS reference *** -->
+
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    <script type="text/javascript">
+        function showGrid(jsonData)
+        {
+            if( jsonData.length == 0 )
+            {
+                showPopup('There are no request for the matching criteria.',function(){});
+                hideLoading();
+                return;
+            }
+            $("#jqGrid").jqGrid(
+            {
+                data: jsonData,
+                datatype: 'local',
+                cmTemplate: { sortable: false },
+                colModel: [
+                    { label:'Manual Trigger Name', name: 'manualTriggerName', search : true },
+                    { label:'Count of Occurrences', name: 'countOfOccurance', align: 'center'},
+                ],
+                loadonce: false,
+                viewrecords: true,
+                height: 'auto',
+                width: 1000,
+                gridView: true,
+                rowNum: 20, 
+                rowList : [20,30,50],
+                pager: "#jqGridPager",
+                footerrow: true,
+                userDataOnFooter: true,
+            });
+         $("#jqGrid").jqGrid(
+                "navGrid","#jqGridPager",{edit:false,add:false,del:false},{},{},{},{sopt:['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc']}
+            );
+         hideLoading();
+        }
+    
+         function reloadGrid(data){
+            if( data.length == 0 )
+            {
+                hideLoading();
+                showPopup('There are no request for the matching criteria.',function (){});
+                return;
+            }
+            var grid = $('#jqGrid');
+            grid.jqGrid("clearGridData", true); 
+            grid.jqGrid('setGridParam',{data:data}).trigger("reloadGrid", [{current: true}] ); 
+            hideLoading();
+        }
+        var allConditions = {}
+
+        function validateConditions()
+        {
+            var startDate = document.getElementById('pageId:formId:blockId:pbSection:sdate:fromDate').value;
+            var endDate = document.getElementById('pageId:formId:blockId:pbSection:edate:toDate').value;
+            var selectedCountry = $('#RequestingCountry').select2('data');
+            var submittingCountry = "";
+			if(selectedCountry != null && selectedCountry.length > 0){
+            	$.each(selectedCountry,function(value,index) {
+                	submittingCountry+= ((index.text) + ';');
+                });
+            }
+            
+            if( startDate == null || startDate == '' )
+            {
+                showPopup('Please select Start Date',function(){});
+                return;
+            }
+            else if( endDate == null || endDate == '' )
+            {
+                showPopup('Please select End Date',function(){});
+                return;
+            }
+            else if( submittingCountry == null || submittingCountry == '' )
+            {
+                showPopup('Please select Submitted Country',function(){});
+                return;
+            }
+            if(new Date(startDate) > new Date(endDate)){
+            	showPopup('Start Date must not be Greater than End Date !!!', function(){});
+                return;
+            }
+            allConditions.fromDate = startDate;
+            allConditions.toDate = endDate;
+            allConditions.countries = submittingCountry;
+            validate(allConditions);
+        }
+    	TotalTPARequest = 0;
+		var showGridFirstTime = true;
+		var resultList = [];
+
+    	function validate(allConditions)
+        {
+            TotalTPARequest = 0; 
+            showLoading();
+            document.getElementById('pageId:formId:tableSection').style.display = 'none'
+            fetchRecords(null,JSON.stringify(allConditions));
+        } 
+    	function fetchRecords(lastRecord, fetchedConditions){
+            console.log(fetchedConditions)
+            console.log(lastRecord)
+            Visualforce.remoting.Manager.invokeAction(
+            	'{!$RemoteAction.CNT_TPA_ManualTriggerReport.searchRequest}',
+                lastRecord,
+                fetchedConditions,
+                function(result, event){
+                    if(event.type == 'exception')
+                	{
+                        hideLoading();
+                        showPopup('<b>Report Timed Out</b> - Please try with specific country filter',function (){});
+                    	return false;                                    
+                	}
+                	else
+                	{	if(result != null){
+                        	console.log(result);
+                    		resultList = result;
+                        }
+                    	if(result.totalRequest % 1000 == 0 && result.totalRequest != 0)
+                    	{
+                            fetchRecords(JSON.stringify(result),fetchedConditions);
+                        	return false;
+                  		}
+                     	else if(result == null || result == '' || result.totalRequest == 0){
+                            hideLoading();
+                            showPopup('There are no request for the matching criteria.',function (){});
+                            return false;
+                        }
+                 		else{
+                            document.getElementById('pageId:formId:tableSection').style.display = "block";
+                            totalTPARequest = result.totalRequest;
+                            document.querySelector('#totalTPARequest').innerText = totalTPARequest;
+                            if(showGridFirstTime){
+                    			showGrid(resultList.Data);
+                                showGridFirstTime = false;
+                            }
+                            else{
+                            	reloadGrid(resultList.Data);
+                            }
+                    	}
+               		}
+                },
+                {escape: true}
+            );
+		}
+    
+     function showPopup(msg, truePart){
+        popup(msg, {'animate':true}, function(r)
+        {
+            if(r)
+        		truePart();
+    	});
+    }
+        $(document).ready(function() {
+            
+            var tempCategory = "{!submittingCountries}";
+            console.log(tempCategory);
+            var submittingCountries = tempCategory.toString().slice(1,-2).split('~,');
+            $('#RequestingCountry').select2({placeholder: "Select Country", width: '50%', closeOnSelect:false});
+                       
+            $.each(submittingCountries,function(k,v){
+                if(k != null )
+                    $('#RequestingCountry').append($("<option></option>").attr("value",v.trim()).text(v.trim()));
+                
+            });
+        	$(".datepicker").datepicker({showOn: "button",  buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAALdQTFRFMzMyAAAAMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMy////j2KaIAAAADt0Uk5TAAAEgzuRhtCH6aaF09KLFnt66xoGAwLsBw8Mfnj3GDiBNGyCNW19d/YOHw118hlDmj8UAfAuEBuv9eqZZ685AAAAAWJLR0Q8p2phzwAAAAlwSFlzAAAASAAAAEgARslrPgAAALxJREFUGNM9jIcOgkAQBUcseLZDVzwrKtgL9nr//18qqC+ZvGSy+8Ahm+WHA7l8wXWLxZRCPocqlSvVWq36oVIuKZTGq0P9g4dWNISm33J832n5TaSB0bQ7bbrdpLTBCD3bZzCgb3vIWwQMR2PCkPFoSJCKaMJ0yiRKhTCzcxYL5naWvGiWqzUirFfL76hnN2y3bKyXXMTs9geiiMN+R2xQR06Zb04cFefLNb4FWkQHt/h6OXN/PM0/z8f9BT8gFJGascv+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE0LTA4LTA1VDA1OjMwOjQ2LTA0OjAwb0yWxAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNC0wOC0wNVQwNTozMDo0Ni0wNDowMB4RLngAAAAASUVORK5CYII=", buttonImageOnly: true});
+        	$(".datepicker").datepicker("option","changeYear", true);
+            $(".datepicker").datepicker("option","changeMonth", true);
+            $(".datepicker").datepicker("option","maxDate", new Date());
+            $(".datepicker").datepicker("option","minDate", new Date(2015,7,3));
+            $(".datepicker").datepicker("option","yearRange", '2015:p');
+            $('img.ui-datepicker-trigger').prop({title: 'Click to open calendar', alt: 'Click to open calendar'});
+            $(".datepicker").datepicker( "option", "dateFormat", 'mm/dd/yy' );
+            $(document).hover(           
+                //Mouse-over    
+                function(e) {
+                    $('.mousehov').mousemove(function(e) {
+                    $('.helpTextDate').css({
+                        'position' : 'absolute',
+                        'top' : e.pageY  - this.offsetTop - 100,
+                        'left' : e.pageX - this.offsetLeft + 30   
+                        }).show();
+                    });    
+                },
+                //Mouse-out
+                function() {
+                    $('.helpTextDate').fadeOut("fast","swing");
+                }    
+            );
+        }, '.mousehov');
+        
+    </script>
+    <body class="slds-scope" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+	    <apex:form id="formId" styleclass="slds-m-around_small ">
+            
+	        <c:VFC_TPA_LoadingImage />
+	        
+	        <apex:outputpanel >
+	            <apex:actionstatus id="status">
+	                <apex:facet name="start">
+	                    <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+					        <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+					            <div class="slds-spinner__dot-a"></div>
+					            <div class="slds-spinner__dot-b"></div>
+					        </div>
+					    </div>
+	                </apex:facet>
+	            </apex:actionstatus>
+	        </apex:outputpanel>
+	        
+	        <apex:sectionHeader title="TPA Request" subtitle="TPA Manual Trigger Statistics Report"/>
+	        <apex:pageMessages id="message" />
+	        
+	        <apex:pageBlock id="blockId" title="Search Criteria" >
+	            <apex:pageBlockSection columns="1" id="pbSection" >
+	                <apex:pageBlockSectionItem id="sdate">
+	                    <apex:outputText value="Start Date: " />
+	                    <apex:outputPanel styleClass="requiredInput mousehov" layout="block">
+                            <div class="helpTextDate">
+	     				       <div id="qtip-0" class="qtip qtip-default  qtip-pos-tr" style="z-index: 15001;">
+	        				        <div class="qtip-content" id="qtip-0-content">
+	                 				   <h6>Data is valid from 08/03/15.</h6>
+	              				  </div>
+	           				 </div>
+                			</div>
+	                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+	                        <apex:input html-readOnly="true" styleclass="slds-input datepicker slds-size_7-of-8" id="fromDate" />
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                
+	                <apex:pageBlockSectionItem id="edate">
+	                    <apex:outputText value="End Date: " />
+	                    <apex:outputPanel layout="block" styleClass="requiredInput">
+	                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+	                        <apex:input html-readOnly="true" styleclass="slds-input datepicker slds-size_7-of-8" id="toDate" />
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                
+	                <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="Requesting Country:" />
+                            <apex:outputPanel >
+                                <div class = 'requiredInput'>
+                                    <div class="requiredBlock"></div>
+                                    <select id="RequestingCountry" multiple="multiple"></select>
+                                    <label style="font-weight:bold;">(Select Requesting Country)</label>
+                                </div>
+                            </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+	            </apex:pageBlockSection>
+	            <apex:commandButton styleclass="slds-align_absolute-center" value="Run Report" onClick="validateConditions(); return false;" status="status" reRender="tableSection" />
+	        </apex:pageBlock>
+            
+	        <apex:outputPanel id="tableSection"  >
+	            <apex:pageBlock title="Manual Trigger Statistics:" id="tableBlock" >
+	                <apex:pageBlockSection columns="1" >
+	                    <div style="font-size:12px;font-family: sans-serif;"> 
+	                        <b><span> Total TPA Requests:  </span></b>
+	                        <span id = 'totalTPARequest'>  </span>
+	                    </div>
+	                    <apex:outputPanel >
+	                        <table id="jqGrid"></table>
+	                        <div id="jqGridPager"></div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSection>
+	            </apex:pageBlock>
+	        </apex:outputPanel>
+	    </apex:form>
+    </body>
+    <script>
+        function setFocus()
+        {
+            document.getElementById('RequestingCountry').focus();
+        }
+        
+        window.onload = setFocus();
+    
+    	document.getElementById('pageId:formId:tableSection').style.display = "none";
+    </script>
+    
+    <style>
+    	#ui-datepicker-div .ui-datepicker {
+		   background: white;
+		}
+
+        #ui-datepicker-div .ui-state-default, #ui-datepicker-div .ui-widget-content .ui-state-default, #ui-datepicker-div .ui-widget-header .ui-state-default {
+		    background: #CCCBCE;
+		    font-weight: normal;
+		    color: black;
+		}
+        
+        #ui-datepicker-div .ui-widget-header {
+		    border: 1px solid #4297d7;
+		    background: #CCCBCE;
+		    color: black;
+		    font-weight: bold;
+		}
+		
+		#ui-datepicker-div .ui-datepicker-prev{ display: none; }
+		#ui-datepicker-div .ui-datepicker-next{ display: none; }
+		
+		.ui-jqgrid .ui-pg-table td{
+			vertical-align: unset;
+		}
+		
+		.ui-jqgrid .ui-pg-selbox, .ui-jqgrid .ui-jqgrid-toppager .ui-pg-selbox {
+		    color: black;
+		}
+        
+        .ui-jqgrid tr.jqgrow td
+        {
+            white-space: normal !important;
+            height:auto;
+            vertical-align:text-top;
+            font-size:12px;
+        }
+        
+        .ui-jqgrid .ui-jqgrid-htable th div
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+            position:relative;
+            overflow:hidden;
+        }
+        
+        .ui-jqgrid tr.jqfoot td
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        
+        .helpTextDate 
+        {
+            position: absolute;
+            display:none;
+            z-index:99999;
+        }
+        body:hover + div.helpTextDate {
+            display: block;
+        }
+        .helpTextDate .qtip {
+        background-color: #FFF;
+        background-color: rgba(255,255,255,.95);
+        border-color: #ccc;
+        padding: 1px;
+        -moz-box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        -webkit-box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        
+        .qtip-default {
+        border-width: 1px;
+        border-style: solid;
+        border-color: #f1d031;
+        background-color: #ffffa3;
+        color: #555;
+        }
+        
+        .qtip, .qtip {
+        max-width: 280px;
+        min-width: 50px;
+        font-size: 10.5px;
+        line-height: 12px;
+        direction: ltr;
+        }
+        #nytmm .qtip-content {
+        border-color: #999;
+        color: #000;
+        padding: 4px 7px;
+        text-align: center;
+        }
+        .qtip-content {
+        position: relative;
+        padding: 5px 9px;
+        overflow: hidden;
+        text-align: left;
+        word-wrap: break-word;
+        }
+        
+        .helpTextDate .qtip-content h5 {
+        font: 300 20px/22px "nyt-cheltenham",Georgia,"Times New Roman",serif;
+        color: #000;
+        margin: 0;
+        }
+        
+        .helpTextDate .qtip-content h6 {
+        font: 600 13px/16px 'nyt-franklin',Arial,Helvetica,sans-serif;
+        margin: 0;
+        }
+        
+        .slds-scope .slds-input[readonly]{
+            padding-left: var(--sds-c-input-spacing-horizontal-start, 0.75rem);
+            border-color: rgb(201, 199, 197);
+            background-color: rgb(236, 235, 234);
+            font-size: inherit;
+            cursor: not-allowed;
+        }
+    </style>
+</apex:page>

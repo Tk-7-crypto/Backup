@@ -1,0 +1,588 @@
+<apex:page controller="CNT_TPA_AMA_ContractDtl_CSV_Import" standardStylesheets="false" lightningStyleSheets="true" title="AMA Contract Details Uploader" id="thePage" sideBar="False" showHeader="true">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;text/csv;charset=UTF-8" />
+        <meta charset="UTF-8" />
+        <title>AMA Contracts Import Wizard</title>
+        <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}"/>
+
+        <!-- *** Angular-JS Library reference *** -->
+        <apex:includeScript value="{!$Resource.AngularJS}"/>
+        <!-- *** Angular-JS Library reference *** -->
+
+        <apex:includeScript value="{!$Resource.TpaDateTimeFormatter}"/>
+
+        <!-- *** Bootstrap Javascript Library reference *** -->
+        <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+        <!-- *** Bootstrap Javascript Library reference *** -->
+
+        <!-- *** JQGrid-Widget Library reference *** -->
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxbuttons.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxscrollbar.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxlistbox.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdropdownlist.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxmenu.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.filter.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.sort.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.grouping.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.selection.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxpanel.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcalendar.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdatetimeinput.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcheckbox.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/globalization/globalize.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.columnsresize.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.export.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.export.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.pager.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/demos.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/generatedata.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}"/>
+        <!-- *** JQGrid-Widget Library reference *** -->
+
+        <!-- *** JQuery Custom Popup reference *** -->
+        <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+        <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+        <!-- *** JQuery Custom Popup reference *** -->
+
+    <style>
+        td{
+                white-space: unset !important;
+        }
+        th {
+                   font-weight: bold !important;
+                }
+        #controlPanel{
+            margin-left: .5rem !important;
+        }
+
+        .fromFile td{
+            margin-bottom: .5rem !important;
+        }
+
+        .slds-scope .slds-file-selector--files .slds-file-selector__button, .slds-scope .slds-file-selector_files .slds-file-selector__button {
+            max-height: inherit;
+        }
+    </style>
+
+    <script>
+        var listType = '';
+        //*** Export error logs to CSV functionality starts***//
+        $(document).ready(function () {
+
+            $("#excelExport").click(function () {
+
+                var successCSV = '';
+                successCSV = getSuccessCSV();
+
+                if (successCSV == '') {
+                    return;
+                }
+
+                //Generate a file name
+                var fileName = "AMAContractDetailsSuccessListing";
+
+                if (isIE()) {
+                    var oWin = window.open();
+                    oWin.document.write('\r\n' + successCSV);
+                    oWin.document.close();
+                    oWin.document.execCommand('SaveAs', true, fileName + ".csv");
+                    oWin.close();
+                }
+                else
+                {
+                    //Initialize file format you want csv or xls
+                    var uri = 'data:text/csv;charset=utf-8,' + escape(successCSV);
+
+                    // Now the little tricky part.
+                    // you can use either>> window.open(uri);
+                    // but this will not work in some browsers
+                    // or you will not get the correct file extension
+
+                    //this trick will generate a temp <a /> tag
+                    var link = document.createElement("a");
+                    link.href = uri;
+
+                    //set the visibility hidden so it will not effect on your web-layout
+                    link.style = "visibility:hidden";
+                    link.download = fileName + ".csv";
+
+                    //this part will append the anchor tag and remove it after automatic click
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                //To export error records
+                var errorCSV = '';
+                errorCSV = getErrorCSV();
+
+                if (errorCSV == '') {
+                    return;
+                }
+
+                //Generate a file name
+                var fileName = "AMAContractDetailsFailuresListing";
+
+                if (isIE()) {
+                    var oWin = window.open();
+                    oWin.document.write('\r\n' + errorCSV);
+                    oWin.document.close();
+                    oWin.document.execCommand('SaveAs', true, fileName + ".csv");
+                    oWin.close();
+                }
+                else
+                {
+                    //Initialize file format you want csv or xls
+                    var uri = 'data:text/csv;charset=utf-8,' + escape(errorCSV);
+
+                    // Now the little tricky part.
+                    // you can use either>> window.open(uri);
+                    // but this will not work in some browsers
+                    // or you will not get the correct file extension
+
+                    //this trick will generate a temp <a /> tag
+                    var link = document.createElement("a");
+                    link.href = uri;
+
+                    //set the visibility hidden so it will not effect on your web-layout
+                    link.style = "visibility:hidden";
+                    link.download = fileName + ".csv";
+
+                    //this part will append the anchor tag and remove it after automatic click
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+        });
+
+        function isIE(userAgent) {
+            var ua = window.navigator.userAgent;
+            return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+        }
+        //*** Export to CSV functionality ends***//
+
+        //*** to process SuccessRecords as csv ***//
+        function getSuccessCSV() {
+
+            var listType = document.getElementById('{!$Component.thePage.form.controlPanel.hiddenContractTypeId}').value;
+            var jsonSuccessData = '{!jsonDataSuccess}';
+            //To export Success records
+            var successArrData = JSON.parse(jsonSuccessData);
+            if(successArrData == null || successArrData.length == 0)
+                return false;
+            var successCSV = '';
+            //Set Report title in first row or line
+            successCSV += 'TPA AMA Contract Success records' + '\r\n\n';
+            successCSV += 'Contract List Type: ' + listType + '\r\n\n';
+            //Set Total number of success records
+            var numberOfSuccessRecords = '{!totalRecordsToInsert}';
+            successCSV += 'Total Success records: ' + numberOfSuccessRecords + '\r\n\n';
+
+            //This condition will generate the Label/Header
+            var row = "";
+            //This loop will extract the label from 1st index of on array
+            if(listType == 'Client List') {
+                row += 'CLIENT' + ',' + 'DBL' + ',' + 'CLIENT SERVICES - ON BEHALF OF(USER-CUSTOMER SUB-CATEGORY)' + ',' + 'CONTRACT TYPE' + ',' + 'CONTRACT END DATE' + ',' + 'MAX FEE REACHED (Y)' + ',' + 'OFFSHORE APPROVAL (Y)' + ',' + 'OFFSHORE LOCATION(S)' + ',' + 'SPECIAL TERMS/CONDITIONS' + ',';
+            } else if(listType == 'Lettershop') {
+                row += 'LETTERSHOP' + ',' + 'DBL' + ',' + 'SERVICES ON BEHALF OF:' + ',' + 'CONTRACT END DATE' + ',' + 'SPECIAL TERMS/CONDITIONS' + ',';
+            }
+            row = row.slice(0, -1);
+            //append Label row with line break
+            successCSV += row + '\r\n';
+
+            //1st loop is to extract each row
+            for (var i = 0; i < successArrData.length; i++) {
+                var row = "";
+                if(listType == 'Client List') {
+                    row += '"' + (successArrData[i]['Client__c'] == null ? '' : successArrData[i]['Client__c']) + '",';
+                    row += '"' + (successArrData[i]['DBL__c'] == null ? '' : successArrData[i]['DBL__c']) + '",';
+                    row += '"' + (successArrData[i]['Client_Services_On_Behalf_Of__c'] == null ? '' : successArrData[i]['Client_Services_On_Behalf_Of__c']) + '",';
+                    row += '"' + (successArrData[i]['Contract_Type__c'] == null ? '' : successArrData[i]['Contract_Type__c']) + '",';
+                    row += '"' + (successArrData[i]['Contract_End_Date__c'] == null ? '' : successArrData[i]['Contract_End_Date__c']) + '",';
+                    row += '"' + (successArrData[i]['Max_Fee_Reached__c'] == null ? '' : successArrData[i]['Max_Fee_Reached__c']) + '",';
+                    row += '"' + (successArrData[i]['Offshore_Approval__c'] == null ? '' : successArrData[i]['Offshore_Approval__c']) + '",';
+                    row += '"' + (successArrData[i]['Offshore_Location__c'] == null ? '' : successArrData[i]['Offshore_Location__c']) + '",';
+                    row += '"' + (successArrData[i]['Special_Terms_And_Conditions__c'] == null ? '' : successArrData[i]['Special_Terms_And_Conditions__c']) + '",';
+                }
+                else if(listType == 'Lettershop') {
+                    row += '"' + (successArrData[i]['Client__c'] == null ? '' : successArrData[i]['Client__c']) + '",';
+                    row += '"' + (successArrData[i]['DBL__c'] == null ? '' : successArrData[i]['DBL__c']) + '",';
+                    row += '"' + (successArrData[i]['Client_Services_On_Behalf_Of__c'] == null ? '' : successArrData[i]['Client_Services_On_Behalf_Of__c']) + '",';
+                    row += '"' + (successArrData[i]['Contract_End_Date__c'] == null ? '' : successArrData[i]['Contract_End_Date__c']) + '",';
+                    row += '"' + (successArrData[i]['Special_Terms_And_Conditions__c'] == null ? '' : successArrData[i]['Special_Terms_And_Conditions__c']) + '",';
+                }
+
+                if(row.length == 0)
+                    return false;
+
+                row.slice(0, row.length - 1);
+
+                //add a line break after each row
+                successCSV += row + '\r\n';
+            }
+            return successCSV;
+
+        }
+
+
+        //*** to process SuccessRecords as csv ends***//
+        //*** to process Error Records as csv start***//
+
+
+        function getErrorCSV() {
+
+            var listType = document.getElementById('{!$Component.thePage.form.controlPanel.hiddenContractTypeId}').value;
+            var jsonErrorData = '{!jsonDataError}';
+            var errorArrData = JSON.parse(jsonErrorData);
+            if(errorArrData == null || errorArrData.length == 0)
+                return false;
+            var errorCSV = '';
+            //Set Report title in first row or line
+            errorCSV += 'TPA AMA Contract Failure records' + '\r\n\n';
+            errorCSV += 'Contract List Type: ' + listType + '\r\n\n';
+            //Set Total number of error records
+            var numberOfErrorRecords = '{!errorLogs.size}';
+            errorCSV += 'Total Error records: ' + numberOfErrorRecords + '\r\n\n';
+
+            //This condition will generate the Label/Header
+            var row = "";
+            //This loop will extract the label from 1st index of on array
+            row += 'Error Record' + ',' + 'Error Message' + ',';
+            row = row.slice(0, -1);
+            //append Label row with line break
+            errorCSV += row + '\r\n';
+
+            //1st loop is to extract each row
+            for (var i = 0; i < errorArrData.length; i++) {
+                var row = "";
+                row += '"' + (errorArrData[i]['errorRecord'] == null ? '' : errorArrData[i]['errorRecord']) + '",';
+                row += '"' + (errorArrData[i]['errorMsg'] == null ? '' : errorArrData[i]['errorMsg']) + '",';
+
+                if(row.length == 0)
+                    return false;
+
+                row.slice(0, row.length - 1);
+
+                //add a line break after each row
+                errorCSV += row + '\r\n';
+            }
+            return errorCSV;
+
+        }
+
+        //*** to process Error Records as csv ends***//
+        //*** Wait Panel Start ***//
+        // Create a namespace for our custom functions
+        /**
+        * Callback when the action button is clicked
+        */
+
+
+        // added by supriya johari under Issue-08450
+        function removeSelectedContractListType(contractTypeId,hiddenContractTypeId) {
+            listType = document.getElementById(hiddenContractTypeId).value;
+            //Storing Contract Type value to hidden field
+            document.getElementById(hiddenContractTypeId).value = document.getElementById(contractTypeId).value;
+            document.getElementById(contractTypeId).value = '';
+            return true;
+        }
+        // added by supriya johari under Issue-08450
+
+
+        function removeFileAttachment(attachedFileId) {
+            document.getElementById(attachedFileId).value = '';
+            return true;
+        }
+
+        function validateFile(uploadedFileId,contractListTypeId) {
+
+            var contractName = document.getElementById(contractListTypeId).value;
+            if(contractName == null || contractName == '') {
+                alert('Please select contract list type first');
+                document.getElementById(uploadedFileId).value = '';
+                return false;
+            }
+            var val = document.getElementById(uploadedFileId).value;
+
+            switch(val.substring(val.lastIndexOf('.') + 1).toLowerCase()){
+                case 'csv':
+                    return true;
+                default:
+                    document.getElementById(uploadedFileId).value = '';
+                    alert("Please upload only CSV File");
+                    return false;
+            }
+        }
+
+        function validateInput(fileNameId,contractTypeId,hiddenContractTypeId) {
+            showLoading();
+            var fileName = document.getElementById(fileNameId).value;
+            var contractName = document.getElementById(contractTypeId).value;
+            if(contractName == null || contractName == '') {
+                alert('Please select contract list type');
+                return false;
+            } else if(fileName == null || fileName == '') {
+                alert('Please upload CSV file first');
+                return false;
+            } else {
+                removeSelectedContractListType(contractTypeId,hiddenContractTypeId);// added by supriya johari under Issue-08450
+                return true;
+            }
+        }
+
+       function saveCorrectRecords() {
+
+            if('{!errorLogs.size}' >0)
+            {
+                if(!confirm('Do you want to save only successfully uploaded records?'))
+                {
+                    return false;
+                }
+                else
+                {
+                    var successCSV = '';
+                    successCSV = getSuccessCSV();
+
+                    var errorCSV = '';
+                    errorCSV = getErrorCSV();
+
+                    document.getElementById('thePage:form2:inpthddn1').value = successCSV;
+                    document.getElementById('thePage:form2:inpthddn2').value = errorCSV;
+                    saveDataCalled();
+                    return true;
+                }
+            }
+            else
+            {
+                var successCSV = '';
+                successCSV = getSuccessCSV();
+
+                document.getElementById('thePage:form2:inpthddn1').value = successCSV;
+                saveDataCalled();
+                return true;
+            };
+        }
+
+    </script>
+    <apex:slds />
+    </head>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-size: cover; min-height: 100vh">
+    <div class="slds-scope">
+    <c:VFC_TPA_LoadingImage />
+
+    <apex:form id="form">
+        <div class="slds-page-header" role="banner" style="margin-bottom: .5em; margin-top: .5em; margin-left: .5em; border-radius: 4px;">
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <div class="slds-media slds-no-space slds-grow">
+                        <div class="slds-media__body">
+                            <h3 class="slds-page-header__title slds-truncate ">AMA Client List and Lettershop Import Wizard</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <apex:actionFunction name="saveContract" action="{!saveData}" status="statusSavingContacts"/>
+        <apex:pageBlock id="controlPanel" html-style="margin-left: .5em;">
+            <apex:pagemessages id="messages" escape="false" />
+            <apex:inputHidden value="{!hiddenContractListType}" id="hiddenContractTypeId"/>
+            <table class="controlPanel fromFile">
+                <tr >
+                    <td colspan="2" ><b>Upload a CSV file to save its contents as AMA Contract Detail records</b><hr/></td>
+                </tr>
+                <tr >
+                    <td>Select Contract List Type</td>
+                    <td>
+                        <apex:outputPanel styleClass="requiredInput slds-size_1-of-2" layout="block">
+                            <apex:outputPanel layout="block" />
+                            <apex:selectList styleclass="slds-size_1-of-1" id="contractTypeId" value="{!contractListType}" onChange="return removeFileAttachment('{!$Component.uploadFileId}')" multiselect="false" size="1" style="margin-bottom: .5em; !important">
+                                <apex:selectOption itemValue="" itemLabel="---Select---"/>
+                                <apex:selectOption itemValue="Client List" itemLabel="Client List"/>
+                                <apex:selectOption itemValue="Lettershop" itemLabel="Lettershop"/>
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Upload CSV file</td>
+                    <td>
+                        <div class="slds-file-selector slds-file-selector_files slds-size_1-of-2">
+                            <div class="slds-file-selector__dropzone slds-size_1-of-1">
+                                <apex:inputFile styleclass="slds-file-selector__input slds-file-selector__body slds-file-selector__button slds-button slds-button_neutral slds-size_1-of-1" value="{!csvFileBody}" accept="csv" contentType="text/csv"  filename="{!fileName}" id="uploadFileId" onChange="validateFile('{!$Component.uploadFileId}','{!$Component.contractTypeId}');"/>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td class="slds-button" ><apex:commandButton style="margin-top: 1.5em; !important" value="Upload CSV" action="{!readFromFile}" id="uploadButton" onClick="return validateInput('{!$Component.uploadFileId}','{!$Component.contractTypeId}','{!$Component.hiddenContractTypeId}'); "   /></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><apex:outputLink onclick="window.open('/lightning/n/AMA_Contract_Details');return false;" id="theCommandLink">Click here to view all existing AMA Contracts</apex:outputLink></td>
+                </tr>
+            </table>
+        </apex:pageBlock>
+    </apex:form>
+    <apex:form id="form2">
+        <apex:outputPanel id="pagBlockPanel">
+            <apex:pageBlock html-style="margin-left: .5em;" id="dataPanel" rendered = "{!(lstContracts.size > 0 && isDataSaved == false)}"> <!--  rendered="{!lstContracts.size > 0}" -->
+                <input style="margin:5px 5px 5px 2px;cursor:pointer;" type="button" id="excelExport" value="Export to CSV" role="button" class="jqx-rc-all jqx-button jqx-widget jqx-fill-state-normal" aria-disabled="false"  /><br/>
+                <apex:outputPanel id="targetPanel">
+                    <div class="container">
+                        <b>Total Records: {!totalRecordsToInsert}</b>
+
+                        <table  class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right slds-size_1-of-1">
+                            <thead class="slds-theme_shade">
+                            <tr>
+                                <apex:repeat value="{!lstFieldLables}" var="fieldLables">
+                                    <th class="slds-truncate slds-cell-wrap" scope="col" >{!fieldLables}</th>
+                                </apex:repeat>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- <apex:repeat value="{!listOfContracts}" var="con1"> -->
+                               <apex:repeat value="{!toDisplay}" var="con">
+                               <tr>
+                                   <apex:repeat value="{!lstFieldNames}" var="fieldName">
+                                   <td >
+                                       <apex:outputText value="{0,date,MM/dd/yyyy}" rendered="{!fieldNameToTypeMap[fieldName] == 'DATE'}">
+                                       <apex:param value="{!con[fieldName]}" />
+                                       </apex:outputText>
+                                       <apex:outputText value="Y" rendered="{!AND(fieldNameToTypeMap[fieldName] == 'BOOLEAN', con[fieldName] == true)}">
+                                       </apex:outputText>
+                                       <apex:outputText value="{!con[fieldName]}" rendered="{!AND(fieldNameToTypeMap[fieldName] != 'DATE',fieldNameToTypeMap[fieldName] != 'BOOLEAN')}" />
+                                   </td>
+                                   </apex:repeat>
+                               </tr>
+                               </apex:repeat>
+                            <!-- </apex:repeat> -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <br/>
+                    <div style="float:left">
+                        Showing Page # {!pageNumber} of {!totalPages}&nbsp;&nbsp;
+                        Show Records: <apex:selectList value="{!size}" multiselect="false" size="1" onchange="reRenderPage();" >
+                        <apex:selectOption itemValue="10" itemLabel="10"/>
+                        <apex:selectOption itemValue="25" itemLabel="25"/>
+                        <apex:selectOption itemValue="50" itemLabel="50"/>
+                        <apex:selectOption itemValue="100" itemLabel="100"/>
+                        <apex:selectOption itemValue="200" itemLabel="200"/>
+                        </apex:selectList>
+                    </div>
+
+                    <apex:actionstatus id="status">
+                        <apex:facet name="start">
+                             <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+        <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+        </div>
+    </div>
+                        </apex:facet>
+                    </apex:actionstatus>
+
+                    <apex:actionstatus id="statusSavingContacts">
+                        <apex:facet name="start">
+                            <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+        <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+        </div>
+    </div>
+                        </apex:facet>
+                    </apex:actionstatus>
+
+                    <div style="float:right">
+                        <apex:commandLink style="margin-left:10px;" action="{!First}" value="First" rendered="{!NOT(hasPrevious)}" rerender="targetPanel" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="First" rendered="{!hasPrevious}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!Previous}" value="Previous" rendered="{!NOT(hasPrevious)}" rerender="targetPanel" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Previous" rendered="{!hasPrevious}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!Next}" value="Next" rendered="{!NOT(hasNext)}" rerender="targetPanel" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Next" rendered="{!hasNext}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!Last}" value="Last" rendered="{!NOT(hasNext)}" rerender="targetPanel" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Last" rendered="{!hasNext}"></apex:outputText>
+                    </div>
+                </apex:outputPanel><br/>
+                <apex:actionFunction action="{!getChangeListSize}" name="reRenderPage" reRender="targetPanel" status="status"/>
+
+                <apex:pageblockButtons location="top">
+                    <apex:actionFunction name="saveDataCalled" action="{!saveData}" status="statusSavingContacts" rerender="pagBlockPanel,messages" />
+                    <apex:commandButton value="Save to AMA Contract Details" onClick="return saveCorrectRecords();"  disabled="{!isDataSaved}" rerender="pagBlockPanel,messages" />
+                </apex:pageblockButtons>
+            </apex:pageBlock>
+
+            <apex:pageBlock id="errorPanel" rendered="{!errorLogs.size > 0}" html-style="margin-left: .5em;">
+                <b><font face="verdana">Error logs for the records that has not been loaded successfully: </font></b> {!errorLogs.size}
+
+                <apex:outputPanel id="contentTableError" >
+                    <div class="errosLogContainer" >
+                        <table class="contract_table slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" >
+                            <thead class="slds-theme_shade">
+                                <tr class="slds-text-heading slds-line-height_reset ">
+                                    <th>Row No.</th>
+                                    <th>Error Record</th>
+                                    <th>Error Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <apex:repeat value="{!toDisplayErrorLogs}" var="err">
+                                    <tr>
+                                        <td style="width: 20px; min-width: 20px; min-width: 30px;">
+                                            <apex:outputText escape="false" value="{!err.rowNo}"/>
+                                        </td>
+                                        <td style="min-width: 700px;">
+                                            <apex:outputText escape="false" value="{!err.errorRecord}"/>
+                                        </td>
+                                        <td style="min-width: 450px;">
+                                            <apex:outputText escape="false" value="{!err.errorMsg}"/>
+                                        </td>
+                                    </tr>
+                                </apex:repeat>
+                            </tbody>
+                            <!-- </apex:repeat> -->
+                        </table>
+
+                    </div>
+                    <br/>
+                    <div style="float:left">
+                        Showing Page # {!pageNumberForErrorLogs} of {!totalPagesForErrorLogs}&nbsp;&nbsp;
+                        Show Error Logs: <apex:selectList value="{!errorLogSize}" multiselect="false" size="1" onchange="reRenderPageForErrorLogs();" >
+                        <apex:selectOption itemValue="10" itemLabel="10"/>
+                        <apex:selectOption itemValue="25" itemLabel="25"/>
+                        <apex:selectOption itemValue="50" itemLabel="50"/>
+                        <apex:selectOption itemValue="100" itemLabel="100"/>
+                        <apex:selectOption itemValue="200" itemLabel="200"/>
+                        </apex:selectList>
+                    </div>
+
+                    <div style="float:right">
+                        <apex:commandLink style="margin-left:10px;" action="{!FirstForErrorLogs}" value="First" rendered="{!NOT(hasPreviousForErrorLogs)}" rerender="contentTableError" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="First" rendered="{!hasPreviousForErrorLogs}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!PreviousForErrorLogs}" value="Previous" rendered="{!NOT(hasPreviousForErrorLogs)}" rerender="contentTableError" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Previous" rendered="{!hasPreviousForErrorLogs}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!NextForErrorLogs}" value="Next" rendered="{!NOT(hasNextForErrorLogs)}" rerender="contentTableError" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Next" rendered="{!hasNextForErrorLogs}"></apex:outputText>
+                        <apex:commandLink style="margin-left:10px;" action="{!LastForErrorLogs}" value="Last" rendered="{!NOT(hasNextForErrorLogs)}" rerender="contentTableError" status="status"/>
+                        <apex:outputText style="margin-left:10px;" Value="Last" rendered="{!hasNextForErrorLogs}"></apex:outputText>
+                    </div>
+
+                </apex:outputPanel><br/>
+                <apex:actionFunction action="{!getChangeListSizeForErrorLogs}" name="reRenderPageForErrorLogs" reRender="contentTableError" status="status"/>
+            </apex:pageBlock>
+        </apex:outputPanel>
+        <apex:inputHidden value="{!successRecordAsString}" id="inpthddn1" />
+        <apex:inputHidden value="{!errorRecordAsString}" id="inpthddn2" />
+    </apex:form>
+    </div>
+    </body>
+</html>
+    <!-- CPU Time after:<apex:outputText value="{!CpuTime}"></apex:outputText> -->
+</apex:page>

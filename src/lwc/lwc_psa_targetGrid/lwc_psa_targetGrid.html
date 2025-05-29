@@ -1,0 +1,106 @@
+<template>
+    <lightning-card>
+        <h1 slot="title">
+            <div class="title-icon slds-float_left slds-m-right_small">
+               <lightning-icon icon-name="custom:custom68" size="medium"></lightning-icon>
+            </div>
+            <span>Program</span>
+            <span class="slds-page-header__title slds-truncate" title="name">{programName} - Target Grid</span>
+        </h1>
+        <div slot="actions">
+            <div class="slds-grid slds-gutters slds-m-right_medium slds-float_left filter-bar">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="GRID_TYPE"
+                        label="Grid Type"
+                        value={gridType}
+                        placeholder="Select a type"
+                        options={gridTypeOptions}
+                        onchange={gridTypeChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="RECORD_TYPE"
+                        label="Type"
+                        value={recordType}
+                        placeholder="Select a type"
+                        options={recordTypeOptions}
+                        onchange={recordTypeChange}>
+                    </lightning-combobox>
+                </div>
+                <div if:true={showProjectCodeBox} class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="PROJECT_CODE"
+                        label="Project Code"
+                        value={projectCode}
+                        placeholder="Select a code"
+                        options={projectCodeOptions}
+                        onchange={projectCodeChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+            <lightning-button-group class="slds-m-top_large">
+               <lightning-button variant="primary" name="view-target-grid" label="Refresh Target Grid" onclick={handleClick} disabled={manualRefreshButton}></lightning-button>
+               <lightning-button label="Go Back" name="go-back" onclick={handleClick}></lightning-button>
+            </lightning-button-group>
+        </div>
+    </lightning-card>
+    
+    <div class="slds-m-top_medium">
+        <lightning-card>
+            <div class="slds-p-around_small">
+                <div if:false={showGrid}>
+                    <span class="slds-align_absolute-center">
+                        <lightning-icon icon-name="utility:info"></lightning-icon> Select a project or service line and a type to view the target grid.
+                    </span>
+                </div>
+                <div if:true={showGrid}>
+                    <div class="slds-col slds-size_1-of-3">
+                        <lightning-input type="text" onchange={handlesearch} placeholder="Search..."></lightning-input>
+                    </div>
+                    <div class="vertical-scroll">
+                        <table class="grid-table">
+                            <tr>
+                                <th class="slds-p-around_x-small slds-text-align_center" for:each={tableColumns} for:item="column" key={column.name}>
+                                    <span if:false={column.first}>{column.name}</span>
+                                </th>
+                            </tr>
+                            <tr for:each={displayedtableRows} for:item="row" key={row.Id}>
+                                <td class="slds-p-around_x-small" for:each={row.cells} for:item="cell" key={cell.name}>
+                                    <span if:true={cell.first}>
+                                        <lightning-helptext 
+                                            content={cell.tooltip}>
+                                        </lightning-helptext> {cell.label}
+                                    </span>
+                                    <lightning-button class="slds-align_absolute-center" if:true={cell.add} label='Inactive' name={cell.name} variant="base" onclick={handleTableClick}></lightning-button>
+                                    <lightning-button class="slds-align_absolute-center" if:true={cell.remove} label='Active' name={cell.name} variant="success" onclick={handleTableClick}></lightning-button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div if:true={showPagination} class="slds-clearfix slds-p-vertical_small">
+                        <lightning-button-group class="slds-float_right">
+                            <lightning-button if:false={onFirstPage} onclick={firstPage} label="First" variant="base" class="slds-p-around_xx-small"></lightning-button>
+                            <lightning-button if:true={onFirstPage} disabled label="First" variant="base" class="slds-p-around_xx-small"></lightning-button>
+                            <lightning-button-icon if:true={pagination.previous} variant="bare" icon-name="utility:jump_to_left" onclick={previousPage} class="slds-p-around_x-small"></lightning-button-icon>
+                            <lightning-button-icon if:false={pagination.previous} variant="bare" icon-name="utility:jump_to_left" disabled class="slds-p-around_x-small"></lightning-button-icon>
+                            <div class="page-input-text slds-p-around_x-small">Page </div>
+                            <div class="page-input slds-m-top_xx-small">
+                                <lightning-input type="number" name="PAGE_NUMBER" label="Page Number" variant="label-hidden" value={pagination.current} onchange={changePage}></lightning-input>
+                            </div>
+                            <div class="page-input-text slds-p-around_x-small"> of {pagination.pageCount}</div>
+                            <lightning-button-icon if:true={pagination.next} variant="bare" icon-name="utility:jump_to_right" onclick={nextPage} class="slds-p-around_x-small"></lightning-button-icon>
+                            <lightning-button-icon if:false={pagination.next} variant="bare" icon-name="utility:jump_to_right" disabled class="slds-p-around_x-small"></lightning-button-icon>
+                            <lightning-button if:false={onLastPage} variant="base" onclick={lastPage} label="Last" class="slds-p-around_xx-small"></lightning-button>
+                            <lightning-button if:true={onLastPage} variant="base" disabled label="Last" class="slds-p-around_xx-small"></lightning-button>
+                        </lightning-button-group>
+                        <span class="slds-p-around_x-small slds-m-right_medium slds-float_right">Showing 50 per page</span>
+                    </div>
+                </div>
+            </div>
+        </lightning-card>
+    </div>
+
+    <c-lwc_helper></c-lwc_helper>
+</template>

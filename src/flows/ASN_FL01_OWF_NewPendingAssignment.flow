@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Email_Notification_for_All_bids_except_Contract_Post_Award</name>
+        <label>Email Notification for All bids except Contract Post Award</label>
+        <locationX>314</locationX>
+        <locationY>431</locationY>
+        <actionName>pse__Assignment__c.ASN_EA01_OWF_MC_Pending_Assignment_Notification</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>pse__Assignment__c.ASN_EA01_OWF_MC_Pending_Assignment_Notification</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <description>IQVIAPSA-6368</description>
+        <name>Mail_Notification_for_Contract_Post_Award_Bid</name>
+        <label>Mail Notification for Contract Post Award Bid</label>
+        <locationX>50</locationX>
+        <locationY>431</locationY>
+        <actionName>pse__Assignment__c.ASN_EA02_OWF_PendingAssignmentNotificationForContractPostAward</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>pse__Assignment__c.ASN_EA02_OWF_PendingAssignmentNotificationForContractPostAward</nameSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <name>Contract_Post_Award_Notification</name>
+        <label>Contract Post Award Notification</label>
+        <locationX>182</locationX>
+        <locationY>323</locationY>
+        <defaultConnector>
+            <targetReference>Email_Notification_for_All_bids_except_Contract_Post_Award</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Send_mail_and_post_chatter_for_Contract_Post_Award_Bid</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Bid_History__r.Record_Type_Developer_Name__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Contract_Post_Award</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Mail_Notification_for_Contract_Post_Award_Bid</targetReference>
+            </connector>
+            <label>Send mail and post chatter for Contract Post Award Bid</label>
+        </rules>
+    </decisions>
+    <description>IQVIAPSA-9436</description>
+    <environments>Default</environments>
+    <interviewLabel>ASN_PB01_OWF_New_Pending_Assignment {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>ASN_FL01_OWF_NewPendingAssignment</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Contract_Post_Award_Notification</targetReference>
+        </connector>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterFormula>AND ( NOT({!$Setup.Trigger_Control_For_Migration__c.Disable_OWF_Assignment_Process_Builder__c}) ,  
+NOT(ISPICKVAL({!$Record.Assignment_Type__c},&apos;Days Off&apos;)),
+ISPICKVAL({!$Record.pse__Status__c}, &apos;Pending&apos;) , {!$Record.RecordType.DeveloperName} == &apos;OWF_Assignment&apos;,
+{!$Record.Trigger_Email_Notification__c}, {!$Record.Owner:User.IsActive} )</filterFormula>
+        <object>pse__Assignment__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <textTemplates>
+        <description>IQVIAPSA-6368</description>
+        <name>ChatterNotificationcontentforContractPostAwardBid</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>{!$Record.Account_Name__c}_{!$Record.Opportunity_Number__c}_{!$Record.Bid_History__r.Requested_Agreement_Type__c} : New Assignment Pending your review, please action
+Dear {!$Record.Owner:User.FirstName} {!$Record.Owner:User.LastName}
+
+You have been assigned a new contract request, please Accept or Reject this assignment by clicking the following link and updating the Status: {!$Record.Base_URL__c}{!$Record.Id}
+
+Type Of Agreement : {!$Record.Bid_History__r.Requested_Agreement_Type__c}
+Agreement Name : {!$Record.Bid_History__r.Name}
+Account : {!$Record.Account_Name__c}
+Legacy Quantiles Opportunity Number : {!$Record.Bid_History__r.Bid_History_Related_Opportunity__r.Legacy_Quintiles_Opportunity_Number__c}
+Opportunity Link : {!$Record.Base_URL__c}{!$Record.Lookup_Opportunity_Name__r.Id}
+Start Date : {!$Record.pse__Start_Date__c}
+Description : {!$Record.Bid_History__r.Description_of_Request__c}
+PL Name : {!PLName}
+PL Region: {!PLRegion}</text>
+    </textTemplates>
+    <textTemplates>
+        <name>PosttochattercontentfornonContractpostawardbids</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>New RFP/EE Assignment pending your review – End Date :  {!$Record.pse__End_Date__c}
+
+Dear {!$Record.Owner:User.FirstName} {!$Record.Owner:User.LastName}
+
+Please Accept or Reject Assignment by clicking the following link and updating the Status: {!$Record.Base_URL__c}{!$Record.Id}
+
+CRM number: {!$Record.Opportunity_Number__c} - {!$Record.Opportunity_Name__c}
+Account Name: {!$Record.Account_Name__c}
+Budget Deliverable: {!$Record.Budget_Deliverable__c}
+Therapy Area: {!$Record.Therapy_Area__c}
+Indication: {!$Record.Indication__c}
+Notes: {!$Record.pse__Resource_Request__r.pse__Notes__c}
+
+Bid History: {!$Record.Base_URL__c}{!$Record.Bid_History__c}
+Unity Link: {!$Record.Bid_History__r.Unity_Living_Proposal__c}
+
+Resource Request Type: {!$Record.Resource_Request_Type__c}
+Suggested FTE: {!$Record.Suggested_FTE__c}
+RFP Ranking: {!$Record.RFP_Ranking__c}
+Start Date: {!$Record.pse__Start_Date__c}
+End Date: {!$Record.pse__End_Date__c}</text>
+    </textTemplates>
+    <variables>
+        <name>PLName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <elementReference>$Record.Bid_History__r.Project_Manager_Name__c</elementReference>
+        </value>
+    </variables>
+    <variables>
+        <name>PLRegion</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

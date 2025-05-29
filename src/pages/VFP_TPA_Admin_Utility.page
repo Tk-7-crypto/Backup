@@ -1,0 +1,524 @@
+<apex:page controller="CNT_TPA_Admin_Utility_Controller" standardStylesheets="false" lightningStylesheets="true">
+    <apex:slds />
+    <html lang="en" >
+        <head>
+            <style>
+            
+                .menu {
+                    list-style: none;
+                    border-bottom: 0.1em solid black;
+                    margin-bottom: 2em;
+                    padding: 0 0 0.5em;
+                }
+                
+                .menu:before {
+                  content: "[";
+                }
+                
+                .menu:after {
+                  content: "]";
+                }
+                
+                .menu > li {
+                  display: inline;
+                }
+                
+                .menu > li:before {
+                  content: "|";
+                  padding-right: 0.3em;
+                }
+                
+                .menu > li:nth-child(1):before {
+                  content: "";
+                  padding: 0;
+                }
+                
+                .navbar-default
+                {
+                    background-color:#B3D1EA !important;
+                    background-image: linear-gradient(to bottom,#B3D1EA 0,#B3D1EA 100%) !important;
+                }
+                
+                .pbSubheader h3
+                {
+                    font-size: 1.1em;
+                    color: #000 !important;
+                    font-weight: bold;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                    font-family: inherit;
+                    line-height: 1.1;
+                }
+                
+                .pbSubheader
+                {
+                    border-width: 2px 0 0;
+                    border-style: solid;
+                    border-color: #0084c9;
+                    font-size: 12px !important;
+                    padding: 4px 16px !important;
+                    font-weight: bold;
+                    margin-top: 15px;
+                    overflow: hidden;
+                    margin-bottom: 2px;
+                    background-color: #10A6F0!important;
+                    color: #222222!important;
+                    background-image: none!important;
+                }
+                
+                .lbl
+                {
+                    color:#4a4a56;
+                    font-size: 12px;
+                    text-align:justify;
+                }
+                
+                label {
+                    width:180px;
+                    clear:left;
+                    text-align:right;
+                    padding-right:10px;
+                }
+
+                .tableWrapper 
+                {
+                    max-height: 250px;
+                    overflow-x: hidden;
+                    overflow-y: scroll;
+                }
+                
+                .list 
+                {
+                    border: 1px solid #e0e3e5;
+                }
+                
+                select[disabled] 
+                {
+                    background-color: #aaa !important;
+                    -webkit-user-select: none;  
+                    -moz-user-select: none;    
+                    -ms-user-select: none;      
+                    user-select: none;
+                }
+                
+                {
+                    font-size: 14px;
+                }
+                
+                .message
+                {
+                    margin: 15px !important;
+                }
+                
+                .appriseOverlay
+                {
+                    z-index: 1002;
+                }
+                
+                .floatThead-floatContainer
+                {
+                    z-index: 0 !important;
+                }
+                
+                
+                    
+            </style>
+            <title>Admin Utilities</title>
+            </head>
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** --> 
+        
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** -->
+        
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" type="text/css" />
+    		<script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript" />
+            
+            <script src="{!$Resource.TPA_Fixed_Header}" type="text/javascript"></script>
+            
+            <script>
+            Visualforce.remoting.timeout = 120000; // Set timeout at page level
+            var adminUtilities = angular.module('adminUtilities',[]);
+            adminUtilities.controller('CheckingController',
+                function CheckingController($scope,$log)
+                {
+                    $scope.applyChanges = function()
+                    {
+                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                            $scope.$apply();
+                    }
+                    $scope.loadView = 'Move Requests';
+                    $scope.properJSON = '{!strClientAccounts}';
+                    $scope.lstClientAccounts = JSON.parse('{!strClientAccounts}');
+                    $log.info('-----------------> ' + JSON.stringify($scope.lstClientAccounts));
+                    $scope.lstClientAccounts.splice(0,0,
+                        {
+                            "Contact": {
+                              "attributes": {
+                                "type": "Contact",
+                                "url": "/services/data/v52.0/sobjects/Contact/00318000004lRkUAAU"
+                              },
+                              "AccountId": '0',
+                              "Id": "00318000004lRkUAAU",
+                              "CurrencyIsoCode": "USD",
+                              "Account": {
+                                "attributes": {
+                                  "type": "Account",
+                                  "url": "/services/data/v52.0/sobjects/Account/001180000062AmiAAE"
+                                },
+                                "Name": "--None--",
+                                "Id": '0',
+                                "RecordTypeId": "012700000009GqPAAU",
+                                "CurrencyIsoCode": "USD"
+                              }
+                            }
+                        }
+                    );
+                    
+                    $scope.lstContryStateCodes = JSON.parse('{!strCountryCodes}');
+                    $scope.lstDestinationAccounts = angular.copy($scope.lstClientAccounts);
+                    $scope.selectedAccount;
+                    $scope.sourceAccountId = '0';
+                    $scope.destinationAccountId = '0';
+                    $scope.lstSourceClientContact = [];
+                    $scope.sourceContactId;
+                    $scope.destinationContactId;
+                    $scope.lstDestinationClientContact = [];
+                    $scope.sourceTPAList = [];
+                    $scope.selected = []; <!-- added by supriya Johari under ER-3420 -->
+                    $scope.tpaRequestNotFoundMsg = 'No TPA Request created by Selected Contact';
+                    $scope.isRequestPresent = true;
+                    $scope.userNotFoundMsg = 'No Portal User Exists for the Selected Contact';
+                    $scope.isUserPresent = true;
+                    
+                    $scope.getAccountFromList = function(accId,lstAccountSearched)
+                    {
+                        for(var index = 0; index < lstAccountSearched.length; index++)
+                        {
+                            if(lstAccountSearched[index].Contact.Account.Id == accId)
+                                return lstAccountSearched[index];
+                        }
+                    }
+                    
+                    $scope.getAccountByCountry = function(countryName,lstAccountFiltered, accountName)// Updated by Rajendra under ER-12336
+                    {
+                        $log.info('country name'+countryName);
+                        for(var index = lstAccountFiltered.length - 1; index > 0; index--)
+                        {
+                            if(lstAccountFiltered[index].Contact.Account.BillingCountry != null)
+                                if($.inArray(lstAccountFiltered[index].Contact.Account.BillingCountry.toLowerCase(), countryName) != -1)
+                                    continue;
+                                // Added by Rajendra under ER-12336 -- Start
+                                if(lstAccountFiltered[index].Contact.Account.Name.toLowerCase().substr(0, (lstAccountFiltered[index].Contact.Account.Name.toLowerCase()).indexOf(' ')) == accountName.toLowerCase().substr(0, accountName.toLowerCase().indexOf(' '))){
+                                    continue;
+                                }
+                                if(lstAccountFiltered[index].Contact.Account.Name.toLowerCase() == accountName.toLowerCase()) {
+                                    continue;
+                                }
+                                if(lstAccountFiltered[index].Contact.Account.Name.toLowerCase().substr(0, (lstAccountFiltered[index].Contact.Account.Name.toLowerCase()).indexOf(' ')) == accountName.toLowerCase()) {
+                                    continue;
+                                }
+                                if(lstAccountFiltered[index].Contact.Account.Name.toLowerCase() == accountName.toLowerCase().substr(0, accountName.toLowerCase().indexOf(' '))) {
+                                    continue;
+                                }
+                                // Added by Rajendra under ER-12336 -- End
+                            lstAccountFiltered.splice(index,1);
+                        }
+                        return lstAccountFiltered;
+                    }
+                    
+                    $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true}, 
+                        function(r)
+                        {
+                            if(r && truePart != null)
+                                truePart();
+                        });
+                    }
+                    
+                    $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                    {
+                        if(isYesNo)
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                        {
+                            if(r)
+                                truePart();
+                            else
+                                falsePart();
+                            haltScreen = false;
+                            $scope.applyChanges();
+                        });                        
+                        else
+                        popup(msg, {'confirm':true, 'animate':true}, function(r)
+                        {
+                            if(r)
+                                truePart();
+                            else
+                                falsePart();
+                            haltScreen = false;
+                            $scope.applyChanges();
+                        });                        
+                    }
+                    
+                    $scope.loadTableHeader = function()
+                    {
+                        var $table = $('table.demo');
+                        $table.floatThead({
+                            scrollContainer: function($table){
+                                return $table.closest('.tableWrapper');
+                            }
+                        });
+                    }
+                    
+                    $scope.accountChanged = function(typeOfCall)
+                    {
+                        var allCountryCodes = [];
+                        var idPassed;
+                        if(typeOfCall == 'Source')
+                        {
+                            idPassed = $scope.sourceAccountId;
+                            $scope.selectedAccount = $scope.getAccountFromList(idPassed,$scope.lstClientAccounts);
+                            if($scope.selectedAccount.Contact.Account.BillingCountry != null)
+                            {
+                                 $.each($scope.lstContryStateCodes, function(k, v) {
+                                    if(v.Code_Type__c == 'C')
+                                    {
+                                            allCountryCodes = [];
+                                            if(v.Country_Possible_Codes__c != null)
+                                            {
+                                                allCountryCodes = v.Country_Possible_Codes__c.toLowerCase().split(';');
+                                            }
+                                            allCountryCodes[allCountryCodes.length] = v.Name.toLowerCase();
+                                            if($.inArray($scope.selectedAccount.Contact.Account.BillingCountry.toLowerCase(), allCountryCodes) > -1)
+                                            {
+                                                return false;
+                                            }
+                                    }
+                                });
+                            }
+                            $scope.lstDestinationAccounts = $scope.getAccountByCountry(allCountryCodes,angular.copy($scope.lstClientAccounts), $scope.selectedAccount.Contact.Account.Name);// Updated by Rajendra under ER-12336
+                            $scope.destinationAccountId = '0';
+                            $scope.destinationContactId = '0';
+                        }
+                        else
+                            idPassed = $scope.destinationAccountId;
+                        $log.info('##id'+idPassed);
+                        showLoading();    
+                        CNT_TPA_Admin_Utility_Controller.getClientContacts(JSON.stringify(idPassed),function(result,event){
+                            if(event.status)
+                            {
+                                if(typeOfCall == 'Source')
+                                {
+                                    $scope.lstSourceClientContact = result;
+                                    $log.info('##contacts'+JSON.stringify(result));
+                                    $scope.lstSourceClientContact.splice(0,0,{'Id':'0','Name':'--None--'});
+                                    $scope.sourceContactId = '0';
+                                    $scope.sourceTPAList = [];
+                                }
+                                else
+                                {
+                                    $scope.lstDestinationClientContact = result;
+                                    $scope.lstDestinationClientContact.splice(0,0,{'Id':'0','Name':'--None--'});
+                                    $scope.destinationContactId = '0';
+                                    if($scope.sourceAccountId == $scope.destinationAccountId)
+                                        $scope.lstDestinationClientContact = $scope.filterDestinationContact($scope.sourceContactId,$scope.lstDestinationClientContact);
+                                }
+                                hideLoading();
+                                $scope.applyChanges();
+                            }
+                        });
+                    }
+                    
+                    $scope.contactChanged = function(typeOfCall)
+                    {
+                        showLoading();
+                        if(typeOfCall == 'Destination')
+                        {
+                            CNT_TPA_Admin_Utility_Controller.isUserPresent(JSON.stringify($scope.destinationContactId),function(result,event){
+                                if(event.status)
+                                {
+                                    if(result)
+                                        $scope.isUserPresent = true;
+                                    else
+                                        $scope.isUserPresent = false;
+                                }
+                                hideLoading();
+                                $scope.applyChanges();
+                            });
+                            return;
+                        }
+                        $scope.destinationAccountId = '0';
+                        $scope.destinationContactId = '0';
+                        if($scope.sourceContactId == '0')
+                        {
+                            $scope.sourceTPAList = [];
+                            return;
+                        }
+                        showLoading();    
+                        CNT_TPA_Admin_Utility_Controller.getTPARequests(JSON.stringify($scope.sourceContactId),function(result,event){
+                            if(event.status)
+                            {
+                                if(typeOfCall == 'Source')
+                                {
+                                    $scope.sourceTPAList = result;
+                                    if($scope.sourceTPAList.length == 0)
+                                        $scope.isRequestPresent = false;
+                                    else
+                                        $scope.isRequestPresent = true;
+                                    $log.info(JSON.stringify(result));
+                                }
+                                hideLoading();
+                                $scope.applyChanges();
+                            }
+                        });
+                    }
+                    
+                    $scope.loadDefault = function()
+                    {
+                        $scope.sourceAccountId = '0';
+                        $scope.destinationAccountId = '0';
+                        $scope.sourceContactId = '0';
+                        $scope.destinationContactId = '0';
+                        $scope.sourceTPAList = [];
+                        $scope.selected = [];
+                        $scope.isRequestPresent = true;
+                        $scope.isUserPresent = true;
+                    }
+                    
+                    $scope.filterDestinationContact = function(matchId,filterList)
+                    {
+                        for(var index = 0; index < filterList.length; index++)
+                        {
+                            if(matchId == filterList[index].Id)
+                                filterList.splice(index,1);
+                        }
+                        return filterList;
+                    }
+                    
+                    $scope.moveTPARequests = function()
+                    {
+                        $.each($scope.sourceTPAList,function(k,v)
+                        {
+                            delete v['$$hashKey'];
+                        });
+                        showLoading();
+                        CNT_TPA_Admin_Utility_Controller.moveTPARequests(JSON.stringify($scope.destinationContactId),JSON.stringify($scope.destinationAccountId),JSON.stringify($scope.selected),function(result,event){ <!-- modified by supriya johari under ER-3420 -->
+                            if(event.status)
+                            {
+                                $scope.popupAlert('TPA Request Updated Successfully');
+                                $scope.loadDefault();
+                            }
+                            hideLoading();
+                            $scope.applyChanges();
+                        });
+                    }
+                    <!-- added by supriya Johari under Er-3420 starts  -->
+                    var updateSelected = function(action, entity) {     
+                      if (action === 'add' && $scope.selected.indexOf(entity) === -1) {     
+                        $scope.selected.push(entity);       
+                      }     
+                      if (action === 'remove' && $scope.selected.indexOf(entity) !== -1) {      
+                        $scope.selected.splice($scope.selected.indexOf(entity), 1);     
+                      }     
+                            
+                      $log.info('Source Tpa List'+JSON.stringify($scope.sourceTPAList));        
+                      $log.info('Selected List'+JSON.stringify($scope.selected));       
+                    };      
+                            
+                    $scope.updateSelection = function($event, entity) {     
+                      var checkbox = $event.target;     
+                      var action = (checkbox.checked ? 'add' : 'remove');       
+                      updateSelected(action, entity);          
+                            
+                    };      
+                            
+                    $scope.selectAll = function($event) {       
+                      var checkbox = $event.target;     
+                      var action = (checkbox.checked ? 'add' : 'remove');       
+                      for ( var i = 0; i < $scope.sourceTPAList.length; i++) {      
+                        var entity = $scope.sourceTPAList[i];       
+                        $log.info('Selected List'+entity.Id);       
+                        updateSelected(action, entity);     
+                      }     
+                    };      
+                            
+                    $scope.getSelectedClass = function(entity) {        
+                      return $scope.isSelected(entity) ? 'selected' : '';       
+                    };      
+                            
+                    $scope.isSelected = function(entity) {      
+                      return $scope.selected.indexOf(entity) >= 0;      
+                    };      
+                            
+                    $scope.isSelectedAll = function() {     
+                      return $scope.selected.length === $scope.sourceTPAList.length;        
+                    };     
+                    
+                    $scope.showPopup = function() { 
+                        if($scope.selected.length > 0) {
+                            $scope.popupConfirm('Are you sure you want to move all the selected '+ $scope.selected.length +' TPA Requests?',$scope.moveTPARequests,null,true);
+                        } else {
+                            $scope.popupAlert('Please select a TPA Request.');
+                        }
+                        //return false;
+                    }
+                            
+                    <!-- added by supriya Johari under Er-3420 ends --> 
+            });
+            
+            adminUtilities.directive('repeatDone', function() 
+            {
+              return function(scope, element, attrs) {
+                if (scope.$last) setTimeout(function(){
+                    if(attrs.repeatDoneData == 'sourceTPARequets')
+                    {    
+                        scope.loadTableHeader();
+                    }
+                  },1);
+              }
+            }); 
+        </script>
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+        	<apex:form >
+        		 <c:VFC_TPA_LoadingImage />
+	             <div class="container" >
+	                 <div ng-app="adminUtilities">
+	                     <div ng-controller="CheckingController">
+	                     	<div class="slds-grid slds-grid_vertical slds-p-around_x-small">
+	                     		<div class="slds-col">
+	                     			<div class="slds-page-header" role="banner" style="margin-bottom: .5em; border-radius: 4px;">
+					                    <div class="slds-grid">
+					                        <div class="slds-col slds-has-flexi-truncate">
+					                            <div class="slds-media slds-no-space slds-grow">
+					                                <div class="slds-media__body">
+					                                    <h1 ng-click="loadView = 'Move Requests';" class="slds-page-header__title slds-truncate slds-align-middle slds-p-around_x-small" title="Move Requests">
+					                                    	Move Requests
+					                                    </h1>
+					                                </div>
+					                            </div>
+					                        </div>
+				                        </div>
+					                </div>
+	                     		</div>
+	                     		<div class="slds-col">
+	                     			<apex:include pageName="VFP_TPA_MoveRequests"/>
+	                     		</div>
+	                     	</div>
+	                     </div>
+	                 </div>
+	            </div>
+            </apex:form>
+        </body>
+    </html>
+</apex:page>

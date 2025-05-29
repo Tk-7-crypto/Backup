@@ -1,0 +1,51 @@
+<apex:page standardcontroller="Account" extensions="Account_MDM_Extension">
+ <apex:form id="AccountApprovalRequestForm">
+ <apex:sectionHeader title="MDM Approval Request for {!Account.Name}" /> 
+ <apex:outputPanel id="AccountAlreadySubmittedPanel" rendered="{!SubmittedForApproval}">
+ <apex:pageBlock title="Account Already Submitted">
+ <apex:pageBlockButtons >
+ <apex:commandButton value="OK" action="{!Cancel}" immediate="true"/>
+ </apex:pageBlockButtons>
+ <apex:pageMessages id="Messages2"></apex:pageMessages>
+    <apex:pageBlockTable value="{!CustomApprovalProcessHistory}" var="h">
+    <apex:column headerValue="Action">{!h.Action}<b><apex:outputLink rendered="{!h.ApproveLinkRendered}" value="{!h.ReassignLink}">Reassign</apex:outputLink><apex:outputPanel rendered="{!h.ApproveLinkRendered}">&nbsp;&nbsp;|&nbsp;&nbsp;</apex:outputPanel><apex:outputLink rendered="{!h.ApproveLinkRendered}" value="{!h.ApproveLink}">Approve&nbsp;/&nbsp;Reject</apex:outputLink></b></apex:column>                
+    <apex:column headerValue="Date"  value="{!h.ProxyTask.ReminderDateTime}"/>
+    <apex:column headerValue="Assigned To" value="{!h.ProxyRa.User__c}"/>
+    <apex:column headerValue="Actual Approver"><apex:outputField value="{!h.ProxyRa.OwnerId}"/></apex:column> 
+    <apex:column headerValue="Comments">{!h.Comments}</apex:column>
+    <apex:column headerValue="Overall Status"><apex:image url="{!h.ImgSrc}" rendered="{!h.ImgRendered}"/>&nbsp;&nbsp;<b>{!h.Status}</b></apex:column>
+    </apex:pageBlockTable>
+ </apex:pageBlock>
+ </apex:outputPanel>
+ <apex:outputPanel id="SubmitForApprovalPanel" rendered="{!NOT(SubmittedForApproval)}">
+ <apex:pageBlock title="Confirm Details and Submit for Approval">
+ <apex:pageMessages id="Messages"></apex:pageMessages>
+ <apex:pageBlockButtons >
+   <apex:actionStatus id="SaveAndSubmitStatus">    
+                    <apex:facet name="stop">    
+                        <apex:commandButton value="Submit" action="{!SubmitForMdmApproval}" reRender="Messages" status="SaveAndSubmitStatus"/> 
+                    </apex:facet>    
+                    <apex:facet name="start">                            
+                        Processing ...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>    
+   </apex:actionStatus>
+  <apex:commandButton value="Cancel" action="{!Cancel}" immediate="true"/>
+ </apex:pageBlockButtons>
+ <apex:pageBlockSection columns="2">
+ <apex:outputField value="{!Account.Name}"/>
+ <apex:outputField value="{!Account.Region_Territory__c}"/>
+ <apex:inputField value="{!Account.BillingStreet}" required="true" />
+ <apex:inputField value="{!Account.ShippingStreet}" />
+ <apex:inputField value="{!Account.BillingCity}" required="true"/>
+ <apex:inputField value="{!Account.ShippingCity}"/>
+ <apex:inputField value="{!Account.BillingState}" required="true"/>
+ <apex:inputField value="{!Account.ShippingState}"/>
+ <apex:inputField value="{!Account.BillingPostalCode}" required="true"/>
+ <apex:inputField value="{!Account.ShippingPostalCode}"/> 
+ <apex:inputField value="{!Account.BillingCountry}" required="true"/> 
+ <apex:inputField value="{!Account.ShippingCountry}"/> 
+ </apex:pageBlockSection>
+ </apex:pageBlock>
+ </apex:outputPanel>
+ </apex:form>
+</apex:page>

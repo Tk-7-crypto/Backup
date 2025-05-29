@@ -1,0 +1,83 @@
+<aura:component controller="CNT_CSM_WorkNote" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:attribute name="record" type="Object" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="recordError" type="String" />
+    <aura:attribute name="caseComments" type="Object" access="global" />
+    <force:recordData aura:id="recordLoader" recordId="{!v.recordId}" layoutType="FULL" targetRecord="{!v.record}" fields="['Status','Origin']" mode="EDIT" targetFields="{!v.simpleRecord}" targetError="{!v.recordError}" recordUpdated="{!c.handleRecordUpdated}" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:if isTrue="{!not(empty(v.recordError))}">
+        <div class="recordError">
+            <ui:message title="Error" severity="error" closable="true">
+                {!v.recordError}
+            </ui:message>
+        </div>
+    </aura:if>
+    <article class="slds-card">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon iconName="custom:custom83" size="small" alternativeText="new work note" />
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="[object Object]">
+                            <span class="slds-text-heading_small">{!$Label.c.Comments} ({!v.caseComments.length})</span>
+                        </a>
+                    </h2>
+                </div>
+            </header>
+            <aura:if isTrue="{! v.simpleRecord.Status ne 'Closed'}">
+            <div class="slds-no-flex">
+                <lightning:button label="{!$Label.c.Save}" onclick="{!c.handleSave}" disabled="{! v.isLoading }" />
+            </div>
+            </aura:if>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <aura:if isTrue="{! v.simpleRecord.Status ne 'Closed'}">
+                <lightning:textarea class="worknoteTextarea" aura:id="commentBody" name="commentBody" label="" value="" placeholder="{!$Label.c.Please_Share_a_comment_with_us_about_this_case}" required="false" />
+    
+                <aura:if isTrue="{! v.simpleRecord.Status eq 'Resolved with Customer'}">
+                    <lightning:input type="checkbox" label="Resolution approved" aura:id="autoCloseCaseCheck" name="autoCloseCaseCheck" checked="true" />
+                </aura:if>
+            </aura:if>
+            
+            <div class="slds-m-top_small">
+                <ul class="slds-feed__list">
+                    <aura:iteration items="{!v.caseComments}" var="caseComment" indexVar="index">
+                        <!-- <aura:if isTrue="{!v.caseComment.IsPublished}"> -->
+                        <li class="slds-feed__item">
+                            <article class="slds-post">
+                                <header class="slds-post__header slds-media">
+                                    <div class="slds-media__body">
+                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                            <p>
+                                                <a href="javascript:void(0);" title="{!caseComment.CreatedBy.Name}">{!caseComment.CreatedBy.Name}</a>
+                                            </p>
+                                            <p class="slds-text-body_small">
+                                                <lightning:formattedDateTime value="{!caseComment.CreatedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit" />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </header>
+                                <div class="slds-post__content slds-text-longform">
+                                    <p class="uiOutputTextArea">{!caseComment.CommentBody}</p>
+                                </div>
+                            </article>
+                        </li>
+                        <!-- </aura:if> -->
+                    </aura:iteration>
+                </ul>
+            </div>
+        </div>
+    </article>
+</aura:component>

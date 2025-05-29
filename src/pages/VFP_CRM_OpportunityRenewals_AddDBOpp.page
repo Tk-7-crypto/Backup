@@ -1,0 +1,104 @@
+<apex:page controller="EXT_CRM_OpportunityRenewals_AddDBOpp" showHeader="false" sidebar="false" tabStyle="Renewal_Task__c">
+  <head>
+  <title>Add Opportunity</title>
+  <base target="_self" />
+  </head>
+  <script>
+    var DASHBOARD_PAGE_NAME = 'VFP_CRM_OpportunityRenewal_Dashboard';
+    var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+    
+    function handleKeyPressSearch(event){
+       var keyCode = isIE ? event.keyCode : event.which;
+       if (keyCode == 13){
+           doSearch();
+           return false;
+       }
+    }
+    
+    function showOpportunityResults(){
+        document.getElementById('j_id0:j_id2:block:oppBlock').style.display = "inline";
+    }
+    
+    function getParameterByName(name) {
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                        results = regex.exec(location.search);
+                    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    
+    </script>    
+  <apex:form >
+      <apex:actionFunction action="{!doSearch}" name="doSearch" oncomplete="showOpportunityResults();" reRender="block" status="status"/>
+      <apex:pageBlock mode="edit" id="block">
+          <apex:pageBlockSection >
+              <apex:pageBlockSectionItem >
+                  <apex:outputLabel for="searchField">Enter Opportunity Number : </apex:outputLabel>
+                  <apex:panelGroup >
+                      <apex:inputText id="searchField" value="{!searchOppNum}" onkeypress="return handleKeyPressSearch(event);"/> 
+                      <apex:commandButton value="Go!" action="{!doSearch}" oncomplete="showOpportunityResults();" rerender="block" status="status" />
+                  </apex:panelGroup>
+              </apex:pageBlockSectionItem>
+          </apex:pageBlockSection>
+          <apex:outputPanel id="addButtonPanel">      
+             <script>
+             if('{!isAddSuccessful}' == 'true'){
+             var isChromium = window.chrome,
+             vendorName = window.navigator.vendor;
+             if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc.") {
+                 // Get the user agent string
+                  var winMain=window.parent.opener;
+                  if (null==winMain)
+                  {
+                     winMain=window.parent.opener;
+                  }
+                  
+                 if(getParameterByName('openFrom') != null && getParameterByName('openFrom') == 'lightning'){
+                     window.parent.opener.location.href = '/lightning/n/Renewal_Dashboard';
+                     window.parent.close();
+                 }else{
+                     window.parent.opener.location.href = '/apex/' + DASHBOARD_PAGE_NAME + '?dashBoardCurrentPage='+getParameterByName('currentPage')+'&sortDir='+getParameterByName('sortingDir')+'&sortField='+getParameterByName('sortingField');
+                     window.parent.close();
+                 }
+
+            }
+            else
+            {
+                 var attrs = window.dialogArguments;
+                 attrs.parWindow.location = '/apex/' + DASHBOARD_PAGE_NAME + '?dashBoardCurrentPage='+attrs.dashboardStatus.currentPage+'&sortDir='+attrs.dashboardStatus.sortingDir+'&sortField='+attrs.dashboardStatus.sortingField;
+                 window.close(); 
+            }
+              
+                 
+              }
+              
+              
+             </script>
+             <apex:pageMessages escape="false"></apex:pageMessages>
+          </apex:outputPanel>
+          <apex:actionStatus id="status" startText="Requesting..." />
+          <apex:outputPanel id="oppBlock" layout="block" style="display:none;">
+          <apex:pageBlockSection title="Opportunities" id="results" columns="1" collapsible="false;">
+            <apex:pageBlockTable value="{!resultOppList}" var="o" rendered="{! NOT(ISNULL(resultOppList))&& resultOppList.size != 0}">               
+                <apex:column >
+                    <apex:actionStatus startText="Processing..." id="addStatus"/> 
+                    <apex:commandButton value="Add to Dashboard" action="{!addDBOpportunity}" status="addStatus" reRender="addButtonPanel">
+                        <apex:param name="oppId" value="{!o.id}" assignTo="{!oppId}"/>
+                    </apex:commandButton>
+                </apex:column>
+                <apex:column headerValue="{!$ObjectType.opportunity.fields.name.label}">
+                    <!--<apex:outputLink value="/{!o.id}" onclick="linkClicked = true;" >{!o.name}</apex:outputLink>-->
+                    <apex:outputLink value="/{!o.id}" target="_blank" >{!o.name}</apex:outputLink>
+
+                </apex:column>
+                <apex:column value="{!o.Opportunity_Number__c}"/>
+                <apex:column value="{!o.Account.name}"/>
+                <apex:column value="{!o.owner.name}"/>               
+            </apex:pageBlockTable>
+            <apex:outputPanel rendered="{!(ISNULL(resultOppList)) || resultOppList.size == 0}">  
+                <apex:outputLabel > No Opportunities Found</apex:outputLabel>
+            </apex:outputPanel> 
+          </apex:pageBlockSection>
+        </apex:outputPanel>    
+      </apex:pageBlock>
+  </apex:form>
+</apex:page>

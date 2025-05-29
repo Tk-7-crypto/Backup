@@ -1,0 +1,335 @@
+<aura:component controller="CNT_CSM_PortalFile"
+    implements="forceCommunity:availableForAllPageTypes,force:hasSObjectName" access="global">
+    <!--<aura:attribute name="object" type="SObject" /> -->
+    <aura:attribute name="type" type="String" />
+    <!--<aura:attribute name="rootFolder" type="String" /> -->
+    <aura:attribute name="folderName" type="String" />
+    <aura:attribute name="rootMikadoFolder" type="String" />
+    <aura:attribute name="folders" type="Object" />
+    <aura:attribute name="nameFolderVisible4All" type="List"
+        default="['IQVIA CUSTOMER SERVICE', 'IQVIA Data Privacy Resources']" />
+
+    <aura:attribute name="files" type="Object" />
+    <aura:attribute name="navigationFolders" type="Object[]" />
+    <aura:attribute name="currentFolder" type="Object" default="{Name='root'}" />
+    <aura:attribute name="forceToSeeFolderName" type="String" default="" />
+    <!--<aura:attribute name="mikadoFolders" type="Object" />-->
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="canUploadFile" type="boolean" default="false" />
+    <aura:attribute name="previewOn" type="boolean" default="false" />
+
+
+    <!--PEP: Preview On created so as to enable partner users to preview files in libraries-->
+    <aura:attribute name="origin" type="String" default="support" />
+    <aura:attribute name="showModule" type="boolean" default="true" />
+    <aura:attribute name="message" type="String" default="" />
+    <aura:attribute name="workspaceId" type="String" default="" />
+    <aura:attribute name="title" type="String" default="" />
+    <aura:attribute name="subtitle" type="String" default="" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <lightning:navigation aura:id="navService" />
+
+    <aura:if isTrue="{! v.showModule}">
+        <div
+            class="{!AND(v.type == 'Folder Name', v.folderName != 'IQVIA Data Privacy Resources')  ? 'csm-container' : ''}">
+            <aura:if isTrue="{! AND(v.type == 'Folder Name', v.folderName != 'IQVIA Data Privacy Resources')}">
+                <div class="slds-m-bottom_large">
+                    <h1 class="header-text">{!$Label.c.Files}&nbsp;{!$Label.c.For}&nbsp;{! v.folderName}</h1>
+                    <lightning:button iconName="utility:knowledge_base" variant="base" label="{!$Label.c.Documentation}"
+                        title="{!$Label.c.Documentation}" value="{! v.folderName}" onclick="{!c.navigateToKb}"
+                        class="slds-m-horizontal_x-small" />
+                    <lightning:button iconName="utility:groups" variant="base" label="{!$Label.c.Forum}"
+                        title="{!$Label.c.Forum}" value="{! v.folderName}" onclick="{!c.navigateToForum}"
+                        class="slds-m-horizontal_x-small" />
+                </div>
+            </aura:if>
+            <div class="card mb-4" style="min-height: 400px;display: block;">
+                <div class="card-body">
+                    <aura:if isTrue="{! not(empty(v.title)) }">
+                        <h3 class="card-title h3">{! v.title }</h3>
+                    </aura:if>
+                    <aura:if isTrue="{! not(empty(v.subtitle)) }">
+                        <h6 class="card-subtitle h6 mb-2">{! v.subtitle }</h6>
+                    </aura:if>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb" style="align-items: center;">
+                            <li class="breadcrumb-item">
+                                <lightning:icon iconName="standard:file" alternativeText="File" title="File"
+                                    class="slds-m-right_small" />
+                                <a href="javascript:void(0);" onclick="{! c.folderClick2 }"
+                                    id="reset">{!$Label.c.Files}</a>
+                            </li>
+                            <aura:iteration items="{!v.navigationFolders}" var="navigationFolder" indexVar="index">
+                                <aura:if isTrue="{! index lt v.navigationFolders.length-1}">
+                                    <li class="breadcrumb-item">
+                                        <a href="javascript:void(0);" onclick="{! c.folderClick2 }" id="{!index}">{!
+                                            navigationFolder.Name}</a>
+                                    </li>
+                                </aura:if>
+                            </aura:iteration>
+                        </ol>
+                    </nav>
+                    <div class="row">
+                        <div class="col">
+                            <aura:if isTrue="{! empty(v.title) }">
+                                <h3 class="h5 text-truncate">{! v.currentFolder.Name} </h3>
+                            </aura:if>
+                            <p>{!v.files.length + v.folders.length }&nbsp;{!$Label.c.items}</p>
+                        </div>
+                        <aura:if isTrue="{!v.canUploadFile}">
+                            <div class="col text-right">
+                                <button type="button" onclick="{!c.openForm}"
+                                    class="btn btn-primary">{!$Label.c.New_Folder}</button>
+                                <aura:if isTrue="{!v.workspaceId ne ''}">
+                                    <lightning:fileUpload class="btn btn-link" title="Upload" name="fileUploader"
+                                        multiple="true" recordId="{!v.workspaceId}"
+                                        onuploadfinished="{!c.handleUploadFinished}" />
+                                </aura:if>
+                            </div>
+                        </aura:if>
+                    </div>
+                </div>
+                <aura:if isTrue="{!v.isLoading}">
+                    <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                        <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+                    <aura:set attribute="else">
+                        <table
+                            class="slds-table slds-table_fixed-layout slds-table_bordered slds-no-row-hover slds-table_cell-buffer">
+                            <thead>
+                                <tr class="slds-text-title_caps">
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="Title">
+                                            <a href="javascript:void(0);" data-sort="desc" id="sortByName"
+                                                onclick="{! c.sortBy }">
+                                                {!$Label.c.Title}
+                                                <lightning:icon iconName="utility:sort" size="xx-small"
+                                                    alternativeText="sort" />
+                                            </a>
+                                        </div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="Modified Date">
+                                            <a href="javascript:void(0);" data-sort="desc" id="sortByDate"
+                                                onclick="{! c.sortBy }">
+                                                {!$Label.c.Modified_Date}
+                                                <lightning:icon iconName="utility:sort" size="xx-small"
+                                                    alternativeText="sort" />
+                                            </a>
+                                        </div>
+                                    </th>
+                                    <aura:if isTrue="{!v.canUploadFile}">
+                                        <th scope="col" style="width: 3.75rem;">
+                                            <div class="slds-th__action">
+                                                <span class="slds-assistive-text">Actions</span>
+                                            </div>
+                                        </th>
+                                    </aura:if>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <aura:iteration items="{!v.folders}" var="folder" indexVar="index">
+                                    <tr>
+                                        <th scope="row" data-label="Title">
+                                            <div class="slds-truncate" title="{!folder.Name}">
+                                                <a href="javascript:void(0);" onclick="{! c.folderClick }"
+                                                    id="{!index}">
+                                                    <lightning:icon iconName="doctype:folder" size="medium"
+                                                        alternativeText="Folder" />
+                                                    <span class="slds-p-left_large">{!folder.Name}</span>
+                                                </a>
+                                            </div>
+                                        </th>
+                                        <th scope="row" data-label="last Modified Date">
+                                            <ui:outputDateTime value="{!folder.LastModifiedDate}" />
+                                        </th>
+                                        <aura:if isTrue="{!v.canUploadFile}">
+                                            <th scope="row" data-label="Delete">
+                                                <div class="slds-truncate" title="Delete"></div>
+                                            </th>
+                                        </aura:if>
+                                    </tr>
+                                </aura:iteration>
+
+                                <aura:iteration items="{!v.files}" var="file" indexVar="index">
+                                    <tr>
+                                        <th scope="row" data-label="Title">
+                                            <div class="slds-truncate" title="{!file.ChildRecord.Title}">
+                                                <a href="{!'/'+v.origin+'/sfc/servlet.shepherd/document/download/'+file.ChildRecordId}"
+                                                    target="_blank">
+                                                    <aura:if isTrue="{!file.ChildRecord.FileExtension == 'pdf'}">
+                                                        <lightning:icon iconName="doctype:pdf" size="medium"
+                                                            alternativeText="pdf" />
+                                                        <aura:set attribute="else">
+                                                            <aura:if
+                                                                isTrue="{! (file.ChildRecord.FileExtension == 'xls' || file.ChildRecord.FileExtension == 'xlsx')}">
+                                                                <lightning:icon iconName="doctype:excel" size="medium"
+                                                                    alternativeText="excel" />
+                                                                <aura:set attribute="else">
+                                                                    <aura:if
+                                                                        isTrue="{! (file.ChildRecord.FileExtension == 'doc' || file.ChildRecord.FileExtension == 'docx')}">
+                                                                        <lightning:icon iconName="doctype:word"
+                                                                            size="medium" alternativeText="word" />
+                                                                        <aura:set attribute="else">
+                                                                            <aura:if
+                                                                                isTrue="{! (file.ChildRecord.FileExtension == 'ppt' || file.ChildRecord.FileExtension == 'pptx')}">
+                                                                                <lightning:icon iconName="doctype:ppt"
+                                                                                    size="medium"
+                                                                                    alternativeText="ppt" />
+                                                                                <aura:set attribute="else">
+                                                                                    <aura:if
+                                                                                        isTrue="{!file.ChildRecord.FileExtension == 'csv'}">
+                                                                                        <lightning:icon
+                                                                                            iconName="doctype:csv"
+                                                                                            size="medium"
+                                                                                            alternativeText="csv" />
+                                                                                        <aura:set attribute="else">
+                                                                                            <aura:if
+                                                                                                isTrue="{! (file.ChildRecord.FileExtension == 'jpg' || file.ChildRecord.FileExtension == 'jpeg' || file.ChildRecord.FileExtension == 'png')}">
+                                                                                                <lightning:icon
+                                                                                                    iconName="doctype:image"
+                                                                                                    size="medium"
+                                                                                                    alternativeText="image" />
+                                                                                                <aura:set
+                                                                                                    attribute="else">
+                                                                                                    <aura:if
+                                                                                                        isTrue="{! (file.ChildRecord.FileExtension == 'txt')}">
+                                                                                                        <lightning:icon
+                                                                                                            iconName="doctype:txt"
+                                                                                                            size="medium"
+                                                                                                            alternativeText="txt" />
+                                                                                                        <aura:set
+                                                                                                            attribute="else">
+                                                                                                            <aura:if
+                                                                                                                isTrue="{! (file.ChildRecord.FileExtension == 'zip' || file.ChildRecord.FileExtension == 'rar' || file.ChildRecord.FileExtension == '7z')}">
+                                                                                                                <lightning:icon
+                                                                                                                    iconName="doctype:zip"
+                                                                                                                    size="medium"
+                                                                                                                    alternativeText="zip" />
+                                                                                                                <aura:set
+                                                                                                                    attribute="else">
+                                                                                                                    <aura:if
+                                                                                                                        isTrue="{! (file.ChildRecord.FileExtension == 'xml')}">
+                                                                                                                        <lightning:icon
+                                                                                                                            iconName="doctype:xml"
+                                                                                                                            size="medium"
+                                                                                                                            alternativeText="xml" />
+
+                                                                                                                        <aura:set
+                                                                                                                            attribute="else">
+                                                                                                                            <aura:if
+                                                                                                                                isTrue="{! (file.ChildRecord.FileExtension == 'exe')}">
+                                                                                                                                <lightning:icon
+                                                                                                                                    iconName="doctype:exe"
+                                                                                                                                    size="medium"
+                                                                                                                                    alternativeText="exe" />
+
+                                                                                                                                <aura:set
+                                                                                                                                    attribute="else">
+                                                                                                                                    <aura:if
+                                                                                                                                        isTrue="{! (file.ChildRecord.FileExtension == 'html' || file.ChildRecord.FileExtension == 'htm')}">
+                                                                                                                                        <lightning:icon
+                                                                                                                                            iconName="doctype:html"
+                                                                                                                                            size="medium"
+                                                                                                                                            alternativeText="html" />
+
+                                                                                                                                        <aura:set
+                                                                                                                                            attribute="else">
+                                                                                                                                            <lightning:icon
+                                                                                                                                                iconName="doctype:unknown"
+                                                                                                                                                size="medium"
+                                                                                                                                                alternativeText="unknown" />
+                                                                                                                                        </aura:set>
+                                                                                                                                    </aura:if>
+                                                                                                                                </aura:set>
+                                                                                                                            </aura:if>
+                                                                                                                        </aura:set>
+                                                                                                                    </aura:if>
+                                                                                                                </aura:set>
+                                                                                                            </aura:if>
+                                                                                                        </aura:set>
+                                                                                                    </aura:if>
+                                                                                                </aura:set>
+                                                                                            </aura:if>
+                                                                                        </aura:set>
+                                                                                    </aura:if>
+                                                                                </aura:set>
+                                                                            </aura:if>
+                                                                        </aura:set>
+                                                                    </aura:if>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                        </aura:set>
+                                                    </aura:if>
+                                                    <span class="slds-p-left_large">
+                                                        {!file.ChildRecord.Title}.{!file.ChildRecord.FileExtension}
+                                                    </span>
+                                                </a>
+                                            </div>
+                                        </th>
+                                        <th scope="row" data-label="last Modified Date">
+                                            <div class="slds-truncate" title="{!file.ChildRecord.LastModifiedDate}">
+                                                <ui:outputDateTime value="{!file.ChildRecord.LastModifiedDate}" />
+                                            </div>
+                                        </th>
+                                        <aura:if isTrue="{!v.canUploadFile}">
+                                            <th scope="row" data-label="Delete">
+                                                <div class="slds-truncate" title="Delete">
+                                                    <button id="{!index}" class="slds-button slds-button_icon"
+                                                        onclick="{! c.deleteFile}">
+                                                        <lightning:icon iconName="utility:delete" variant="Delete"
+                                                            class="p-1" size="x-small" />
+                                                    </button>
+                                                </div>
+                                            </th>
+                                        </aura:if>
+                                    </tr>
+                                </aura:iteration>
+                            </tbody>
+                        </table>
+                        <aura:if isTrue="{! and(v.files.length le 0,v.folders.length le 0) }">
+                            <div class="text-center alert alert-info m-5" role="alert">
+                                <p>{!$Label.c.No_items_to_display}</p>
+                            </div>
+                        </aura:if>
+                    </aura:set>
+                </aura:if>
+            </div>
+        </div>
+        <aura:set attribute="else">
+            <c:LXC_CSM_CommunityAlert type="warning" title="{!$Label.c.You_can_t_view_these_resources}"
+                message="{! v.message }" />
+        </aura:set>
+    </aura:if>
+
+
+
+
+
+    <div aura:id="modaldialog" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide" style="z-index: 9050">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+                    onclick="{!c.closeForm}">
+                    <lightning:icon iconName="utility:close" variant="close" />
+                </button>
+                <h2 class="slds-text-heading--medium">{!$Label.c.New_Folder}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control">
+                        <lightning:input aura:id="newFolderName" required="true" name="foderName" label="Folder Name" />
+                    </div>
+                </div>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button variant="neutral" label="Cancel" onclick="{!c.closeForm}" />
+                <lightning:button variant="brand" label="Save" onclick="{!c.onSubmit}" />
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

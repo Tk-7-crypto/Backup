@@ -1,0 +1,67 @@
+<aura:component controller="CNT_CPQ_QuoteLanding" implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,force:lightningQuickActionWithoutHeader" access="global" >
+    <aura:attribute name="simpleRecord" type="object" />	
+    <force:recordData aura:id="recordLoader" fields="Id, Name, Line_of_Business__c" recordId="{!v.recordId}" targetFields="{!v.simpleRecord}" recordUpdated="{!c.doInIt}" />
+    <aura:attribute name="showSpinner" type="Boolean" default="true"/>
+    <aura:attribute name="accId" type="Id" />
+    <aura:attribute name="quoteRecordTypes" type="Object[]"/>
+    <aura:attribute name="pricingToolsOptions" type="List" default="[
+                                                                    {'label': 'Pricning Tool1', 'value': 'option1'},
+                                                                    {'label': 'Pricning Tool2', 'value': 'option2'}
+                                                                    ]"/>
+    <aura:attribute name="selectedRecordType" type="String"/>
+    <aura:attribute name="selectedpricingTool" type="String"/>
+    <aura:attribute name="isDisplayRecordTypes" type="Boolean" default="true"/>
+    <aura:attribute name="showPricingTools" type="Boolean" default="false"/>
+    <aura:attribute name="showCreateBudgetScreenForRDS" type="Boolean" default="false"/>
+    <aura:attribute name="isCreateQuoteFromOpportunity" type="Boolean" default="true"/>
+    <aura:attribute name="showError" type="Boolean" default="false"/>
+    <aura:attribute name="showRecordTypeSelection" type="Boolean" default="false"/>
+    <aura:attribute name="showButtons" type="Boolean" default="false"/>
+    
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <aura:if isTrue="{!v.showRecordTypeSelection}">
+        <aura:html tag="style">
+            .modal-body{ height : 180px !important;}
+        </aura:html>
+        <h1 class="slds-text-heading--medium slds-align_absolute-center">Create New Quote</h1>
+        <aura:if isTrue="{!v.showError}">
+            <div class="slds-m-top_small slds-border_top">
+                You don't have access to select the record type. Please contact your admin.
+            </div>
+        </aura:if>
+        <aura:if isTrue="{!v.isDisplayRecordTypes}">
+            <div class="slds-m-top_small slds-border_top">
+                Please select Record Type to proceed:
+            </div>	
+            <lightning:radioGroup name="radioGroup" label="" options="{!v.quoteRecordTypes}" value="{!v.selectedRecordType}" type="radio" />
+        </aura:if>
+    </aura:if>
+    <aura:if isTrue="{!v.showPricingTools}">
+        <aura:html tag="style">
+            .modal-body{ height : 180px !important; }
+        </aura:html>
+        <h1 class="slds-text-heading--medium slds-align_absolute-center">Create New Quote</h1>
+        <div class="slds-m-top_small slds-border_top">
+            Please select Pricing Tool to proceed:
+        </div>
+        <lightning:radioGroup name="radioGroup" label="" options="{!v.pricingToolsOptions}" value="{!v.selectedpricingTool}" type="radio" />
+    </aura:if>
+    <div class="slds-text-align_center">
+        <aura:if isTrue="{!and(v.showButtons, !v.showError)}">
+            <aura:if isTrue="{!v.showPricingTools}">
+                <button class="slds-button slds-button_brand " onclick="{!c.redirectToQuoteCreatePageAction}">Continue</button>
+            </aura:if>
+            <aura:if isTrue="{!v.showRecordTypeSelection}">
+                <button class="slds-button slds-button_brand " onclick="{!c.handleSelectedRecordType}">Continue</button> 
+            </aura:if>
+            <button class="slds-button slds-button--neutral" onclick="{!c.closeQuickAction}">Cancel</button>
+        </aura:if>
+    </div>
+    <aura:if isTrue="{!v.showCreateBudgetScreenForRDS}">
+        <c:LXC_CPQ_CreateQuote aura:id="quoteComp" 
+                               recordId = "{!v.recordId}"
+                               isCreateQuoteFromOpportunity = "{!v.isCreateQuoteFromOpportunity}" />
+    </aura:if>
+</aura:component>

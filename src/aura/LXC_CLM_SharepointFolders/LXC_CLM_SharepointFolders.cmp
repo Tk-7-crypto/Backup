@@ -1,0 +1,49 @@
+<aura:component implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" 
+    controller="CNT_GBL_FileRelatedList" extends="c:LXC_CLM_BaseComponent">
+    
+    <aura:attribute type="Integer" name="numberOfRecords" default="6" />
+    <aura:attribute type="String" name="numberOfRecordsForTitle" access="private" default="0"/>
+    <aura:attribute name="isModalShown" type="Boolean"/>
+    <aura:attribute name="folders" type="List"/>
+    <aura:attribute name="folderName" type="String"/>
+    <aura:attribute name="foldersCommaSeparated" type="String"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    
+    <div class="slds-m-around_xx-small">
+        <lightning:card class="slds-card_boundary" iconName="standard:file">
+            <aura:set attribute="title">
+                <b>Files ({!v.numberOfRecordsForTitle})</b>
+            </aura:set>
+            <lightning:layout>
+                <aura:iteration items="{!v.folders}" var="folder">
+                    <div class="slds-m-around_small slds-p-around_small slds-card_boundary slds-text-align_center" 
+                        name="{!folder}" onclick="{!c.folderToggel}">
+                        <div name="{!folder}">
+                            <lightning:icon iconName="standard:folder" size="large"/>
+                        </div>
+                        <p class="slds-m-top_x-small" name="{!folder}">{!folder}</p>
+                    </div>
+                </aura:iteration>
+            </lightning:layout>
+        </lightning:card>
+        
+        <aura:if isTrue="{!v.isModalShown}">
+            <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open" 
+                aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{!v.folderName}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <c:LXC_GBL_FileRelatedList recordId="{!v.recordId}" folderName="{!v.folderName}"/>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" name="close" onclick="{!c.folderToggel}">Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </aura:if>
+    </div>
+</aura:component>

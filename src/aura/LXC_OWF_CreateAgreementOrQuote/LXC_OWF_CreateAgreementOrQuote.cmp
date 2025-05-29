@@ -1,0 +1,40 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" controller = "CNT_OWF_CreateAgreementOrQuote">
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="showSpinner" type="Boolean" default="true" />
+    <aura:attribute name="actionName" type="String" />
+    <aura:attribute name="showError" type="Boolean" default="false" />
+    <aura:attribute name="errorMsg" type="String" />
+    <aura:attribute name="flowName" type="String" default=""/>
+    <aura:attribute name="isItAgreementCreation" type="Boolean" default="false"  />
+    <aura:attribute name="isItQuoteCreation" type="Boolean" default="false"  />
+    <aura:attribute name="isItCNFQuoteCreation" type="Boolean" default="false"  />
+    <aura:attribute name="bidHistoryRecord" type="object" />
+    <force:recordData aura:id="recordLoader" fields="Id, RecordTypeId, Agreement_Pathway__c, Requested_Agreement_Type__c, Create_Agreement_Quote_Button_Visibility__c" recordId="{!v.recordId}" targetFields="{!v.bidHistoryRecord}" recordUpdated="{!c.doInit}" />
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <aura:if isTrue="{!!v.showSpinner}">
+        <aura:if isTrue="{!v.showError}">
+            <aura:html tag="style">
+                .quick-actions-panel{
+                max-height: 100px !important;
+                overflow: hidden !important;
+                }
+            </aura:html>
+            <div class="errorMessage slds-text-color_error slds-text-title_bold slds-text-align_center slds-m-around_large">
+                {!v.errorMsg}
+            </div>
+        </aura:if> 
+        <aura:if isTrue="{!!v.showError}">
+            <aura:if isTrue = "{!v.isItAgreementCreation}">
+                <c:LXC_CLM_Launch_Flow recordId = "{!v.recordId}" flowName="{!v.flowName}"/>
+            </aura:if>
+            <aura:if isTrue = "{!v.isItQuoteCreation}">
+                <c:LXC_CPQ_CreateBudget recordId = "{!v.recordId}"/>
+            </aura:if>
+            <aura:if isTrue = "{!v.isItCNFQuoteCreation}">
+                <c:LXC_CLM_Launch_Flow recordId = "{!v.recordId}" flowName="CLM_Create_Bid_Quote_ScreenFlow"/>
+            </aura:if>
+        </aura:if>
+    </aura:if>
+</aura:component>

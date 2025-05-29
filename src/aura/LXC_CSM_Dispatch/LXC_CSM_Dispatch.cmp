@@ -1,0 +1,293 @@
+<aura:component controller="CNT_CSM_Dispatch" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="caseDevice" type="String" />
+    <aura:attribute name="caseEnvironmentType" type="String" />
+    <aura:attribute name="simpleNewCase" type="Object" />
+    <aura:attribute name="options" type="List" default="[
+                                                        {'label': 'Dispatch', 'value': 'option2'},
+                                                        {'label': 'Assign', 'value': 'option1'}
+                                                        
+                                                        ]"/>
+    <aura:handler event="c:LXC_CSM_lookup_evt" action="{!c.handleApplicationEvent}" name="sampleCmpEvent"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="showModule" type="Boolean" default="false"/>
+    <aura:attribute name="value" type="String" default="option2"/>
+    <aura:attribute name="prioritytype" type="String[]" />
+    <aura:attribute name="currentStatus" type="String" />
+    <aura:attribute name="currentSubStatus" type="String" />
+    <aura:attribute name="esclated" type="String" />
+    <aura:attribute name="priorityselect" type="String" />
+    <aura:attribute name="substatus" type="String[]" />
+    <aura:attribute name="substatusselect" type="String" />
+    <aura:attribute name="previoususer" type="String[]" />
+    <aura:attribute name="previoususerselect" type="String" />
+    <aura:attribute name="previousowner" type="String[]" />
+    <aura:attribute name="previouownerselect" type="String" />
+    <aura:attribute name="previousqueue" type="String[]" />
+    <aura:attribute name="previousqueueBasedonUser" type="String[]" />
+    <aura:attribute name="previousqueueselect" type="String" />
+    <aura:attribute name="caseowner" type="String[]" />
+    <aura:attribute name="opti" type="Object"/>
+    <aura:attribute name="op" type="List" />
+    <aura:attribute name="radioGroupVis" type="Boolean" default = "true" />
+    <aura:attribute name="caseownerselect" type="String" />
+    <aura:attribute name="cssStyle" type="String"/>
+    <aura:unescapedHtml value="{!v.cssStyle}"/>
+    <aura:attribute name="disabledPick" type="Boolean" default="true"/>
+     <aura:attribute name="parentOptions" type="List"/>
+    <aura:attribute name="dependentPicklist" type="Object"/>
+    <aura:attribute name="dependentOptions" type="List"/>
+    <aura:attribute name="newContact" type="Case"  default="{ 'sobjectType': 'Case',
+                                                            'Owner': '','Email':'','Phone':'','IsEscalated':'','Priority':'','Status':'','SubStatus__c':'','Previous_User__c':'','Previous_Queue__c':'','OwnerId':'','Id':'','PreviousQueueUser__c':'',}"/>
+    <aura:attribute name="currentProfileName" type="Boolean" default = "true" />
+    <aura:attribute name="internalFollowUp" type="DateTime"/>
+    <aura:attribute name="product" type="String"/>
+    <aura:attribute name="subType1" type="String"/>
+    <aura:attribute name="subType2" type="String"/>
+    <aura:attribute name="caseRecordType" type="String" />
+    <aura:attribute name="showComponent" type="Boolean" default="false" />
+    
+    <lightning:workspaceAPI aura:id="workspace"/>
+    <form style="background-color: white;" class = "cuf-scroller-outside" >
+        <div class="slds-grid slds-wrap slds-grid--pull-padded" style="background-color: white;" >   
+           <aura:if isTrue="{!v.Spinner}">
+              <div aura:id="spinnerId" class="slds-spinner_container">
+                  <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                   <span class="slds-assistive-text">Loading</span>
+                   <div class="slds-spinner__dot-a"></div>
+                   <div class="slds-spinner__dot-b"></div>
+                  </div>
+              </div>
+           </aura:if>
+            
+            <aura:if isTrue="{!v.showComponent}">
+				<aura:if isTrue="{!(v.previoususer.length > 0)}">
+					<div class="slds-col--padded slds-size--1-of-1">
+						<div aura:id="prioritySelectFormElement" class="slds-form-element">
+							<div class="slds-form-element__control">
+								<lightning:select name="priority" label="Previous Owner/Queue" aura:id="Prev"
+												  value="{!v.newContact.Previous_User__c}" onchange ="{!c.changepiclist}">
+									<option value="Please Specify" text="Please Specify"></option>
+									<aura:iteration items="{!v.previoususer}" var="type">
+										<option value="{!type}" text="{!type}"></option>
+									</aura:iteration>
+								</lightning:select>
+							</div>
+						</div>
+					</div>
+				</aura:if>
+				<aura:if isTrue="{!(v.radioGroupVis)}">
+					<div class="slds-col--padded slds-size--1-of-1"> 
+						<div class="slds-form-element">
+							<div class="slds-form-element__control">
+								<lightning:radioGroup name="radioGroup" aura:id ="radio1"
+													  label=""
+													  options="{! v.options }"
+													  value="{! v.value }"
+													  type="radio"
+													  onchange="{! c.handleChange }"         />
+							</div>
+						</div>
+					</div> 
+				</aura:if>
+				<aura:if isTrue="{(!(v.value == 'option2') &amp;&amp; !(v.previousqueue.length > 0))}">
+					<div class="slds-col--padded slds-size--1-of-1">
+						<div class="slds-form-element__control">
+							<lightning:select name="priority" label="Previous Queue"
+											  value="{!v.newContact.Previous_Queue__c}">
+								<option value="Please Specify" text="Please Specify"></option>
+								<aura:iteration items="{!v.previousqueue}" var="type">
+									<option value="{!type}" text="{!type}"></option>
+								</aura:iteration>
+							</lightning:select>
+						</div>
+					</div>
+					
+				</aura:if>
+				
+				<div class="slds-col--padded slds-size--1-of-1">
+					<aura:if isTrue="{!((v.value == 'option1'))}">       
+						<c:LXC_CSM_Lookup objectName="User" fieldName="Name" label="Assign to User"  aura:id = "Lookup" iconName="standard:user" placeholder="Enter Value" />
+					</aura:if>
+					<aura:if isTrue="{!((v.value == 'option2'))}">
+						<c:LXC_CSM_Lookup objectName="Group" fieldName="Name" label="Dispatch to Queue" aura:id = "LookupOwner"  iconName="standard:queue" placeholder="Enter Value" />
+					</aura:if>
+					
+				</div>
+				<aura:if isTrue="{(!(v.value == 'option1') &amp;&amp; !(v.previoususer.length > 0))}">
+					<div class="slds-col--padded slds-size--1-of-1">
+						<div class="slds-form-element__control">
+							<lightning:select name="priority" label="Case Owner"
+											  value="{!v.newContact.Previous_User__c}" onchange ="{!c.changepiclist}">
+								<option value="Please Specify" text="Please Specify"></option>
+								<aura:iteration items="{!v.previoususer}" var="type">
+									<option value="{!type}" text="{!type}"></option>
+								</aura:iteration>
+							</lightning:select>
+						</div>                            
+					</div>
+				</aura:if>
+				
+				<aura:if isTrue="{!(v.value == 'option1')}">
+						<div class="slds-col--padded slds-size--1-of-1">
+							<div class="slds-form-element__control">
+								<lightning:select name="priority" label="Assignee Current Queue"
+												  value="{!v.newContact.Previous_Queue__c}">
+									<option value="Please Specify" text="Please Specify"></option>
+									<aura:iteration items="{!v.previousqueue}" var="type">
+										<option value="{!type}" text="{!type}"></option>
+									</aura:iteration>
+								</lightning:select>
+							</div>
+						</div>
+						
+					</aura:if>
+					
+					<div class="slds-col--padded slds-size--1-of-2">
+						<div aura:id="prioritySelectFormElement" class="slds-form-element">
+							<div class="slds-form-element__control">
+								<lightning:select name="priority" label="Status" aura:id="parentStatus"
+												   onchange="{!c.PickStatusChange}">
+
+									<aura:iteration items="{!v.prioritytype}" var="type">
+										<option value="{!type}" text="{!type}"></option>
+									</aura:iteration>
+								</lightning:select>
+							</div>
+						</div>
+					</div>
+					<div class="slds-col--padded slds-size--1-of-2">
+						<div aura:id="prioritySelectFormElement" class="slds-form-element">
+							<div class="slds-form-element__control">
+								<lightning:select name="substatus" label="Sub Status" disabled="{!v.disabledPick}" aura:id="subStatusParent" 
+												  value="{!v.newContact.SubStatus__c}">
+									<aura:if isTrue="{!(v.disabledPick == false)}">
+										<aura:iteration items="{!v.substatus}" var="type">
+											<aura:if isTrue="{AND(!type == 'None',v.currentSubStatus == '')}">
+												<option value="" text="{!type}" selected= "true"></option>
+												<aura:set attribute="else">
+													<option value="{!type}" text="{!type}" selected= "{!type==v.currentSubStatus}"></option>    
+												</aura:set>
+											</aura:if>
+										</aura:iteration>
+										<aura:set attribute="else">
+											<aura:iteration items="{!v.substatus}" var="type">
+											<aura:if isTrue="{!type == 'None'}">
+												<option value="" text="{!type}" selected= "true"/>
+												</aura:if>
+											</aura:iteration>
+										</aura:set>
+									</aura:if>
+								</lightning:select>
+							</div>
+						</div>
+					</div>
+					<div class="slds-col--padded slds-size--1-of-2">
+						<ui:inputCheckbox aura:id="leadsCheckBox" label="Escalated" value="{!v.newContact.IsEscalated}" disabled="true" />
+					</div>
+					<div class="slds-col--padded slds-size--1-of-2">
+						<div class="slds-form-element__control">
+							<aura:if isTrue="{!((v.value == 'option2'))}">
+								<lightning:input name="internalFollowUp" type="datetime" label="Internal Follow Up" value="{!v.newContact.Internal_Follow_Up__c}" />
+							</aura:if>
+						</div>
+					</div>
+					<div class="slds-col--padded slds-size--1-of-1 slds-m-top_large">          
+						<aura:if isTrue="{!v.currentProfileName}">
+							<aura:if isTrue="{!v.caseRecordType == 'TechnologyCase'}" >
+								<lightning:button  aura:id="btnEscalation" label="Create Escalation Form" onclick="{!c.openNewEscalationForm}" />
+							</aura:if>
+						</aura:if>
+						<lightning:button aura:id="contactField" label="Save" onclick="{!c.saveData}"/>
+					</div>
+				 <aura:set attribute="else">
+						<p><b>Only member of the case's current queue can use this quick action.</b></p>
+					</aura:set>
+            </aura:if> 
+        </div>
+    </form>
+    <aura:handler name="init" value="{!this}" action="{!c.openForm}" />
+    <div aura:id="modaldialog" role="dialog" tabindex="-1"  class="slds-modal slds-fade-in-hide" style="z-index: 9050">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <aura:if isTrue="{!v.isMandatory == false}">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{!c.closeForm}">
+                        <lightning:icon iconName="utility:close" variant="close" />
+                    </button>
+                </aura:if>
+                <h2 class="slds-text-heading--medium">Dispatch User/Queue History</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="slds-grid slds-wrap slds-grid--pull-padded slds-m-bottom_large">
+                    <div class="slds-col--padded slds-size--1-of-1"> 
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:radioGroup name="radioGroup"
+                                                      label=""
+                                                      options="{! v.options }"
+                                                      value="{! v.value }"
+                                                      type="radio"
+                                                      onchange="{! c.handleChange }"         />
+                            </div>
+                        </div>
+                    </div>  
+                    <div class="slds-col--padded slds-size--1-of-1"> 
+                        <lightning:input name="quantity" value="{!v.newContact.Previous_User__c}"
+                                         maxlength="30" readonly="true" />
+                    </div>  
+                    <aura:if isTrue="{!(v.value == 'option1')}">
+                        <div class="slds-col--padded slds-size--1-of-2">
+                            
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <lightning:select name="priority" label="Assign to User"
+                                                      value="{!v.newContact.Previous_User__c}" onchange ="{!c.changepiclist}">
+                                        <option value="Please Specify" text="Please Specify"></option>
+                                        <aura:iteration items="{!v.previousowner}" var="type">
+                                            <option value="{!type}" text="{!type}"></option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </div>                            
+                            </div>
+                            
+                        </div>
+                        <div class="slds-col--padded slds-size--1-of-2">
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <lightning:select name="priority" label="Current Queue"
+                                                      value="{!v.newContact.Previous_Queue__c}">
+                                        <option value="Please Specify" text="Please Specify"></option>
+                                        <aura:iteration items="{!v.previousqueueBasedonUser}" var="type">
+                                            <option value="{!type}" text="{!type}"></option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </div>
+                            </div>
+                        </div>
+                    </aura:if>
+                    <div class="slds-col--padded slds-size--1-of-1">
+                        <aura:if isTrue="{!(v.value == 'option2')}">
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <lightning:select name="priority" label="Dispatch to queue" onchange ="{!c.changepiclist}"
+                                                      value="{!v.newContact.PreviousQueueUser__c}">
+                                        <option value="Please Specify" text="Please Specify"></option>
+                                        <aura:iteration items="{!v.previousqueueBasedonUser}" var="type">
+                                            <option value="{!type}" text="{!type}"></option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </div>
+                            </div>
+                        </aura:if>
+                    </div>
+                </div>
+                <div class="slds-modal__footer slds-m-top_large" style="background-color: white; border: none;">
+                    <lightning:button variant="neutral" label="Cancel" onclick="{!c.closeForm}" />
+                    <lightning:button variant="brand" label="Save" onclick="{!c.saveData}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

@@ -1,0 +1,56 @@
+<aura:component controller="CNT_CSM_CommunityPage"
+    implements="forceCommunity:availableForAllPageTypes,force:hasSObjectName" access="global">
+    <aura:attribute name="user" type="Object" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="partnerURL" type="boolean" access="global" default="false" />
+    <aura:if isTrue="{!v.partnerURL}">
+        <div class="container">
+            <c:LXC_CSM_CommunityTopics partnerURL="{!v.partnerURL}" />
+        </div>
+        <aura:set attribute="else">
+            <aura:if isTrue="{! not(empty(v.user)) }">
+                <c:lwc_csm_csh_main_hero />
+                <div class="csm-container">
+                    <c:lwc_csm_csh_announcements includeExpired="false" />
+                    <!--<c:LXC_CSM_CommunityAnnouncements includeExpired="false" />-->
+                </div>
+                <aura:if isTrue="{! v.user.Contact.Portal_Case_Type__c eq 'R&amp;D'}">
+                    <div class="csm-container">
+                        <c:LXC_CSM_PortalReports />
+                    </div>
+                    <aura:set attribute="else">
+                        <aura:if isTrue="{! v.user.Contact.Contact_User_Type__c eq 'Rep User'}">
+                            <div class="csm-container">
+                                <c:LXC_CSM_CaseList />
+                                <c:LXC_CSM_CommunityFilesExplorer type="Shared folder" forceToSeeFolderName="Rep" />
+                            </div>
+                            <aura:set attribute="else">
+                                <div class="csm-container">
+                                    <c:lwc_csm_product_topics />
+                                    <!--<c:LXC_CSM_CommunityAppLauncher />-->
+                                    <c:lwc_csm_csh_applications_links />
+                                    <c:lwc_csm_csh_bookmarks />
+                                    <!--<c:LXC_CSM_CommunityFavorites showTitle="true" />-->
+                                    <aura:if isTrue="{! not(v.user.Contact.Remove_Data_Privacy_Section_Access__c)}">
+                                        <c:LXC_CSM_CommunityFilesExplorer type="Folder Name"
+                                            title="{!$Label.c.Your_IQVIA_Data_Privacy_Resources}"
+                                            subtitle="{!$Label.c.The_attached_SCCs_are_incorporated_by_reference_into_contracts_for_the_offerings}"
+                                            folderName="IQVIA Data Privacy Resources" />
+                                    </aura:if>
+                                </div>
+                            </aura:set>
+                        </aura:if>
+                    </aura:set>
+                </aura:if>
+                <aura:set attribute="else">
+                    <c:lwc_csm_csh_main_hero />
+                    <div class="csm-container">
+                        <c:lwc_csm_csh_announcements includeExpired="false" />
+                        <!--<c:LXC_CSM_CommunityAnnouncements includeExpired="false" />-->
+                        <c:lwc_csm_product_topics />
+                    </div>
+                </aura:set>
+            </aura:if>
+        </aura:set>
+    </aura:if>
+</aura:component>

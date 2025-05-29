@@ -1,0 +1,148 @@
+<template>
+    <template if:true={isTicketGenieEnabled}>
+        <template if:true={isOcePersonal}>
+    <article class="slds-card">
+        <div class="slds-align_absolute-center">   
+            <template if:true={showSpinner}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <div class="slds-box">
+        <lightning-layout>
+            <lightning-layout-item flexibility="auto" size="2" padding="around-small">
+                <lightning-input type="toggle" name="genieType" message-toggle-active="Advanced" message-toggle-inactive="Basic" required checked={genieType} onchange={onCheckboxChange}></lightning-input>
+            </lightning-layout-item>
+            <!-- <lightning-layout-item flexibility="auto" size="2" padding="around-small">
+                <lightning-input type="toggle" name="genieLanguage" message-toggle-active="Native Language" message-toggle-inactive="English" required checked={genieLanguage} onchange={onCheckboxChange}></lightning-input>      
+            </lightning-layout-item> -->
+            <lightning-layout-item flexibility="auto" size="2" padding="around-small">
+                <lightning-button label="Ask Genie" onclick={askGenie} variant="brand"></lightning-button>
+            </lightning-layout-item>
+        </lightning-layout>
+        </div>
+        <template if:true={respRecords}>
+            <template if:true={respRecords.detail}>
+            <lightning-card  title={respRecords.detail}>
+                <p class="slds-p-horizontal_small">{respRecords.detail}</p>
+            </lightning-card>
+            </template>
+            <template if:false={respRecords.detail}>
+            <template if:true={respRecords.Summary}>
+            <div class="slds-box">
+                <lightning-card  title="Case Summary">
+                    <lightning-layout horizontal-align="spread" multiple-rows>
+                        <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                            <div class="slds-form-element__label slds-form-element__control" role="option" style="margin-bottom:6px;">
+                                <p>
+                                    <lightning-formatted-rich-text value={respRecords.Summary} class="slds-text-body_small"></lightning-formatted-rich-text>
+                                </p>
+                        </div>
+                    </lightning-layout-item>
+                    </lightning-layout>
+                </lightning-card>
+            </div>
+        </template>
+        <template if:true={respRecords.Resolution}>
+            <div class="slds-box">
+            <lightning-card  title="Suggested Resolution Steps">
+                <lightning-layout horizontal-align="spread" multiple-rows>
+                    <lightning-layout-item flexibility="auto" size="10" padding="around-small">
+                <!-- <ul class="slds-list_dotted">-->
+                <ol>
+                    <template for:each={respRecords.Resolution} for:item="resol">
+                        <li key={resol}>
+                            <div class="slds-form-element__label slds-form-element__control" key={ref} role="option" style="margin-bottom:6px;">
+                               <p> <lightning-formatted-rich-text value={resol} class="slds-text-body_small"></lightning-formatted-rich-text></p>                            
+                    </div>
+                        </li>
+                        </template>
+                </ol>
+                
+                <!-- <p class="slds-form-element__label"> <lightning-formatted-rich-text value={resolutionData} class="slds-text-body_small">
+                </lightning-formatted-rich-text></p> -->
+            
+                </lightning-layout-item>
+                </lightning-layout>
+            </lightning-card>
+        </div>
+        </template>
+        <template if:true={respRecords.References}>
+        <div class="slds-box">
+            <lightning-card  title="Quick References">
+                <lightning-layout horizontal-align="spread" multiple-rows>
+                    <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                <template for:each={respRecords.References} for:item="ref">
+                    <div class="slds-media slds-listbox__option 
+                                slds-listbox__option_entity 
+                                slds-listbox__option_has-meta" key={ref} role="option" style="margin-bottom:6px;">
+                        <span class="slds-media__body" style="font-weight: 500;">
+                            <span class="slds-listbox__option-text_entity">
+                                <lightning-formatted-url value={ref} target="_blank">{ref}</lightning-formatted-url>
+                            </span>
+                        </span>
+                    </div>
+                </template>
+                </lightning-layout-item>
+                <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                    <template if:true={respRecords.Chatbot}>
+                    <legend class="slds-form-element__legend slds-form-element__label">Did not get what you were looking for? Interact with our Genie Assistant below</legend>
+                </template>
+                </lightning-layout-item>
+                <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                <template if:true={respRecords.Chatbot}>
+                    <a class="slds-button slds-button_brand" href={respRecords.Chatbot} target="_blank">Genie Assistant</a>
+                </template>
+                </lightning-layout-item>
+                </lightning-layout>
+            </lightning-card>
+        </div>
+    </template>
+        <div class="slds-box">
+            <lightning-card>
+            <h4 slot="title">How satisfied are you with the suggested resolution?</h4>
+                <lightning-layout horizontal-align="spread" multiple-rows>
+                    <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                        <legend class="slds-form-element__legend slds-form-element__label">Where 1 = Not effective and 5 = Very effective</legend>
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                        <lightning-radio-group name="feedBackScore" variant="label-hidden" label="Feedback Score (1:lower, 5:higher)" disabled={showSaveBtn} onchange={handleChangeFeedScore} options={options} value={radioValue} type="button"></lightning-radio-group>
+                        <legend class="slds-form-element__legend slds-p-right_x-large">Not effective</legend>
+                        <legend class="slds-form-element__legend slds-p-left_x-large">Very effective</legend>
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                        <div class="slds-media slds-listbox__option  slds-listbox__option_entity  slds-listbox__option_has-meta" role="option" style="margin-bottom:6px;">
+                            <span class="slds-media__body" style="font-weight: 500;">
+                                <span class="slds-listbox__option-text_entity">
+                                    <legend class="slds-form-element__legend slds-form-element__label">Feedback Comment</legend>
+                                    <lightning-textarea name="feedBackComments" variant="label-hidden" disabled={showSaveBtn} value={ticketGenie.Comments__c} onchange={handleChangeFeedbackComment} label="Feedback Comment" maxlength="2340" ></lightning-textarea>
+                                </span>              
+                            </span>
+                </div>
+            </lightning-layout-item>
+            <lightning-layout-item flexibility="auto" size="12" padding="around-small">
+                <template if:false={showSaveBtn}>
+                    <div class="slds-clearfix">
+                        <lightning-button label="Save" onclick={saveFeedBack} variant="brand" class="slds-float_right"></lightning-button>
+                    </div>
+                </template>
+            </lightning-layout-item>
+            </lightning-layout>
+            </lightning-card>
+        </div>
+        </template>
+        </template>
+    </article>
+    </template>
+    <template if:false={isOcePersonal}>
+        <lightning-card  title="Product level Restriction">
+            <p class="slds-p-horizontal_small">Ask Genie is only available for OCE Personal in current version</p>
+        </lightning-card>
+    </template>
+    </template>
+    <template if:false={isTicketGenieEnabled}>
+        <lightning-card  title="Insufficient privileges">
+            <p class="slds-p-horizontal_small">You don't have permission to view or edit this component</p>
+        </lightning-card>
+    </template>
+</template>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <actionCalls>
+        <name>RRQ_WEA01_PSA_CLD_PSA_Resource_Request_Held</name>
+        <label>RRQ_WEA01_PSA_CLD-PSA Resource Request Held</label>
+        <locationX>50</locationX>
+        <locationY>431</locationY>
+        <actionName>pse__Resource_Request__c.RRQ_WEA01_PSA_CLD_ResourceRequestHeld</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>pse__Resource_Request__c.RRQ_WEA01_PSA_CLD_ResourceRequestHeld</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion>
+    <decisions>
+        <description>PSA-CLD-USNONE-Fires when a resource request is held.</description>
+        <name>RRQ_WR01_PSA_ResourceRequestHeld</name>
+        <label>RRQ_WR01_PSA_ResourceRequestHeld</label>
+        <locationX>182</locationX>
+        <locationY>323</locationY>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Yes_RRQ_WR01_PSA_ResourceRequestHeld</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>ResourceRequestCondition</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Service_Line_Lead__r.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>RRQ_WEA01_PSA_CLD_PSA_Resource_Request_Held</targetReference>
+            </connector>
+            <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+            <label>Yes RRQ_WR01_PSA_ResourceRequestHeld</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>ResourceRequestCondition</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(OR(ISPICKVAL({!$Record.pse__Status__c}, &apos;Hold&apos;), {!$Record.pse__Resource_Held__c} = true), {!$Record.RecordType.DeveloperName} = &apos;RDS_Request&apos;)</expression>
+    </formulas>
+    <interviewLabel>RR FL01 PSA Email Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>RR FL01 PSA Email Notification</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>RRQ_WR01_PSA_ResourceRequestHeld</targetReference>
+        </connector>
+        <filterFormula>NOT {!$Setup.Mulesoft_Integration_Control__c.By_Pass_Flow_Process__c} || {!$Setup.Mulesoft_Integration_Control__c.Is_Mulesoft_User__c}</filterFormula>
+        <object>pse__Resource_Request__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

@@ -1,0 +1,706 @@
+<aura:component controller="CNT_PSA_HA_Websites_Review" implements="lightning:isUrlAddressable,force:lightningQuickActionWithoutHeader,force:hasRecordId,flexipage:availableForAllPageTypes,force:appHostable,lightning:actionOverride" access="global">
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="RecId" type="String"/>
+    <aura:attribute name="account" type="String"/>
+    <aura:attribute name="projectCode" type="String"/>
+    <aura:attribute name="datePublishedOnWebsite" type="Date"/>
+    <aura:attribute name="dueDate" type="Date"/>
+    <aura:attribute name="productId" type="String"/>
+    <aura:attribute name="countries" type="String"/>
+    <aura:attribute name="sdrunid" type="String"/>    
+    <aura:attribute name="pageReference" type="Object" />
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.handlePageChange}" />
+    
+    <aura:attribute name="modalWindow" type="boolean" default ="true"/>
+    <aura:attribute name="hasPermission" type="boolean" default ="true"/>
+    <aura:attribute name="hasEditPermission" type="boolean" default ="true"/>
+    <aura:attribute name="hasDeletePermission" type="boolean" default="false"/>
+    
+    <aura:attribute name="targetList" type="Target__c[]" />
+    <aura:attribute name="targetIdList" type="String[]" />
+    <aura:attribute name="targetId" type="String" />
+    <aura:attribute name="targetName" type="String" />
+    <aura:attribute name="hawrObject" type="Object" /> 
+    
+    <aura:attribute name="Spinner" type="boolean" default="true"/>
+    <lightning:navigation aura:id="navService"/>
+    <aura:handler event="aura:locationChange" action="{!c.update}"/>
+    
+    <aura:if isTrue="{!v.hasPermission}">
+        <aura:if isTrue="{! (v.recordId == null ? true : false)}">
+            <aura:html tag="style">.toastMessage.forceActionsText{white-space : pre-line !important;}</aura:html>
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large " role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <lightning:card>
+                
+                <lightning:recordEditForm objectApiName="HA_Websites_Review__c"
+                                          aura:id="sdForm"
+                                          onsubmit="{!c.handleOnSubmit}"
+                                          onload="{!c.handleOnLoad}"
+                                          onsuccess="{!c.handleOnSuccess}"
+                                          density="Compact">
+                     
+                    <lightning:messages />
+                    <div class="slds-media__body leftmargin rightmargin">
+                        <lightning:messages />
+                        <lightning:layout multipleRows="true" class="slds-grid_vertical-align-center">
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                        <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:button variant="neutral" label="{!v.targetName}" onclick="{!c.openProductModel}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                               <lightning:layoutItem size="5">
+                                 <lightning:inputField fieldName="Countries_product_is_marketed_by_Clients__c" required="true" />           <!-- value="{!v.countries}" -->
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="HA_document__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Month_Covered__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+			    <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_HA_Document__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Range_Meeting__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Published_On_Website__c" value="{!v.datePublishedOnWebsite}"  onchange="{!c.handleOnChange}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="HA_Topic__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Client_marketing_author_in_the_country__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="ELVIS_Link__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Due_Date_HA_Topic_Presented_to_Client__c" value="{!v.dueDate}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_HA_Topic_Presented_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_HA_Topic_Presented_Late_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Outcome_Discuss_on_HA_Topic_with_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Label_update_recommended_in_HA_document__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="If_Y_LabelUpdate_App_To_ClientProduct__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="If_LU_Yes_Date_Topic_Comm_to_RespFun__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Due_Date_for_Submis_of_label_updat_to_HA__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Any_Action_item_for_SM_Team__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Status_Action_Items__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Action_Items_for_SM_Team_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SM_Specialist__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SM_QC_Reviewer__c" />
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_QC_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Internal_Comments__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Created By</p>
+                                 <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Last Modified By</p>
+                                 <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Owner</p>
+                                 <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </div>
+                    
+                    <lightning:layout horizontalAlign="center" class="slds-m-top_large marginbottom">
+                        <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleOnCancel}"/>
+                        <lightning:button variant="brand" label="Save" title="Save" type="submit"/>
+                    </lightning:layout>
+                    
+                </lightning:recordEditForm>
+            </lightning:card>
+            <aura:set attribute="else">
+                <force:recordData aura:id="recordHandler"
+                    recordId="{!v.recordId}"
+                    fields="Id,Project__c"
+                    targetFields="{!v.hawrObject}"              
+                    targetError="{!v.recordError}"
+                    recordUpdated="{!c.handleRecordUpdated}" />
+                <lightning:recordViewForm aura:id="viewForm" 
+                                          recordId="{!v.recordId}"
+                                          objectApiName="HA_Websites_Review__c"
+                                          >
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <aura:if isTrue="{!v.hasEditPermission}">
+                                <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                    <lightning:button variant="neutral" class="slds-col_bump-left" label="Edit" title="Edit Record" onclick="{!c.editRecord}"/>
+                                    <aura:if isTrue="{!v.hasDeletePermission}">
+                                    	<lightning:button label="Delete" variant="neutral" onclick="{!c.confirmDeletion}"/>
+                                    </aura:if>
+                                    <lightning:button variant="neutral" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                    <lightning:button variant="neutral" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                </lightning:layout>
+                                <aura:set attribute="else">
+                                    <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                        <lightning:button variant="neutral" class="slds-col_bump-left" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                        <lightning:button variant="neutral" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                    </lightning:layout>
+                                </aura:set>
+                            </aura:if>
+                            <h3 clas="slds-page-header__title slds-m-right_small slds-align-middle slds-truncate">
+                                <lightning:outputfield fieldName="Name"/>
+                            </h3>                                   
+                            <lightning:layout multipleRows="true" >                              
+                                
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                        <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Product__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Countries_product_is_marketed_by_Clients__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="HA_document__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Month_Covered__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                           
+                            <lightning:layoutItem size="5">
+                                <lightning:outputField fieldName="Other_HA_Document__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Range_Meeting__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Published_On_Website__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="HA_Topic__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Client_marketing_author_in_the_country__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="ELVIS_Link__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Due_Date_HA_Topic_Presented_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_HA_Topic_Presented_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Reason_HA_Topic_Presented_Late_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Outcome_Discuss_on_HA_Topic_with_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Label_update_recommended_in_HA_document__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="If_Y_LabelUpdate_App_To_ClientProduct__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="If_LU_Yes_Date_Topic_Comm_to_RespFun__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Due_Date_for_Submis_of_label_updat_to_HA__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Any_Action_item_for_SM_Team__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Status_Action_Items__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Action_Items_for_SM_Team_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="SM_Specialist__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="SM_QC_Reviewer__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_QC_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                <lightning:outputField fieldName="Internal_Comments__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Created By</p>
+                                 <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Last Modified By</p>
+                                 <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Owner</p>
+                                 <lightning:outputField fieldName="OwnerId" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                                
+                            </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordViewForm>
+                <lightning:recordEditForm aura:id="editForm" recordId="{!v.recordId}" objectApiName="HA_Websites_Review__c" class="slds-hide" onsubmit="{!c.handleEditSubmit}" onsuccess="{!c.handleSuccess}">        
+                    
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <lightning:messages />
+                            <lightning:layout multipleRows="true" >
+                                <lightning:layoutItem class="display-none">
+                                	<lightning:inputField aura:id="editProjectId" fieldName="Project__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <!--<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Product__c" value="{!v.productId}" onchange="{!c.handleProductChange}"/>
+                            </lightning:layoutItem>-->                                
+                            <lightning:layoutItem size="5">
+                                <lightning:button variant="neutral" label="{!v.targetName}" title="Product" onclick="{!c.openProductModelInEditMode}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Countries_product_is_marketed_by_Clients__c" required="true" disabled="false"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <label>Product Name</label>
+                                    <lightning:outputField variant="label-hidden" fieldName="Product__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="HA_document__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Month_Covered__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_HA_Document__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Range_Meeting__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Published_On_Website__c" value="{!v.datePublishedOnWebsite}"  onchange="{!c.handleOnChange}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="HA_Topic__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Client_marketing_author_in_the_country__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="ELVIS_Link__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Due_Date_HA_Topic_Presented_to_Client__c" value="{!v.dueDate}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_HA_Topic_Presented_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_HA_Topic_Presented_Late_to_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Outcome_Discuss_on_HA_Topic_with_Client__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Label_update_recommended_in_HA_document__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="If_Y_LabelUpdate_App_To_ClientProduct__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="If_LU_Yes_Date_Topic_Comm_to_RespFun__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Due_Date_for_Submis_of_label_updat_to_HA__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Any_Action_item_for_SM_Team__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Status_Action_Items__c" required="true"/>
+                            </lightning:layoutItem>                                
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Action_Items_for_SM_Team_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SM_Specialist__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SM_QC_Reviewer__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_QC_Completed__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Internal_Comments__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Created By</p>
+                                 <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Last Modified By</p>
+                                 <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex"> Owner</p>
+                                 <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                            </lightning:layoutItem>
+                            </lightning:layout>
+                            <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleCancel}" />
+                                <lightning:button variant="brand" label="Save" title="Save" type="submit" />
+                            </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordEditForm>
+            </aura:set>
+        </aura:if>
+        <aura:set attribute="else">
+            <lightning:card>
+                <p style="color:red;padding-left: 25%;font-weight: bold;">
+                    This is a Signal Management object and you do not have permissions or you are not on SM project to create the record.
+                </p>
+            </lightning:card>
+        </aura:set>
+    </aura:if>
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+    <aura:if isTrue="{!v.isOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container modalwidth">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeProductModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Products</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <table class="slds-table slds-table--bordered slds-table--cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title--caps">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Target Name">Target Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug">Drug</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug Trade Name">Drug Trade Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Formulation">Formulation</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Country">Country</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.targetList}" var="ct">
+                                <tr>
+                                    <td data-label="Name">
+                                        <lightning:button variant="base" label="{!ct.Name}" onclick="{!c.addProduct}" value="{!ct.Id}">
+                                        </lightning:button>
+                                    </td>
+                                    <td data-label="Drug Name">
+                                        {! ct.Drug__r.Name }
+                                    </td>
+                                    <td data-label="Drug Trade Name">
+                                        {! ct.Drug_Trade_Name__r.Name }
+                                    </td>
+                                    <td data-label="Formulation">
+                                        {! ct.Formulation__r.Name }
+                                    </td>
+                                    <td data-label="Country">
+                                        {! ct.Single_Country__c }
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+    </aura:if>
+    <!-- Dialog box to confirm deletion of SD Run-->
+    <aura:attribute name="isDeletionConfirmationOpen" type="boolean" default="false"/>
+    <aura:if isTrue="{!v.isDeletionConfirmationOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2>Delete HA Website Review</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    Are you sure you want to delete this HA Website Review?
+                </div>
+                <!--###### MODAL BOX FOOTER Part Start ######-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" 
+                                      label="Delete"
+                                      title="Delete"
+                                      onclick="{! c.handleDeleteRecord }"/>
+                    <lightning:button variant="neutral" 
+                                      label="Cancel"
+                                      title="Cancel"
+                                      onclick="{! c.closeModel }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+        
+    </aura:if>
+</aura:component>

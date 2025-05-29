@@ -1,0 +1,52 @@
+<apex:page standardController="Lead" recordSetvar="leads" extensions="EXT_CRM_Lead_AddToCampaign" lightningStylesheets="true">
+
+    <apex:form id="saveCampaign">
+        <apex:outputPanel id="showMessage" >
+            <style type="text/css">
+                {
+                font-weight: bold;
+                }
+            </style>
+            <script>
+            function showSuccessMsg() {
+                var isSuccess = {!isSuccess};
+                var isMemberExisting = {!isMemberExisting};
+                if(isSuccess == true && isMemberExisting == false){
+                    sforce.one.showToast({
+                        "title" : "Success",
+                        "message": "{!selectedLeadCount} Campaign Members added succesfully .",
+                        "type":"success"
+                    });
+                    window.location="/{!campaignId}";
+                }else if(isSuccess == true && isMemberExisting == true){
+                    var addedLeadCount = {!selectedLeadCount} - {!existingMemberCount};
+                    sforce.one.showToast({
+                        "title" : "Success",
+                        "message": "{!existingMemberCount} Leads are already Campaign Members ."+addedLeadCount+" Campaign Members added succesfully .",
+                        "type":"success"
+                    });
+                    window.location="/{!campaignId}"; 
+                }
+            }
+            </script>
+        </apex:outputPanel>
+        <apex:pageBlock title="Add Campaign Members" mode="edit">
+            <apex:pageMessages id="pbm"/>
+            
+            <apex:pageBlockSection title="Select a Campaign and Member Status" columns="1" collapsible="false" rendered="{!hasRecords}">
+                <apex:outputText style="font-weight:700" value="{!selectedLeadCount} Lead Selected" rendered="{!isSingleRecordselected}"></apex:outputText>
+                <apex:outputText style="font-weight:700" value="{!selectedLeadCount} Leads Selected" rendered="{!isMultipleSelected}"></apex:outputText>
+                <apex:inputField value="{!cmp.campaignId}" required="true"/>
+                <apex:selectList value="{!cmp.status}" multiselect="false" size="1">
+                    <apex:selectOptions value="{!statusOptions}"/>
+                </apex:selectList>
+            </apex:pageBlockSection>
+            <apex:variable value="{!hasRecords}" var="hasRecords"/>
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="Save" action="{!AddToCampaignRecords}" rendered="{!hasRecords}" reRender="saveCampaign" onComplete="showSuccessMsg();"/>
+                
+                <apex:commandButton value="Return" action="{!cancel}"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

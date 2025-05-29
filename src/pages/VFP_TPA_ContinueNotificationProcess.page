@@ -1,0 +1,165 @@
+<apex:page controller="CNT_TPA_ContinueNotificationProcess" lightningStylesheets="true">
+ <apex:slds />
+ <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!$Resource.AngularJS}"/>
+    
+    <apex:form >
+        <c:VFC_TPA_LoadingImage />
+        <apex:actionFunction action="{!sendVSNMail}" name="sendOfferingNotificationMail" onComplete="redirectToHome();">
+        </apex:actionFunction>
+        <apex:actionFunction action="{!setStatusExp}" name="setStatusExpire" onComplete="redirectToHome();">
+                <apex:param name="tpaRequestJSON" assignTo="{!expireDateString}" value="" /> 
+        </apex:actionFunction>
+        
+        <div ng-app="dateApp" ng-controller="dateAppController" id="dateAppController">
+            <div ng-hide="showHide" class="center">
+                <div class="center">
+                    <label for="expireDate">Expire Date : </label>
+                    <input type="date" id="expireDate" ng-model="expireDate" /> 
+                    <div class="centerButton">
+                        <button onclick="return false;" ng-click="onNext();"> Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:form>
+    <style>
+        .center {
+          margin: auto;
+          width: 60%;
+          padding: 10px;
+        }
+        .centerButton {
+          margin: auto;
+          width: 35%;
+          padding: 10px;
+        }
+    </style>
+    <script type="text/javascript">
+         
+        
+        window.$Label = window.$Label || {};
+        $Label.confirmMsg = '{!$Label.TPA_Are_you_sure_you_want_to_Expire_this_contract}';
+        $Label.notificationMsg = '{!$Label.TPA_The_early_expiry_requests_has_been_processed}';
+        
+        $(document).ready(function(){
+           angularScope = angular.element($('#dateAppController')).scope();
+        });
+        function redirectToHome()
+        {
+            var agrId = getParameterByName('id').trim();
+            window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+        }
+        function popupConfirm(msg, truePart, falsePart, isYesNo)
+        {
+           // $log.info('##isYesNo = ' + isYesNo);
+            if(isYesNo)
+                popup(msg, {'verify':true, 'animate':true}, function(r)
+                      {
+                          if(r)
+                              truePart();
+                          else
+                              falsePart();
+                          haltScreen = false;
+                      });                        
+            else
+                popup(msg, {'confirm':true, 'animate':true}, function(r)
+                      {
+                          if(r)
+                              truePart();
+                          else
+                              falsePart();
+                          haltScreen = false;
+                      });                          
+        }
+        
+        function popupAlert(msg, truePart)
+        {
+            
+            popup(msg, {'animate':true},
+            function(r)
+            {
+                if(r && truePart != null)
+                    truePart();
+            });
+        }
+        
+        function showcontinueNotificationPrecessPopup()
+        {   
+            var agrId = getParameterByName('id').trim();
+            popupConfirm( '<font color="Red">STOP:</font>   – Prior to continuing the notification process all manual reviews and approvals should be completed. For the reviews ensure the commercial owners are aware of the vendor specific notifications that they client will be required to acknowledge',sendOfferingNotificationMail,
+                         function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},false);
+        }
+        
+        function getParameterByName(name) 
+        {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+        function showConfirmEarlyExpirePopup() {  
+            var agrId = getParameterByName('id').trim();
+            console.log('##agrId = ' + agrId);
+            console.log('##$Label.confirmMsg = ' + $Label.confirmMsg);
+            popupConfirm($Label.confirmMsg,
+                         function(){
+                            angularScope.showHide = false;
+                            angularScope.applyChanges();
+                        },function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},true);
+        }
+        
+        
+        if(getParameterByName('type').trim() == 'setExpire') {
+            showConfirmEarlyExpirePopup();
+        }
+        else {
+            sendOfferingNotificationMail();
+        }
+
+        var app = angular.module("dateApp", []);
+        app.controller("dateAppController", function($scope) {
+            $scope.expireDate;
+            $scope.showHide = true;
+            $scope.expireValue = '{!expireDateValue}';
+
+            $scope.onNext = function() {
+                var tpaRequestExpireDate = new Date($scope.expireValue);
+                var tempDate = new Date();
+
+                var dd = tempDate.getDate();
+                var mm = tempDate.getMonth()+1;
+
+                if(dd<10){
+                            dd='0'+dd
+                        } 
+                        if(mm<10){
+                            mm='0'+mm
+                        } 
+
+
+                var todayDate = new Date(tempDate.getFullYear() + '-' + mm + '-' +  dd);
+                var inputDate = new Date($scope.expireDate);
+
+               
+                if(inputDate >= todayDate && tpaRequestExpireDate > inputDate) {
+                    setStatusExpire($scope.expireDate);
+                    popupAlert($Label.notificationMsg , function(){ showLoading();});
+                }
+                else {
+                    if(inputDate >= todayDate)
+                        popupAlert('Please Select Date less than Data Access End Date');
+                    else 
+                        popupAlert("Please Select Today's date or Future Date");
+                }
+            }
+
+            $scope.applyChanges = function() {
+                if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                    $scope.$apply();
+            }
+        });
+    </script>
+</apex:page>

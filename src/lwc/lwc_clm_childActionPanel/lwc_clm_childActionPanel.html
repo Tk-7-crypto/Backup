@@ -1,0 +1,130 @@
+<template>
+    <span>
+        <div class="slds-col slds-text-align--center">
+            <a href="javascript:void(0)" onclick={handleOnClick} target="_self">
+                <img src={logo} width="40" height="40"> <br />
+                <span class="spanClass">
+                    {label}
+                </span>
+            </a>
+        </div>
+    </span>
+    <template if:true={isOpen}>
+        <div style="height: 640px;">
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container slds-align_absolute-center">
+                    <header class="slds-modal__header slds-modal__header_empty" style="padding-left: 1048px;">
+                        <lightning-button-icon icon-name="utility:close"
+                            onclick={closeFlowModal}></lightning-button-icon>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" style="height:640px; width:1080px;">
+                        <lightning-flow flow-api-name={flowApiName} flow-input-variables={inputVariables}>
+                        </lightning-flow>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </template>
+    <template if:true={isModalOpen}>
+        <div style="height: 640px;">
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container slds-align_absolute-center">
+                    <header class="slds-modal__header slds-modal__header_empty"
+                        style="padding-left: 1048px;margin-bottom: -5px;">
+                        <lightning-button-icon icon-name="utility:close" onclick={closeModal}></lightning-button-icon>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" style="height:640px; width:1080px;">
+                        <h1 style="margin-left: 400px;font-size: 22px;">Update Key Fields</h1>
+                        <hr>
+                        <template if:false={isLoading}>
+                            <lightning-spinner alternative-text="Loading" class="spin"></lightning-spinner>
+                        </template>
+                        <template if:false={isValid}>
+                            <lightning-record-edit-form record-id={recordId} onload={handleOnLoad}
+                                object-api-name="Apttus__APTS_Agreement__c" onsubmit={handleOnSubmit}
+                                onsuccess={handleOnSuccess} onerror={handleOnError}>
+                                <template for:each={sectionData} for:item="d" for:index="index1">
+                                    <template lwc:if={d.value.length}>
+                                        <div class={d.toggleClass} key={d}>
+                                            <h3 class="slds-section__title" onclick={handleToggleClick}
+                                                data-index={index1}>
+                                                <button aria-controls="expando-unique-id" aria-expanded="true"
+                                                    class="slds-button slds-section__title-action">
+                                                    <svg class="slds-section__title-action-icon slds-button__icon slds-button__icon_left"
+                                                        aria-hidden="true">
+                                                        <use
+                                                            xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#switch">
+                                                        </use>
+                                                    </svg>
+                                                    <span class="slds-truncate" onclick={spanClick}
+                                                        data-id={index1}>{d.key}</span>
+                                                </button>
+                                            </h3>
+                                            <div aria-hidden="false" class="slds-section__content">
+                                                <lightning-layout multiple-rows>
+                                                    <template for:each={d.value} for:item="field" for:index="index2">
+                                                        <lightning-layout-item size="6" padding="around-small"
+                                                            key={field} data-role={field}>
+                                                            <lightning-input-field field-name={field}
+                                                                data-id={field}></lightning-input-field>
+                                                        </lightning-layout-item>
+                                                    </template>
+                                                    <template if:true={d.hasMSA}>
+                                                        <lightning-layout-item size="6" padding="around-small">
+                                                            <c-lwc_clm_custom-lookup record-id={recordId} label="Related Master Agreement" 
+                                                                onselect={handleSelect}></c-lwc_clm_custom-lookup>   
+                                                        </lightning-layout-item>
+                                                    </template>
+                                                </lightning-layout>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template for:each={dateSection} for:item="d1" for:index="index1">
+                                    <template lwc:if={d1.value.length}>
+                                        <div class={d1.toggleClass} key={d1}>
+                                            <h3 class="slds-section__title" data-index={index1}
+                                                onclick={handleToggleClickDate}>
+                                                <button aria-controls="expando-unique-id" aria-expanded="true"
+                                                    class="slds-button slds-section__title-action">
+                                                    <svg class="slds-section__title-action-icon slds-button__icon slds-button__icon_left"
+                                                        aria-hidden="true">
+                                                        <use
+                                                            xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#switch">
+                                                        </use>
+                                                    </svg>
+                                                    <span class="slds-truncate" onclick={spanClick}
+                                                        data-id={index1}>{d1.key}</span>
+                                                </button>
+                                            </h3>
+                                            <div aria-hidden="false" class="slds-section__content">
+                                                <lightning-layout multiple-rows>
+                                                    <template for:each={d1.value} for:item="field" for:index="index2">
+                                                        <lightning-layout-item size="6" padding="around-small"
+                                                            key={field}>
+                                                            <lightning-input-field field-name={field} data-id={field}
+                                                                onchange={handleFieldClick}></lightning-input-field>
+                                                        </lightning-layout-item>
+                                                    </template>
+                                                </lightning-layout>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <hr>
+                                <lightning-button variant="brand" class="slds-m-top_small" type="submit" label="Save"
+                                    style="margin-left: 500px; margin-bottom: 20px;"></lightning-button>
+                            </lightning-record-edit-form>
+                        </template>
+                        <template lwc:if={isValid}>
+                            <lightning-formatted-rich-text value={richText}
+                                class="acterr"></lightning-formatted-rich-text>
+                        </template>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </template>
+</template>

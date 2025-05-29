@@ -1,0 +1,138 @@
+<apex:page controller="AgreementLocatorController" sidebar="false" standardStylesheets="false" cache="true"
+    contenttype="application/vnd.ms-excel#Agreement_Locator_Report_{!TODAY()}.xls" showHeader="false">
+
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    </head>
+    
+    <apex:form >
+        <!-----------------------------------TABLE OF FILTER CRITERIA INFORMATION---------------------------------------------->
+        <table>   
+            <tr>
+                <td colspan="4">
+                    <h3>{!$Label.Select_Filters}</h3> 
+                </td>
+            </tr>
+            <tr><td colspan="4"> </td></tr>
+            <tr>
+                <td>{!$Label.Quick_Search_by}</td>
+                <td>
+                    <apex:OutputText value="{!excelquickSearchby}" rendered="{!If(excelquickSearchby != 'None', true, false)}" />
+                    <apex:OutputText value="{!$Label.Not_Applied}" rendered="{!If(excelquickSearchby != 'None', false, true)}" />
+                </td>
+                <!-- Updated By Rakesh : 31 oct 2013 : ER-530 :: update colspan="1" -->
+                <td colspan="1"><apex:OutputText value="{!excelquickSearchByStr}"
+                    rendered="{!If(excelquickSearchby != 'None', true, false)}" />
+                </td>
+                
+                <!-- Added By Rakesh : 31 oct 2013 : ER-530 :: START -->
+                <td >
+                	<apex:outputPanel rendered="{!If(OR(excelAttachNumber != null ,excelAttachNumber != '' ), true, false)}"> {!$Label.Attach_Number} &nbsp; <apex:outputText value="{!excelAttachNumber}" ></apex:outputText> </apex:outputPanel>
+                    <apex:outputPanel rendered="{!If(OR(excelAttachNumber != null ,excelAttachNumber != '' ), false, true)}"> {!$Label.Attach_Number} &nbsp; <apex:outputText value="Not Applied" ></apex:outputText> </apex:outputPanel>
+                </td>
+                <!-- End : ER-530 -->
+                
+            </tr>            
+            <tr>
+                <td>{!$Label.ATC_Code}</td>
+                <td><apex:OutputText value="{!excelATCode}" rendered="{!If(OR(excelATCode != null ,excelATCode != '' ), true, false)}" />
+                    <apex:OutputText value="Not Applied"    rendered="{!If(OR(excelATCode != null ,excelATCode != ''), false, true)}" />
+                </td>                
+            </tr>
+            <tr>
+                <td>{!$Label.Time_Frame}</td>
+                <td><apex:OutputText value="{!exceltimeFrame}" rendered="{!If(exceltimeFrame != 'None', true, false)}" />
+                    <apex:OutputText value="Not Applied" rendered="{!If(exceltimeFrame != 'None', false, true)}" />
+                </td>
+                <td>
+                    <apex:outputPanel rendered="{!If(exceltimeFrame != 'None', true, false)}" > {!$Label.From} <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!excelStartDate}" /></apex:outputText>
+                    </apex:outputPanel>
+                </td>                
+                <td>
+                    <apex:outputPanel rendered="{!If(exceltimeFrame != 'None', true, false)}" > {!$Label.To}   <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!excelEndDate}" /></apex:outputText>
+                    </apex:outputPanel>
+                </td>
+             </tr>
+             <tr>
+                <td>{!$Label.Contract_Type}</td>
+                <td><apex:OutputText value="{!excelcontractType}" rendered="{!If(excelcontractType != 'None', true, false)}" />
+                    <apex:OutputText value="Not Applied" rendered="{!If(excelcontractType != 'None', false, true)}" />
+                </td>
+             </tr>
+             <tr>
+                <td>{!$Label.Agreement_Term}</td>
+                <td><apex:OutputText value="{!excelagreementTerm}" rendered="{!If(excelagreementTerm != 'None', true, false)}" />
+                    <apex:OutputText value="Not Applied" rendered="{!If(excelagreementTerm != 'None', false, true)}" />
+                </td>
+            </tr>
+            <tr>
+                <td>{!$Label.Agreement_Status}</td>
+                <td><apex:OutputText value="{!excelactive}" rendered="{!If(excelactive != 'None', true, false)}" />
+                    <apex:OutputText value="Not Applied" rendered="{!If(excelactive != 'None', false, true)}" />
+                </td>
+            </tr>
+        </table>
+        <br/>
+        <br/>
+       <!--------------------------------------------------RESULT - TABLE ------------------------------------------------------->
+       <apex:pageBlock title="{!$Label.Agreement_Summary_Details}" id="agreementDetails">   
+           <!-- Updated by:-Ekta ,Date-6th Jaune,2013 ,Details:-Issue-00967-->
+            <apex:outputPanel rendered="{!If(aggWrapperList.size == 0, false, true)}">
+                <table id="myTable">
+                    <thead>
+                        <th> {!$Label.Agreement_Name}</th>     
+                        <th> {!$Label.Account_Name}</th>
+                        <th> {!$Label.Account_Local_Name}</th>
+                        <th> {!$Label.Agreement_Number}</th>
+                        <th> {!$Label.Attach_Number}</th>
+                        <th> {!$Label.Agreement_Start_Date}</th>
+                        <th> {!$Label.Agreement_End_Date}</th>
+                        <th> {!$Label.Agreement_Term}</th>
+                        <th> {!$Label.Contract_Type}</th>
+                        <th> {!$Label.Agreement_Status}</th>
+                        <th> {!$Label.Company_Signed_Date}</th>
+                        <th> {!$Label.Other_Party_Signed_Date}</th>
+                        <th> {!$Label.Product_Name} </th>
+                        <th> {!$Label.Data_Period_Start_Product} </th>
+                        <th> {!$Label.Data_Period_End_Product}</th>
+                        <th> {!$Label.ATC_Code}</th>
+                        <th> {!$Label.Data_Period_Start_ATC}</th>
+                        <th> {!$Label.Data_Period_End_ATC}</th>
+                        <th> {!$Label.Opportunity_Number}</th>
+                    </thead>
+                    <tbody>
+                    <!-- Updated by:-Ekta ,Date-6th Jaune,2013 ,Details:-Issue-00967-->
+                        <apex:repeat value="{!aggWrapperList}" var="agg">
+                        <tr>
+                            <td>{!agg.agreementName}</td>
+                            <td>{!agg.agreementAccountName}</td>
+                            <td>{!agg.agreeAccLoclName}</td>
+                            <td>&nbsp;{!agg.agreementNumber}</td>
+                            <!-- Updated By Rakesh : 1 Nov 2013 : ER-530  -->                           
+                            <!-- <td>{!agg.agreementAttachNo}</td> -->
+                            <td>&nbsp;{!agg.agliAttachNo}</td>
+                            <!-- End : ER-530 -->
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementSTARTDate}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementENDDate}" /></apex:outputText></td>
+                            <td>{!agg.agreementTerm}</td>
+                            <td>{!agg.agreeContractType}</td>
+                            <td><apex:outputText value="{!If(agg.agreementISActive, 'Active','InActive')}" /></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementCmpanySignedDate}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementOtherPartySignedDate}" /></apex:outputText></td>
+                            <td width="500px">{!agg.agreeLIProdName}</td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreeLIDataMonthStart}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreeLIDataMonthEnd}" /></apex:outputText></td>
+                            <td >{!agg.agreementLIATCcode}</td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementLIATCstartDate}" /></apex:outputText></td>
+                            <td><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementLIATCendDate}" /></apex:outputText></td>
+                            <td>{!agg.agreementRelatedOppNo}</td>           
+                         </tr>
+                         </apex:repeat>
+                    </tbody>
+                </table> 
+            </apex:outputPanel>
+             <!-- Updated by:-Ekta ,Date-6th Jaune,2013 ,Details:-Issue-00967-->
+            <apex:outputLabel value="{!$Label.No_Agreement_Records}" rendered="{!If(aggWrapperList.size == 0, true, false)}"/>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

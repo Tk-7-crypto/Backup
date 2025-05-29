@@ -1,0 +1,469 @@
+<template>
+    <article class="slds-card">
+        <div class="slds-align--absolute-center ">
+            <template if:true={showSpinner}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon size="small" icon-name="standard:link"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="JIRA Link">
+                            <span class="slds-text-heading_small">JIRA Link</span>
+                        </a>
+                    </h2>
+                </div>
+            </header>
+            <template if:true={canEdit}>
+                <div class="slds-no-flex">
+                    <lightning-button label="Add a link" title="Add a link" onclick={openJiraFormModal} class="slds-m-left_x-small"></lightning-button>
+                </div>
+            </template>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <template if:true={hasJiraLinks}>
+                <lightning-tabset active-tab-value="">
+                    <template for:each={jiraLinks} for:item="jiraLink">
+                        <lightning-tab label={jiraLink.jira_key__c} key={jiraLink.jira_key__c} value={jiraLink.Id} onactive={handleActive}>
+                            <dl class="slds-dl--horizontal">
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Issue Key">Issue Key:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.jira_key__c}>
+                                        <lightning-formatted-url value={jiraIssueURL} tooltip={jiraIssueURL} label={jiraLink.jira_key__c} target="_blank"></lightning-formatted-url>
+                                    </p>
+                                </dd>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Issue type">Issue type:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.issue_type__c}>{jiraLink.issue_type__c}</p>
+                                </dd>
+                                <template if:true={jiraLinkHasSprint}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="Sprint">Sprint:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.Sprint__c}>{jiraLink.Sprint__c}</p>
+                                    </dd>
+                                </template>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Summary">Summary:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.summary__c}>{jiraLink.summary__c}</p>
+                                </dd>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Priotity">Priority:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.priority__c}>{jiraLink.priority__c}</p>
+                                </dd>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Status">Status:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.status__c}>
+                                        <span class="slds-badge">{jiraLink.status__c}</span>
+                                    </p>
+                                </dd>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Assignee">Assignee:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.assignee__c}>{jiraLink.assignee__c}</p>
+                                </dd>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Reporter">Reporter:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.reporter__c}>{jiraLink.reporter__c}</p>
+                                </dd>
+                                <template if:true={jiraLinkHasEpic}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="Epic">Epic Link:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.Epic_Name__c}>
+                                            <lightning-formatted-url value={jiraEpicLink} tooltip={jiraEpicLink} label={jiraLink.Epic_Name__c} target="_blank"></lightning-formatted-url></p>
+                                    </dd>
+                                </template>
+                                <dt class="slds-dl--horizontal__label">
+                                    <p class="slds-truncate" title="Description">Description:</p>
+                                </dt>
+                                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                    <p class="slds-truncate" title={jiraLink.description__c}>{jiraLink.description__c}</p>
+                                </dd>
+                                <template if:true={jiraLinkHasFixVersions}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="FixVersions">FixVersions:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.fixVersions__c}>{jiraLink.fixVersions__c}</p>
+                                    </dd>
+                                </template>
+
+                                <template if:true={jiraLinkHasCountry}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="Country">Country:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.country__c}>{jiraLink.country__c}</p>
+                                    </dd>
+                                </template>
+                                <template if:true={jiraLinkHasCustomer}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="Customer">Customer:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.customer__c}>{jiraLink.customer__c}</p>
+                                    </dd>
+                                </template>
+                                <template if:true={jiraLinkHasPSAProject}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="PSA Project">PSA Project:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.PSA_Project__c}>{jiraLink.PSA_Project__c}</p>
+                                    </dd>
+                                </template>
+                                <template if:true={jiraLinkHasDueDate}>
+                                    <dt class="slds-dl--horizontal__label">
+                                        <p class="slds-truncate" title="PSA Project">Due Date:</p>
+                                    </dt>
+                                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                                        <p class="slds-truncate" title={jiraLink.due_date__c}>{jiraLink.due_date__c}</p>
+                                    </dd>
+                                </template>
+                            </dl>
+                            <lightning-button-group>
+                                <lightning-button label="Transitions / Comments / Attachments" icon-name="utility:comments" icon-position="left" onclick={openJiraCommentsModal}></lightning-button>
+                                <template if:true={canEdit}>
+                                    <lightning-button variant="destructive" label="Unlink" icon-name="utility:remove_link" icon-position="left" onclick={deleteJiraLink}></lightning-button>
+                                </template>
+                            </lightning-button-group>
+                        </lightning-tab>
+                    </template>
+                </lightning-tabset>
+            </template>
+            <template if:false={hasJiraLinks}>
+                <div class="emptyStateMessage slds-card__body--inner">No JIRA issue is yet linked to this case</div>
+            </template>
+        </div>
+    </article>
+
+
+
+
+
+    <template if:true={isJiraFormModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeJiraFormModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create New JIRA Link</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1" style="overflow: initial;">
+                    <div class="slds-align_absolute-center ">
+                        <template if:true={showSpinner}>
+                            <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                            </lightning-spinner>
+                        </template>
+                    </div>
+                    <template if:true={formError}>
+                        <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                            <h2>Please make sure that all fields marked with a red star are filled in</h2>
+                        </div>
+                    </template>
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning-combobox name="jiraBaseUrl" label="Select your JIRA Platform" value={jiraBaseUrl} options={jiraBaseUrls} onchange={changeJiraBaseUrl}></lightning-combobox>
+                        </div>
+                    </div>
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning-radio-group label="Radio Button Group" options={typeJiraLinkOptions} value={typeJiralink} onchange={handleTypeJiraLinkChange}>
+                            </lightning-radio-group>
+                        </div>
+                    </div>
+                    <template if:true={linkWithExisting}>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-input type="text" value={jiraIssueKey} onchange={handleJiraIssueKeyChange} label="Issue Key" placeholder="ex JIR-123" required></lightning-input>
+                            </div>
+                        </div>
+                    </template>
+                    <template if:false={linkWithExisting}>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraProjects" label="Select your JIRA project" value={jiraProjectSelected} options={jiraProjectsOptions} onchange={changeJiraProject} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraIssueTypes" label="Issue Type" value={newJiraIssue.fields.issuetype.id} options={jiraIssueTypesOptions} onchange={changeIssueTypes} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="priority">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraPriorities" label="Priority" value={newJiraIssue.fields.priority.id} options={jiraPrioritiesOptions} onchange={changeJiraPriorities} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-input type="text" value={newJiraIssue.fields.summary} onchange={handleSummaryChange} label="Summary" required></lightning-input>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-textarea name="description" label="Description" value={newJiraIssue.fields.description} onchange={handleDescriptionChange} required></lightning-textarea>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="customer">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraCustomers" label="Customer" value={newJiraIssue.fields.customfield_14511.id} options={jiraCustomersOptions} onchange={changeJiraCustomers} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="country">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraCountries" label="Country" value={newJiraIssue.fields.customfield_14510.id} options={jiraCountriesOptions} onchange={changeJiraCountries} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="PSAProject">
+                            <div class="slds-form-element__control">
+                                <lightning-input type="text" value={newJiraIssue.fields.customfield_16646} onchange={changePSAProject} label="PSA Project"></lightning-input>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="foundDuring">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraFoundDuring" label="Found During" value={newJiraIssue.fields.customfield_10601.id} options={jiraFoundDuringOptions} onchange={changeJiraFoundDuring} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="environmentType">
+                            <div class="slds-form-element__control">
+                                <lightning-combobox name="jiraEnvironmentType" label="Environment Type" value={newJiraIssue.fields.customfield_10605.id} options={jiraEnvironmentTypeOptions} onchange={changeJiraEnvironmentType} dropdown-alignment="auto"></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-hide" data-id="assignee">
+                            <div class="slds-form-element__control">
+                                <c-lwc_lookup onsearch={handleSearchAssignableUsers} label="Assignee" placeholder="Select a JIRA User..." errors={userErrors} onselectionchange={handleLookupAssignableUsersChange}>
+                                </c-lwc_lookup>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <c-lwc_lookup onsearch={handleSearch} label="CSM User" placeholder="Select a CSM User..." errors={userErrors} onselectionchange={handleLookupChange}>
+                                </c-lwc_lookup>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_brand" onclick={handleCreateJiraLinkClick} title="Submit">Submit</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+
+
+
+    <template if:true={isJiraCommentsModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeJiraCommentsModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">JIRA issue {currentJiraLink.jira_key__c}</h2>
+                </header>
+                <template if:true={showSpinner}>
+                    <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                    </lightning-spinner>
+                </template>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                    <div class="slds-page-header slds-page-header_record-home slds-m-bottom_medium">
+                        <div class="slds-page-header__row">
+                            <div class="slds-page-header__col-title">
+                                <div class="slds-media">
+                                    <div class="slds-media__figure">
+                                        <lightning-icon icon-name="standard:link"></lightning-icon>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <div class="slds-page-header__name">
+                                            <div class="slds-page-header__name-title">
+                                                <h1>
+                                                    <span>JIRA</span>
+                                                    <span class="slds-page-header__title slds-truncate" title={currentJiraLink.summary__c}>{currentJiraLink.summary__c}</span>
+                                                </h1>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <template if:true={canEdit}>
+                                <div class="slds-page-header__col-actions">
+                                    <template if:true={hasJiraTransitions}>
+                                        <p class="slds-text-color_weak slds-text-body_small">Apply a JIRA transition</p>
+                                        <lightning-button-group>
+                                            <template for:each={jiraTransitions} for:item="jiraTransition">
+
+                                                <lightning-button key={jiraTransition.id} onclick={applyTransition} label={jiraTransition.name} value={jiraTransition.id}></lightning-button>
+                                            </template>
+                                        </lightning-button-group>
+                                    </template>
+                                </div>
+                            </template>
+
+                        </div>
+                        <div class="slds-page-header__row slds-page-header__row_gutters">
+                            <div class="slds-page-header__col-details">
+                                <ul class="slds-page-header__detail-row">
+                                    <li class="slds-page-header__detail-block">
+                                        <div class="slds-text-title slds-truncate" title="Status">
+                                            <p class="slds-truncate" title="Status">Status</p>
+                                        </div>
+                                        <div class="slds-truncate" title={currentJiraLink.status__c}>
+                                            <span class="slds-badge">{currentJiraLink.status__c}</span>
+                                        </div>
+                                    </li>
+                                    <li class="slds-page-header__detail-block">
+                                        <div class="slds-text-title slds-truncate" title="CSM Reporter">
+                                            <p class="slds-truncate" title="CSM Reporter">CSM Reporter</p>
+                                        </div>
+                                        <div class="slds-truncate" title="aaaa">xxxxxx</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <article class="slds-card slds-card_boundary slds-m-bottom_medium">
+                        <div class="slds-card__header slds-grid">
+                            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                <div class="slds-media__body">
+                                    <h2>
+                                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="JIRA Attachments">
+                                            <span class="slds-text-heading_small">JIRA Attachments</span>
+                                        </a>
+                                    </h2>
+                                </div>
+                            </header>
+                            <template if:true={canEdit}>
+                                <div class="slds-no-flex">
+                                    <lightning-file-upload label="" name="fileUploader" record-id={recordId} onuploadfinished={handleUploadFinished} multiple>
+                                    </lightning-file-upload>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="slds-feed slds-card__body_inner">
+                            <template if:true={hasJiraAttachments}>
+                                <lightning-datatable key-field="id" data={jiraAttachments} columns={jiraAttachmentColumns}>
+                                </lightning-datatable>
+                                <!--<table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Example default base table of Opportunities">
+                                    <thead>
+                                      <tr class="slds-line-height_reset">
+                                        <th class="" scope="col">
+                                            <div class="slds-truncate" title="File Name">File Name</div>
+                                        </th>
+                                        <th class="" scope="col">
+                                            <div class="slds-truncate" title="Author">Author</div>
+                                        </th>
+                                        <th class="" scope="col">
+                                          <div class="slds-truncate" title="Created date">Created date</div>
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={jiraAttachments} for:item="jiraAttachment">
+                                        <tr class="slds-hint-parent" key={jiraAttachment.id} >
+                                        <th data-label="File Name" scope="row">
+                                            <div class="slds-truncate" title={jiraAttachment.filename}>
+                                            <a data-url={jiraAttachment.content} data-mimetype={jiraAttachment.mimeType} data-filename={jiraAttachment.filename} onclick={handleJiraAttachmentClick}>{jiraAttachment.filename}</a>
+                                            </div>
+                                        </th>
+                                        <td data-label="Author">
+                                            <div class="slds-truncate" title={jiraAttachment.author}>{jiraAttachment.author}</div>
+                                        </td>
+                                        <td data-label="Created date">
+                                            <div class="slds-truncate" title={jiraAttachment.created}>
+                                                <lightning-formatted-date-time value={jiraAttachment.created} year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                                            </div>
+                                        </td>
+                                        </tr>
+                                        </template>
+                                    </tbody>
+                                </table>-->
+                            </template>
+                        </div>
+                    </article>
+
+                    <article class="slds-card slds-card_boundary slds-m-bottom_medium">
+                        <div class="slds-card__header slds-grid">
+                            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                <div class="slds-media__body">
+                                    <h2>
+                                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Comments">
+                                            <span class="slds-text-heading_small">Comments</span>
+                                        </a>
+                                    </h2>
+                                </div>
+                            </header>
+                        </div>
+                        <div class="slds-feed slds-card__body_inner">
+                            <template if:true={formError}>
+                                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                                    <h2>JIRA Comment is mandatory</h2>
+                                </div>
+                            </template>
+                            <ul class="slds-feed__list">
+                                <template if:true={canEdit}>
+                                    <li class="slds-feed__item slds-m-bottom_small">
+                                        <lightning-textarea name="newJiraComment" value={newJiraComment.body} label="New JIRA Comment" required="true" onchange={newJiraCommentChange}></lightning-textarea>
+                                        <div class="slds-float--right">
+                                            <lightning-button label="Add a Comment" variant="brand" onclick={handleCreateNewJiraCommentClick} title="Add a comment" class="slds-m-left_x-small"></lightning-button>
+                                        </div>
+                                    </li>
+                                </template>
+                                <template for:each={jiraComments} for:item="jiraComment">
+                                    <li key={jiraComment.id} class="slds-feed__item">
+                                        <article class="slds-post">
+                                            <header class="slds-post__header slds-media">
+                                                <div class="slds-media__body">
+                                                    <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                                        <p>
+                                                            <a href="javascript:void(0);" title={jiraComment.author.displayName}>{jiraComment.author.displayName}</a>
+                                                        </p>
+                                                        <p class="slds-text-body_small">
+                                                            <lightning-formatted-date-time value={jiraComment.updated} year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </header>
+                                            <div class="slds-post__content slds-text-longform">
+                                                <lightning-formatted-rich-text value={jiraComment.body}></lightning-formatted-rich-text>
+                                            </div>
+                                        </article>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

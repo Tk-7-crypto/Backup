@@ -1,0 +1,203 @@
+<apex:page controller="CNT_TPA_OfferingsWithCategory">
+    <apex:slds />
+    <script type="text/javascript">
+        if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+            var globalBar = document.getElementsByClassName("globalHeaderBar");
+            if(globalBar != null  && globalBar.length > 0) {
+                globalBar[0].classList.add("hideGlobalHeader");
+            }
+            var searchBar = document.getElementsByClassName("zen-navViaSearch");
+            if(searchBar != null  && searchBar.length > 0) {
+                searchBar[0].classList.add("hideGlobalHeader");
+            }
+            var navigationMenu = document.getElementsByClassName("zen-hasMessages");
+            if(navigationMenu != null && navigationMenu.length > 0) {
+                navigationMenu[0].classList.add("hideGlobalHeader");
+            }
+        }
+    </script>
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/> 
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->
+
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** -->
+    
+            <style>
+                .hideGlobalHeader{
+                    display: none !important;
+                }
+        </style>
+            <script type="text/javascript">
+
+                var myapp = angular.module('OfferingsWithCategory', ['ui.bootstrap']);
+                var contrl = myapp.controller('controllerPage', ['$scope', '$filter', '$modal', '$log', '$window', function($scope, $filter, $modal, $log, $window) 
+                {
+                    $scope.offeringRecords = [];
+                    var queryString = window.location.search;
+                    $scope.urlParams = new URLSearchParams(queryString);
+                   	$scope.reqId = $scope.urlParams.get('reqId');
+                    $scope.pageSize = 1000;
+                    //$scope.reqId = 'aE5170000004E6LCAU';
+                    $scope.showTable = false;
+                    $scope.offCategoryWithIndex = {
+                        'Sub-National':0,
+                        'National':1,
+                        'Anonymized Patient-Level Data / Transaction-Level':2,
+                        'Consumer Health':3,
+                        'Real World Evidence':4,
+                        'Global Services':5,
+                        'Reference Data':6,
+                    };
+                    $scope.fetchOffRecords =  function(lastRecId) {
+                        //showLoading();
+                        Visualforce.remoting.Manager.invokeAction(
+                            '{!$RemoteAction.CNT_TPA_OfferingsWithCategory.getOfferingRecords}',
+                            $scope.reqId,
+                            lastRecId,
+                            $scope.pageSize,
+                            function(result, event)
+                            {
+                                console.log(result);
+                                if(event.type == 'exception')
+                                    return false;
+                                if(result != null)
+                                    $scope.offeringRecords = $scope.offeringRecords.concat(result);
+                                
+                                if(result != null && result.length == $scope.pageSize){
+                                    console.log('here' + result[result.length - 1].recId);
+                                    $scope.fetchOffRecords(result[result.length - 1].recId);
+                                    
+                                }
+                                else {
+                                    $scope.showTables();
+                                    //hideLoading();
+                                    $scope.showTable = true;
+                                    $scope.$apply();
+                                    console.log( $scope.offeringRecords);
+                                    console.log( $scope.UseOfferingsWithBUs);
+                                }
+                            },
+                            {escape: false},
+                        );
+                        /*CNT_TPA_OfferingsWithCategory.getOfferingRecords( $scope.reqId , function(result, event)
+                        {
+                            if(event.type == 'exception')
+                                return false;
+                            else {
+                                $scope.offeringRecords = result;  
+                                $scope.showTables();
+                                //hideLoading();
+                                $scope.showTable = true;
+                                $scope.$apply();
+                                console.log( $scope.offeringRecords);
+                                console.log( $scope.UseOfferingsWithBUs);
+                            }
+                        });*/
+                        
+                    }
+                    /*$scope.UseOfferingsWithBUs = {
+                        'United States' : {
+                            'Use1' : ['off1','off2','off3','off4','off5','off6','off7'],
+                            'Use2' : ['off1','off2','off3','off4','off5','off6','off7'],
+                            'Use3' : ['off1','off2','off3','off4','off5','off6','off7'],
+                        },
+                        'United Kingdom' : {
+                            'Use4' : ['off1','off2','off3','off4','off5','off6','off7'],
+                            'Use5' : ['off1','off2','off3','off4','off5','off6','off7'],
+                            'Use6' : ['off1','off2','off3','off4','off5','off6','off7'],
+                        },
+                    };*/
+
+                    $scope.UseOfferingsWithBUs = {};
+                    $scope.hideLoading = function () {
+           				console.log("hide calling");
+            			document.getElementById("ldsSpinner").classList.add("slds-hide");
+        			}
+                    $scope.showTables = function(){
+                        $scope.hideLoading();
+                        var useoffMap = {};
+                        var offList = [];
+                        $.each($scope.offeringRecords,function(key,offRecord){
+                            //console.log(offRecord.BU);
+                            useoffMap = {};
+                            offList = ['n/a','n/a','n/a','n/a','n/a','n/a','n/a'];
+                            if($scope.UseOfferingsWithBUs[offRecord.BU] != null){
+                                useoffMap = $scope.UseOfferingsWithBUs[offRecord.BU];
+                                if(useoffMap[offRecord.purposeName] != null){
+                                    offList = useoffMap[offRecord.purposeName];
+                                    if(offList[$scope.offCategoryWithIndex[offRecord.offCategory]] != 'n/a'){
+                                        offList[$scope.offCategoryWithIndex[offRecord.offCategory]] += offRecord.fullOfferingNames;
+                                    }
+                                    else{
+                                        offList[$scope.offCategoryWithIndex[offRecord.offCategory]] =  offRecord.fullOfferingNames;
+                                    }
+                                    useoffMap[offRecord.purposeName] = offList;
+                                }else{
+                                    offList[$scope.offCategoryWithIndex[offRecord.offCategory]] = offRecord.fullOfferingNames;
+                                    useoffMap[offRecord.purposeName] = offList;
+                                }
+                                $scope.UseOfferingsWithBUs[offRecord.BU] = useoffMap;
+                            }
+                            else{
+                                offList[$scope.offCategoryWithIndex[offRecord.offCategory]] = offRecord.fullOfferingNames;
+                                useoffMap = {};
+                                useoffMap[offRecord.purposeName] =  offList;
+                                $scope.UseOfferingsWithBUs[offRecord.BU] = useoffMap;
+                            }
+                        });
+                    }
+                    //showLoading();
+                    $scope.fetchOffRecords(null);
+                }]);
+            </script>
+        </head>
+        <body>
+            <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+        	<div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+            	<div class="slds-spinner__dot-a"></div>
+            	<div class="slds-spinner__dot-b"></div>
+        	</div>
+    		</div>
+            <div id="ng-app" ng-app="OfferingsWithCategory" class="slds-scope slds-m-around_medium">
+                <div id="controllerPage" ng-controller="controllerPage">
+                    <table ng-show="showTable" ng-repeat="(BU,purposesWithOfferings) in UseOfferingsWithBUs" style="margin:10px;border-collapse: collapse;font-size:13px;font-family:arial;border:2px solid #0CB6F3;">
+                        <tr>
+                            <th colSpan="8" style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">{{BU}} Offerings Selected in Request</th>
+                        </tr>
+                        <tr>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Use(s) Selected in Request</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Sub-national</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">National</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Anonymized Patient-Level Data / Transaction-Level Offering Section</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Consumer Health</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Real World Evidence</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Global Services</th>
+                            <th style="text-align: center;border:2px solid #0CB6F3;font-size:13px;font-family:arial;">Reference Data</th>
+                        </tr>
+                        <tr ng-repeat="(purposeName,offeringsWithCategory) in purposesWithOfferings">
+                            <td style="font-size:13px;font-family:arial;border:2px solid #0CB6F3;text-align: center;vertical-align: middle;"> {{purposeName}} </td>
+                            
+                            <td ng-repeat="offerings in offeringsWithCategory track by $index" style="font-size:13px;font-family:arial;border:2px solid #0CB6F3;text-align: center;vertical-align: middle;"> {{offerings}} </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>    
+        </body>
+        
+    </html>
+</apex:page>

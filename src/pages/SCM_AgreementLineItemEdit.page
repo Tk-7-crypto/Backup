@@ -1,0 +1,1063 @@
+<apex:page standardController="Agreement_Line_Item__c" extensions="SCM_AgreementLineItemEditController" id="pg" lightningStylesheets="true"> 
+    <apex:slds />
+    <!--Added By:-Ekta, Date:-15th Feb,2013, Details:- ER - 0750  -->
+    <c:JQueryBlockUI />
+    
+    <!-- Added By Ekta : Issue-02454 :: 12 July 2013-->
+    <script type="text/javascript">
+  
+    //Added By Rakesh : 3 Oct 2013 : Issue-2874 (ER-520)
+    function scrollWindow()
+    {
+        window.scrollTo(0,0);   
+    }
+    //****** End Issue-2874 (ER-520)  ******
+  
+    function getConfirmation()
+    {
+        try {
+            
+            //Added By Rakesh : 30 Sept 2013 : ER-520
+            //*****   START by Rakesh****
+            var noOfSelectedAggProduct = 0;
+            if( document.getElementById('{!$Component.pg:frm:otherProducts:otherAggProducts:multiSelectAggProductlist}') != null  )
+            {
+                var selectedProducts = document.getElementById('{!$Component.pg:frm:otherProducts:otherAggProducts:multiSelectAggProductlist}');
+                var allSelected = false ;
+                for(var i = 0; i < selectedProducts.options.length; i++)
+                {
+                    if(selectedProducts.options[i].selected ) 
+                    {
+                        noOfSelectedAggProduct++;
+                        if( selectedProducts.options[i].value == 'All' )
+                        {
+                            allSelected = true;                         
+                            break;
+                        }
+                        
+                    }
+                }
+                document.getElementById('{!$Component.pg:frm:otherProducts:allAggProdSelectedHidden}').value = allSelected; 
+                
+                if(noOfSelectedAggProduct <= 0 )
+                {
+                    alert('Please select at least one agreement product in order to apply same product specifications to selected products.');
+                    YUIHideLoading();
+                    return false;
+                }
+            }
+            //******  End By  Rakesh  ER-520 ******
+            
+
+            //Updated by Rakesh : 19 July 2013 :: Issue-2506 :: Add 's' to line item (Message)
+            //Updated By Rakesh :: 11 Sept 2013 :: ER-478
+            //**** START By Rakesh***
+            //var hasConfirm = confirm("Press OK for copy to all line items, Press Cancel to save this line item.");
+            var hasConfirm = confirm("{!$Label.Copy_To_All_Product_Confirmation}");
+            //****  END By Rakesh  ***
+            if (hasConfirm == true)
+            {
+              //Added By:-Ekta, Date:-15th Feb,2013, Details:- ER - 0750
+              var attributeName = '';
+              if('{!prodWithDiff_DeliveryFrequency}' != '' && '{!prodWithDiff_DeliveryFrequency}' != null)
+                  attributeName = 'Delivery Frequency';
+              if('{!prodWithDiff_DeliveryMedia}' != '' && '{!prodWithDiff_DeliveryMedia}' != null)
+              {
+                  if(attributeName != '')
+                      attributeName = attributeName +' and '+ 'Delivery Media';
+                  else
+                      attributeName = 'Delivery Media';
+              }
+              var productName = ''; 
+              if('{!prodWithDiff_DeliveryFrequency}' != '' && '{!prodWithDiff_DeliveryFrequency}' != null)
+                  productName = '{!prodWithDiff_DeliveryFrequency}';
+              if('{!prodWithDiff_DeliveryMedia}' != '' && '{!prodWithDiff_DeliveryMedia}' != null)
+              {
+                  var deliveryMedia = '{!prodWithDiff_DeliveryMedia}'.split(',');
+                  for(var count = 0;count<deliveryMedia.length ;count++)
+                  {
+                      if(productName != '' && productName !=null && productName.indexOf(deliveryMedia[count]) == -1)
+                          productName = productName.concat(','+deliveryMedia[count]);
+                  }
+              }
+              if(attributeName != '' && attributeName != null)
+                  alert("Value requested for "+attributeName+" to be copied into the "+productName +" record identified is not an acceptable value. Copy into this field will not be executed. To update this field, enter the "+productName+" product and modify the "+attributeName+" field with an acceptable value from the drop down list provided.");
+              //Ended By:-Ekta, Date:-15th Feb,2013, Details:- ER - 0750
+              copyToAllLineItems();
+              //******  Added By  Rakesh  ER-520 ******
+              return false;
+            }
+            else
+            {
+                OnlySaveLineItem();
+                //******  Added By  Rakesh  ER-520 ******
+                return false;
+            }
+        }catch(e)
+        {
+            alert(e);
+        }
+    }
+    
+    //Added by Rakesh :: Issue-02458 :: 26 July
+    //Start 
+    // Updated By Rakesh : 7 Oct 2013 : Issue-2887 :: Comment Out window.onload JS method and Add $(document).ready() JQUERY method
+    // *************  START   **************
+    /*
+    window.onload = function() 
+    {
+        showHideOtherFields();
+        /*document.getElementById('idOfferingOptionOther').style.display = 'none';
+        document.getElementById('idChannelOther').style.display = 'none';
+        document.getElementById('idDataLevelOther').style.display = 'none';
+        document.getElementById('idDeliveryMethodOther').style.display = 'none';
+        document.getElementById('idHistoricalDaysOther').style.display = 'none';
+        document.getElementById('idBackDataOther').style.display = 'none';
+        document.getElementById('idDeliveryFrequencyOther').style.display = 'none'; */
+        
+    //}
+    
+    $(document).ready(function(){  
+        showHideOtherFields();
+        
+        //****** START : QMS-IM1586410 ****
+        showHideDataLevelAndChannelOtherAtPageLoad();
+        //****** END : QMS-IM1586410 ****
+        $('.multiSelectPicklistTable td:nth-child(2)').removeAttr('colspan');
+    });
+    /***************** END Issue-2887 ******************/
+    
+    
+    //Added By Rakesh : 3 June 2014 : QMS-IM1586410
+    //****** START : QMS-IM1586410 ****
+    function showHideDataLevelAndChannelOtherAtPageLoad()
+    {
+        if({!hasDataLevelOther})
+        {
+            document.getElementById('idDataLevelOther').style.display = 'block';
+        }
+        
+        if({!hasChannelOther})
+        {
+            document.getElementById('idChannelOther').style.display = 'block';
+        }
+    }
+    //****** END : QMS-IM1586410 ****
+
+    function showHideOtherFields()
+    {
+        
+
+        //show hide Delivery Frequency Other
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+        if(document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idFrequency:idDeliveryFrequency}') != null )
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idFrequency:idDeliveryFrequency}').value;
+            if(val == 'Other')
+            {
+                document.getElementById('idDeliveryFrequencyOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idDeliveryFrequencyOther').style.display = 'none';
+            }
+            
+            //Added By Rakesh  : 9 Nov 2103 : ER-636 
+            if(val == 'Once [O]')
+            {
+                document.getElementById('idExpectedDeliveryDate').style.display = 'block';
+            } else
+            {
+                document.getElementById('idExpectedDeliveryDate').style.display = 'none';
+            }
+            // **** End : ER-636 **** 
+        }
+        
+        
+        //show hide Delivery Media (US)
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+        if(document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:DeliveryFormat:idDeliveryFormat}') !=  null)
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:DeliveryFormat:idDeliveryFormat}').value;
+            if(val == 'Not Applicable [NA]')
+            {
+                document.getElementById('idDeliveryFormatOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idDeliveryFormatOther').style.display = 'none';
+            }
+        }
+        
+        
+        //show hide Delivery Format other
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+        if(document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idDeliveryMethod}') !=  null)
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idDeliveryMethod}').value;
+            if(val == 'Other')
+            {
+                document.getElementById('idDeliveryMethodOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idDeliveryMethodOther').style.display = 'none';
+            }
+        }
+        
+        // Added by Sandeep for ER-0385 Date 23 May 2014 -Start
+        //show hide Delivery Media other
+        if(document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:DeliveryFormat:idDeliveryFormat}') !=  null)
+        {  
+            val = document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:DeliveryFormat:idDeliveryFormat}').value;
+            if(val == 'Other')
+            {   
+                document.getElementById('idDeliveryFormatOther').style.display = 'block';
+            } else
+            {   
+                document.getElementById('idDeliveryFormatOther').style.display = 'none';
+            }
+        }
+        //Added by Sandeep for ER-0385 Date 23 May 2014 -End
+        
+        //show hide Dap Days Other 
+        //Updated By:-Ekta , Date:-9th Sep,2013 , Details:-ER - 0546
+        if(document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idAcceleratedDAPSection:idAcceleratedDAP}') != null )
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idDeliveryDetails:idAcceleratedDAPSection:idAcceleratedDAP}').value;
+            if(val == 'Accelerated DAP')
+            {
+                document.getElementById('idAcceleratedDAPDays').style.display = 'block';
+            } else
+            {
+                document.getElementById('idAcceleratedDAPDays').style.display = 'none';
+            }
+            
+            if(val == 'Other')
+            {
+                document.getElementById('idAcceleratedDAPDaysOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idAcceleratedDAPDaysOther').style.display = 'none';
+            }
+        }
+        
+        //show hide Offering Option other
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+        if(document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idOfferingOption}') != null)
+        {
+            var val = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idOfferingOption}').value;
+            if(val == 'Other')
+            {
+                document.getElementById('idOfferingOptionOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idOfferingOptionOther').style.display = 'none';
+            }
+        }
+        
+
+
+
+        
+       //show hide Channel other
+        // Updated By ranu ER-596
+        //var multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idChannel}');
+        //Updated By Rakesh : 30 Sept 2013 :: ER-520
+        //var multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:j_id160:idChannel}');
+        var multiSel ;
+        
+        var otherSelected = false;
+        
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+         //commented by Ranu Issue_2840 ER-597 date : 15th Oct
+         //if(document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idChannelItem:idChannel}') != null)
+
+         //commented and updated by Ranu Issue_2840 ER-597 date : 15th Oct
+        if(document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idChannel_selected}') != null)
+        {
+            //commented by Ranu Issue_2840 ER-597 date : 15th Oct
+            //multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idChannelItem:idChannel}');
+            multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idChannel_selected}');
+            
+            for(var i = 0; i < multiSel.options.length; i++)
+            {
+                if(multiSel.options[i].selected && multiSel.options[i].value == 'Other') 
+                {
+                    otherSelected =true;
+                    break;
+                }
+            }
+        }
+
+            
+            if(otherSelected == true) 
+            {
+                document.getElementById('idChannelOther').style.display = 'block';
+            } else 
+            {
+                document.getElementById('idChannelOther').style.display = 'none';
+            }
+
+        
+        
+        
+        //show hide Data Level other
+        otherSelected = false;
+
+ //if(isItalyUser == false){
+       // alert('hiii');
+       //ER-596 by Ranu
+       // multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idDataLevel}');
+       // }else{
+       //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+       //multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:j_id144:idDataLevel}');
+       //commented by Ranu Issue_2840 ER-597 date : 15th Oct
+       
+        //if( document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idDataLevelItem:idDataLevel}') != null)
+
+
+       if( document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idDataLevel_selected}') != null)
+        {
+           //commented by Ranu Issue_2840 ER-597 date : 15th Oct
+           //multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idDataLevelItem:idDataLevel}');
+
+           multiSel = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idDataLevel_selected}');
+
+            
+
+
+            
+            for(var i = 0; i < multiSel.options.length; i++)
+            {
+                if(multiSel.options[i].selected && multiSel.options[i].value == 'Other') 
+                {
+                    otherSelected =true;
+                    break;
+                }
+            }
+        }
+
+            
+            if(otherSelected == true) 
+            {
+                document.getElementById('idDataLevelOther').style.display = 'block';
+            } else 
+            {
+                document.getElementById('idDataLevelOther').style.display = 'none';
+            }
+
+        
+        
+       // }
+
+
+
+        
+        
+        //show hide Rolling Historical Data other
+        //Added By Rakesh : 30 Sept 2013 :: ER-520 ::  Add null check
+        if( document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idHistoricalDays}') != null )
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idHistoricalDays}').value;
+            if(val == 'Other')
+            {
+                document.getElementById('idHistoricalDaysOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idHistoricalDaysOther').style.display = 'none';
+            }
+        }
+        
+        
+        //show hide Back Data other
+         //Updated By:-Ekta , Date:-9th Sep,2013 , Details:-ER - 0546
+        if(document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idBackData}') != null)
+        {
+            val = document.getElementById('{!$Component.pg:frm:editmode:idProductOptions:idBackData}').value;
+            if(val == 'Other')
+            {
+                document.getElementById('idBackDataOther').style.display = 'block';
+            } else
+            {
+                document.getElementById('idBackDataOther').style.display = 'none';
+            }
+        }
+    }
+
+
+    function showOtherFields(val, otherDivId, otherString)
+    {
+        
+        //Added By Rakesh : 9 Nov 2013 : ER-636
+        if(otherDivId == 'idDeliveryFrequencyOther')
+        {
+            var deliveryFreqOnceSelected = false;        
+            for(var i = 0; i < val.options.length; i++)
+            {
+                if(val.options[i].selected && val.options[i].value == 'Once [O]') 
+                {
+                    deliveryFreqOnceSelected = true;
+                    break;
+                }
+            }
+            
+            if( deliveryFreqOnceSelected )
+            {
+                document.getElementById('idExpectedDeliveryDate').style.display = 'block';
+                document.getElementById('idDeliveryFrequencyOther').style.display = 'none';
+                return;
+            } else 
+            {
+                document.getElementById('idExpectedDeliveryDate').style.display = 'none';
+                document.getElementById('idDeliveryFrequencyOther').style.display = 'none';
+            }
+        }
+        //**** End : ER-636 ****
+        
+        var otherSelected = false;
+
+        for(var i = 0; i < val.options.length; i++)
+        {
+            if(val.options[i].selected && val.options[i].value == otherString) 
+            {
+                otherSelected =true;
+                break;
+            }
+        }
+                    
+        if(otherSelected == true) 
+        {
+            document.getElementById(otherDivId).style.display = 'block';
+        } else 
+        {
+            document.getElementById(otherDivId).style.display = 'none';
+        }
+        
+        if( otherString == 'Accelerated DAP')
+        {
+            var otherSelected = false;
+            for(var i = 0; i < val.options.length; i++)
+            {
+                if(val.options[i].selected && val.options[i].value == 'Other') 
+                {
+                    otherSelected =true;
+                    break;
+                }
+            }
+            if(otherSelected == true) 
+            {
+                document.getElementById('idAcceleratedDAPDaysOther').style.display = 'block';
+            } else 
+            {
+                document.getElementById('idAcceleratedDAPDaysOther').style.display = 'none';
+            }
+        }
+        
+        // Added by Sandeep for ER-0385 Date 23 May 2014 - Start
+        if(otherDivId == 'idDeliveryFormatOther')
+        {
+            
+            var isOtherSelected = false;        
+            for(var i = 0; i < val.options.length; i++)
+            {
+                if(val.options[i].selected && val.options[i].value == 'Other') 
+                {    
+                    isOtherSelected = true;
+                    break;
+                }
+            }            
+            if( isOtherSelected )
+            {   
+                document.getElementById('idDeliveryFormatOther').style.display = 'block';
+                return;
+            } else 
+            {   
+                document.getElementById('idDeliveryFormatOther').style.display = 'none';
+            }
+        }
+        // Added by Sandeep for ER-0385 Date 23 May 2014 - End
+    }
+    //End   
+
+  </script>
+  <style>
+      .multiSelectPicklistTable td:nth-child(1){
+        width: 220px !important;
+      }
+      .multiSelectPicklistTable td:nth-child(2){
+        width: 50px !important;
+      }
+
+      .multiSelectPicklistTable td:nth-child(3){
+        width: 220px !important;
+      }
+
+      img[class=helpOrb] {
+          width: 16px;
+      }
+  </style>
+  <!--  End  -->    
+
+ 
+    <apex:outputpanel id="frmPanel">
+        <apex:form id="frm">
+            <apex:actionFunction name="isDeliveryMediaAndFrequencyCopyToAllAgli" action="{!isDeliveryMediaAndFrequencyCopyToAllAgli}"/>
+            <apex:pageblock rendered="{!ShowComponentMessage}">
+                <apex:pageBlockButtons >            
+                    <apex:commandButton value="OK" action="{!cancel}">
+                    </apex:commandButton>
+                </apex:pageBlockButtons>
+                <apex:pageMessages escape="false" id="UserMessages"/>
+            </apex:pageblock>
+            <apex:outputpanel >
+                <apex:outputpanel rendered="{!!ShowComponentMessage}">
+                    <apex:pagemessages id="errMsg"/>
+                    <apex:sectionHeader title="{!$Label.Agreement_Line_Item_Edit}" subtitle="{!agliRecord.Name}" rendered="{!Not(isclone)}"/>
+                    <apex:sectionHeader title="{!$Label.Agreement_Line_Item_Edit}" subtitle="Clone" rendered="{!isclone}"/>
+                    <apex:pageblock title="{!$Label.Agreement_Line_Item_Edit}" id="editmode" mode="edit" rendered="{!AND(!showOtherProducts, (NOT(CONTAINS(UserProfileName,'japan'))), NOT(CONTAINS(UserProfileName, $Label.System_Admin)))}">
+                        <apex:pageBlockButtons >
+                            <apex:commandbutton value="Save" id="saveButton" action="{!saveLineItem}" rerender="frm,errMsg" onclick="YUIShowLoading();" oncomplete="scrollWindow(); YUIHideLoading();showHideOtherFields();"/>
+                            <apex:commandbutton value="Cancel" id="cancelButton" action="{!cancelLineItem}" immediate="true"/>
+                            <apex:commandButton value="{!$Label.Save_and_Copy_To_All_Line_Items}" id="idcopyAll" rendered="{! NOT(CONTAINS(Lower($Profile.Name), 'client services')) && Not(isclone)}" rerender="frm" immediate="false" action="{!getValidations}" onclick="YUIShowLoading();" oncomplete="scrollWindow(); YUIHideLoading();showHideOtherFields();"/>
+                        </apex:pageBlockButtons>
+                        <apex:pageblockSection id="idGeneralInfo" columns="2">
+                            <apex:inputField value="{!Agreement_Line_Item__c.ProductId__c}" rendered="{!CONTAINS(UserProfileName,'japan')}" required="true"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.ProductId__c}" rendered="{!(NOT(CONTAINS(UserProfileName,'japan')))}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Line_Item_Number__c}"/>  
+                            <apex:inputField value="{!Agreement_Line_Item__c.Revenue_Type__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Sale_Type__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Line_Item_Category__c}" rendered="{!IF(Agreement_Line_Item__c.User_Country__c == 'Canada',false,true)}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.AgreementId__c}" rendered="{!NOT(isClone) && Agreement_Line_Item__c.AgreementId__r.RecordType.Name!='SOW'}"/> 
+                            <apex:outputField value="{!Agreement_Line_Item__c.AgreementId__r.Agreement_Name_long__c}" rendered="{!NOT(isClone) && Agreement_Line_Item__c.AgreementId__r.RecordType.Name=='SOW'}"/> 
+                            <apex:inputField value="{!clonedRecord.AgreementId__c}" rendered="{!isClone && Agreement_Line_Item__c.AgreementId__r.RecordType.Name!='SOW'}"/> 
+                            <apex:outputField value="{!clonedRecord.AgreementId__r.Agreement_Name_long__c}" rendered="{!isClone && Agreement_Line_Item__c.AgreementId__r.RecordType.Name=='SOW'}"/> 
+                            <apex:inputField value="{!Agreement_Line_Item__c.Primary_Contact__c}"/>                  
+                            <apex:outputfield value="{!Agreement_Line_Item__c.Related_Opportunity_Number__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Co_Promote_Agreement__c}"/>
+                            <apex:outputLabel value=""></apex:outputLabel>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Additional_Description__c}"/>
+                        </apex:pageblockSection>
+                        <apex:outputpanel id="idDeliveryDetailsPanel"> 
+                            <apex:pageblockSection id="idDeliveryDetails" title="Delivery Details" columns="2">
+                                <apex:pageblockSectionItem id="idFrequency" >
+                                    <apex:outputPanel >
+                                        <span class="helpButton" id="DeliveryFrequency-_help"> 
+                                            <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Apts_Delivery_Frequency__c.label}"/> 
+                                            <img id="helpImg1" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                            <script>
+                                                sfdcPage.setHelp('DeliveryFrequency', '{!$ObjectType.Agreement_Line_item__c.fields.Apts_Delivery_Frequency__c.inlineHelpText}');
+                                                var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                var helpImg = document.getElementById('helpImg1');
+                                                if(isIE7)
+                                                    helpImg.style.marginRight = "6px";
+                                                else if(isIE)
+                                                helpImg.style.marginRight = "0px";
+                                                else
+                                                helpImg.style.marginRight = "3px";                         
+                                            </script> 
+                                        </span>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel styleClass="{!IF(AND(NOT(isUserCountryItaly),isZPUBProduct),'requiredInput','')}" layout="block" id="pwPanel">
+                                        <apex:outputPanel styleClass="{!IF(isZPUBProduct,'requiredBlock','')}"/>
+                                        <apex:selectList id="idDeliveryFrequency" value="{!Agreement_Line_Item__c.Apts_Delivery_Frequency__c}"  multiselect="false" size="1" onchange="showOtherFields(this, 'idDeliveryFrequencyOther', 'Other');">
+                                            <apex:selectOptions value="{!DeliveryProj_Rpt_Frequency_options}"></apex:selectOptions>
+                                        </apex:selectList>
+                                    </apex:outputPanel>
+                                </apex:pageblockSectionItem>
+                
+                                <apex:outputpanel >
+                                    <div id="idDeliveryFrequencyOther">                     
+                                        <apex:pageBlockSection columns="1" >                
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="DeliveryFrequencyOtherHelpText-_help">
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Delivery_Frequency_Other__c.label}"/>
+                                                            <img id="helpImg5" class="helpOrb" title="" alt="" src="/s.gif" />
+                                                            <script>
+                                                                sfdcPage.setHelp('DeliveryFrequencyOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Delivery_Frequency_Other__c.inlineHelpText}');
+                                                                var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                                var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                                var helpImg = document.getElementById('helpImg5');
+                                                                if(isIE7)
+                                                                    helpImg.style.marginRight = "6px";
+                                                                else if(isIE)
+                                                                helpImg.style.marginRight = "0px";
+                                                                else
+                                                                helpImg.style.marginRight = "3px";                         
+                                                            </script>
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel style="float:left;">
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.Delivery_Frequency_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div> 
+                  
+                                    <div id="idExpectedDeliveryDate">
+                                        <apex:outputPanel rendered="{!If( AND(Agreement_Line_Item__c.AgreementId__r.IMS_Legal_Entity__c != 'IMS Health Incorporated' ,Agreement_Line_Item__c.AgreementId__r.IMS_Legal_Entity__c != $Label.Quintiles_IMS_Incorporated ,Agreement_Line_Item__c.AgreementId__r.IMS_Legal_Entity__c != $Label.Iqvia), true, false)}">
+                                            <apex:pageBlockSection columns="1" >                
+                                                <apex:pageBlockSectionItem >
+                                                    <apex:outputlabel styleClass="labelCol" value="{!$ObjectType.Agreement_Line_Item__c.fields.Expected_Delivery_Date__c.label}"/>
+                                                    <apex:outputpanel style="float:left;">
+                                                        <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                            <apex:inputField value="{!Agreement_Line_item__c.Expected_Delivery_Date__c }"/>
+                                                        </div>  
+                                                    </apex:outputpanel>                                                        
+                                                </apex:pageBlockSectionItem>
+                                            </apex:pageBlockSection>
+                                        </apex:outputPanel> 
+                                    </div>
+                                </apex:outputpanel>
+                                <apex:pageblockSectionItem id="DeliveryFormat" >
+                                    <apex:outputPanel >
+                                        <span class="helpButton" id="DeliveryFormatHelpTxt-_help"> 
+                                            <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Apts_Delivery_Format__c.label}"/> 
+                                                <img id="helpImg2" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                <script>
+                                                    sfdcPage.setHelp('DeliveryFormatHelpTxt', '{!$ObjectType.Agreement_Line_item__c.fields.Apts_Delivery_Format__c.inlineHelpText}');
+                                                    var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                    var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                    var helpImg = document.getElementById('helpImg2');
+                                                    if(isIE7)
+                                                        helpImg.style.marginRight = "6px";
+                                                    else if(isIE)
+                                                    helpImg.style.marginRight = "0px";
+                                                    else
+                                                    helpImg.style.marginRight = "3px";                         
+                                                </script> 
+                                        </span>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel styleClass="{!IF(AND(isZPUBProduct,NOT(isUserCountryItaly)),'requiredInput','')}" layout="block" id="pwPanel1" >                
+                                        <apex:outputPanel styleClass="{!IF(isZPUBProduct,'requiredBlock','')}"/>
+                                        <apex:selectList id="idDeliveryFormat" value="{!Agreement_Line_Item__c.Apts_Delivery_Format__c}" multiselect="false" size="1" onchange="showOtherFields(this, 'idDeliveryFormatOther', 'Other');">
+                                            <apex:selectOptions value="{!DeliveryMediaOptions}"></apex:selectOptions>
+                                        </apex:selectList> 
+                                    </apex:outputPanel>
+                                </apex:pageblockSectionItem>
+                                <apex:outputpanel > 
+                                    <div id="idDeliveryFormatOther">                    
+                                        <apex:pageBlockSection columns="1">                  
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="DeliveryFormatOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Delivery_Format_Other__c.label}"/> 
+                                                        <img id="helpImg6" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('DeliveryFormatOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Delivery_Format_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg6');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.Delivery_Format_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div>  
+                                </apex:outputpanel>  
+                                <apex:inputField id="idDeliveryMethod" value="{!Agreement_Line_Item__c.Delivery_Method__c}" required="{!If(AND(Agreement_Line_Item__c.AgreementId__r.User_Country__c=='USA',isZPUBProduct), true, false)}" onchange="showOtherFields(this, 'idDeliveryMethodOther', 'Other');"/>
+                                <apex:outputpanel > 
+                                    <div id="idDeliveryMethodOther">            
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="DeliveryMethodOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Delivery_Method_Other__c.label}"/> 
+                                                            <img id="helpImg7" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                            <script>
+                                                                sfdcPage.setHelp('DeliveryMethodOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Delivery_Method_Other__c.inlineHelpText}');
+                                                                var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                                var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                                var helpImg = document.getElementById('helpImg7');
+                                                                if(isIE7)
+                                                                    helpImg.style.marginRight = "6px";
+                                                                else if(isIE)
+                                                                helpImg.style.marginRight = "0px";
+                                                                else
+                                                                helpImg.style.marginRight = "3px";                         
+                                                            </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}"> 
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.Delivery_Method_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div>
+                                </apex:outputpanel>
+                                <apex:inputField value="{!Agreement_Line_item__c.Metric__c }" />
+                                <apex:pageBlockSection id="idAcceleratedDAPSection" columns="1" rendered="{!AND(IF(Agreement_Line_Item__c.User_Country__c == 'Italy',false,true),IF(Agreement_Line_Item__c.User_Country__c == 'Canada',false,true))}">
+                                    <apex:inputField id="idAcceleratedDAP" value="{!Agreement_Line_Item__c.Apts_DAP__c}"  onchange="showOtherFields(this, 'idAcceleratedDAPDays', 'Accelerated DAP');" />
+                                </apex:pageBlockSection>
+                                <apex:outputLabel value=""/> 
+                                <apex:outputpanel rendered="{!AND(IF(Agreement_Line_Item__c.User_Country__c == 'Italy',false,true),IF(Agreement_Line_Item__c.User_Country__c == 'Canada',false,true))}">
+                                    <div id="idAcceleratedDAPDays">                 
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="AcceleratedDAPDaysHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.APTPS_Accelerated_DAP_Days__c.label}"/> 
+                                                        <img id="helpImg8" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('AcceleratedDAPDaysHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.APTPS_Accelerated_DAP_Days__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg8');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.APTPS_Accelerated_DAP_Days__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                                  
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div> 
+                                    <div id="idAcceleratedDAPDaysOther"> 
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="AcceleratedDAPDaysOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Accelerated_DAP_Days_Other__c.label}"/> 
+                                                        <img id="helpImg9" class="helpOrb" title="" alt="" src="/s.gif"/> 
+                                                        <script>
+                                                            sfdcPage.setHelp('AcceleratedDAPDaysOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Accelerated_DAP_Days_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg9');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <apex:inputField value="{!Agreement_Line_item__c.Accelerated_DAP_Days_Other__c }" />
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>  
+                                        </apex:pageBlockSection>
+                                    </div>
+                                </apex:outputpanel>
+                                <apex:inputField value="{!Agreement_Line_item__c.Apts_Custom_Delivery_Creation_Descr__c }"/>
+                                <apex:outputLabel value=""></apex:outputLabel>
+                            </apex:pageblockSection>
+                        </apex:outputpanel>
+                        <apex:outputpanel >
+                            <apex:pageblockSection id="idProductOptions" title="Product Options" columns="2">                      
+                                <apex:inputField id="idOfferingOption" value="{!Agreement_Line_Item__c.Apts_Offering_Option__c}" required="{!AND(NOT(isUserCountryItaly),isZPUBProduct)}" onchange="showOtherFields(this, 'idOfferingOptionOther', 'Other');"/>
+                                <apex:outputpanel >
+                                    <div id="idOfferingOptionOther">                  
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="OfferingOptionOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.APTPS_Offering_Option_Other__c.label}"/> 
+                                                            <img id="helpImg10" class="helpOrb" title="" alt="" src="/s.gif"  /> 
+                                                            <script>
+                                                                sfdcPage.setHelp('OfferingOptionOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.APTPS_Offering_Option_Other__c.inlineHelpText}');
+                                                                var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                                var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                                var helpImg = document.getElementById('helpImg10');
+                                                                if(isIE7)
+                                                                    helpImg.style.marginRight = "6px";
+                                                                else if(isIE)
+                                                                helpImg.style.marginRight = "0px";
+                                                                else
+                                                                helpImg.style.marginRight = "3px";                         
+                                                            </script> 
+                                                        </span>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.APTPS_Offering_Option_Other__c }" />
+                                                    </div>
+                                                </apex:outputPanel>                             
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div>  
+                                </apex:outputpanel>
+                                <apex:inputField id="idDataLevel" value="{!Agreement_Line_Item__c.Data_Level__c}" required="{!AND(NOT(isUserCountryItaly),isZPUBProduct)}" onchange="showOtherFields(this, 'idDataLevelOther', 'Other');" style="height:auto !important; width: auto !important;"/>
+                                <apex:outputpanel > 
+                                    <div id="idDataLevelOther">                  
+                                        <apex:pageBlockSection columns="1" >                      
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="DataLevelOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Data_Level_Other__c.label}"/> 
+                                                        <img id="helpImg11" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('DataLevelOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Data_Level_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg11');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.Data_Level_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div> 
+                                </apex:outputpanel>
+                                <apex:inputField id="idChannel" value="{!Agreement_Line_Item__c.Apts_Channel__c}" required="{!AND(NOT(isUserCountryItaly),isZPUBProduct)}" onchange="showOtherFields(this, 'idChannelOther', 'Other');" />
+                                <apex:outputpanel > 
+                                    <div id="idChannelOther">                  
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="ChannelOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.APTPS_Channel_Other__c.label}"/> 
+                                                        <img id="helpImg12" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('ChannelOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.APTPS_Channel_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg12');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.APTPS_Channel_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div> 
+                                </apex:outputpanel>
+                                <apex:inputField id="idHistoricalDays" value="{!Agreement_Line_Item__c.APTPS_Historical_Data__c}" required="{!IF(OR(Agreement_Line_Item__c.User_Country__c == 'Italy',isZPUBProduct == false),false,true)}" onchange="showOtherFields(this, 'idHistoricalDaysOther', 'Other');"/>
+                                <apex:outputpanel > 
+                                    <div id="idHistoricalDaysOther">                    
+                                        <apex:pageBlockSection columns="1" >
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="HistoricalDaysOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.APTPS_Historical_Days_Other__c.label}"/> 
+                                                        <img id="helpImg13" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('HistoricalDaysOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.APTPS_Historical_Days_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg13');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.APTPS_Historical_Days_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div>   
+                                </apex:outputpanel>
+                                <apex:inputField id="idBackData" value="{!Agreement_Line_Item__c.Back_Data__c}" required="{!IF(Agreement_Line_Item__c.AgreementId__r.User_Country__c == 'Italy' || !isZPUBProduct,false,true)}" onchange="showOtherFields(this, 'idBackDataOther', 'Other');"/>
+                                <apex:outputpanel >
+                                    <div id="idBackDataOther">                   
+                                        <apex:pageBlockSection columns="1" >                 
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputPanel >
+                                                    <span class="helpButton" id="BackDataOtherHelpText-_help"> 
+                                                        <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Back_Data_Other__c.label}"/> 
+                                                        <img id="helpImg14" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                        <script>
+                                                            sfdcPage.setHelp('BackDataOtherHelpText', '{!$ObjectType.Agreement_Line_item__c.fields.Back_Data_Other__c.inlineHelpText}');
+                                                            var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+                                                            var isIE7 = (navigator.appVersion.indexOf('MSIE 7.')==-1) ? false : true;
+                                                            var helpImg = document.getElementById('helpImg14');
+                                                            if(isIE7)
+                                                                helpImg.style.marginRight = "6px";
+                                                            else if(isIE)
+                                                            helpImg.style.marginRight = "0px";
+                                                            else
+                                                            helpImg.style.marginRight = "3px";                         
+                                                        </script> 
+                                                    </span>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel >
+                                                    <div class="{!IF(NOT(isUserCountryItaly),'requiredInput','')}">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField value="{!Agreement_Line_item__c.Back_Data_Other__c }" />
+                                                    </div>
+                                                </apex:outputpanel>                                                        
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                    </div> 
+                                </apex:outputpanel>
+                                <apex:inputField value="{!Agreement_Line_Item__c.Market_Definition_Options__c}" required="{!AND(NOT(isUserCountryItaly),isZPUBProduct)}"/>
+                                <apex:outputLabel value=""></apex:outputLabel>
+                                <apex:inputField value="{!Agreement_Line_Item__c.Apts_Market_Definitions__c}" rendered="{!$Profile.Name == 'System Administrator'}"/> 
+                                <apex:outputText value="{!Agreement_Line_Item__c.Market_Definitions_By_Groups__c}" rendered="{!$Profile.Name != 'System Administrator'}" escape="false"/>
+                            </apex:pageblockSection>
+                        </apex:outputpanel>
+                        <apex:pageBlockSection columns="2" >                      
+                            <apex:pageBlockSectionItem id="userContry">
+                                <apex:inputfield value="{!Agreement_Line_Item__c.User_CountryPicklist__c}" id="UserCountry" rendered="true" style="display:none"/> 
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>       
+                        <apex:pageblockSection id="idMiscellaneous" title="Miscellaneous" columns="2">
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Additional_Subsetting__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Service_Pack__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Addons_Additionals__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Users_Seat_Licenses__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Report_Generation_Allotment__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Apts_Extra_Copies__c}"/>
+                        </apex:pageblockSection>
+                        <apex:pageblockSection id="idPricing" title="Pricing" columns="2"> 
+                            <apex:inputField value="{!Agreement_Line_Item__c.List_Price__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Net_Price__c}" rendered="{!IF(NOT(CONTAINS(UserProfileName,'client services')),true,false)}" required="true"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.Net_Price__c}" rendered="{!CONTAINS(UserProfileName,'client services')}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Discount_Price__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Option_Price__c}" rendered="{!IF(Agreement_Line_Item__c.User_Country__c == 'Italy',false,true)}"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.CurrencyIsoCode}" />
+                            <apex:pageblockSectionItem id="invoicingSch" rendered="{!IF(OR(Agreement_Line_Item__c.User_Country__c == 'Italy',Agreement_Line_Item__c.User_Country__c == 'Canada', Agreement_Line_Item__c.User_Country__c == 'Hungary'),true,false)}">
+                                <apex:outputPanel >
+                                    <apex:outputLabel value="{!$ObjectType.Agreement_Line_Item__c.fields.Invoicing_Schedule__c.label}"/>
+                                </apex:outputPanel>
+                                <apex:outputPanel styleClass="{!IF(AND(NOT(isUserCountryItaly),isZPUBProduct),'requiredInput','')}" layout="block" id="pwPanel" >
+                                    <apex:outputPanel styleClass="{!IF(isZPUBProduct,'requiredBlock','')}"/>
+                                    <apex:selectList id="idinvoicingSch" value="{!Agreement_Line_Item__c.Invoicing_Schedule__c}"  multiselect="false" size="1" required="{!IF(AND(OR(Agreement_Line_Item__c.User_Country__c == 'Canada',Agreement_Line_Item__c.User_Country__c == 'Hungary'),isZPUBProduct),true,false)}" rendered="{!IF(OR(Agreement_Line_Item__c.User_Country__c == 'Italy',Agreement_Line_Item__c.User_Country__c == 'Canada',Agreement_Line_Item__c.User_Country__c == 'Hungary'),true,false)}">
+                                        <apex:selectOptions value="{!ItalianInvoicingSchedule}"></apex:selectOptions>
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:pageblockSectionItem>
+                        </apex:pageblockSection>
+                        <apex:pageblockSection id="idKeyDates" title="Key Dates" columns="2">
+                            <apex:inputField value="{!Agreement_Line_Item__c.Line_item_date_type__c}" required="{!AND(NOT(isUserCountryItaly),isZPUBProduct)}"/>
+                            <apex:outputLabel value=""></apex:outputLabel>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Data_Month_Start__c}" required="{!isZPUBProduct}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Data_Month_End__c}" required="{!isZPUBProduct}"/>
+                        </apex:pageblockSection>
+                        <apex:pageblockSection id="idEarlyCancellation" title="Early Cancellation" columns="2" rendered="{!$Profile.Name == 'System Administrator'}">
+                            <apex:inputField value="{!Agreement_Line_Item__c.Termination_Date__c}"/>
+                            <br/>
+                            <apex:inputField value="{!Agreement_Line_item__c.Primary_Reason_for_Change__c  }"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Primary_Change_Reason_Other__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Secondary_Reasons_for_Change__c}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Secondary_Change_Reason_Other__c}" /> 
+                        </apex:pageblockSection>
+               
+                        <apex:pageBlockSection title="Early Cancellation" columns="2" rendered="{!$Profile.Name != 'System Administrator'}">
+                            <apex:outputField value="{!Agreement_Line_Item__c.Termination_Date__c}"/>
+                            <apex:outputField value="{!Agreement_Line_item__c.Primary_Reason_for_Change__c  }"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.Primary_Change_Reason_Other__c}"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.Secondary_Reasons_for_Change__c}"/>
+                            <apex:outputField value="{!Agreement_Line_Item__c.Secondary_Change_Reason_Other__c}" />
+                        </apex:pageBlockSection>
+                    </apex:pageblock>       
+                    <apex:pageblock title="{!$Label.select_agreement_product}" id="otherProducts" mode="edit" rendered="{!AND(showOtherProducts, (NOT(CONTAINS(UserProfileName,'japan'))))}">
+                        <apex:inputHidden id="allAggProdSelectedHidden" value="{!isAllAggProdSelected}"/>
+                        <apex:actionFunction name="copyToAllLineItems" action="{!CopyToAllLineItems}" rerender="frmPanel" oncomplete="YUIHideLoading();" />
+                        <apex:actionFunction name="OnlySaveLineItem"  action="{!saveLineItem}" rerender="frmPanel" oncomplete="YUIHideLoading();"/>
+                        <apex:pageBlockButtons >
+                            <apex:commandbutton value="Save"  onclick="YUIShowLoading(); return getConfirmation();" /> 
+                            <apex:commandbutton value="Cancel" id="CancelProducts" action="{!cancel}" />
+                        </apex:pageBlockButtons>
+                            
+                        <apex:pageblockSection id="otherAggProducts" columns="1">
+                            <apex:outputText value="{!$Label.select_other_products}" style="font-weight:bold; color:red;" >
+                            </apex:outputText>
+                            <apex:outputPanel id="OtherLineItemList"> 
+                                <apex:selectList multiselect="true" value="{!selectedAggProductsForCopyProdSpecification}" size="4" id="multiSelectAggProductlist" style="width : auto;" onchange="isDeliveryMediaAndFrequencyCopyToAllAgli();">
+                                    <apex:selectOptions value="{!AggProductListOption}"></apex:selectOptions>
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </apex:pageblockSection>
+                    </apex:pageblock>
+                    <apex:pageBlock rendered="{!OR(CONTAINS(UserProfileName,'japan'), CONTAINS(UserProfileName,$Label.System_Admin))}" title="{!$Label.Agreement_Line_Item_Edit}" mode="edit">
+                        <apex:pageBlockButtons >
+                            <apex:commandbutton value="Save" id="saveButton" action="{!saveLineItem}"/>
+                            <apex:commandbutton value="Cancel" id="cancelButton" action="{!cancel}"/>               
+                        </apex:pageBlockButtons>
+                        <apex:pageblockSection id="idJapanUserBlock" title="Information" columns="2">
+                            <apex:inputField value="{!Agreement_Line_Item__c.Name}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.AgreementId__c}" rendered="{!OR(NOT(isClone), AND(UserProfileName != 'japan field operation contract management scm', UserProfileName != 'japan field operations sales support scm'))}"/>
+                            <apex:inputField value="{!clonedRecord.AgreementId__c}" rendered="{!AND(isClone, OR(UserProfileName == 'japan field operation contract management scm', UserProfileName == 'japan field operations sales support scm'))}"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.ProductId__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Contract_Start_Date__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Delivery_Rpt_Frequency__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Contract_End_Date__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Delivery_Media__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Termination_Date__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Co_promotion_contract__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Data_Period_Start__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Option_Detail__c}" />                
+                            <apex:inputField value="{!Agreement_Line_Item__c.Data_Period_End__c}" />
+                            <apex:outputlabel value="" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Attach_Number__c}" />
+                        </apex:pageblockSection>
+                        <apex:pageblockSection id="idJapanUserBlockPrice" title="Price" columns="2">
+                            <apex:inputField value="{!Agreement_Line_Item__c.List_Price__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.Net_Price__c}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Additional_Price__c}" />
+                            <apex:inputField value="{!Agreement_Line_Item__c.CurrencyIsoCode}" required="true"/>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Discount_Price__c}" />
+                            <apex:outputLabel value=""></apex:outputLabel>
+                            <apex:inputField value="{!Agreement_Line_Item__c.Description__c}" style="width:170%;"/>
+                        </apex:pageblockSection>
+                    </apex:pageBlock>
+                </apex:outputpanel>
+          </apex:outputpanel>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.USC_Market_Def__c}"/>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.ATC_Market_Def__c}"/>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.Brand_Market_Def__c}"/>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.Manufacturer_Market_Def__c}"/>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.NEC_Market_Def__c}"/>
+          <apex:inputHidden value="{!Agreement_Line_Item__c.Speciality_Market_Def__c}"/>
+        </apex:form>
+    </apex:outputpanel>
+</apex:page>

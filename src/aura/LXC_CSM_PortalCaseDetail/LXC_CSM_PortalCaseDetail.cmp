@@ -1,0 +1,39 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="CNT_CSM_PortalCaseDetails">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="record" type="Object" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="fullRecord" type="Object" />
+    <aura:attribute name="recordError" type="String" />
+    <aura:attribute name="isLoading" type="boolean" default="true" />
+    <force:recordData aura:id="recordLoader" recordUpdated="{!c.handleRecordUpdated}" targetRecord="{!v.fullRecord}" layoutType="FULL" recordId="{!v.recordId}" targetFields="{!v.simpleRecord}" targetError="{!v.recordError}" fields="['RecordType.Name','Account.Name','Account.AccountCountry__c','Contact.Name','Owner.Name','Asset.Name','Asset.Product2.Name','Asset.CSH_Enable_SubType123__c','Asset.Product2.CSH_Enable_SubType123__c','CreatedBy.Name','DTMS_Sponsors__c','DTMS_Studies__c','OnBehalfOf__r.Name','LastModifiedBy.Name','SubType1__c','SubType2__c','SubType3__c','CaseSource__c','Data_Provider_Name__c','Territory__c','Metric__c','ClientInq__c','Pharma_Product_Name__c','USC_Code__c','IMSDr__c','CMFProd__c','DEA__c','ZipOutlet__c','ReportName__c','Origin','Response_to_Client__c','Country_of_the_requester2__c','Release_Date__c','SubStatus__c','ClosedDate','ParentId','Followed_Case_Id__c','Parent.Followed_Case_Id__c','UrgentForCustomer__c','To_be_evaluated_for_fix_in_version__c','ScheduledDatetime__c','EnvironmentType__c','Mail_CC_List__c','Country_of_the_requester2__c','LOS__c', 'Study__r.Name', 'Case_Sponsor__c']" />
+    <div id="RecordDetails">
+        <aura:if isTrue="{!not(empty(v.recordError))}">
+            <div class="recordError">{!v.recordError}</div>
+        </aura:if>
+        <aura:if isTrue="{!v.isLoading}">
+            <div class=" slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+            <aura:set attribute="else">
+                <aura:if isTrue="{!v.simpleRecord.CaseSource__c eq 'Internal'}">
+                    <c:LXC_CSM_PortalErrorPage messageTitle="{!$Label.c.You_can_t_view_this_case}" messageBody="{!$Label.c.It_may_have_been_deleted_or_you_don_t_have_permission_to_view_it}" />
+                    <aura:set attribute="else">
+                        <aura:if isTrue="{!v.simpleRecord.RecordType.Name eq 'DATA Case'}">
+                            <c:LXC_CSM_CommunityDataCaseDetail recordId="{!v.recordId}" simpleRecord="{!v.simpleRecord}" fullRecord="{!v.fullRecord}"/>
+                        </aura:if>
+                        <aura:if isTrue="{!v.simpleRecord.RecordType.Name eq 'TechnologyCase'}">
+                            <c:LXC_CSM_CommunityTechnoCaseDetail recordId="{!v.recordId}" simpleRecord="{!v.simpleRecord}" fullRecord="{!v.fullRecord}"/>
+                        </aura:if>
+                        <aura:if isTrue="{!v.simpleRecord.RecordType.Name eq 'R&amp;D - Activity Plan Case'}">
+                            <c:LXC_CSM_CommunityRnDCaseDetail recordId="{!v.recordId}" simpleRecord="{!v.simpleRecord}" fullRecord="{!v.fullRecord}"/>
+                        </aura:if>
+                    </aura:set>
+                </aura:if>
+            </aura:set>
+        </aura:if>
+
+    </div>
+</aura:component>

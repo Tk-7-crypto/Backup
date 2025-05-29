@@ -1,0 +1,31 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:hasRecordId" controller="CNT_CRM_ProductHierarchyVisual">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="productRecords" type="Product2[]" />
+    <aura:attribute name="currentChain" type="String" />
+    <aura:attribute name="currentLayer" type="String" />
+    <aura:attribute name="isParent" type="Boolean" default="false"/>
+    <aura:attribute name="isChild" type="Boolean" default="true"/>
+    <aura:attribute name="activeTabId" type="String" default=""/>
+    <aura:attribute name="enableRegionalHierarchy" type="Boolean" default="false"/>
+    <aura:attribute name="enableRegionalProduct" type="Product2"/>
+    <aura:attribute name="fieldsAPIList" type="String[]" default="id,Hierarchy_Chain__c,Offering_Group__c,Offering_Segment__c,Offering_Type__c,COE_Name__c,Product_Group__c,Unit_Name__c,ProductGroup__c,Hierarchy_Global_Code_Description__c"/>
+    <div class="slds-vertical-tabs">
+        <ul class="slds-vertical-tabs__nav" role="tablist" aria-orientation="vertical">
+            <aura:iteration items="{!v.productRecords}" var="product" indexVar="index"> 
+                <li class="slds-vertical-tabs__nav-item tab" role="presentation">
+                    <a class="slds-vertical-tabs__link" role="tab" tabindex="0" aria-selected="true" aria-controls="slds-vertical-tabs-0" id="{!product.Hierarchy_Chain__c}" aura:id="link" data-index="{!index}" data-chain="{!product.Hierarchy_Chain__c}" onclick="{!c.SetCurrentValue}">
+                        {!product.Name}
+                    </a>
+                    <aura:if isTrue="{!and (v.enableRegionalHierarchy, product.Enable_Regional_Hierarchy__c)}">
+                        <div style="position:absolute;margin-left:100px" onfocusout="{!c.hideButton }">
+                            <lightning:button class="slds-vertical-tabs__nav-item" label="Go To Product Licensing" title="Go To Product Licensing" onclick="{!c.gotoRegionalHierarchy }" />
+                        </div>
+                    </aura:if>
+                </li>
+                <aura:if isTrue="{!v.isChild}">
+                    <span class="expandArrow" aura:id="expandArrow">></span>
+                </aura:if>
+            </aura:iteration>
+        </ul>
+    </div>
+</aura:component>

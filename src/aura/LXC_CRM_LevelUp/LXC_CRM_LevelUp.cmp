@@ -1,0 +1,73 @@
+<aura:component controller="CNT_CRM_LevelUp" implements="flexipage:availableForRecordHome,force:hasRecordId">
+    <aura:attribute name="cmpTitle" type="String" />
+    <aura:attribute name="maxLevel" type="String" />
+    <aura:attribute name="cmpObject" type="String" />
+    <aura:attribute name="currentStep" type="String" />
+    <aura:attribute name="levels" type="List" default="[]" />
+    <aura:attribute name="nextStep" type="String" />
+    <aura:attribute name="currentLevelFields" type="List" default="[]" />
+    <aura:attribute name="finalLevel" type="Boolean" default="false" />
+    <aura:attribute name="showSpinner" type="Boolean" default="false"/>
+    <aura:attribute name="fieldsAvailable" type="Boolean" default="true" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+
+    <lightning:card iconName="custom:custom48">
+        <aura:set attribute="title">
+            <b>{!v.cmpTitle}</b>
+        </aura:set>
+        
+        <aura:if isTrue="{!v.showSpinner}">
+            <lightning:spinner aura:id="cmpSpinner" variant="brand" size="medium" alternativeText="Loading Account Strength component."/>
+        </aura:if>
+        
+        <div class="slds-p-horizontal_small">
+            <aura:if isTrue="{!and(not(v.finalLevel), v.fieldsAvailable)}">
+                <div align="Center">
+                    <p>You have reached</p>
+                    <p class="highlight">Level {!v.currentStep}</p>
+                </div>
+                
+                <div class="progressIndicatorContainer">
+                    <lightning:progressIndicator currentStep="{!v.currentStep}" type="base" variant="shaded">
+                        <aura:iteration aura:id="levelFields" items="{!v.levels}" var="level">
+                            <lightning:progressStep label="{! 'Level ' + level}" value="{!level}"/>
+                        </aura:iteration>
+                    </lightning:progressIndicator>
+                </div>
+    
+                <div align="Center">
+                    <p>To reach <b>level {!v.nextStep}</b>, complete the following fields:</p>
+                    <br/>
+                </div>
+    
+                <lightning:recordEditForm objectApiName="{!v.cmpObject}" recordId="{!v.recordId}" class="slds-card__body_inner" onload="{!c.handleOnLoad}" onsuccess="{!c.handleOnSucess}" onsubmit="{!c.handleOnSumbit}" onerror="{!c.handleOnError}">
+                    <lightning:messages />
+                    <aura:iteration aura:id="levelFields" items="{!v.currentLevelFields}" var="curField" indexVar="indexVar">
+                        <lightning:inputField fieldName="{!curField.Field}" /> 
+                    </aura:iteration>  
+                    <div align="Right">
+                        <lightning:button type="submit" name="Save" label="Save" variant="brand" class="slds-m-top_medium" />
+                    </div>
+                </lightning:recordEditForm>
+
+                <aura:set attribute="else">
+                    <aura:if isTrue="{!not(v.fieldsAvailable)}">
+                        <div class="fieldsError" align="Center">
+                            <p>There are no fields set for the {!v.cmpTitle} component. Please contact your Salesforce administrator.</p>
+                        </div>
+                        <aura:set attribute="else">
+                            <div class="finalLevel" align="Center">
+                                <lightning:icon class="checkIcon" iconName="action:check" alternativeText="Congratulations!" size="large" title="Congratulations!" />
+                                <p class="highlight">Congratulations!</p>
+                                <br/>
+                                <p>You have successfully reached level {!v.maxLevel}.</p>
+                            </div>
+                        </aura:set>
+                    </aura:if>
+                </aura:set>
+            </aura:if>
+        </div>
+    </lightning:card>
+</aura:component>

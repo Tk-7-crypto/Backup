@@ -1,0 +1,42 @@
+<apex:page id="pg1" StandardController="Agreement__c" extensions="SCM_NewAggOverrideExt" tabStyle="Agreement__c" sidebar="true" lightningStylesheets="true">
+    <apex:slds /> 
+    <c:JQueryBlockUI />
+    <apex:form id="frm">
+        <apex:outputPanel >    
+            <apex:sectionHeader title="Select Agreement Record Type" id="secHead" rendered="true"/>
+            <div class="bDescription">Select a record type for the new agreement.</div>
+        </apex:outputPanel>
+        
+        <apex:outputPanel id="pg">
+            <apex:pageblock rendered="{!NOT($ObjectType.Agreement__c.createable)}">
+                <apex:pageBlockButtons location="bottom">            
+                    <apex:commandButton value="Ok" action="{!ret}"/>
+                </apex:pageBlockButtons>
+                <apex:pageMessages escape="false" id="UserMessages" rendered="{!$ObjectType.Agreement__c.createable}"></apex:pageMessages>
+                <apex:pageMessage summary="Insufficient Privileges" severity="Error" strength="3" rendered="{!OR(haserror,!$ObjectType.Agreement__c.createable)}"> </apex:pageMessage>
+            </apex:pageblock>
+            
+            <apex:outputPanel >
+                <apex:pageBlock id="pgb" rendered="{!$ObjectType.Agreement__c.createable}">       
+                    <Apex:pageBlockButtons location="bottom">
+                        <apex:commandButton styleClass="btn btn-default" value="Continue" action="{!redirectCustom}" reRender="frm" onclick="YUIShowLoading();" disabled="{! AggRecordTypes.size <= 0 }"/>
+                        <apex:commandButton styleClass="btn btn-default" html-data-dismiss="modal" value="Cancel" action="{!ret}"/> 
+                    </Apex:pageBlockButtons> 
+                    <apex:pageBlockSection columns="1" id="pbs">
+                        <apex:pageblockSectionItem id="pbsi" >
+                            <apex:outputlabel value="Record Type of new record" styleClass="labelCol" style="font-size: 11px; width: 100%;"></apex:outputlabel>
+                            <apex:outputpanel style="float:left;">
+                                <div class="requiredInput">
+                                    <div class="requiredBlock"></div>
+                                    <apex:selectList value="{!selectedAggRecTypeId}" size="1" title="Record Type of new record" id="recTypeList" required="true">
+                                        <apex:selectOptions value="{!AggRecordTypes}" id="selectedValue"/>
+                                    </apex:selectList>
+                                </div>  
+                            </apex:outputpanel>
+                        </apex:pageblockSectionItem>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:outputPanel>
+    </apex:form>
+</apex:page>

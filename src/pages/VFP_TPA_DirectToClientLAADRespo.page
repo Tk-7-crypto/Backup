@@ -1,0 +1,501 @@
+<apex:page Controller="CNT_TPA_DirectToClientLAADRespo" cache="false" sideBar="false" showHeader="false" lightningStylesheets="true" standardStylesheets="false">
+    <apex:slds />
+    <!-- Added for site to community logic submission Starts-->
+    <script type="text/javascript">
+        console.log('currentLoggedInUserProfile0::::'+'{!currentUserProfileName}');
+        function getUrlVars() {
+            var vars = {}, hash;
+            var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for(var i = 0; i < hashes.length; i++) {
+                hash = hashes[i].split('=');
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+		}
+        console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+        if('{!currentUserProfileName}' == 'tpa Profile') {
+            var qryString = '';
+            var urlParams = getUrlVars();
+            for(var key in urlParams) {
+                if(urlParams.hasOwnProperty(key)) {
+                    var val = urlParams[key];
+                    qryString += key + '=' + val + '&';
+                }
+            }
+            console.log('quryString-1:::'+JSON.stringify(urlParams));
+            console.log('quryString:::'+qryString);
+            qryString = qryString.slice(0, -1);
+            console.log('quryString0:::'+qryString);
+            console.log('quryString1:::'+'{!tpaCommunityUrl}');
+            window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_DirectToClientLAADRespo&' + qryString;
+        }
+    </script>
+    <apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+        <!-- Added for site to community logic submission end-->
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/> 
+
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->  
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+            
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** --> 
+            
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+    
+    <style>
+        
+        p.indent { 
+            padding-left: 1.8em 
+        }
+        
+        .labelText {
+            color:#4a4a56;
+            font-weight:bold;
+        }
+        .headingText {
+            color: #000;
+            font-size: 1.3em;
+        }
+        /**** Error Message Style Start ****/
+        .message ul li
+        {
+            list-style:disc;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .message ul
+        {                
+            margin-top: 30px;
+        }
+        
+       .textbox { 
+            background: white; 
+            border: 1px solid #DDD; 
+            border-radius: 5px; 
+            box-shadow: 0 0 5px #DDD inset; 
+            color: #666; 
+            outline: none; 
+            height:25px; 
+            width: 275px; 
+        } 
+        
+        .vertical-line { 
+            border-left:medium #CC0000 solid;
+            margin-right:1px;
+        }
+        
+        #menu { 
+            padding:0; 
+            margin-Left:0;
+            margin-Top:20px; 
+        }
+        
+        #menu li { 
+            margin-Top:5px;
+            margin-left:100px;
+        } 
+        
+        div {
+            text-align: justify;
+        }
+        li {
+            margin-left: 1em!important;
+        }
+        
+        #idClientResponse::placeholder {
+            color: #757575;
+            opacity: 1;
+        }
+        
+        #idClientResponse:-ms-input-placeholder { 
+            color: #757575 !important;
+        }
+        
+        #idClientResponse::-ms-input-placeholder {
+            color: #757575 !important;
+        } 
+        /**** Error Message Style End ****/
+    </style>       
+    <script type="text/javascript">
+        
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMARevisedOffshoreProcess', ['ui.bootstrap']);
+        
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$location', '$filter', '$modal', '$log', '$window', function ($scope, $location, $filter, $modal, $log, $window) 
+        {
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.rootObject = {};
+            $scope.rootObject.viewMode = '';
+            $scope.rootObject.type = '';
+            
+            $scope.rootObject.vendorSpecificNotificationObj = {};
+            $scope.rootObject.vendorSpecificNotificationObj.Client__c = '';  // Client name
+            $scope.rootObject.vendorSpecificNotificationObj.TPA_Request__c = '';  // tpa Request id
+            $scope.rootObject.vendorSpecificNotificationObj.clientResponse = '';  // tpa Request id
+            $scope.rootObject.vendorSpecificNotificationObj.id = '';  // tpa Request id
+            
+       
+            <!--other values -->
+            $scope.rootObject.Agreement_file_Name = '';
+            $scope.rootObject.TPA_Request_number = ''; // tpa Request id
+            $scope.rootObject.vendorCompanyName = '';   // vendor company name
+            $scope.rootObject.technologiesValues = [];
+            
+            $scope.rootObject.MsgShow = 'false';
+            $scope.rootObject.offshoreErrorMessage = '';
+            $scope.rootObject.offshoreSuccessMessage = '';
+            $scope.rootObject.isProcessing = false;
+            
+                                                                 
+            $scope.rootObject.agreementAdditionalFieldDetailObject = JSON.parse('{!agreementAdditionalFieldDetailAsString}');
+            $scope.rootObject.onLoadForm = function() {
+				//Shut down popup code start
+				var isPermanentDown = {!isTPAPermanentDown};
+				var isRestrictedUser = {!isRestrictedUser};
+				var portalDownMessage = '{!Message}';
+				$(document).ready(function(){
+					if(isPermanentDown)
+					{
+						popupAlert(portalDownMessage);
+							$('.customPopupFooter .aButtons').css("display","none");
+							$('#backWhiteOverlay').css("display", "");
+							$('#pageBody').keydown(function(objEvent) {
+								if (objEvent.keyCode == 9) {  //tab pressed
+									objEvent.preventDefault(); // stops its action
+								}
+								if (objEvent.keyCode == 13) {  //enter pressed
+									objEvent.preventDefault(); // stops its action
+								}
+							});
+					}
+				});
+				//shut down popup code end
+                
+                if(getParameterByName('id').trim().length > 0)
+                {   
+                    $scope.rootObject.vendorSpecificNotificationObj.id = $scope.rootObject.agreementAdditionalFieldDetailObject.Id;
+                    $scope.rootObject.vendorSpecificNotificationObj.TPA_Request__c = $scope.rootObject.agreementAdditionalFieldDetailObject.Related_TPA_Request__r.Name;
+                    $scope.rootObject.vendorSpecificNotificationObj.RequestID = $scope.rootObject.agreementAdditionalFieldDetailObject.Related_TPA_Request__c;
+                } else {
+                    
+                    $scope.rootObject.offshoreErrorMessage = 'Sorry, you are not authorized to access this page.';
+                }
+           
+            } 
+            
+              $scope.rootObject.onLoadForm();
+            
+            $scope.rootObject.saveOffshoreformforVendor = function() {
+               
+                //validation messages
+                if($scope.rootObject.vendorSpecificNotificationObj.clientResponse == null || $scope.rootObject.vendorSpecificNotificationObj.clientResponse == '' || $scope.rootObject.vendorSpecificNotificationObj.clientResponse == [] ||  $scope.rootObject.vendorSpecificNotificationObj.clientResponse.indexOf('Select Response') > -1) {
+                    $scope.popupAlert('Please select client Response.' , function(){});
+                    return false;
+                }
+                 var inputElements = document.getElementById('isAcknowledged');
+                if(!inputElements.checked){
+                    $scope.popupAlert('Please Acknowledge your understanding and adherence.' , function(){});
+                    return false;
+                }
+                
+               
+                $scope.rootObject.AgreementAdditionalFieldObj = {};
+                $scope.rootObject.AgreementAdditionalFieldObj.Direct_To_Client_LAAD_Response_Value__c = $scope.rootObject.vendorSpecificNotificationObj.clientResponse;
+                $scope.rootObject.AgreementAdditionalFieldObj.Id = $scope.rootObject.vendorSpecificNotificationObj.id;
+                
+                  showLoading();
+                 $scope.postSubmitActivity = function(redirectionURL)
+                                                                    {
+                                                                        var q = encodeURIComponent(redirectionURL);
+                                                                        var uri_dec = decodeURIComponent(redirectionURL);
+                                                                        $scope.$log.info('redirectionURL: ' + redirectionURL); 
+                                                                          window.location.href = uri_dec;
+                                                                    }
+
+                CNT_TPA_DirectToClientLAADRespo.saveLAADResponseforClient(JSON.stringify($scope.rootObject.AgreementAdditionalFieldObj), function(result, event)
+                {
+                    if(event.type == 'exception')
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    else if(result.indexOf('success') > -1)
+                    {
+                           hideLoading(); 
+                        $scope.postSubmitActivity(result.split('~')[1]);
+                    }
+                    else if(result != null && result == 'alreadySubmittedResponse')
+                    {
+                        hideLoading(); 
+                        $scope.rootObject.offshoreErrorMessage = 'Sorry, you have already submitted your response.';;
+                        angular.element($('#controllerPage')).scope().applyChanges();
+                        return true;
+                    }
+                    else
+                    {
+                        hideLoading();                            
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            
+            }
+            
+            $scope.popupAlert = function(msg, truePart)
+            {
+                popup(msg, {'animate':true}, 
+                function(r)
+                {
+                    if(r && truePart != null)
+                        truePart();
+                });
+            }
+            
+           $scope.getFormattedValue = function(label){
+              var addText = label;
+              if(addText!= null && addText!= '')
+                  return addText.split(';').join(', ');
+              else
+                  return addText;
+            };
+            
+                       
+            //****** Angular Apply All Changes Event Start ******//
+            //*** function triggers and applies all angular scope changes explicitly ***//
+            $scope.applyChanges = function()
+            {
+                if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                    $scope.$apply();
+            }
+            //****** Angular Apply All Changes Event End ******//
+            
+            
+            //*** function to read Query strings Start ***//
+            function getParameterByName(name) 
+            {
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            //*** function to read Query strings End ***//
+            
+    }]);
+    
+        $(document).ready(function(){
+            
+        });
+        
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+			
+			//Shut down popup code
+            var popupAlert = function(msg, truePart)
+			{
+            popup(msg, {'animate':true}, 
+            function(r)
+            {
+                if(r && truePart != null)
+                    truePart();                    
+            });
+            //  $(".aButtons button").html('{!$Label.TPA_OK}');
+			}
+        
+    </script>
+    </head>
+    <body id="pageBody" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+	<apex:form id="theForm">
+        <div id="ng-app" ng-app="AMARevisedOffshoreProcess">
+            <c:VFC_TPA_LoadingImage />
+            <div id="controllerPage" ng-controller="controllerPage">
+            
+                <!-- AMA Offshore process for Client starts -->
+              <div style="margin:30px;background-color:white;" id="block1" ng-if="rootObject.offshoreErrorMessage =='' && rootObject.offshoreSuccessMessage== ''">
+             <apex:outputPanel >
+                    <apex:pageBlock >
+                        <apex:pageblocksection collapsible="false" columns="1" >
+                            <div style="margin:30px;">
+                                <br/>
+                                <div>    
+                                    <p style="text-align:center; font-size: 20px;"><b>LAAD Question and Compliance </b></p><br/><br/>
+                                    <p><b>STATUS:</b> {{rootObject.vendorSpecificNotificationObj.TPA_Request__c}} is <u>pending</u> IQVIA Review; your response is required to continue.</p> <br/>
+                                    <p><b>The request is asking to share Longitudinal Access and Adjudication Data [LAAD] information and we require your attention and/or response on two points:</b></p><br/>
+                                </div>
+                                <div>
+                                    <ol type="1" class="slds-list_ordered">
+                                        <p >
+                                            <li><b>Your Response is Required:</b> Additional information is required to continue processing</li><br/>
+                                            <span>
+                                                In an effort to protect the vast IQVIA intellectual property within LAAD, please advise if the full deliverable of LAAD is required for sharing or could visibility be limited to share: 
+                                            </span>
+                                            <br/><br/>
+                                            <span>
+                                                <i>Please advise if</i> the full deliverable is required or specify what portion of LAAD needs to be shared. [For example: 1) only Formulary Impact Analyzer portion, 2) select fields, or 3) 
+                                                patients but not their Concomitant usage.]  
+                                            </span><br/>
+                                            <div class="requiredInput">
+                                                <div class="requiredBlock"></div>
+                                                <input class="slds-input slds-size_1-of-3" id="idClientResponse" type="text" ng-model="rootObject.vendorSpecificNotificationObj.clientResponse" placeholder="Please describe here" />
+                                            </div>
+                                       </p>
+                                        <br/>
+                                        <li><b>Your Compliance Required:</b>A reminder of your IQVIA Contractual Conditions</li> <br/>
+                                        <p> 
+                                            The below terms related to LAAD were in your contract and will also be included within the Third Party Limited License Agreement that will be signed by your vendor for adherence.
+                                        </p><br/>
+                                        <ul>
+                                            <li>
+                                                <b><u>Additional Terms Relative to Longitudinal Access and Adjudication Data [LAAD] -</u></b> Client is not permitted to share, and Vendor is not permitted to receive any reference data attributes other than those within the dimension files included in the LAAD deliverable. Vendor is expressly prohibited from re-identifying in any manner any prescribers/payers/plans that are the subject of the Health Plan Claims or Ambulatory EMR Data, including, but not limited to, linking or combining the Data with any available IQVIA or other data source
+                                            </li>
+                                        </ul>
+                                    </ol>
+                                </div>
+                                <br/>
+                                <div>
+                                    <span><i>Please click to acknowledge your understanding and adherence:</i></span> 
+                                    <input type="checkbox" id="isAcknowledged" name="vehicle" /> 
+                                    <br/><br/>
+                                    <span style="font-size: 12px !important; font-style: italic;">If you do not understand and have questions, please reach out to your IQVIA Account Representative or <u><a href="mailto:TP-US@IQVIA.com">TP-US@IQVIA.com</a></u> for more information.</span><br/><br/>
+                                    <span>We will continue our review of your request once we have received this completed form.  </span><br/><br/>
+                                    <h5>We thank you for your time in advance,</h5>
+                                    <br/><br/>
+                                    <span>IQVIA Third Party Access Program</span><br/>
+                                </div><br/>
+                                
+                                 <div style = "text-align:center;">
+                                    <button class="slds-button slds-button_brand" onclick="return false;" ng-click="rootObject.saveOffshoreformforVendor();" >Submit</button>
+                                </div><br/><br/>
+                            </div>
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+                </apex:outputPanel>
+                </div> 
+              <!-- AMA Offshore process for Client ends-->
+                
+              <!-- Success Block for Success Message -->
+              <div style="margin:30px;" id="block3" ng-if="rootObject.offshoreSuccessMessage != '' ">
+                      
+                     <apex:outputPanel >
+                         <apex:pageBlock >
+                             
+                             <!-- Success Message Box Start -->
+                             <div  ng-if="rootObject.offshoreSuccessMessage !='' " class="slds-theme_success slds-p-around_small">
+                                 <div class="messageText slds-align_absolute-center" >
+                                    <h2 id= 'msg' >{{rootObject.offshoreSuccessMessage}}</h2>
+                                 </div><br/>
+                             </div>
+                         </apex:pageBlock>  
+                     </apex:outputPanel>
+              </div>
+              <!-- Message Block for Offshore Success Process -->  
+              
+                 
+              <!-- Message Block  for Offshore Process -->
+              <div class="slds-theme_error" ng-if="rootObject.offshoreErrorMessage !=''" style="margin:20px;">
+                 <apex:outputPanel >
+                         <apex:pageBlock >
+                                 <!-- Error Message Box Start -->
+                                 <div class="message errorM3 slds-notify__content " role="alert">
+                                    <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                          <div class="slds-col">
+                                              <div class="slds-grid">
+                                                  <div class="slds-col slds-size_1-of-3"></div>
+                                                  <div class="slds-col slds-size_1-of-3">
+                                                      <h2 class="slds-text-heading_small">
+                                                          <div class="messageText">
+                                                              <span><h4>Errors</h4></span>
+                                                          </div>
+                                                      </h2>
+                                                  </div>
+                                                  <div class="slds-col slds-size_1-of-3"></div>
+                                              </div>
+                                          </div>
+                                          <div class="slds-col">
+                                              <div class="slds-grid">
+                                                  <div class="slds-col slds-size_1-of-5"></div>
+                                                  <div class="slds-col slds-size_1-of-5"></div>
+                                                  <div class="slds-col slds-size_1-of-5">
+                                                      <ul>
+                                                          <li>{{rootObject.offshoreErrorMessage}}</li>
+                                                      </ul>
+                                                  </div>
+                                                  <div class="slds-col slds-size_1-of-5"></div>
+                                                  <div class="slds-col slds-size_1-of-5"></div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                         </apex:pageBlock>
+                 </apex:outputPanel>
+             </div>
+             <!-- Message Block  for Offshore Process -->  
+                 
+            </div>
+            <!-- AMA Cancelation Process --> 
+        </div>
+    </apex:form>
+    </body>
+    </html>
+</apex:outputPanel>
+    
+</apex:page>

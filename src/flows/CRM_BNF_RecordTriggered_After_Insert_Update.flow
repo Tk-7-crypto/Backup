@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>57.0</apiVersion>
+    <decisions>
+        <name>One_Hour_Check</name>
+        <label>SAP Pending Check</label>
+        <locationX>446</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>SAP_Pending_Check_1_hour</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.BNF_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>SAP Pending</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>IBNF_is_Stuck_in_Pending_for_more_than_1_hour</targetReference>
+            </connector>
+            <label>SAP Pending Check 1 hour</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>CRM_BNF_RecordTriggered_ After_Insert_Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM_BNF_RecordTriggered_ After_Insert_Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>122</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CRM_Subflow_BNF_WR01_Purchase_BNF_Send_Mail_to_RA</targetReference>
+        </connector>
+        <filterFormula>TEXT({!$Record__Prior.BNF_Status__c}) &lt;&gt;TEXT({!$Record.BNF_Status__c})</filterFormula>
+        <object>BNF2__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <scheduledPaths>
+            <name>X1_hour</name>
+            <connector>
+                <targetReference>One_Hour_Check</targetReference>
+            </connector>
+            <label>1 hour</label>
+            <offsetNumber>1</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>LastModifiedDate</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Abnormal_BNF_Stage_Change_Notification</name>
+        <label>Abnormal BNF Stage Change Notification</label>
+        <locationX>50</locationX>
+        <locationY>384</locationY>
+        <flowName>CRM_SubFlow_Abnormal_BNF_Stage_Change_Notification</flowName>
+        <inputAssignments>
+            <name>New_BNF_Status</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Old_BNF_Status</name>
+            <value>
+                <elementReference>$Record__Prior</elementReference>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <subflows>
+        <name>CRM_Subflow_BNF_WR01_Purchase_BNF_Send_Mail_to_RA</name>
+        <label>CRM_Subflow : BNF_WR01_Purchase_BNF_Send_Mail_to_RA</label>
+        <locationX>50</locationX>
+        <locationY>276</locationY>
+        <connector>
+            <targetReference>Abnormal_BNF_Stage_Change_Notification</targetReference>
+        </connector>
+        <flowName>CRM_Subflow_BNF_WR01_Purchase_BNF_Send_Mail_to_RA</flowName>
+        <inputAssignments>
+            <name>var_newRecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>var_oldRecord</name>
+            <value>
+                <elementReference>$Record__Prior</elementReference>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <subflows>
+        <name>IBNF_is_Stuck_in_Pending_for_more_than_1_hour</name>
+        <label>IBNF is Stuck in Pending for more than 1 hour</label>
+        <locationX>314</locationX>
+        <locationY>384</locationY>
+        <flowName>CRM_Subflow_IBNF_is_stuck_in_SAP_PENDING_Status_for_more_than_an_hour</flowName>
+        <inputAssignments>
+            <name>Newrecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+</Flow>

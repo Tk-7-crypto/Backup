@@ -1,0 +1,149 @@
+/*
+* Test class for FLOW- CRM Flow : CSAT Survey Recipient to Qualtrics
+*/
+
+@IsTest
+public class TST_CRM_Flow_CSAT_Survey_Recipient_to_Qualtrics {
+    
+    /**
+* This method is used to setup data for all methods.
+*/
+    @testSetup
+    static void dataSetup() {
+        Test.startTest();
+        
+        //Account
+        Account acc = UTL_TestData.createAccount();
+        acc.Name = 'Test Account';
+        insert acc;
+        
+        //contact
+        Contact cnt = UTL_TestData.createContact(acc.Id);
+        cnt.Survey_Opt_Out__c = false;
+        insert cnt;
+        
+        //Opportunity
+        Opportunity opp = UTL_TestData.createOpportunity(acc.Id);
+        opp.Name = 'Test Opportunity';
+        opp.Survey_Recipient__c = cnt.id;
+        opp.Awarded_Date__c = date.today();
+        opp.Potential_Regions__c = 'Global';
+        opp.StageName = CON_CRM.CLOSED_WON_STAGE;
+        opp.Is_Survey_Exist__c = false;
+        opp.Expected_Project_End_Date__c = date.today().addDays(15);
+        opp.Upcoming_Survey_Send_Date__c = date.today().addDays(15);
+        opp.Line_of_Business__c = 'Connected Devices';
+        opp.Is_this_IQVIA_Biotech__c = 'Yes';
+        insert opp;
+        
+        //contact role
+        OpportunityContactRole contactRole = UTL_TestData.createOpportunityContactRole(cnt.Id, opp.Id);
+        insert contactRole;
+        
+        //Products
+        Product2 product = UTL_TestData.createProduct();
+        product.Hierarchy_Level__c = CON_CRM.MATERIAL_LEVEL_HIERARCHY_OLI;
+        product.Offering_Group_Code__c = CON_CRM.OFFERING_GROUP_CODE_GLOBAL_RND;
+        insert product;
+        PricebookEntry pbEntry = UTL_TestData.createPricebookEntry(product.Id);
+        insert pbEntry;
+        
+        OpportunityLineItem oppLineItem = UTL_TestData.createOpportunityLineItem(opp.Id, pbEntry.Id);
+        oppLineItem.TotalPrice = 17000;
+        
+        insert oppLineItem;
+        
+        
+        //Survey
+        Client_Sat_Survey__c survey = UTL_TestData.createClientSatSurveyRecord('Test Survey','Yes',cnt.id,opp.id); 
+        survey.Send_Survey__c = 'Yes';
+        survey.Survey_Send_Date__c = date.today();
+        survey.Survey_Initiation_Status__c = CON_Qualtrics.SURVEY_APPROVED ;
+        survey.Survey_Method__c = CON_Qualtrics.WEB_SURVEY ;
+        insert survey;
+        
+    }
+    
+    @isTest
+    static void test_CSATSurveyRec_Outbound_Flow_for_MedTech(){
+        Opportunity opp = [SELECT id,Name,StageName,Is_Survey_Eligible_for_RDS_Auto__c from Opportunity where Name = 'Test Opportunity'];
+        opp.Global_project_unit__c = 'IQVIA BioTech MedTech Clinical Solutions';
+        update opp;
+        
+        Client_Sat_Survey__c survey = [SELECT id,Name from Client_Sat_Survey__c where Opportunity_Name__c = 'Test Opportunity' limit 1];
+        
+        Test.Starttest();
+        BCH_Qualtrics_CreateSurveyRecipient batchObj = new BCH_Qualtrics_CreateSurveyRecipient();
+        database.executeBatch(batchObj,200);
+        Test.Stoptest();
+       
+        
+        List<Client_Sat_Survey_Recipient__c> recipientList = new List<Client_Sat_Survey_Recipient__c>();
+        recipientList = [SELECT Id FROM Client_Sat_Survey_Recipient__c];
+        System.assertEquals(1, recipientList.size(), 'Recipient Created for MedTech');
+        
+
+    }
+    
+    @isTest
+    static void test_CSATSurveyRec_Outbound_Flow_for_BioTech(){
+        Opportunity opp = [SELECT id,Name,StageName,Is_Survey_Eligible_for_RDS_Auto__c from Opportunity where Name = 'Test Opportunity'];
+        opp.Global_project_unit__c = 'IQVIA Biotech Dermatology';
+        update opp;
+        
+        Client_Sat_Survey__c survey = [SELECT id,Name from Client_Sat_Survey__c where Opportunity_Name__c = 'Test Opportunity' limit 1];
+        
+        Test.Starttest();
+        BCH_Qualtrics_CreateSurveyRecipient batchObj = new BCH_Qualtrics_CreateSurveyRecipient();
+        database.executeBatch(batchObj,200);
+        Test.Stoptest();
+       
+        
+        List<Client_Sat_Survey_Recipient__c> recipientList = new List<Client_Sat_Survey_Recipient__c>();
+        recipientList = [SELECT Id FROM Client_Sat_Survey_Recipient__c];
+        System.assertEquals(1, recipientList.size(), 'Recipient Created for BioTech');
+        
+
+    }
+    @isTest
+    static void test_CSATSurveyRec_Outbound_Flow_for_Other(){
+        Opportunity opp = [SELECT id,Name,StageName,Is_Survey_Eligible_for_RDS_Auto__c from Opportunity where Name = 'Test Opportunity'];
+        opp.Is_this_IQVIA_Biotech__c = 'No';
+        update opp;
+        
+        Client_Sat_Survey__c survey = [SELECT id,Name from Client_Sat_Survey__c where Opportunity_Name__c = 'Test Opportunity' limit 1];
+        
+        Test.Starttest();
+        BCH_Qualtrics_CreateSurveyRecipient batchObj = new BCH_Qualtrics_CreateSurveyRecipient();
+        database.executeBatch(batchObj,200);
+        Test.Stoptest();
+       
+        
+        List<Client_Sat_Survey_Recipient__c> recipientList = new List<Client_Sat_Survey_Recipient__c>();
+        recipientList = [SELECT Id FROM Client_Sat_Survey_Recipient__c];
+        System.assertEquals(1, recipientList.size(), 'Recipient Created for IQVIA BioTech is Other');
+        
+
+    }
+    @isTest
+    static void test_CSATSurveyRec_Outbound_Flow_for_NonRDS(){
+        Opportunity opp = [SELECT id,Name,StageName,Is_Survey_Eligible_for_RDS_Auto__c from Opportunity where Name = 'Test Opportunity'];
+        opp.Is_this_IQVIA_Biotech__c = '';
+        update opp;
+        
+        Client_Sat_Survey__c survey = [SELECT id,Name from Client_Sat_Survey__c where Opportunity_Name__c = 'Test Opportunity' limit 1];
+        
+        Test.Starttest();
+        BCH_Qualtrics_CreateSurveyRecipient batchObj = new BCH_Qualtrics_CreateSurveyRecipient();
+        database.executeBatch(batchObj,200);
+        Test.Stoptest();
+       
+        
+        List<Client_Sat_Survey_Recipient__c> recipientList = new List<Client_Sat_Survey_Recipient__c>();
+        recipientList = [SELECT Id FROM Client_Sat_Survey_Recipient__c];
+        System.assertEquals(1, recipientList.size(), 'Recipient Created for IQVIA BioTech is NonRDS');
+        
+
+    }
+  
+}

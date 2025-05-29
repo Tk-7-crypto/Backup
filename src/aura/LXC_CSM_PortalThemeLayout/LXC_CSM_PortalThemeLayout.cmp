@@ -1,0 +1,148 @@
+<aura:component controller="CNT_CSM_PortalThemeLayout" implements="forceCommunity:themeLayout" access="global" description="Sample Custom Theme Layout">
+    <aura:attribute name="search" type="Aura.Component[]" required="false" />
+    <aura:attribute name="profileMenu" type="Aura.Component[]" required="false" />
+    <aura:attribute name="navBar" type="Aura.Component[]" required="false" />
+    <aura:attribute name="newHeader" type="Aura.Component[]" required="false" />
+    <aura:attribute name="newContentHeader" type="Aura.Component[]" required="false" />
+    <aura:attribute name="menuHomeHref" type="String" />
+    <aura:attribute name="menu1Label" type="String" />
+    <aura:attribute name="menu1Href" type="String" />
+    <aura:attribute name="menu2Label" type="String" />
+    <aura:attribute name="menu2Href" type="String" />
+    <aura:attribute name="menu3Label" type="String" />
+    <aura:attribute name="menu3Href" type="String" />
+    <aura:attribute name="menu4Label" type="String" />
+    <aura:attribute name="menu4Href" type="String" />
+    <aura:attribute name="menu5Label" type="String" />
+    <aura:attribute name="menu5Href" type="String" />
+    <aura:attribute name="btn1Label" type="String" />
+    <aura:attribute name="btn11Href" type="String" />
+    <aura:attribute name="menu1VisibleFor" type="String" />
+    <aura:attribute name="menu2VisibleFor" type="String" />
+    <aura:attribute name="menu3VisibleFor" type="String" />
+    <aura:attribute name="menu4VisibleFor" type="String" />
+    <aura:attribute name="menu5VisibleFor" type="String" />
+    <aura:attribute name="menu1isVisible" type="boolean" default="false" />
+    <aura:attribute name="menu2isVisible" type="boolean" default="false" />
+    <aura:attribute name="menu3isVisible" type="boolean" default="false" />
+    <aura:attribute name="menu4isVisible" type="boolean" default="false" />
+    <aura:attribute name="menu5isVisible" type="boolean" default="false" />
+    <aura:attribute name="contact" type="Contact" />
+    <aura:attribute name="majorIncident" type="Object" />
+
+    <aura:attribute name="alertTheme" type="String" default="slds-theme_success" />
+    
+    <aura:attribute name="isTPAAccess" type="boolean" default="false" />
+    <aura:attribute name="tpaAppPermissionSets" type="List" default="['TPA Customer Community Plus Login User','Customer Community Plus Login User','Super User Profile CCP','TPA Processor Profile CCP','US TP Processor Profile CCP']" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:html tag="style">
+        .salesforceIdentityAppLauncherDesktopInternal #sortable li {
+            width: 60%;
+        }
+        .siteforcePanelsContainer .modal-header .title {
+            width: 60%;
+            color: rgb(43, 58, 66);
+        }
+    </aura:html>
+
+    <c:LXC_CSM_PortalPrompt aura:id="cPrompt" headerText="{! v.majorIncident.Major_Incident_Subject__c}" bodyText="{! v.majorIncident.Major_Incident_Customer_Communication__c}" theme="{! v.alertTheme}" btnCloseLabel="OK" />
+    <div class="fixed-top ">
+        <aura:if isTrue="{! not(empty (v.majorIncident))}">
+            <div class="{! 'slds-notify slds-notify_alert slds-theme_alert-texture ' + v.alertTheme}" role="alert">
+                <span class="slds-assistive-text">Incident</span>
+                <span class="slds-icon_container slds-icon-utility-offline slds-m-right_x-small" title="Description of icon when needed"> </span>
+
+                <aura:if isTrue="{!v.majorIncident.Status__c eq 'Resolved'}">
+                    <h2>
+                        {!$Label.c.Major_Incident_is_resolved}&nbsp;
+                        <a href="javascript:void(0);" onclick="{!c.openIncidentDetails}"> {!$Label.c.Click_h}</a>
+                        &nbsp;{!$Label.c.to_consult_details}
+                    </h2>
+                    <aura:set attribute="else">
+                        <h2>
+                            {!$Label.c.	Major_Incident_is_currently_ongoing} &nbsp;
+                            <a href="javascript:void(0);" onclick="{!c.openIncidentDetails}">{!$Label.c.Click_h}</a>
+                            &nbsp;{!$Label.c.to_consult_details}
+                        </h2>
+                    </aura:set>
+                </aura:if>
+
+                <button class="slds-button slds-button_icon slds-notify__close slds-button_icon-inverse" title="Close">
+                    <span class="slds-assistive-text">{!$Label.c.Close}</span>
+                </button>
+            </div>
+        </aura:if>
+
+        <nav class="navbar  navbar-expand-lg cHeaderPanel navbar-dark" style="color: rgb(0, 112, 210);">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <div class="slds-global-header__item">
+                        <a class="navbar-brand slds-global-header__logo" href="/support/s/"></a>
+                    </div>
+                </a>
+                <button class="navbar-toggler custom-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <aura:if isTrue="{!v.isTPAAccess}">
+                            <li class="nav-item">
+                                <forceCommunity:appLauncher/>
+                            </li>
+                        </aura:if>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/support/s/" data-toggle="collapse" data-target=".navbar-collapse.show">
+                                <lightning:icon iconName="utility:home" size="x-small" variant="inverse" alternativeText="Home" />
+                            </a>
+                        </li>
+                        <aura:if isTrue="{! v.menu1isVisible}">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! v.menu1Href}" data-toggle="collapse" data-target=".navbar-collapse.show">{! v.menu1Label}</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{! v.menu2isVisible}">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! v.menu2Href}" data-toggle="collapse" data-target=".navbar-collapse.show">{! v.menu2Label}</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{! v.contact.Contact_User_Type__c ne 'Rep User'}">
+                            <aura:if isTrue="{! v.menu3isVisible}">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{! v.menu3Href}" data-toggle="collapse" data-target=".navbar-collapse.show">{! v.menu3Label}</a>
+                                </li>
+                            </aura:if>
+                        </aura:if>
+                        <aura:if isTrue="{! v.contact.Contact_User_Type__c ne 'Rep User'}">
+                            <aura:if isTrue="{! v.menu4isVisible}">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{! v.menu4Href}" data-toggle="collapse" data-target=".navbar-collapse.show">{! v.menu4Label}</a>
+                                </li>
+                            </aura:if>
+                        </aura:if>
+                        <aura:if isTrue="{! v.menu5isVisible}">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{! v.menu5Href}" data-toggle="collapse" data-target=".navbar-collapse.show">{! v.menu5Label}</a>
+                            </li>
+                        </aura:if>
+                    </ul>
+                    <form class="form-inline my-2 my-lg-0">
+                        <div class="searchRegion" style="width: 100%;">{!v.search}</div>
+                    </form>
+                    <div class="profileMenuRegion text-white">{!v.profileMenu}</div>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="CSMnavigation  mb-5"></div>
+
+    <div class="newHeader">{!v.newHeader}</div>
+    <div class="mainContentArea container" style="margin-top: 100px;">{!v.body}</div>
+    <!-- 	<div class="container-fluid bg-light" style="padding: 25px; position: absolute; bottom: 0; width: 100%;">
+				<div class="container">
+					<div class="slds-global-header__logo"></div>test
+				</div>
+		</div>-->
+
+</aura:component>

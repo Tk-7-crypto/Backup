@@ -1,0 +1,143 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="global" controller="CNT_CPQ_CountrySalesHeadDetails">
+    <aura:handler name="init" value="{! this }" action="{! c.init }"/>
+    <aura:attribute name="CountrySalesHeadWrapperList" type="Object"/>
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    <aura:attribute name = "isDeleteButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name = "isSaveButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name="openPopupForAddRecord" type="boolean" default="false"/>
+    <aura:attribute name = "objInfo" type = "Country_Sales_Head__c" default = "{sobjectType : 'Country_Sales_Head__c','Sale_Type__c': '',
+		'Approver_Name__c': '',Country_Sales__c :''}"/>    
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <h3 class="slds-page-header slds-section__title slds-text-title_caps"> Country Sales Head </h3>
+    
+    <!--Filters-->
+    
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Sale Type</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="saleType" class="slds-select" />
+        </div>
+    </div>
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Country Sale</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="countrySale" class="slds-select" />
+        </div>
+    </div>
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Approver Name</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="customerName" class="slds-select" />
+        </div>
+    </div>
+    
+    <br/>
+    <lightning:button variant="brand" label="Submit" onclick="{!c.handleClick}"/>
+    <lightning:button variant="brand" label="Cancel" onclick="{!c.handleCancelClick}"/>
+    <br/>
+    
+    <aura:if isTrue="{!v.CountrySalesHeadWrapperList}">
+        <!--save Delete Add-->
+        <div class="slds-align_absolute-center" >
+            <aura:if isTrue="{!not(empty(v.CountrySalesHeadWrapperList))}">
+                <lightning:button variant="success" class="slds-m-right_medium" label="Save" title="Save" onclick="{!c.saveMap}"
+					disabled="{!v.isSaveButtonDisable}" aura:id="saveButtonId" />
+                <lightning:button variant="destructive" class="slds-m-right_medium" label="Delete" title="Delete" onclick="{!c.deleteMap}"
+                    disabled="{!v.isDeleteButtonDisable}" aura:id="deleteButtonId"/>
+            </aura:if>
+            <lightning:button class="slds-p-left_large" variant="brand" label="Add New" onclick="{!c.addRecord}" name=""/>
+        </div>
+        <br/>
+        
+        <!--Country Sales Head Data-->
+        <table class="Table_Layout slds-table slds-table--bordered slds-table--striped">
+            <thead>
+                <tr>
+                    <th scope="col"><span class="slds-truncate">Country Sales</span></th>
+                    <th scope="col"><span class="slds-truncate">Emerging BioPharma</span></th>
+                    <th scope="col"><span class="slds-truncate">Mid Sized</span></th>
+                    <th scope="col"><span class="slds-truncate">Large</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.CountrySalesHeadWrapperList}" var="record" indexVar="index">
+                    <tr>
+                        <td>{!record.country}</td>
+                        <td>
+                            <aura:iteration items="{!record.countrySalesHeadCustomerWrapperList}" var="item" indexVar="index">  
+                                <aura:if isTrue="{!item.countrySalesHead.Sale_Type__c == 'Emerging BioPharma'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.countrySalesHead.Name}" aura:id="input1"
+											value="{!item.countrySalesHead.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.countrySalesHead.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.countrySalesHeadCustomerWrapperList}" var="item" indexVar="index">  
+                                <aura:if isTrue="{!item.countrySalesHead.Sale_Type__c == 'Mid Sized'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.countrySalesHead.Name}" aura:id="input1"
+											value="{!item.countrySalesHead.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.countrySalesHead.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td>
+                            <aura:iteration items="{!record.countrySalesHeadCustomerWrapperList}" var="item" indexVar="index">  
+                                <aura:if isTrue="{!item.countrySalesHead.Sale_Type__c == 'Large'}">
+                                    <aura:if isTrue="{!record.isEdit}">
+                                        <lightning:input type="String" name="{!item.countrySalesHead.Name}" aura:id="input1"
+											value="{!item.countrySalesHead.Approver_Name__c}"/>
+                                        <aura:set attribute="else">
+                                            {!item.countrySalesHead.Approver_Name__c}
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if> 
+                            </aura:iteration>
+                        </td>
+                        <td><lightning:input class="{!record.countrySalesHead + ' '}" type="checkbox" label="Edit"
+								name="input1" checked="{!record.isEdit}" onchange="{!c.isEditable}" aura:id="editCheckbox"/></td>
+                        <td><lightning:input class="{!record.countrySalesHead + ' '}" type="checkbox" label="Delete"
+								name="input2" checked="{!record.isDelete}" onchange="{!c.isDeleteable}" aura:id="deleteCheckbox" /></td>
+                    </tr>
+                </aura:iteration>
+            </tbody>
+        </table>
+    </aura:if>
+    
+    <!--Add new Popup-->
+    <aura:if isTrue = "{!v.openPopupForAddRecord}">
+        <section role = "dialog" tabindex = "-1" aria-labelledby = "modal-heading-01" aria-modal = "true" aria-describedby =
+                 "modal-content-id-1" class = "slds-modal slds-fade-in-open">
+            <div class = "slds-modal__container" >
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class = "slds-modal__header" >
+                    <h2 id = "modal-heading-01" class = "slds-text-heading_medium slds-hyphenate">Create New Country Sales Heads Record</h2>
+                </header>
+                <div class = "slds-modal__content slds-p-around_medium" id = "modal-content-id-1">
+                    <lightning:recordEditForm objectApiName="Country_Sales_Head__c" aura:id="newRecordForm" onsuccess="{!c.handleSuccess}" onerror = "{!c.handleError}">
+                        <lightning:inputField fieldName="Sale_Type__c" aura:id = "selectSaleType"/>
+                        <lightning:inputField fieldName="Country_Sales__c" aura:id = "selectCountry"/>
+                        <lightning:inputField fieldName="Approver_Name__c" aura:id="selectCustomerName"/>
+                        <lightning:inputField fieldName="Approver_Email__c" aura:id="selectCustomerEmail"/>
+                        <div class="slds-align_absolute-center" >
+                            <lightning:button variant="brand" type="submit" label="Save"/>
+                            <lightning:button variant="brand" label="Cancel" onclick="{!c.closeModel}" />
+                        </div>
+                    </lightning:recordEditForm>
+                </div>
+            </div>
+        </section>
+    </aura:if>
+    <br/><br/><br/>
+    
+</aura:component>

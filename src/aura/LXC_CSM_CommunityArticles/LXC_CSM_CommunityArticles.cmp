@@ -1,0 +1,269 @@
+<aura:component controller="CNT_CSM_CommunityArticles" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="articleObjfiltered" type="Object[]" />
+    <aura:attribute name="articleObj" type="Object[]" />
+    <aura:attribute name="articleFav" type="Object[]" />
+    <aura:attribute name="isFilteredByAcc" type="boolean" default="false" />
+    <aura:attribute name="isFilteredByFav" type="boolean" default="false" />
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="topicId" type="String" />
+    <aura:attribute name="category" type="String" />
+    <aura:attribute name="maxShow" type="Integer" />
+    <aura:attribute name="numChapter" type="Integer" />
+    <aura:attribute name="partnerURL" type="boolean" access="global" default="false" />
+    <aura:attribute name="today" type="DateTime" />
+    <aura:attribute name="isFilteredByNew" type="boolean" default="false" />
+    <aura:attribute name="isFilteredByUpdated" type="boolean" default="false" />
+    <aura:attribute name="oce_sales_articles" type="boolean" default="false" />
+    <aura:attribute name="userId" type="String" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:if isTrue="{!v.partnerURL}">
+        <div id="CSM_PortalArticle">
+            <aura:if isTrue="{!v.isLoading}">
+                <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <div class="text-right">
+                <div class="text-left" style="display: inline-grid;">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" Checked="{! v.isFilteredByNew }" class="custom-control-input" id="customSwitch1" data-type="byNew" onclick="{! c.filterPRMArticles }" />
+                        <label class="custom-control-label" for="customSwitch1" style="margin: 8px;color: #005587;font-weight: 900;">{!$Label.c.PRM_New}</label>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" Checked="{! v.isFilteredByUpdated }" class="custom-control-input" id="customSwitch2" data-type="byUpdated" onclick="{! c.filterPRMArticles }" />
+                        <label class="custom-control-label" for="customSwitch2" style="margin: 8px;color: #005587;font-weight: 900;">{!$Label.c.PRM_Updated}</label>
+                    </div>
+                </div>
+            </div>
+            <aura:if isTrue="{! v.articleObjfiltered.length > 0  }">
+                <div class="row">
+                    <aura:iteration items="{!v.articleObjfiltered}" var="obj" indexVar="chapter">
+                        <aura:if isTrue="{! obj.articles.length > 0  }">
+                            <aura:if isTrue="{! v.numChapter eq -1}">
+                                <div class="col-12 col-sm-6 mb-3"><br></br>
+                                    <div class="articleChapter">
+                                        {!obj.categorization}
+                                    </div>
+                                    <aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+                                        <aura:if isTrue="{! countArticle lt v.maxShow }">
+                                            <aura:if isTrue="{!v.partnerURL}">
+                                                <div class="slds-truncate">
+                                                    <a class="articles" href="{!'/partner/s/article/'+ article.contentArticle.UrlName}" target="_blank">{!article.contentArticle.Title}</a>
+                                                    <aura:if isTrue="{!article.contentArticle.ContentDocumentLinks[0].Id!=null}">
+                                                        <img src="{!$Resource.AttachmentIndicator}" class="attachmentIndicator" />
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!v.today le article.contentArticle.End_date_of_display_as_new_or_updated__c}">
+                                                        <aura:if isTrue="{!article.contentArticle.VersionNumber == 1}">
+                                                            <lightning:button label="New" class="slds-button newIcon" variant="brand" disabled="true" />
+                                                            <aura:set attribute="else">
+                                                                <lightning:button label="Updated" class="slds-button updatedIcon" variant="brand" disabled="true" />
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </aura:if>
+                                                </div>
+                                                <aura:set attribute="else">
+                                                    <div class="slds-truncate">
+                                                        <a class="item-title-link" href="{!'/support/s/article/'+ article.contentArticle.UrlName}">{!article.contentArticle.Title}</a>
+                                                    </div>
+                                                </aura:set>
+                                            </aura:if>
+                                        </aura:if>
+                                        <aura:if isTrue="{! countArticle eq v.maxShow }">
+                                            <div class="mt-3">
+                                                <button class="showAllButton" data-chapter_num="{!chapter}" onclick="{! c.showMore}">{!$Label.c.Show_all}&nbsp;({! obj.articles.length}&nbsp;{!$Label.c.articles})</button>
+                                            </div>
+                                        </aura:if>
+                                    </aura:iteration>
+                                </div>
+                                <aura:set attribute="else">
+                                    <aura:if isTrue="{!chapter eq v.numChapter}">
+                                        <aura:if isTrue="{! or(obj.categorization ne 'Other', v.articleObj.length > 1 )}">
+                                            <div class="col-12 mb-3">
+                                                <div class="row no-gutters">
+                                                    <!--<img src="{!$Resource.Arrows + '/LeftArrow.png'}" class="backButton" onclick="{! c.back}"/>-->
+                                                    <!-- <button class="backButton" onclick="{! c.back}">&#8592;-->
+                                                    <!--<lightning:icon iconName="utility:back" size="x-small" alternativeText="{!$Label.c.Back_to_chapters}" />-->
+                                                    <!-- </button>-->
+                                                    <a class="backButton" onclick="{! c.back}"><b>&#8592;</b></a>
+
+                                                    <div class="text-uppercase h6 my-auto">
+                                                        <b>{!obj.categorization}</b>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </aura:if>
+                                        <aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+                                            <div class="col-12 col-sm-6">
+                                                <aura:if isTrue="{!v.partnerURL}">
+                                                    <div class="slds-truncate">
+                                                        <a class="item-title-link" href="{!'/partner/s/article/'+ article.contentArticle.UrlName}" target="_blank">{!article.contentArticle.Title}</a>
+                                                        <aura:if isTrue="{!article.contentArticle.ContentDocumentLinks[0].Id!=null}">
+                                                            <img src="{!$Resource.AttachmentIndicator}" class="attachmentIndicator" />
+                                                        </aura:if>
+                                                        <aura:if isTrue="{!v.today le article.contentArticle.End_date_of_display_as_new_or_updated__c}">
+                                                            <aura:if isTrue="{!article.contentArticle.VersionNumber == 1}">
+                                                                <lightning:button label="New" class="slds-button newIcon" variant="brand" disabled="true" />
+                                                                <aura:set attribute="else">
+                                                                    <lightning:button label="Updated" class="slds-button updatedIcon" variant="brand" disabled="true" />
+                                                                </aura:set>
+                                                            </aura:if>
+                                                        </aura:if>
+                                                    </div>
+                                                    <aura:set attribute="else">
+                                                        <div class="slds-truncate">
+                                                            <a class="item-title-link" href="{!'/support/s/article/'+ article.contentArticle.UrlName}">{!article.contentArticle.Title}</a>
+                                                        </div>
+                                                    </aura:set>
+                                                </aura:if>
+                                            </div>
+                                        </aura:iteration>
+                                    </aura:if>
+                                </aura:set>
+                            </aura:if>
+                        </aura:if>
+                    </aura:iteration>
+                </div>
+                <aura:set attribute="else">
+                    <c:LXC_CSM_CommunityAlert type="info" title="{!$Label.c.No_article}" message="No Article Found" />
+                </aura:set>
+            </aura:if>
+        </div>
+
+        <aura:set attribute="else">
+            <div id="CSM_PortalArticle">
+                <aura:if isTrue="{!v.isLoading}">
+                    <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                        <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+                </aura:if>
+                <div class="text-right">
+                    <div class="text-left" style="display: inline-grid;">
+                        <aura:if isTrue="{! not(empty(v.userId))}">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" Checked="{! v.isFilteredByAcc }" class="custom-control-input" id="customSwitch1" data-type="byAcc" onclick="{! c.filter }" />
+                                <label class="custom-control-label" for="customSwitch1">{!$Label.c.For_my_account}</label>
+                            </div>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" Checked="{! v.isFilteredByFav }" class="custom-control-input" id="customSwitch2" data-type="byFav" onclick="{! c.filter }" />
+                                <label class="custom-control-label" for="customSwitch2">{!$Label.c.My_bookmarks}</label>
+                            </div>
+                        </aura:if>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" Checked="{! v.isFilteredByNew }" class="custom-control-input" id="customSwitch3" data-type="byNew" onclick="{! c.filter }" />
+                            <label class="custom-control-label" for="customSwitch3">{!$Label.c.New}</label>
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" Checked="{! v.isFilteredByUpdated }" class="custom-control-input" id="customSwitch4" data-type="byUpdated" onclick="{! c.filter }" />
+                            <label class="custom-control-label" for="customSwitch4">{!$Label.c.Updated}</label>
+                        </div>
+                    </div>
+                </div>
+                <aura:if isTrue="{! v.articleObjfiltered.length > 0  }">
+                    <div class="row">
+                        <aura:iteration items="{!v.articleObjfiltered}" var="obj" indexVar="chapter">
+                            <aura:if isTrue="{! obj.articles.length > 0  }">
+                                <aura:if isTrue="{! v.numChapter eq -1}">
+                                    <div class="col-12 col-sm-6 mb-3">
+                                        <div class="text-uppercase h6">
+                                            <b>{!obj.categorization}</b>
+                                        </div>
+                                        <aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+                                            <aura:if isTrue="{! countArticle lt v.maxShow }">
+                                                <div class="row">
+                                                    <div class="col-auto text-truncate" style="max-width: 90%;">
+                                                        <a class="item-title-link" href="{!'/support/s/article/'+ article.contentArticle.UrlName}" title="{!article.contentArticle.Title}">
+                                                            <aura:if isTrue="{!article.fav}">
+                                                                <lightning:icon iconName="utility:favorite" class="mr-1" style="vertical-align: text-top;" size="x-small" alternativeText="favorite" />
+                                                            </aura:if>
+                                                            <aura:if isTrue="{!article.forThisAcc}">
+                                                                <lightning:icon iconName="utility:groups" class="mr-1" style="vertical-align: text-top;" size="x-small" alternativeText="favorite" />
+                                                            </aura:if>
+                                                            {!article.contentArticle.Title}
+                                                        </a>
+                                                    </div>
+                                                    <aura:if isTrue="{!v.today le article.contentArticle.End_date_of_display_as_new_or_updated__c}">
+                                                        <div class="col-1 pl-0">
+                                                            <aura:if isTrue="{!article.contentArticle.VersionNumber == 1}">
+                                                                <span class="badge badge-success">New</span>
+                                                                <aura:set attribute="else">
+                                                                    <span class="badge badge-warning">Updated</span>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                        </div>
+                                                    </aura:if>
+                                                </div>
+                                            </aura:if>
+                                            <aura:if isTrue="{! countArticle eq v.maxShow }">
+                                                <div class="mt-3">
+                                                    <button class="btn btn-primary" data-chapter_num="{!chapter}" onclick="{! c.showMore}">{!$Label.c.Show_all}&nbsp;({! obj.articles.length}&nbsp;{!$Label.c.articles})</button>
+                                                </div>
+                                            </aura:if>
+                                        </aura:iteration>
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{!chapter eq v.numChapter}">
+                                            <aura:if isTrue="{! or(obj.categorization ne 'Other', v.articleObjfiltered.length > 1 )}">
+                                                <div class="col-12 mb-3">
+                                                    <div class="row no-gutters">
+                                                        <div class="col-auto">
+                                                            <button class="btn btn-primary p-0 pr-2 pl-2 mr-2" onclick="{! c.back}">
+                                                                <lightning:icon iconName="utility:back" size="x-small" alternativeText="{!$Label.c.Back_to_chapters}" />
+                                                            </button>
+                                                        </div>
+                                                        <div class="col align-self-center">
+                                                            <div class="text-uppercase h6 my-auto">
+                                                                <b>{!obj.categorization}</b>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </aura:if>
+                                            <aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+                                                <div class="col-12 col-sm-6">
+                                                    <div class="row">
+                                                        <div class="col-auto text-truncate" style="max-width: 90%;">
+                                                            <a class="item-title-link" href="{!'/support/s/article/'+ article.contentArticle.UrlName}" title="{!article.contentArticle.Title}">
+                                                                <aura:if isTrue="{!article.fav}">
+                                                                    <lightning:icon iconName="utility:favorite" class="mr-1" style="vertical-align: text-top;" size="x-small" alternativeText="favorite" />
+                                                                </aura:if>
+                                                                <aura:if isTrue="{!article.forThisAcc}">
+                                                                    <lightning:icon iconName="utility:groups" class="mr-1" style="vertical-align: text-top;" size="x-small" alternativeText="favorite" />
+                                                                </aura:if>
+                                                                {!article.contentArticle.Title}
+                                                            </a>
+                                                        </div>
+                                                        <aura:if isTrue="{!v.today le article.contentArticle.End_date_of_display_as_new_or_updated__c}">
+                                                            <div class="col-1 pl-0">
+                                                                <aura:if isTrue="{!article.contentArticle.VersionNumber == 1}">
+                                                                    <span class="badge badge-success">New</span>
+                                                                    <aura:set attribute="else">
+                                                                        <span class="badge badge-warning">Updated</span>
+                                                                    </aura:set>
+                                                                </aura:if>
+                                                            </div>
+                                                        </aura:if>
+                                                    </div>
+                                                </div>
+                                            </aura:iteration>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </aura:if>
+                        </aura:iteration>
+                    </div>
+                    <aura:set attribute="else">
+                        <c:LXC_CSM_CommunityAlert type="info" title="{!$Label.c.No_article}" message="{!$Label.c.Sorry_we_have_not_article_for +' ' + v.category }" />
+                    </aura:set>
+                </aura:if>
+            </div>
+        </aura:set>
+    </aura:if>
+</aura:component>

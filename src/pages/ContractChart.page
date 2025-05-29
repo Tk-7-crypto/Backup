@@ -1,0 +1,431 @@
+<apex:page id="pg" title="Agreement Chart" standardController="ATC__c" extensions="ContractChart" sidebar="false" showHeader="true" readOnly="true" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+    <c:JQueryBlockUI />
+    <script> 
+         var flagEnter = false;
+         document.body.onkeypress = function(e){
+            var keycode;  
+            if (window.event) {  
+                keycode = window.event.keyCode;  
+            }  
+            else if (e) {  
+                keycode = e.which;
+            }
+            if(keycode == 13) {
+                if(flagEnter == true)
+                    {
+                        flagEnter = false;
+                        return false;
+                    }
+                    YUIShowLoading();  
+                    enterkeycalling();// action function which rerender a particular div/section             
+                    return false;
+            }
+            else
+                return true;
+        }
+         
+        var lookupwindow ='';   
+        var lookUpWindowOpen = false;
+        
+        function ShowLookup(searchText) {
+            YUIShowLoading();
+            if(!lookUpWindowOpen) {
+                lookUpWindowOpen = true;
+                lookupwindow = window.open('/apex/Account_Lookup?strText='+ searchText,'_blank','width=700,height=450,scrollbars=1');  
+                lookUpWindowOpen = false;
+            }
+            else {
+                YUIHideLoading();
+            }
+            
+        }
+
+        function blankAccountNameCheck() {
+            if(!document.getElementById("pg:frm:pb:section:pbsi:txtAccount").value) {
+                jsAssignAccount(''); 
+            }
+        }
+        
+        function SetAccount(accountId,accountName) {
+            document.getElementById("pg:frm:pb:section:pbsi:txtAccount").value = accountName;
+            jsAssignAccount(accountId); 
+        }
+        
+        function SetAccountNull() {
+            YUIHideLoading();
+        }
+
+        function PopupOnEnter(evt,elementId) {
+            var charCode = (evt.which) ? evt.which : event.keyCode
+            if (charCode == 13) {
+                flagEnter = true;
+                ShowLookup(document.getElementById("pg:frm:pb:section:pbsi:txtAccount").value);
+                return false;
+            } else {
+                return true;
+            }
+        }    
+        
+        function searchRjs1() {
+            try {
+                var winW = 630, winH = 460;
+                if (document.body && document.body.offsetWidth) {
+                    winW = document.body.offsetWidth;
+                    winH = document.body.offsetHeight;
+                }
+                if (document.compatMode=='CSS1Compat' &&
+                    document.documentElement &&
+                    document.documentElement.offsetWidth ) {
+                    winW = document.documentElement.offsetWidth;
+                    winH = document.documentElement.offsetHeight;
+                }
+                if (window.innerWidth && window.innerHeight) {
+                    winW = window.innerWidth;
+                    winH = window.innerHeight;
+                }
+                
+                var panelwidth = winW - 59; 
+                //var dateValidated = validateDate();
+                //if(dateValidated) {
+                    searchRjs(panelwidth);
+                //}
+            } catch(e) {
+                alert(e);
+            }
+        }
+
+        function validateDate() {
+            var startDate = new Date($("[id$='strtDt']").val());
+            var endDate = new Date($("[id$='endDt']").val());
+            console.log($("[id$='strtDt']").val());
+            console.log($("[id$='endDt']").val());
+            if(($("[id$='strtDt']").val() == '' || $("[id$='strtDt']").val() == undefined) || ($("[id$='endDt']").val() == '' || $("[id$='endDt']").val() == undefined)) {
+                alert('Please Fill Date Ranges');
+                return false;
+            }
+            var daysDiff = parseInt((endDate.getTime()-startDate.getTime())/(24*3600*1000));
+            if(endDate.getFullYear() - startDate.getFullYear() > 3 || endDate.getFullYear() - startDate.getFullYear() < 0 || daysDiff < 0) {
+                alert('Please fill Date within Range of 3 Years and "FROM Date" must be less than "TO Date"');
+                return false;
+            }
+            return true;
+        }
+
+        function setFocus() { 
+            return; 
+        }
+    </script>
+    <style>
+        .container {
+            background:#667799; 
+            color:#fff;
+            box-shadow: 4px 5px 10px #888;
+            z-index: 1;
+            word-break: break-all;
+        }
+        
+        .rtop, .rbottom {
+            display:block;
+            background:#EEE;
+        }
+        
+        .rtop *, .rbottom * {
+            display: block;
+            height: 1px;
+            overflow: hidden;
+            background:#667799;
+        }
+        
+        .r1 {
+            margin: 0 5px;
+        }
+        
+        .r2 {
+            margin: 0 3px;
+        }
+        
+        .r3 {
+            margin: 0 2px;
+        }
+        
+        .r4{
+            margin: 0 1px;
+            height: 2px;
+        }
+        
+        .productcontainer {
+            background:green; 
+            color:#fff;
+            font-size:89%;
+            box-shadow: 4px 5px 10px #888;
+            z-index: 1;
+            word-break: break-all;
+        }
+        
+        .prrtop, .prrbottom {
+            display:block;
+            background:#EEE;
+        }
+        
+        .prrtop *, .prrbottom * {
+            display: block;
+            height: 1px;
+            overflow: hidden;
+            background:green;
+        }
+        
+        .r1pr {
+            margin: 0 5px;
+        }
+        
+        .r2pr {
+            margin: 0 3px;
+        }
+        
+        .r3pr {
+            margin: 0 2px;
+        }
+        
+        .r4pr {
+            margin: 0 1px;
+            height: 2px
+        }
+        
+        .empty{
+            width:0px !important;
+            padding : 0px !important;
+            font-size : 0px !important;
+        }
+        .pbSubsection {
+            padding : 0px !important;
+        }
+        
+        .spanDisplay {
+            display: block;
+        }
+    </style>
+ 
+    <apex:form id="frm">
+        <apex:actionFunction name="enterkeycalling" action="{!searchResults}" onComplete="YUIHideLoading();" rerender="opResults,opButton,opError">
+        </apex:actionFunction>            
+        <apex:actionFunction name="searchRjs" action="{!searchResults}" onComplete="YUIHideLoading();" rerender="opResults,opButton,opError" >
+            <apex:param name="panelwidth" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction action="{!AssignAccount}" name="jsAssignAccount" onComplete="YUIHideLoading();" rerender="opProduct,opButton" immediate="true">
+            <apex:param name="accId" value=""/>
+        </apex:actionFunction>
+        <apex:pageBlock rendered="{!isShowMessage}">
+            <apex:pageBlockSection >
+                <apex:pageblocksectionItem >
+                    <apex:outputPanel >You have insufficient privileges for access this functionality.</apex:outputPanel> 
+                </apex:pageblocksectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock id="pb" mode="edit" rendered="{!!isShowMessage}">
+            <apex:outputPanel id="opError">
+                <apex:pageMessages id="pmError" />
+            </apex:outputPanel>
+            <apex:pageBlockSection columns="1" id="section" title="{!$Label.Filter_criteria}" >
+                <apex:pageBlockSectionItem id="pbsi" >
+                    <apex:outputLabel value="{!$Label.Account}:"></apex:outputLabel>
+                    <apex:outputPanel >
+                        <div class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:outputPanel id="opAccount">
+                                <apex:actionRegion >
+                                    <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_right slds-size_1-of-3">    
+                                        <apex:inputText id="txtAccount" styleClass="slds-input" value="{!AccountName}" onkeypress="return PopupOnEnter(event,'pg:frm:pb:section:pbsi:txtAccount');" onblur="blankAccountNameCheck()"/>
+                                        <a class="slds-icon_container slds-icon-utility-search">
+                                            <svg aria-hidden="true" class="slds-icon slds-input__icon slds-input__icon_right slds-icon-text-default"
+                                                 onclick="return ShowLookup(document.getElementById('pg:frm:pb:section:pbsi:txtAccount').value);" 
+                                                 style="pointer-events: visible;top:15px;">
+                                                <use xmlns:xlink="http://www.w3.org/1999/xlink" 
+                                                     xlink:href="/apexpages/slds/latest//assets/icons/utility-sprite/svg/symbols.svg#search">
+                                                </use>
+                                            </svg>
+                                            <span class="slds-assistive-text">search</span>
+                                        </a>
+                                    </div>
+                                </apex:actionRegion>
+                            </apex:outputPanel>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="pbsi1">
+                    <apex:outputLabel value="{!$Label.Product}:"></apex:outputLabel>
+                    <apex:outputPanel id="opProduct">
+                        <apex:selectList value="{!ProductId}" id="valProduct" size="5" multiselect="true"> 
+                            <apex:selectOption itemValue="" itemLabel="{!$Label.All}"></apex:selectOption>
+                            <apex:selectOptions value="{!lstProducts}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.Agreement_Status}"></apex:outputLabel>
+                    <apex:selectList value="{!contractStatus}" id="valStatus" size="1"> 
+                        <apex:selectOption itemValue="true" itemLabel="{!$Label.Active}" ></apex:selectOption> 
+                        <apex:selectOption itemValue="false" itemLabel="{!$Label.InActive}"></apex:selectOption> 
+                        <apex:selectOption itemValue="all" itemLabel="{!$Label.All}" ></apex:selectOption>         
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.Contract_Type}:"></apex:outputLabel>
+                    <apex:selectList value="{!contractType}" id="valType" size="5" multiselect="true" > 
+                        <apex:selectOption itemValue="all" itemLabel="{!$Label.All}"></apex:selectOption>
+                        <apex:selectOption itemValue="Agreement" itemLabel="{!$Label.Agreement}" ></apex:selectOption> 
+                        <apex:selectOption itemValue="CES Memorandum" itemLabel="{!$Label.CES_Memorandum}" ></apex:selectOption> 
+                        <apex:selectOption itemValue="Co-promotion Agreement" itemLabel="{!$Label.Co_promotion_Agreement}"></apex:selectOption>
+                        <apex:selectOption itemValue="Information Service Agreement" itemLabel="{!$Label.Information_Service_Agreement}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Master Agreement of Consulting" itemLabel="{!$Label.Master_Agreement_of_Consulting}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Master Agreement of Services" itemLabel="{!$Label.Master_Agreement_of_Services}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Memorandum" itemLabel="{!$Label.Memorandum}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Non Disclosure Agreement" itemLabel="{!$Label.Non_Disclosure_Agreement}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Order Form" itemLabel="{!$Label.Order_Form}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Other" itemLabel="{!$Label.Other}"></apex:selectOption> 
+                        <apex:selectOption itemValue=" Personal information protection agreement" itemLabel="{!$Label.Personal_information_protection_agreement}"></apex:selectOption> 
+                        <apex:selectOption itemValue="Third party access agreement" itemLabel="{!$Label.Third_party_access_agreement}"></apex:selectOption> 
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.Signed_Date_By_Client_IMS}"></apex:outputLabel>
+                    <apex:outputpanel >
+                        <apex:outputLabel value="{!$Label.From}:"></apex:outputLabel>
+                        <apex:input type="date" value="{!dataPeriodStart}" id="strtDt" size="12"> </apex:input>
+                        <apex:outputLabel value="{!$Label.To}:"></apex:outputLabel>
+                        <apex:input type="date" value="{!dataPeriodEnd}" id="endDt" size="12"> </apex:input>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:inputHidden />
+                    <apex:outputPanel id="opButton">
+                        <apex:commandButton title="{!$Label.Reset_Filters}"  value="{!$Label.Reset_Filters}" action="{!resetFilters}" immediate="true"  />
+                        <apex:commandButton title="{!$Label.Get_Data}" id="btnGetData" value="{!$Label.Get_Data}" onclick="searchRjs1();return false;" rerender="opError,opResults,opButton" />
+                        <apex:commandButton title="{!$Label.Export_to_Excel}" value="{!$Label.Export_to_Excel}" action="{!ExportToExcel}" reRender="opButton" rendered="{!showDataBlock}" oncomplete="window.open('{!strQuery}');"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:outputPanel id="opResults">
+                <apex:outputPanel rendered="{!IF(showDataBlock,true,false)}">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <b>{!$Label.Legends}</b>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:{!contractColorSettings.Case1_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td>
+                                {!$Label.Contract_Type} - {!$Label.Memorandum} / {!$Label.Agreement} / {!$Label.Order_Form}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:{!contractColorSettings.Case2_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td>
+                                {!$Label.Contract_Type} - {!$Label.Third_party_access_agreement} / {!$Label.Co_promotion_Agreement} / {!$Label.Non_Disclosure_Agreement} / {!$Label.Personal_information_protection_agreement} / {!$Label.Other}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:{!contractColorSettings.Case3_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td>
+                                {!$Label.Contract_Type} - {!$Label.Information_Service_Agreement} / {!$Label.Master_Agreement_of_Consulting} / {!$Label.Master_Agreement_of_Services}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:{!contractColorSettings.Default_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td>
+                                {!$Label.Any_other_Contract_Type}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:green">&nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td>
+                                {!$Label.Product_Nodes}
+                            </td>
+                        </tr>
+                        <tr>
+                        </tr>
+                    </table>
+                </apex:outputPanel>
+                
+                <apex:pageBlockSection title="{!$Label.Search_Result_s}" rendered="{!showSearchResults}" id="pbsResults"  >  
+                    <apex:outputPanel layout="block" rendered="{!NOT(showDataBlock)}" style="width:100;">
+                        <apex:outputText value="{!$Label.No_search_results}"></apex:outputText>
+                    </apex:outputPanel>
+                    <apex:outputPanel style="width:{!panelwidth}px; height:650px ;overflow-y:scroll" layout="block" id="opDataHierarchy" rendered="{!showDataBlock}">
+                        <div style="line-height: 1.5;padding-top:5px;padding-left:8px;">
+                            <apex:variable value="{!0}" var="totalPriAggMargin"/>
+                            <apex:variable value="{!0}" var="currentAggNumber"/>
+                            <apex:repeat value="{!lstChartDataWrapper}" var="objDataWrapper">
+                                <div style="{!IF(objDataWrapper.levelOfAgreement = 1, 'z-index:1; display:block; position:relative; margin-top:35px; width:max-content;','display:none;')}"></div>
+                                <apex:variable value="{!IF(objDataWrapper.levelOfAgreement > 1, ((objDataWrapper.levelOfAgreement-2)*300) + 200, 0)}" var="totalPriAggMargin"/>
+                                <div style="width: max-content;display: flex;">
+                                    <apex:variable value="{!0}" var="marginToDeduct"/>
+                                    <apex:variable value="{!1}" var="DivShowIndex"/>
+                                    <apex:repeat value="{!objDataWrapper.preLevelSibling}" var="hasToShowDiv" first="1">
+                                        <div style="{!IF(AND(hasToShowDiv, objDataWrapper.levelOfAgreement > 2), 'display:inline-block; position: relative; margin-left:' & IF(DivShowIndex = 1, '200', '300') & 'px; border-left: 5px solid gray; height:' & TEXT(290+(290*objDataWrapper.lstItems.size)) & 'px;', 'display:inline-block; position: relative; margin-left:' & IF(DivShowIndex = 1, '200', '300') & 'px;')}"></div>
+                                        <apex:variable value="{!IF(objDataWrapper.levelOfAgreement > 2, marginToDeduct + IF(DivShowIndex = 1, 200, 300), marginToDeduct)}" var="marginToDeduct"/>
+                                        <apex:variable value="{!DivShowIndex + 1}" var="DivShowIndex"/>
+                                    </apex:repeat>
+                                    <div style="{!IF(AND(objDataWrapper.hasParent, objDataWrapper.levelOfAgreement > 1), 'display:inline-block; margin-left:' & TEXT(totalPriAggMargin-marginToDeduct) & 'px;', 'display:inline-block;')}">
+                                        <div style="position: relative;width: auto; {!IF(objDataWrapper.hasParent,'height: 290px;','height: auto;')}">
+                                            <div style="{!IF(objDataWrapper.hasParent,'display:inline-block; position: absolute; border-left : 5px solid gray; border-bottom: 5px solid gray; width:100px; height: 200px;','display:none;')}"></div>
+                                            <div class="container" style="{!IF(objDataWrapper.hasParent,'position:absolute; display:inline-block;left:100px; top: 135px;','')} width:max-content;max-width:600px;min-width:400px;border-radius: 5px; padding: 5px; background-color:{!objDataWrapper.bgColor};" onmouseover="this.style.cursor='pointer'" onclick="window.open('/'+ '{!objDataWrapper.AgreementId}', '');">
+                                                <div id="statusImage" style="display:block;width:auto;height:18px;text-align:end;">
+                                                    <apex:image url="/resource/1334241618000/CM_Check" width="20px" height="15px" rendered="{!IF(objDataWrapper.status = 'Active',true,false)}" title="Active"/>
+                                                    <apex:image width="20px" height="15px" url="/resource/1334241749000/CM_Cross" rendered="{!IF(objDataWrapper.status = 'Active',false,true)}" title="Inactive"/>
+                                                </div>
+                                                <div style="width: auto; height: auto;">
+                                                    <span class="spanDisplay"><b>{!$label.Agreement_Name}:</b> {!objDataWrapper.AgreementName}</span>
+                                                    <span class="spanDisplay"><b>{!$label.Contract_Type}:</b> {!objDataWrapper.ContractType}</span>
+                                                    <span class="spanDisplay"><b>{!$label.Agreement_Term}:</b> {!objDataWrapper.AgreementTerm}</span>
+                                                    <span class="spanDisplay"><b>{!$label.Agreement_Number}:</b> {!objDataWrapper.AgreementNumber}</span>
+                                                    <span class="spanDisplay" style="display:{!IF(objDataWrapper.hasParent,'block','none')};"><b>{!$label.Total_Agreement_Value}:</b> {!objDataWrapper.ISOCode}&nbsp;<apex:outputText value="{0, number, ###,##0}"><apex:param value="{!objDataWrapper.objAgr.Total_Contract_Value__c}" /></apex:outputText></span>
+                                                    <span class="spanDisplay"><b>{!$label.Agreement_Start_Date}:</b> <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!objDataWrapper.AgreementStartDate}" /></apex:outputText></span>
+                                                </div>
+                                            </div>
+                                            <div style="{!IF(AND(objDataWrapper.hasParent, NOT(objDataWrapper.IsLastNode)),'display:inline-block; position: absolute; border-left : 5px solid gray; width:100px; height: 100px; top:200px;','display:none;')}"></div>
+                                        </div>
+                                        <div style="{!IF(objDataWrapper.hasChild, IF(AND(objDataWrapper.hasParent, lstChartDataWrapper[objDataWrapper.parentIndex].totalChild > objDataWrapper.siblingcount), 'border-left: 5px solid gray;', IF(AND(objDataWrapper.lstItems.size > 0, NOT(objDataWrapper.hasParent)),'margin-left:200px; border-left: 5px solid gray;', 'border-left: 5px solid gray; margin-left:300px;')), '')}">
+                                            <apex:variable value="{!1}" var="productNum"/>
+                                            <apex:repeat value="{!objDataWrapper.lstItems}" var="LineItemData">
+                                                <div style="{!IF(AND(objDataWrapper.hasParent, NOT(objDataWrapper.IsLastNode)), IF(objDataWrapper.hasChild,'border-left : 5px solid gray; margin-left : 300px;','border-left : 5px solid gray;'), '')}">
+                                                    <div style="position: relative; height: 290px; {!IF(objDataWrapper.hasChild, 'margin-left:100px;', IF(objDataWrapper.hasParent, 'margin-left:300px;', 'margin-left:200px;'))}">
+                                                        <div style="display:inline-block; position: absolute; width: 100px; height: 150px; border-left: 5px dotted gray; border-bottom: 5px dotted gray;"></div>
+                                                        <div class="productcontainer" style="display:inline-block; position: absolute; width:350px; height:auto; top: 100px; margin-left: 100px; padding:5px; border-radius: 5px;" onmouseover="this.style.cursor='pointer'" onclick="window.open('/'+ '{!LineItemData.LineItemId }', '');">
+                                                            <div id="liStatusImage" style="display:block;width:auto;height:18px;text-align:end;">
+                                                                <apex:image width="20px" height="15px" url="/resource/1334241618000/CM_Check" rendered="{!LineItemData.isActive}" title="Active"/>
+                                                                <apex:image width="20px" height="15px" url="/resource/1334241749000/CM_Cross" rendered="{!NOT(LineItemData.isActive)}" title="Inactive"/>
+                                                            </div>
+                                                            <div style="width:auto;height:auto;">
+                                                                <span class="spanDisplay"><b>{!$label.Product_Name}:</b> {!LineItemData.ProductName}</span>
+                                                                <span class="spanDisplay"><b>{!$label.Attach_Number}:</b> {!LineItemData.attachNumber}</span>
+                                                                <span class="spanDisplay"><b>{!$label.Net_Price}:</b> {!LineItemData.ISOCode}&nbsp; <apex:outputText value="{0, number, ###,##0}"><apex:param value="{!LineItemData.objALI.Net_Price__c}" /></apex:outputText></span>
+                                                                <span class="spanDisplay"><b>{!$label.Contract_End_Date}:</b> <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!LineItemData.objALI.Contract_End_Date__c}" /></apex:outputText></span>
+                                                                <span class="spanDisplay"><b>{!$label.Termination_Date_Pro}:</b> <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!LineItemData.objALI.Termination_Date__c}" /></apex:outputText></span>
+                                                            </div>
+                                                        </div>
+                                                        <div style="{!IF(objDataWrapper.lstItems.size <> productNum, 'display:inline-block; position: absolute; border-left : 5px dotted gray; width:100px; height: 140px; top:150px;', 'display: none;')}"></div>
+                                                        <apex:variable value="{!productNum +1}" var="productNum"/>
+                                                    </div>
+                                                </div>
+                                            </apex:repeat>
+                                        </div>
+                                    </div>
+                                </div>
+                                <apex:variable value="{!currentAggNumber + 1}" var="currentAggNumber"/>
+                            </apex:repeat>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageblocksection>
+            </apex:outputPanel>   
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

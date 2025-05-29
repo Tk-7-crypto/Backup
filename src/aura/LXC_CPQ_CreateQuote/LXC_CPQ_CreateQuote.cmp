@@ -1,0 +1,115 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId,force:hasSObjectName" controller="CNT_CPQ_CreateQuote">
+    <aura:attribute name="showSpinner" type="Boolean" default="true" />
+    <aura:attribute name="allQuoteDetailsObj" type="Object"/>
+    <aura:attribute name="contractId" type="Id" />
+    <aura:attribute name="showConfirmation" type="boolean" default="false"/>
+    <aura:attribute name="cloneConfirmed" type="boolean" default="true"/>
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute name="isCreateQuoteFromOpportunity" type="Boolean" default ="false"/>
+    <aura:attribute name="isCreateQuoteFromGenericContract" type="Boolean" default = "false"/>
+    <aura:attribute name="oppId" type="Id" />
+    <aura:attribute name="ObjectName" type="String"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <aura:if isTrue="{!!v.showSpinner}">
+        <aura:if isTrue="{!v.allQuoteDetailsObj.isStatusClosedForInternalPurposes}">
+            <aura:html tag="style">
+                .modal-body{ height : 120px !important; }
+            </aura:html>
+            <div class="errorMessage slds-text-color_error slds-text-title_bold slds-text-align_center slds-m-around_large">
+                This Triage record is Closed for Internal purposes.
+            </div>
+        </aura:if>
+        <aura:if isTrue="{!and(!v.allQuoteDetailsObj.isOpportunityExist, !v.allQuoteDetailsObj.isStatusClosedForInternalPurposes)}">
+            <aura:html tag="style">
+                .modal-body{ height : 150px !important; }
+            </aura:html>
+            <div class="errorMessage slds-text-color_error slds-text-title_bold slds-text-align_center slds-m-around_large">
+                Quote record could not be created since there is no Opportunity associated
+            </div>
+        </aura:if>
+        <aura:if isTrue="{!and(and(v.allQuoteDetailsObj.isOpportunityExist, and(v.allQuoteDetailsObj.isQuoteExist, !v.allQuoteDetailsObj.isPrimaryQuoteExist)), !v.allQuoteDetailsObj.isStatusClosedForInternalPurposes)}">
+            <aura:html tag="style">
+                .modal-body{ height : 200px !important; }
+            </aura:html>
+            <div class="errorMessage slds-text-color_error slds-text-title_bold slds-text-align_center slds-m-around_large">
+                The Quote needs to be marked as primary.
+                Please go to the awarded quote record from the opportunity and Mark as Primary.
+            </div>
+        </aura:if>
+        <aura:if isTrue="{!and(and(and(v.allQuoteDetailsObj.isOpportunityExist, and(v.allQuoteDetailsObj.isQuoteExist, v.allQuoteDetailsObj.isPrimaryQuoteExist)), !v.allQuoteDetailsObj.isStatusClosedForInternalPurposes),v.showConfirmation)}">
+            <aura:html tag="style">
+                .cuf-content {
+                padding: 0 0rem !important;
+                }
+                .slds-p-around--medium {
+                padding: 0rem !important;
+                }       
+                td{
+                border-bottom: 1px solid #dddbda;;
+                }
+                .quoteData {
+                height:400px !important;
+                }
+            </aura:html>
+            <header class="slds-modal__header" style="margin-left: 2rem;">
+                <h1 class="slds-text-heading--medium">Attention!!!!</h1>
+            </header>
+            <div class="quoteData" style="margin-left: 2rem;"><br></br>
+                <aura:if isTrue="{!v.allQuoteDetailsObj.isCancelled}">
+                    <div>
+                        <p style="color:red">
+                            You are cloning a cancelled primary Quote.
+                        </p>
+                        <br/>
+                        Before cloning either set any other Quote to primary or set the new cloned Quote as primary.
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{!!v.allQuoteDetailsObj.isCancelled}">
+                    <div>
+                        Creating a Quote record when a Quote Record already exists will clone the current primary Quote Record.   
+                    </div>
+                </aura:if>
+                <br/><br/>The current primary Quote is:
+                <div class="quoteTable">
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                        <tr><td>Proposal ID: </td><td class="slds-cell-wrap">{!v.allQuoteDetailsObj.budgetName}</td></tr>
+                        <tr><td>Budget Type: </td><td>{!v.allQuoteDetailsObj.budgetType}</td></tr>
+                        <tr><td>Scenario: </td><td>{!v.allQuoteDetailsObj.scenario}</td></tr>
+                        <tr><td>Scenario Description: </td><td class="slds-cell-wrap">{!v.allQuoteDetailsObj.scenarioDescription}</td></tr>
+                        <tr><td>Scenario Number: </td><td>{!v.allQuoteDetailsObj.scenarioNumber}</td></tr>
+                        <tr><td>Budget Iteration: </td><td>{!v.allQuoteDetailsObj.budgetIteration}</td></tr>
+                        <tr><td>Approval Stage: </td><td>{!v.allQuoteDetailsObj.approvalStage}</td></tr>
+                        <tr><td>Total Quote Amount: </td><td>{!v.allQuoteDetailsObj.totalQuoteAmount}</td></tr>
+                    </table>
+                </div>
+                <aura:if isTrue="{!v.allQuoteDetailsObj.isCancelled}">
+                    <b>Do you want to proceed with cloning? <br></br><br></br></b>
+                </aura:if>
+                <aura:if isTrue="{!!v.allQuoteDetailsObj.isCancelled}">
+                    Do you want to proceed with cloning? <br></br><br></br>
+                </aura:if>
+            </div><br></br><br></br><br></br>
+            <footer class="slds-modal__footer" style="margin-left: 2rem;">
+                <lightning:button variant="brand" name='Yes' label='Yes' onclick='{!c.handleYesConfirmation}'/>
+                <lightning:button name='No' label='No' onclick='{!c.handleNoConfirmation}'/>
+            </footer>
+        </aura:if>
+        <aura:if isTrue="{!or(and(!v.allQuoteDetailsObj.isStatusClosedForInternalPurposes, and(v.allQuoteDetailsObj.isOpportunityExist, !v.allQuoteDetailsObj.isQuoteExist)), v.cloneConfirmed) }">
+            <c:LXC_CPQ_CreateBudgetScreen aura:id="childComp" 
+                selectedBudgetTool = "{!v.allQuoteDetailsObj.quotePricingTool}" 
+                budgetName = "{!v.allQuoteDetailsObj.opportunityName}"
+                oppId = "{!v.allQuoteDetailsObj.opportunityId}"
+                contractId = "{!v.contractId}"
+                accountId = "{!v.allQuoteDetailsObj.accountId}"
+                budgetToolList = "{!v.allQuoteDetailsObj.pricingToolValues}"
+                clinicalBid = "{!v.allQuoteDetailsObj.clinicalBidId}"
+                relatedQuoteId = "{! and(v.allQuoteDetailsObj.isQuoteExist, v.allQuoteDetailsObj.isCreateQuoteFromGenericContract) ? v.allQuoteDetailsObj.quoteId : null}"
+                isCreateQuoteFromGenericContract = "{!and(v.allQuoteDetailsObj.isCreateQuoteFromGenericContract,!v.allQuoteDetailsObj.isQuoteExist) ? true : false}"
+                isCreateQuoteFromOpportunity ="{!!(v.allQuoteDetailsObj.isCreateQuoteFromGenericContract) ? true : false}"
+                parentBudgetType = "{! v.allQuoteDetailsObj.isQuoteExist ? v.allQuoteDetailsObj.budgetType : null}"/>
+        </aura:if>
+    </aura:if>
+</aura:component>

@@ -1,0 +1,90 @@
+<aura:component controller="CNT_CSM_CorrectiveAction" description="LXC_CSM_CorrectiveTable">
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="correctiveFieldNames" type="List"/> 
+    <aura:attribute name="correctiveActionWrapperList" type="List"/> 
+    <aura:attribute name="caseId" type="String" required="true"/>
+    <aura:attribute name="isShowDelete" type="boolean" default="false"/>
+    <aura:attribute name="tabName" type="String" required="true"/>
+    <aura:attribute name="maxRows" type="Integer"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <form style="background-color: white;" class = "cuf-scroller-outside">
+        <div class="slds-m-top_none">
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <div class="slds-float_right slds-p-bottom_small">
+                <div class="slds-page-header__title">
+                    <lightning:buttonIcon iconName="utility:add" size="large" variant="bare" alternativeText="Add Row" onclick="{!c.addRow}"/>
+                </div>
+            </div>
+            <div class="container-fluid">        
+                <table class="slds-table slds-table_cell-buffer"> 
+                    <thead>
+                        <tr class="slds-text-title_caps">
+                            <th scope="col">
+                                <div class="slds-truncate ">#</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="Corrective Field Name">Corrective Field Name</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate " title="Corrective Field Value">Corrective Field Value</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="Action">Action</div>
+                            </th>
+                        </tr>
+                    </thead>   
+                    <tbody>      
+                        <aura:iteration items="{!v.correctiveActionWrapperList}" var="correctiveActionWrapper" indexVar="index">
+                            <tr>
+                                <td > 
+                                    {!index + 1}
+                                </td>
+                                <td>
+                                    <lightning:select variant="label-hidden" class="label-hidden"
+                                                      value="{!correctiveActionWrapper.correctiveAction.Corrective_Field_Name__c}" 
+                                                      required="true" aura:id="correctiveform" name="correctiveFieldPicklist"
+                                                      onchange="{!c.handleChange}">
+                                        <option value="Please Specify" text="Please Specify"></option>
+                                        <aura:iteration items="{!v.correctiveFieldNames}" var="correctiveField">
+                                            <option value="{!correctiveField}" text="{!correctiveField}"></option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                    <aura:if isTrue="{!correctiveActionWrapper.isShowFieldNameError}">
+                                        <div class="slds-form-element__help slds-text-color_destructive" role="alert">Complete this field</div>
+                                    </aura:if>
+                                </td>
+                                <td>
+                                    <lightning:input type="text" variant="label-hidden"  
+                                                     maxlength="5" messageWhenPatternMismatch="Enter a valid value" pattern="^[0-9]+[0-9]*$"
+                                                     required="true" aura:id="correctiveform"
+                                                     value="{!correctiveActionWrapper.correctiveAction.Corrective_Field_Value__c}" />
+                                </td>
+                                <td>
+                                    <aura:if isTrue="{!v.isShowDelete}">
+                                        <a onclick="{!c.removeRow}" data-record="{!index}">
+                                            <lightning:icon iconName="utility:delete" size="small" alternativeText="Delete Row"/>
+                                            <span class="slds-assistive-text">Delete</span>
+                                        </a>
+                                    </aura:if> 
+                                </td> 
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                <div class="slds-align_absolute-center slds-p-top_small">
+                    <lightning:button variant="brand" label="Save" title="Save" onclick="{!c.saveCorrectiveActions}"/>
+                </div>
+            </div>
+        </div>	
+    </form>
+</aura:component>

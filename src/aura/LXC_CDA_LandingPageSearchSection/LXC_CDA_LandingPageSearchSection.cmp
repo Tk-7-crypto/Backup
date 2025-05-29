@@ -1,0 +1,171 @@
+<aura:component controller="CNT_CDA_CustomLandingComnt" implements="force:hasRecordId" access="global">
+    <aura:attribute name="statusPicklistValues" type="Object" />
+    <aura:attribute name="iqviaBusinessPicklistValues" type="Object" />
+    <aura:attribute name="cdaTypePicklistValues" type="Object" />
+    <aura:attribute name="cdaNegotiatorPicklistValues" type="Object" />
+    <aura:attribute name="depnedentFieldMap" type="Map" description="Key - Controller Picklist Values, value - dependent picklist values" />
+    <aura:attribute name="isDependentDisable" type="boolean" default="true" description="to make disbale dependent field." />
+    <aura:attribute name="isNegotiatorTab" type="Boolean" default="false" />
+    <aura:attribute name="isLookupReportTab" type="Boolean" default="false" />
+    <aura:attribute name="cdaType" type="String" default="CDA Type" />
+    
+    <aura:registerEvent name="searchRequests" type="c:LXE_CDA_LandingPageSearchEvt" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    
+    <c:LXC_CDA_PickListValues sObjectName="CDA_Request__c" fieldName="Status__c" picklistValues="{!v.statusPicklistValues}" />
+    <c:LXC_CDA_PickListValues sObjectName="CDA_Request__c" fieldName="Negotiator_Assigned_List__c" picklistValues="{!v.cdaNegotiatorPicklistValues}" />
+    
+    <div aria-labelledby="searchForm">
+        <fieldset class="slds-box slds-theme--shade">
+            <form class="slds-form">                
+                <lightning:layout horizontalAlign="spread" multipleRows="true">
+                    
+                    <aura:if isTrue="{! !v.isLookupReportTab}">
+                        <lightning:layoutItem size="4" class="slds-p-bottom_x-small">
+                            <label>
+                                CDA Id #
+                            </label>
+                            <lightning:input aura:id="CDA_Id_c" name="CDA_Id_c" label="CDA Id #" />
+                        </lightning:layoutItem>
+                        
+                        <lightning:layoutItem size="4" class="slds-p-left_large slds-p-right_large slds-p-bottom_x-small">
+                            <label>
+                                IQVIA Business
+                            </label>
+                            <lightning:helptext content="Refer to Legacy IMS CDA Guidance 170225 for help." class="slds-p-left_xx-small"/>
+                            <lightning:select aura:id="QuintilesIMS_Business__c" name="QuintilesIMS_Business__c" label="IQVIA Business" onchange="{!c.onControllerFieldChange}">
+                                <aura:iteration items="{!v.iqviaBusinessPicklistValues}" var="item" >
+                                    <option value="{!item.label}">{!item.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="4" class="slds-p-bottom_x-small">
+                            <label>
+                                {!v.cdaType}
+                            </label>
+                            <lightning:select aura:id="CDA_Type__c" name="CDA_Type__c" label="CDA Type" disabled="{!v.isDependentDisable}">
+                                <aura:iteration items="{!v.cdaTypePicklistValues}" var="item" >
+                                    <option value="{!item.label}">{!item.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                        
+                        <lightning:layoutItem size="4" class="slds-p-bottom_x-small">
+                            <label>
+                                Status
+                            </label>
+                            <lightning:helptext content="Current Status" class="slds-p-left_xx-small" />
+                            <lightning:select aura:id="Status__c" name="Status__c" label="Status">
+                                <option value="--None--">--None--</option>
+                                
+                                <aura:iteration items="{!v.statusPicklistValues}" var="item" >
+                                    <aura:if isTrue="{! !v.isNegotiatorTab}">
+                                        <option value="{!item}">{!item}</option>
+                                    </aura:if>
+                                    <aura:if isTrue="{! v.isNegotiatorTab &amp;&amp; (item == 'Acquiring Internal Signature' || item == 'In Review by IQVIA' || item == 'Signature Request Denied' || item == 'Awaiting GLD Competitor Approval' || item == 'Validating Recipient Provided Document')}">
+                                        <option value="{!item}">{!item}</option>
+                                    </aura:if>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                    </aura:if>
+                    
+                    <aura:if isTrue="{! !v.isNegotiatorTab}">
+                        <lightning:layoutItem size="4" class="slds-p-left_large slds-p-right_large slds-p-bottom_x-small">
+                            <label>
+                                Recipient Legal Entity Name
+                            </label>
+                            <span onkeypress="{!c.keyCheck}" class="slds-size--11-of-12">
+                                <lightning:input aura:id="recipientLegalEntityName" name="recipientLegalEntityName" label="Recipient Legal Entity Name" />
+                            </span>
+                        </lightning:layoutItem>
+                    </aura:if>
+                    
+                    <aura:if isTrue="{! !v.isLookupReportTab}">
+                        <aura:if isTrue="{! !v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="slds-p-bottom_x-small">
+                                <label>
+                                    Recipient Point of Contact Name
+                                </label>
+                                <lightning:input aura:id="recipientPointOfContactName" name="Recipient_Point_of_Contact_Name__c" label="Recipient Point of Contact Name" />
+                            </lightning:layoutItem>
+                        </aura:if>
+                        
+                        <aura:if isTrue="{! !v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="slds-p-bottom_x-small">
+                                <label>
+                                    CDA Negotiator
+                                </label>
+                                <lightning:select aura:id="Negotiator_Assigned_List__c" name="Negotiator_Assigned_List__c" label="CDA Negotiator">
+                                    <option value="--None--">--None--</option>
+                                    <aura:iteration items="{!v.cdaNegotiatorPicklistValues}" var="item" >
+                                        <option value="{!item}">{!item}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                        </aura:if>
+                        
+                        <aura:if isTrue="{! v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="slds-p-left_large slds-p-right_large slds-p-bottom_x-small">
+                                <label>
+                                    CDA Negotiator
+                                </label>
+                                <lightning:select aura:id="Negotiator_Assigned_List__c" name="Negotiator_Assigned_List__c" label="CDA Negotiator">
+                                    <option value="--None--">--None--</option>
+                                    <aura:iteration items="{!v.cdaNegotiatorPicklistValues}" var="item" >
+                                        <option value="{!item}">{!item}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                        </aura:if>
+                        
+                        <aura:if isTrue="{! !v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="slds-p-left_large slds-p-right_large"> 
+                                <label>
+                                    Requestor Name
+                                </label>
+                                <lightning:input aura:id="requestorName" name="requestorName" label="Requestor Name" />
+                            </lightning:layoutItem>
+                        </aura:if>
+                        
+                        <aura:if isTrue="{! v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="slds-p-bottom_x-small"> 
+                                <label>
+                                    Requestor Name
+                                </label>
+                                <lightning:input aura:id="requestorName" name="requestorName" label="Requestor Name" />
+                            </lightning:layoutItem>
+                        </aura:if>
+                        
+                        <aura:if isTrue="{! !v.isNegotiatorTab}">
+                            <lightning:layoutItem size="4" class="" />
+                        </aura:if>
+                        <lightning:layoutItem size="4" class="slds-p-left_xx-large" />
+                    </aura:if>
+                        
+                    <lightning:layoutItem flexibility="grow" size="4" class="slds-p-left_large slds-p-right_large slds-p-top_small">
+                        <lightning:layout horizontalAlign="spread">
+                            <lightning:layoutItem size="3" mediumDeviceSize="3" />
+                            <lightning:layoutItem size="3" mediumDeviceSize="4"> 
+                                <lightning:button onclick="{!c.Search}"
+                                          variant="brand"
+                                          label="Search"
+                                          iconName="utility:search"/> 
+                            </lightning:layoutItem>
+                            <aura:if isTrue="{! !v.isLookupReportTab}">
+                                <lightning:layoutItem size="3" mediumDeviceSize="2"> 
+                                    <lightning:button onclick="{!c.resetSearchForm}"
+                                                      variant="neutral"
+                                                      label="Clear"/> 
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <lightning:layoutItem size="3" mediumDeviceSize="4" /> 
+                        </lightning:layout>                        
+                    </lightning:layoutItem>
+                    <lightning:layoutItem size="4" class="slds-p-right_xx-large" />
+                </lightning:layout>
+            </form>
+        </fieldset>
+    </div>
+</aura:component>

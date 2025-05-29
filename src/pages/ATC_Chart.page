@@ -1,0 +1,536 @@
+<apex:page id="pg" controller="ATC_Chart" sidebar="false" readOnly="true" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+    <c:JQueryBlockUI /> 
+    <!-------------------------------------JAVA SCRIPT SYNCHRONIZATION FOR COMMON SCROLLING --BEGIN----------------------------- -->
+    <script language="javascript">
+    /**----- FOR ACCOUNT VIEW TABLE ---**/
+    function divScrollR() 
+    {   
+        var Right = document.getElementById('div1Id'); 
+        var Left = document.getElementById('div2Id'); 
+        Left.scrollTop = Right.scrollTop; 
+    } 
+    
+    function divScrollL() 
+    {   
+        var Right = document.getElementById('div1Id'); 
+        var Left = document.getElementById('div2Id'); 
+        Right.scrollTop = Left.scrollTop; 
+    }
+    
+    /**----- FOR ATC VIEW TABLE ---**/
+    function divScrollR2() 
+    {   
+        var Right = document.getElementById('div1IdATC'); 
+        var Left = document.getElementById('div2IdATC'); 
+        Left.scrollTop = Right.scrollTop; 
+    } 
+    
+    function divScrollL2() 
+    {   
+        var Right = document.getElementById('div1IdATC'); 
+        var Left = document.getElementById('div2IdATC'); 
+        Right.scrollTop = Left.scrollTop; 
+    }   
+    
+    function ScrollToTop(isSuccess)
+    {
+        if (!isSuccess) {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        } else {
+            document.body.scrollTop = document.body.scrollHeight;
+            document.documentElement.scrollTop = document.body.scrollHeight;
+        }
+    }
+    </script> 
+    <!-- ----------- Style Panel(For Help icon ) Begins---------- -->
+    <style type="text/css">
+        .imgclass:hover{
+        background-image: url(/img/help/helpOrbs.gif);
+        background-repeat: no-repeat;
+        width: 16px;
+        height: 15px;    
+        background-position: right;
+        
+        }
+        .imgclass{
+        background-image: url(/img/help/helpOrbs.gif);
+        background-repeat: no-repeat;
+        width: 16px;
+        height: 15px;
+        }
+        .spanLegend{display: block;margin-bottom: 10px;}
+        .spanLegendCat div{height: 15px;width: 15px;display: inline-block;}
+        .spanLegendCat label{vertical-align:top;}
+        [id$="divAccountSummary"] table.detailList td{padding:0px;}
+        [id$="opData"] table.detailList{table-layout:auto !important;}
+        [id$="divAccountSummary"] table.detailList table{table-layout:auto;}
+        [id$="divATC"] table.detailList table{table-layout:auto;}
+        [id$="divATC"] table.detailList td{padding:0px;}
+        
+    </style>   
+    <!-------------------------------------JAVA SCRIPT SYNCHRONIZATION FOR COMMON SCROLLING ---ENDS------------------------------>
+    <script> 
+    var flagEnter = false;        
+    document.body.onkeypress = function(e){
+        var keycode;  
+        if (window.event)  
+        {  
+            keycode = window.event.keyCode;  
+        }  
+        else if (e)  
+        {  
+            keycode = e.which;
+        }
+        if(keycode == 13)
+        {
+            if(flagEnter == true)
+            {
+                flagEnter = false;
+                return false;
+            }
+            YUIShowLoading();
+            enterkeycalling();// action function which rerender a particular div/section             
+            return false;
+        }
+        else
+            return true;
+    }
+    </script>
+    <script>
+    var lookupwindow ='';   
+    var lookUpWindowOpen = false;
+    
+    function ShowLookup(searchText)
+    {
+        if(!lookUpWindowOpen)
+        {
+            lookUpWindowOpen = true;
+            //Commented By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+            //lookupwindow = window.showModalDialog(encodeURI('{!$Page.Account_Lookup}' + '?strText=' + searchText),'test',"dialogWidth:700px;dialogHeight:450px;center:yes;dialogTop:100;dialogLeft:300"); 
+            //Added By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+            lookupwindow = window.open('/apex/Account_Lookup?strText='+ searchText,'_blank','width=700,height=450,scrollbars=1');
+            
+            lookUpWindowOpen = false;
+        }
+        //Commented By:-Ekta , Date :- Oct 9, 2014 , Details:- Issue-05527
+        /*if(lookupwindow != null)
+                      {
+                          SetAccount(lookupwindow[0],lookupwindow[1]);
+                      } */                 
+    } 
+    
+    function SetAccount(accountId,accountName)
+    {
+        document.getElementById("pg:frm:pb:section:pbsi:txtAccount").value = accountName;
+        jsAssignAccount(accountId);   
+        
+    }
+    function SetAccountNull() {
+        YUIHideLoading();
+    }
+    function SetAccountOnChange(accountName)
+    {
+        
+        if(accountName == '')
+        {
+            YUIShowLoading();
+            jsAssignAccount('');
+        }
+        else 
+        {
+            
+        }
+    }
+    function PopupOnEnter(evt,elementId)
+    {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        
+        if (charCode == 13)
+        {
+            flagEnter = true;
+            ShowLookup(document.getElementById("pg:frm:pb:section:pbsi:txtAccount").value);
+            
+            return false;
+        }
+        
+        else
+        {
+            return true;
+        }
+    }     
+    
+    function RemoveProducts(accName)
+    {  
+        if(accName == '')
+        {                
+            removeprodcts();
+        }
+    }
+    
+    </script>
+    
+    <apex:form id="frm">        
+        <apex:pageMessages id="roleError" />        
+        <apex:actionFunction name="removeprodcts" immediate="true" action="{!RemoveProducts}" reRender="pb" />        
+        <apex:actionFunction name="enterkeycalling" action="{!searchResults}" onComplete="YUIHideLoading();ScrollToTop({!showDataBlock});" reRender="opButton,datablk,roleError"/>        
+        <apex:actionFunction action="{!AssignAccount}" name="jsAssignAccount" rerender="opProduct" onComplete="YUIHideLoading();">
+            <apex:param name="accountId" value="" assignTo="{!AccountId}"/>
+        </apex:actionFunction>
+        <!---------------------------------------------FILTER CRITERIA---SECTION--STARTS--------------------------------------------------------- -->
+        <apex:pageBlock id="pb" title="Market Definition Chart">
+            <apex:pageBlockSection columns="1" id="section" title="{!$Label.Filter_criteria}">
+                
+                <apex:pageBlockSectionItem id="pbsi">
+                    <apex:outputLabel value="{!$Label.Account}:"></apex:outputLabel>
+                    <apex:outputPanel id="opAccount">
+                        <apex:actionRegion >
+                            <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_right slds-size_1-of-3">
+                                <apex:inputText id="txtAccount" styleClass="slds-input" onchange="RemoveProducts(this.value);" onkeyup="return SetAccountOnChange(this.value);" onkeypress="return PopupOnEnter(event,'pg:frm:pb:section:pbsi:txtAccount');"/>
+                                <!-- <apex:image url="/s.gif" alt="Lookup (New Window)" styleClass="lookupIcon" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';"
+onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onclick="return ShowLookup(document.getElementById('pg:frm:pb:section:pbsi:txtAccount').value);" title="{!$Label.Lookup_New_Window}"/> -->
+                                <a class="slds-icon_container slds-icon-utility-search">
+                                    <svg aria-hidden="true" class="slds-icon slds-input__icon slds-input__icon_right slds-icon-text-default"
+                                         onclick="return ShowLookup(document.getElementById('pg:frm:pb:section:pbsi:txtAccount').value);" 
+                                         style="pointer-events: visible;top:15px;">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" 
+                                             xlink:href="/apexpages/slds/latest//assets/icons/utility-sprite/svg/symbols.svg#search">
+                                        </use>
+                                    </svg>
+                                    <span class="slds-assistive-text">search</span>
+                                </a>
+                            </div>
+                        </apex:actionRegion>       
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                             
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.ATC_Code}:"></apex:outputLabel>
+                    <apex:inputText value="{!aTCodeCriteria}"/> 
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.Data_Period_Start}:"></apex:outputLabel>
+                    <!--Update by: Sneha Date: 20 feb, 2012 -- Object Permission fix for date fields -->
+                    <!--<apex:inputfield required="true" value="{!objAgreement.Contract_Start_Date__c}"/>-->
+                    <apex:outputPanel >
+                        <div class="requiredInput"><div class="requiredBlock"></div>
+                            <apex:outputPanel styleClass="dateInput dateOnlyInput">
+                                <apex:input type="date" value="{!dataPeriodStart}" id="strtDt" size="12" > </apex:input>
+                            </apex:outputPanel>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.Data_Period_End}:"></apex:outputLabel>
+                    <!--Update by: Sneha Date: 20 feb, 2012 -- Object Permission fix for date fields -->
+                    <!--<apex:inputfield required="true" value="{!objAgreement.Contract_End_Date__c}"/> -->
+                    <apex:outputPanel id="prodSectionId">
+                        <div class="requiredInput"><div class="requiredBlock"></div>
+                            <apex:outputPanel styleClass="dateInput dateOnlyInput">
+                                <apex:input type="date" value="{!dataPeriodEnd}" id="endDt" size="12" > </apex:input>
+                            </apex:outputPanel> 
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="pbsi1">
+                    <apex:outputLabel value="{!$Label.Product}:"></apex:outputLabel>
+                    <apex:outputPanel id="opProduct">
+                        <apex:selectList value="{!ProductId}" id="valProduct" size="5" multiselect="true"> 
+                            <apex:selectOption itemValue="" itemLabel="{!$Label.All_ATCChart}"></apex:selectOption>
+                            <apex:selectOptions value="{!lstProducts}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputPanel >
+                        <apex:outputLabel value="{!$Label.NonChargeDeliver_ATC}:"></apex:outputLabel>
+                        <img src="/s.gif" Class="imgclass" title="{!$Label.Non_Chargedeliverof_ATC_Msg}" />
+                    </apex:outputPanel>
+                    <apex:inputCheckBox value="{!Non_Chargedeliverof_ATC}" />
+                </apex:pageBlockSectionItem>
+                
+                <!--------------------RADIO BUTTON SECTION To SELECT ACCOUNT/ATC VIEW-------------->
+                <apex:pageBlockSectionItem >
+                    &nbsp;
+                    <apex:selectRadio value="{!viewMode}" >
+                        <!-- added by :Ranu,date : 11th Aug,detail : ER-0283(R-3) -->
+                        <apex:selectOption itemvalue="ProductSumm" itemlabel="{!$Label.AccountSumm_View}"/>
+                        <apex:selectOption itemvalue="Product" itemlabel="{!$Label.Account_View}"/>
+                        <apex:selectOption itemvalue="ATCSumm" itemlabel="{!$Label.ATC_CodeSumm_View}"/>
+                        <apex:selectOption itemvalue="ATC" itemlabel="{!$Label.ATC_Code_View}"/>
+                        
+                    </apex:selectRadio>
+                </apex:pageBlockSectionItem>
+                <!--------------------- BUTTON SECTION ------------------>
+                <apex:pageBlockSectionItem >
+                    <apex:inputHidden />
+                    <apex:outputPanel id="opButton">                             
+                        <apex:commandButton value="{!$Label.Reset_Filters}" action="{!resetFilters}" />
+                        <apex:commandButton value="{!$Label.Get_Data}" title="{!$Label.Get_Data}" onclick="YUIShowLoading();enterkeycalling();return false;"/>
+                        <apex:commandButton value="{!$Label.Export_to_Excel}" title="{!$Label.Export_to_Excel}" action="{!ExportToExcel}" reRender="opButton,datablk" rendered="{!If (AND(showDataBlock , hasProductData ) , true , false)}" oncomplete="window.open('{!excelPageUrl}');"/>                                               
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>            
+            <apex:outputPanel id="datablk">
+                <apex:outputPanel rendered="{!hasProductData}" >
+                    <apex:outputPanel rendered="{!IF(showDataBlock,true,false)}">
+                        <div class="divLegend">
+                            <span class="spanLegend" style="display: block;margin-bottom: 10px;">
+                                <b>Legends :</b>
+                            </span>
+                            <span class="spanLegendCat">
+                                <div style="background:#999"></div>
+                                <label>
+                                    {!$Label.Non_Charge_Delivery_of_ATC_Code}
+                                </label>
+                            </span>
+                            <span class="spanLegendCat">
+                                <div style="background: #33BB55;"></div>
+                                <label>
+                                    {!$Label.Period_of_Delivery_ATC_Code}
+                                </label>
+                            </span>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <!---------------------------------------------ACCOUNT-VIEW---------------------------------------------------------------->
+                <apex:outputPanel id="ResultSection" rendered="{!IF(showDataBlock,true,false)}" >               
+                    <apex:outputPanel rendered="{!hasProductData}" id="navButton">
+                        <center>               
+                            
+                            <apex:commandLink reRender="ResultSection" action="{!gotofirstPageOfTable}" rendered="{!IF(pageNumberInTable == 1,false,true)}" onclick="YUIShowLoading();" oncomplete="YUIHideLoading();">
+                                <apex:image id="theImage" value="/EXT/theme/sfdc/images/grid/page-first.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                            </apex:commandLink>
+                            
+                            <apex:image value="/EXT/theme/sfdc/images/grid/page-first-disabled.gif" width="20" height="20" rendered="{!pageNumberInTable == 1}" style="vertical-align:bottom;"/> 
+                            
+                            <apex:commandLink reRender="ResultSection"  action="{!gotoPreviousPageOfTable}" rendered="{!IF(pageNumberInTable == 1,false,true)}"   onclick="YUIShowLoading();" oncomplete="YUIHideLoading();" >
+                                <apex:outputPanel >
+                                    <apex:image value="/EXT/theme/sfdc/images/grid/page-prev.gif"  width="20" height="20"  style="vertical-align:bottom;" />  
+                                    <apex:outputLabel style="vertical-align:text-top;">Previous</apex:outputLabel>
+                                </apex:outputPanel>
+                            </apex:commandLink>
+                            
+                            <apex:outputPanel rendered="{!pageNumberInTable == 1}" >
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-prev-disabled.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                                <apex:outputLabel style="vertical-align:text-top;">Previous</apex:outputLabel>
+                            </apex:outputPanel>
+                            <apex:outputLabel style="vertical-align:text-top;">&nbsp;|&nbsp;</apex:outputLabel>
+                            <apex:commandLink reRender="ResultSection" action="{!gotoNextPageOfTable}" rendered="{!IF(pageNumberInTable == totalPagesInTABLE,false,true)}"  onclick="YUIShowLoading();" oncomplete="YUIHideLoading();" >
+                                <apex:outputLabel style="vertical-align:text-top;">Next</apex:outputLabel>
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-next.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                            </apex:commandLink>
+                            
+                            <apex:outputPanel rendered="{!IF(pageNumberInTable == totalPagesInTABLE,true,false)}">
+                                <apex:outputLabel style="vertical-align:text-top;">Next</apex:outputLabel>
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-next-disabled.gif" width="20" height="20" rendered="{!IF(pageNumberInTable == totalPagesInTABLE,true,false)}" style="vertical-align:bottom;"/>
+                            </apex:outputPanel>                               
+                            
+                            <apex:commandLink reRender="ResultSection" action="{!gotoLastPageOfTable}" rendered="{!IF(pageNumberInTable == totalPagesInTABLE,false,true)}"  onclick="YUIShowLoading();" oncomplete="YUIHideLoading();">                 
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-last.gif" width="20" height="20" style="vertical-align:bottom;"/> 
+                            </apex:commandLink>
+                            <apex:outputPanel rendered="{!pageNumberInTable == totalPagesInTABLE}">
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-last-disabled.gif" width="20" height="20" style="vertical-align:bottom;"/> 
+                            </apex:outputPanel>
+                            <apex:outputLabel >&nbsp;&nbsp;</apex:outputLabel>                        
+                        </center>                          
+                    </apex:outputPanel>
+                    
+                    
+                    <!-- added By :ranu,detail : Request-3,ER-0283 -->
+                    <apex:outputlabel rendered="{!AND(hasProductData,OR(viewMode=='ProductSumm',viewMode=='ATCSumm'))}"> <b> {!$Label.Note_ATCChart}</b> </apex:outputlabel><br/>
+                    
+                    <apex:outputlabel rendered="{!hasProductData}" style="vertical-align:text-top;font-style:italic;">[Showing page:{!pageNumberInTABLE} Of {!totalPagesInTABLE} within date range from :({!Month(minStartDateWithActualData)},{!Year(minStartDateWithActualData)}) to  ({!Month(maxEndDateWithActualData)} ,{!Year(maxEndDateWithActualData)})]</apex:outputlabel>
+                    <!-- updated By :ranu,detail : Request-3,ER-0283 -->
+                    
+                    <apex:pageBlockSection title="{!if(viewMode='Product',$Label.Account_View,$Label.AccountSumm_View)}" rendered="{!IF(showDataBlock,IF( OR(viewMode=='Product',viewMode=='ProductSumm'),true,false),false)}" columns="1" id="divAccountSummary"> 
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel rendered="{!hasProductData}">
+                                <apex:outputPanel style="width:100%" layout="block" id="opData" rendered="{!IF(showDataBlock,IF(OR(viewMode=='Product',viewMode=='ProductSumm'),true,false),false)}">
+                                    <table border="0" bordercolor="#F0F0F0" cellspacing="0" cellpadding="0" width="100%">
+                                        <tr>
+                                            <td bgcolor="#A1D7EE" colspan="5">&nbsp;</td>
+                                            <td colspan="{!dataPeriodLength}" bgcolor="#A1D7EE" align="center" style="text-align:center"><b>{!$Label.Data_Period}</b></td>
+                                        </tr>
+                                        <!-------------------------------------LEFT TABLE HEADER ----------------------------------------->
+                                        <tr>
+                                            <!-- Upadetd By:-Ekta Sharma,Date:-21st March,2013 Details:-change width for ER-0343-->
+                                            <td style="width:130px;border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-left-width:1px; border-left-style:inset ; border-left-color:black ;border-top-width:1px; border-top-style:inset ; border-top-color:black" nowrap="nowrap" align="center" bgcolor="#A1D7EE"><div style="width:130px;white-space: nowrap"><b>{!$Label.Agreement_Number}</b></div></td>
+                                            <td width="250px" style="width:250px;border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black" nowrap="nowrap" align="center" bgcolor="#A1D7EE"><div style="width:250px;white-space: nowrap"><b>{!$Label.Product_Name}&nbsp;</b></div></td>
+                                            <td width="100px"  style="width:100px;border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black" nowrap="nowrap" align="center" bgcolor="#A1D7EE"><div style="width:100px;white-space: nowrap"><div style="margin-left:30px;background-color:nocolor" ><div align="left" style="white-space: nowrap"><b>&nbsp;{!$Label.ATC_Code}</b></div></div></div></td>
+                                            <td Width="130px"  style="width:130px;border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-right-width:1px; border-right-style:inset ; border-right-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black" nowrap="nowrap" align="center" bgcolor="#A1D7EE"><div style="width:130px;white-space: nowrap"><div align="center" style="margin-left:1px;background-color:nocolor" ><b>{!$Label.Market_Def_Type}</b></div></div></td>
+                                            <td bgcolor="#A1D7EE" style="border-top-width:1px; border-top-style:inset ; border-top-color:black" ><div style="width:14px;background-color:#A1D7EE;">&nbsp;</div></td>
+                                            
+                                            <td  rowspan="{!itemCount}" >
+                                                <div style="width:660px;height:240px;overflow-x:scroll;overflow-y:hidden;border-right-color:black;border-right-width:1px;border-right-style:solid" >
+                                                    <!-------------------------------------RIGHT TABLE HEADER --------------------------------------- -->
+                                                    <table  bordercolor="#F0F0F0" border="0" cellspacing="0" cellpadding="0" width="100%" height="100%">
+                                                        <tr height="8px">
+                                                            <apex:repeat value="{!lstDates}" var="objDate">
+                                                                <td nowrap="nowrap" bgcolor="#A1D7EE" style="border-top-width:1px; border-top-style:inset ; border-top-color:black ; border-left-width:1px;border-left-style:inset;border-bottom-style:solid;border-bottom-width: 1px;border-bottom-color:black;border-left-color:gray;">
+                                                                    <div style="width:64px;" align="center" overflow="hidden"><b>    
+                                                                        <apex:outputText value="{0,date,MMM yyyy}">
+                                                                            <apex:param value="{!objDate}" />
+                                                                        </apex:outputText>
+                                                                        </b>
+                                                                    </div>
+                                                                </td>
+                                                            </apex:repeat>
+                                                        </tr>
+                                                        <!-------------------------------------Table RIGHT DATA Section--------------------------------------- -->
+                                                        <tr style="display:{!IF(hasProductData,'block-line','none')}">
+                                                            <td colspan="{!outerColSpan - 1}">                                        
+                                                                <div style="height:205px;width:100%;overflow-x:hidden;overflow-y:hidden;" id="div2Id" onscroll="divScrollL()" >
+                                                                    <table width="100%" cellspacing="0" cellpadding="0">                              
+                                                                        <apex:repeat value="{!lstDataWrapper}" var="objATCData">
+                                                                            <tr >                                   
+                                                                                <apex:repeat value="{!objATCData.divList}" var="ATCData">
+                                                                                    <td width="64px" style="border-bottom-width:1px; border-bottom-style:solid ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;{!IF(ATCData = 0,'background-color:nocolor',IF(ATCData = 2,'background-color:#999999','background-color:#33BB55'))};"><div style="width:100%;height:19px;">&nbsp;</div></td>                                                                          
+                                                                                </apex:repeat>                                     
+                                                                            </tr>
+                                                                        </apex:repeat>
+                                                                    </table>
+                                                                </div>   
+                                                            </td>
+                                                        </tr>
+                                                        <tr style="display:{!IF(hasProductData,'none','block-line')}">
+                                                            <td style="background-color:#FFCECE" colspan="{!dataPeriodLength}">No search results!!</td>
+                                                        </tr>                                                                
+                                                    </table>
+                                                </div>
+                                            </td> 
+                                        </tr>
+                                        <!-------------------------------------Table Left DATA - Section--------------------------------------- -->
+                                        <tr>
+                                            <td nowrap="nowrap" width="100%"  colspan="5">
+                                                <div id="div1Id" style="width:100%;height:205px;overflow-y:scroll;overflow-x:hidden;" onscroll="divScrollR()">
+                                                    <table cellspacing="0" cellpadding="0" width="100%" >
+                                                        <apex:repeat value="{!lstDataWrapper}" var="objATCData">
+                                                            <tr rendered="{!IF(hasProductData, true,false)}">
+                                                                <!-- Upadetd By:-Ekta Sharma,Date:-21st March,2013 Details:-change width for ER-0343-->
+                                                                <td title="{!objATCData.AgreementNumber}" nowrap="nowrap" align="center" width="130px" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;white-space: nowrap">
+                                                                    <div style="width:130px;height:19px;overflow:hidden;white-space: nowrap">
+                                                                        <apex:outputLink >
+                                                                            <a href="/{!objATCData.AgreementId}" target="_blank">{!objATCData.AgreementNumber}&nbsp;</a>
+                                                                        </apex:outputLink>
+                                                                    </div>
+                                                                </td>                                                        
+                                                                <!-- Upadetd By:-Ekta Sharma,Date:-21st March,2013 Details:-change width for ER-0343-->                                                     
+                                                                <td width="250px" align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;white-space: nowrap"><div style="width:230px;height:19px;overflow:hidden;white-space: nowrap" title="{!objATCData.ProductName}" >{!objATCData.ProductName}&nbsp;</div></td>
+                                                                <td width="100px"  align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;white-space: nowrap"><div style="width:100px;height:19px;white-space: nowrap">{!objATCData.ATCCode}&nbsp;</div></td>
+                                                                <td width="130px"  align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;white-space: nowrap"><div style="width:130px;height:19px;white-space: nowrap">{!objATCData.Brand}&nbsp;</div></td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </table>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel rendered="{!!hasProductData}"><F>{!$Label.No_search_results}</F></apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        
+                    </apex:pageBlockSection>
+                    
+                    <!----------------------------------------------------------------------ATC-VIEW-------------------------------------------------------------- -->
+                    
+                    <apex:pageBlockSection title="{!if(viewMode='ATC' ,$Label.ATC_Code_View,$Label.ATC_CodeSumm_View)}" rendered="{!IF(showDataBlock,IF( OR(viewMode=='ATC', viewMode=='ATCSumm'),true,false),false)}" id="divATC">
+                        <apex:outputPanel rendered="{!hasProductData}" >
+                            <apex:outputPanel style="width:1200px;" layout="block" id="opData" rendered="{!IF(showDataBlock,IF( OR(viewMode=='ATC', viewMode=='ATCSumm'),true,false),false)}">
+                                <table border="0" bordercolor="#F0F0F0" cellspacing="0" cellpadding="0" width="100%">
+                                    <tr>
+                                        <td bgcolor="#A1D7EE" colspan="5">&nbsp;</td>
+                                        <td colspan="{!dataPeriodLength}" bgcolor="#A1D7EE" style="text-align:center"><b>{!$Label.Data_Period}</b></td>
+                                    </tr>
+                                    <!-------------------------------------LEFT TABLE HEADER --------------------------------------- -->
+                                    <tr>
+                                        <!-- Updated By:-Ekta Sharma ,Date:-21st March,2013, Detail:-ER-0343,Width of td and div are changed -->
+                                        <td width="75px"   style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-left-width:1px; border-left-style:inset ; border-left-color:black ;border-top-width:1px; border-top-style:inset ; border-top-color:black" align="center" bgcolor="#A1D7EE"><div style="width:75px;white-space: nowrap"><b>{!$Label.ATC_Code}</b></div></td>
+                                        <td width="160px"  style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black"  nowrap="nowrap"   align="center" bgcolor="#A1D7EE"><div style="width:160px;white-space: nowrap"><b>{!$Label.Account_Name}</b></div></td>
+                                        <td width="260px"  style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black"  nowrap="nowrap"   align="center" bgcolor="#A1D7EE"><div style="width:260px;white-space: nowrap"><b>{!$Label.Product_Name}</b></div></td>
+                                        <td Width="140px"  style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ; border-top-width:1px; border-top-style:inset ; border-top-color:black ;"  nowrap="nowrap"   align="center" bgcolor="#A1D7EE"><div style="width:140px;white-space: nowrap"><b>{!$Label.Agreement_Number}</b></div></td>
+                                        <td bgcolor="#A1D7EE" style="border-left-width:1px; border-left-style:inset ; border-left-color:black;border-top-width:1px; border-top-style:inset ; border-top-color:black;border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;" ><div style="width:14px;background-color:#A1D7EE;">&nbsp;</div></td>
+                                        <td style="padding:0em;" rowspan="{!itemCount}">
+                                            <div style="width:max-content;height:242px;overflow-x:scroll;overflow-y:hidden;border-right-color:black;border-right-width:1px;border-right-style:solid;margin-top:-12px;" >
+                                                <!-------------------------------------RIGHT TABLE HEADER --------------------------------------- -->
+                                                <table bordercolor="#F0F0F0" border="0" cellspacing="0" cellpadding="0"  width="100%">
+                                                    <tr>
+                                                        <apex:repeat value="{!lstDates}" var="objDate">
+                                                            <td nowrap="nowrap"  bgcolor="#A1D7EE" style="border-top-width:1px; border-top-style:inset ; border-top-color:black ; border-left-width:1px;border-left-style:inset;border-bottom-style:solid;border-bottom-width: 1px;border-bottom-color:black;border-left-color:gray;">
+                                                                <div style="overflow:hidden; align:center;"><b>
+                                                                    <apex:outputText value="{0,date,MMM yyyy}" >
+                                                                        <apex:param value="{!objDate}" />
+                                                                    </apex:outputText>
+                                                                    </b>
+                                                                </div>                                                   
+                                                            </td>
+                                                        </apex:repeat>
+                                                    </tr>
+                                                    <!-------------------------------------RIGHT TABLE DATA SECTION--------------------------------------- -->
+                                                    <tr style="display:{!IF(hasProductData,'block-line','none')}">
+                                                        <td colspan="{!outerColSpan}">
+                                                            <div style="height:208px;width:100%;overflow:hidden;" id="div2IdATC" onscroll="divScrollL2()" > 
+                                                                <table width="100%" cellspacing="0" cellpadding="0" >    
+                                                                    <apex:repeat value="{!lstATCViewWrapper}" var="objATCViewData">
+                                                                        <tr>                                       
+                                                                            <apex:repeat value="{!objATCViewData.divList}" var="ATCData">
+                                                                                <td style="border-bottom-width:1px; border-bottom-style:solid ; border-bottom-color:black;border-left-width:1px; border-left-style:inset ; border-left-color:black ;{!IF(ATCData = 0,'background-color:nocolor',IF(ATCData = 2,'background-color:#999999','background-color:#33BB55'))};"><div style="height:20px">&nbsp;</div></td>
+                                                                            </apex:repeat>                                          
+                                                                        </tr>
+                                                                    </apex:repeat>
+                                                                    
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr style="display:{!IF(hasProductData,'none','block-line')}">
+                                                        <td style="background-color:#FFCECE;width:100%" colspan="{!dataPeriodLength}">No search results!!</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </td> 
+                                    </tr>
+                                    <tr>
+                                        <td nowrap="nowrap" width="100%"  colspan="5">
+                                            <div id="div1IdATC" style="width:100%;height:210px;overflow-x:hidden;overflow-y:scroll;" onscroll="divScrollR2()">
+                                                <!-------------------------------------LEFT TABLE DATA SECTION--------------------------------------- -->
+                                                <table cellspacing="0" cellpadding="0" width="100%" >
+                                                    <apex:repeat value="{!lstATCViewWrapper}" var="objATCViewData">                                                             
+                                                        <tr rendered="{!IF(hasProductData, true,false)}">
+                                                            <!-- Updated By:-Ekta Sharma ,Date:-21st March,2013, Detail:-ER-0343,Width of td and div are changed -->
+                                                            <td   width="65px"   align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black"><div title="{!objATCViewData.ATCCode}"      style="width:65px;height:20px;  background-color:nocolor; overflow:hidden;white-space: nowrap">{!objATCViewData.ATCCode}&nbsp;</div></td>
+                                                            <td   width="145px"  align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black"><div title="{!objATCViewData.AccountName}"   style="width:145px;height:20px; background-color:nocolor; overflow:hidden;white-space: nowrap">{!objATCViewData.AccountName}&nbsp;</div></td>
+                                                            <td   width="180px"  align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black"><div title="{!objATCViewData.ProductName}"   style="width:240px;height:20px; background-color:nocolor; overflow:hidden;white-space: nowrap" >{!objATCViewData.ProductName}&nbsp;</div></td>
+                                                            <td   width="120px"  align="center" nowrap="nowrap" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black">
+                                                                <div title="{!objATCViewData.AgreementNumber}" style="width:120px;height:20px; background-color:nocolor; overflow:hidden;white-space: nowrap">
+                                                                    <apex:outputLink >
+                                                                        <a href="/{!objATCViewData.AgreementId}" target="_blank">{!objATCViewData.AgreementNumber}&nbsp;</a>
+                                                                    </apex:outputLink>
+                                                                </div>
+                                                            </td>
+                                                        </tr>                                       
+                                                    </apex:repeat>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="4">&nbsp;</td>
+                                    </tr> 
+                                </table>                    
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!!hasProductData}"><F>{!$Label.No_search_results}</F></apex:outputPanel>
+                    </apex:pageBlockSection>
+                </apex:outputPanel>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

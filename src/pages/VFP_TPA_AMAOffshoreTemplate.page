@@ -1,0 +1,843 @@
+<apex:page Controller="CNT_TPA_AMAOffshoreTemplate" cache="false" sideBar="false" showHeader="false" standardstylesheets="false" lightningStylesheets="true">
+    <apex:slds />
+    <html>
+        <!-- <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" /> 
+            <apex:stylesheet value="/sCSS/52.0/sprites/1297816277000/Theme3/default/gc/versioning.css" />     
+            
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+                    <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+                    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+            
+                <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" type="text/css" />
+    		<script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript" />
+            <style>
+            
+            table {
+                font-family: arial, sans-serif;
+                width: 100%;
+            }
+            
+            td, th {
+                text-align: left;
+                padding: 8px;
+            }
+            
+            p.indent { 
+                padding-left: 1.8em 
+            }
+            
+            .labelText {
+                color:#4a4a56;
+                font-weight:bold;
+            }
+            .headingText {
+                color: #000;
+                font-size: 1.3em;
+            }
+            .message .messageText h4
+            {
+                font-size:20px;
+                margin-left: 30px;
+            }
+            
+            .message ul li
+            {
+                list-style:disc;
+            }
+            
+            .textbox { 
+                background: white; 
+                border: 1px solid #DDD; 
+                border-radius: 5px; 
+                box-shadow: 0 0 5px #DDD inset; 
+                color: #666; 
+                outline: none; 
+                height:25px; 
+                width: 275px; 
+            } 
+            
+            .vertical-line { 
+                border-left:medium #CC0000 solid;
+                margin-right:1px;
+            }
+            
+            #menu { 
+            padding:0; 
+            margin-Left:0;
+            margin-Top:20px; 
+            }
+            
+            #menu li { 
+            margin-Top:5px;
+            margin-left:100px;
+            } 
+            
+            div {
+                text-align: justify;
+            }
+            pre{
+                margin:0px;
+                font-family: "Salesforce Sans",Arial,sans-serif;
+            }
+            </style>       
+            <script type="text/javascript">
+                
+                var myapp = angular.module('AMARevisedOffshoreProcess', ['ui.bootstrap']);
+            
+                var contrl = myapp.controller('controllerPage',['$scope', '$location', '$filter', '$modal', '$log', '$window', function ($scope, $location, $filter, $modal, $log, $window) {
+						$scope.$log = $log;
+						$scope.rootObject = {};
+					$scope.rootObject.viewMode = '';
+					$scope.rootObject.type = '';
+					
+					$scope.rootObject.amaAgreementObj = {};
+					$scope.rootObject.amaAgreementObj.id = '';
+					$scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = '';  
+					$scope.rootObject.amaAgreementObj.Client__c = ''; 
+					$scope.rootObject.amaAgreementObj.TPA_Request__c = '';  
+					
+					$scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = '';  
+					$scope.rootObject.amaAgreementObj.Contract_Type__c = ''; 
+					$scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = '';   
+					$scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = '';  
+					$scope.rootObject.amaAgreementObj.Agreement_End_Date__c = '';    
+					$scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c ='';   
+					$scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = '';  
+					$scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = '';  
+					$scope.rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c = '';
+					
+						$scope.rootObject.amaAgreementObj.Status_of_Offshore_Process__c = '';
+					$scope.rootObject.amaAgreementObj.Technologies_to_access_AMA_PPD_by_vendor__c = '';
+					$scope.rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c = '';
+					$scope.rootObject.amaAgreementObj.Vendor_employee_access_data_in_country__c = '';
+					$scope.rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c = '';
+					$scope.rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c = '';
+					$scope.rootObject.amaAgreementObj.Date_vendor_responded_for_offshore__c = '';
+					
+						$scope.rootObject.AMAResponseforOffshore = '';
+					$scope.rootObject.amaAgreementObj.Questions_for_Vendor_Response__c = '';
+					$scope.rootObject.amaAgreementObj.AMA_reasons_why_offshore_not_approved__c = '';
+					
+						$scope.rootObject.Agreement_file_Name = '';
+					$scope.rootObject.TPA_Request_number = ''; 
+					$scope.rootObject.vendorCompanyName = '';   
+					$scope.rootObject.accessTechnologyList = {!TechnologyToAccessAMAPPDList};
+					$scope.rootObject.technologiesValues = [];
+					
+					$scope.rootObject.MsgShow = 'false';
+					$scope.rootObject.offshoreErrorMessage = '';
+					$scope.rootObject.offshoreSuccessMessage = '';
+					$scope.rootObject.isProcessing = false;					
+					
+					$scope.rootObject.amaAgreementDetailObject = JSON.parse('{!amaAgreementDetailAsString}');
+																				
+					$scope.rootObject.onLoadForm = function() {
+                        var isPermanentDown = {!isTPAPermanentDown};
+        				var isRestrictedUser = {!isRestrictedUser};
+        				var portalDownMessage = '{!Message}';
+        				$(document).ready(function(){
+            				if(isPermanentDown)
+                            {
+                                popupAlert(portalDownMessage);
+                                    $('.customPopupFooter .aButtons').css("display","none");
+									$('#backWhiteOverlay').css("display", "");
+									$('#pageBody').keydown(function(objEvent) {
+										if (objEvent.keyCode == 9) {  
+											objEvent.preventDefault(); 
+										}
+										if (objEvent.keyCode == 13) { 
+											objEvent.preventDefault(); 
+										}
+									});
+                            }
+        				});
+						
+						
+						if(getParameterByName('viewMode').trim().length > 0 )
+						{
+							$scope.rootObject.viewMode = getParameterByName('viewMode').trim();
+						}
+						
+						if(getParameterByName('type').trim().length > 0 ){
+							
+							$scope.rootObject.type = getParameterByName('type').trim();
+						}
+						
+						if($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'offshore'&& $scope.rootObject.type != null && ($scope.rootObject.type == 'VSubmit' || $scope.rootObject.type == 'DBLSubmit'|| $scope.rootObject.type == 'TpUsRequest'))
+						{							
+							if($scope.rootObject.type == 'TpUsRequest') {
+								
+								$scope.rootObject.amaAgreementObj.id = $scope.rootObject.amaAgreementDetailObject.Id;
+							}
+							else if($scope.rootObject.type == 'VSubmit' && $scope.rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  != 'Awaiting Vendor Response: AMA Offshore Consent form has been sent to Vendor') {
+								$scope.rootObject.offshoreErrorMessage = 'Sorry, you have already submitted your response.';
+							}
+							else if($scope.rootObject.type == 'DBLSubmit' && $scope.rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  != 'Awaiting AMA Response: Offshore Consent form requires AMA review/approval') {
+								$scope.rootObject.offshoreErrorMessage = 'Sorry, you have already submitted your response.';
+							}
+							else if($scope.rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  != 'Awaiting Vendor Response: AMA Offshore Consent form has been sent to Vendor' && $scope.rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c != 'Awaiting AMA Response: Offshore Consent form requires AMA review/approval') {
+								
+								$scope.rootObject.offshoreErrorMessage = 'Sorry, you are not authorized to access this page.';
+							}
+							else
+							{
+								$scope.rootObject.amaAgreementObj.id = $scope.rootObject.amaAgreementDetailObject.Id;
+								$scope.rootObject.Agreement_file_Name = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Name;
+								$scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = $scope.rootObject.amaAgreementDetailObject.Vendor_Contact_Name__c;
+								$scope.rootObject.vendorCompanyName = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Vendor_Company_Name__c;
+								$scope.rootObject.amaAgreementObj.Client__c = $scope.rootObject.amaAgreementDetailObject.Client__c;
+								$scope.rootObject.amaAgreementObj.TPA_Request__c = $scope.rootObject.amaAgreementDetailObject.TPA_Request__c;
+								$scope.rootObject.TPA_Request_number = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Name;
+								
+								$scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c;
+								$scope.rootObject.amaAgreementObj.Contract_Type__c  = $scope.rootObject.amaAgreementDetailObject.Contract_Type__c;
+								$scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_Start_Date__c;
+								$scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = $scope.rootObject.amaAgreementDetailObject.Initial_Termination_Date__c;
+								$scope.rootObject.amaAgreementObj.Agreement_End_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_End_Date__c;
+								$scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c = $scope.rootObject.amaAgreementDetailObject.AMA_TypeOfPrescriberLevelData__c;
+								$scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = $scope.rootObject.amaAgreementDetailObject.AMA_Services_Provided__c;
+								$scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = $scope.rootObject.amaAgreementDetailObject.AMA_Howlong_SP_has_Data_Access__c;
+								$scope.rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c = $scope.rootObject.amaAgreementDetailObject.Ex_US_Legal_Entity_Name__c;
+								
+								$scope.rootObject.amaAgreementObj.Status_of_Offshore_Process__c = $scope.rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c;
+								$scope.rootObject.amaAgreementObj.Vendor_employee_access_data_in_country__c = $scope.rootObject.amaAgreementDetailObject.Vendor_employee_access_data_in_country__c;
+								
+								if($scope.rootObject.type == 'VSubmit') {
+									$scope.rootObject.amaAgreementObj.Date_vendor_responded_for_offshore__c  = $filter('date')(new Date(),'MM/dd/yyyy');
+									
+								} else if($scope.rootObject.type == 'DBLSubmit') {
+									
+									$scope.rootObject.amaAgreementObj.Technologies_to_access_AMA_PPD_by_vendor__c = $scope.rootObject.amaAgreementDetailObject.Technologies_to_access_AMA_PPD_by_vendor__c;
+									$scope.rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c = $scope.rootObject.amaAgreementDetailObject.Other_technology_to_access_AMA_PPD__c;
+									$scope.rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c = $scope.rootObject.amaAgreementDetailObject.Vendor_Name_who_requested_offshore__c;
+									$scope.rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c = $scope.rootObject.amaAgreementDetailObject.Title_for_vendor_who_requested_offshore__c;
+									
+									if($scope.rootObject.amaAgreementObj.Technologies_to_access_AMA_PPD_by_vendor__c != '' && $scope.rootObject.amaAgreementObj.Technologies_to_access_AMA_PPD_by_vendor__c != null) {
+										$scope.rootObject.technologiesValues = $scope.rootObject.amaAgreementObj.Technologies_to_access_AMA_PPD_by_vendor__c.split(';');
+									}
+									if($scope.rootObject.amaAgreementDetailObject.Date_vendor_responded_for_offshore__c != '' || $scope.rootObject.amaAgreementDetailObject.Date_vendor_responded_for_offshore__c != null) {
+										$scope.rootObject.amaAgreementObj.Date_vendor_responded_for_offshore__c  = $filter('date')(new Date($scope.rootObject.amaAgreementDetailObject.Date_vendor_responded_for_offshore__c),'MM/dd/yyyy');
+									}
+									
+								}
+							}							
+						} else {							
+							$scope.rootObject.offshoreErrorMessage = 'Sorry, you are not authorized to access this page.';
+						}						
+					}
+					
+					$scope.rootObject.onLoadForm();					
+					
+					if($scope.rootObject.viewMode == 'offshore' && $scope.rootObject.type == 'TpUsRequest')
+					{						
+						CNT_TPA_AMAOffshoreTemplate.tpUsReqSendQuesTOVendor($scope.rootObject.amaAgreementObj.id,function(result, event)
+							{
+								if(event.type == 'exception')
+								{
+									hideLoading();                                
+									$scope.$log.info('Exception: ' + event.message);
+									return false;                                    
+								}
+								else if(result != null && result == true )
+								{
+									window.location.href = '/' + getParameterByName('id');
+								}
+									else
+									{
+										hideLoading();                                
+										$scope.$log.info('Event Type: ' + event.type);
+										return false;
+									}
+								if(!$scope.$$phase) {
+									$scope.$apply();
+								}
+								hideLoading();
+							},
+							{escape: false}
+						);						
+					}
+					
+					$scope.rootObject.saveOffshoreformforVendor = function() {
+						
+						if($scope.rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c == null || $scope.rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c == ''){
+							$scope.popupAlert('Please provide Ex-US Legal Entity Name for offshore request.' , function(){});
+							return false;
+						}
+						if($scope.rootObject.technologiesValues == null || $scope.rootObject.technologiesValues == '' || $scope.rootObject.technologiesValues == []) {
+							$scope.popupAlert('Please select technologies to access AMA-PPD for offshore request.' , function(){});
+							return false;
+						}
+						if($scope.rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c == null || $scope.rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c == '') {
+							$scope.popupAlert('Please provide your name for offshore request.' , function(){});
+							return false;
+						}
+						if($scope.rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c == null || $scope.rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c == '') {
+							$scope.popupAlert('Please provide title for offshore request.' , function(){});
+							return false;
+						}
+						if($scope.rootObject.technologiesValues.indexOf('Other') != -1 && ($scope.rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c == null || $scope.rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c == '')) {
+							$scope.popupAlert('Please provide technology detail for offshore request.' , function(){});
+							return false;
+						}
+						$scope.rootObject.amaObj = {};
+						
+						$scope.rootObject.amaObj.id = $scope.rootObject.amaAgreementObj.id;
+						$scope.rootObject.amaObj.Client__c = $scope.rootObject.amaAgreementObj.Client__c;
+						$scope.rootObject.amaObj.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c;
+						$scope.rootObject.amaObj.Technologies_to_access_AMA_PPD_by_vendor__c = $scope.rootObject.technologiesValues.join(';');
+						$scope.rootObject.amaObj.Other_technology_to_access_AMA_PPD__c =  $scope.rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c;
+						$scope.rootObject.amaObj.Title_for_vendor_who_requested_offshore__c = $scope.rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c;
+						$scope.rootObject.amaObj.Vendor_Name_who_requested_offshore__c = $scope.rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c;
+						$scope.rootObject.amaObj.Ex_US_Legal_Entity_Name__c = $scope.rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c;
+						
+						$scope.rootObject.isProcessing = true;
+						
+						CNT_TPA_AMAOffshoreTemplate.saveOffshoreformforVendor(JSON.stringify($scope.rootObject.amaObj), function(result, event) {
+								if(event.type == 'exception')
+								{
+									hideLoading();                                
+									$scope.$log.info('Exception: ' + event.message);
+									$scope.rootObject.isProcessing = false;
+									return false;                                    
+								}
+								else if(result != null && result == 'success')
+								{
+									$scope.rootObject.offshoreSuccessMessage = 'Congratulations, Your response has been submitted.';
+									angular.element($('#controllerPage')).scope().applyChanges();
+									return true;
+								}
+								else if(result != null && result == 'alreadySubmittedResponse')
+								{
+									$scope.rootObject.offshoreErrorMessage = 'Sorry, you have already submitted your response.';;
+									angular.element($('#controllerPage')).scope().applyChanges();
+									return true;
+								}
+								else
+								{
+									$scope.rootObject.isProcessing = false;
+									hideLoading();                            
+									$scope.$log.info('Event Type: ' + result);
+									return false;
+								}
+								if(!$scope.$$phase) {
+									$scope.$apply();
+								}
+								hideLoading();
+						    },
+						    {escape: false}
+						);						
+					}					
+					
+					$scope.rootObject.saveAMAResponse = function(){						
+						if($scope.rootObject.AMAResponseforOffshore == null || $scope.rootObject.AMAResponseforOffshore == '') {							
+							$scope.popupAlert('Please provide your AMA response' , function(){});
+							return false;
+						}
+						
+						if($scope.rootObject.AMAResponseforOffshore == 'Additional questions for Vendor' && ( $scope.rootObject.amaAgreementObj.Questions_for_Vendor_Response__c == null || $scope.rootObject.amaAgreementObj.Questions_for_Vendor_Response__c =='')) {							
+							$scope.popupAlert('Please provide Additional Information' , function(){});
+							return false;
+						}
+						
+						if($scope.rootObject.AMAResponseforOffshore == 'not approved' && ($scope.rootObject.amaAgreementObj.AMA_reasons_why_offshore_not_approved__c =='' || $scope.rootObject.amaAgreementObj.AMA_reasons_why_offshore_not_approved__c == null)) {
+							
+							$scope.popupAlert('Please provide the Reason for not approval' , function(){});
+							return false;
+						}
+						
+						$scope.rootObject.amaObject = {};
+						
+						$scope.rootObject.amaObject.id = $scope.rootObject.amaAgreementObj.id;
+						$scope.rootObject.amaObject.Questions_for_Vendor_Response__c =  $scope.rootObject.amaAgreementObj.Questions_for_Vendor_Response__c;
+						$scope.rootObject.amaObject.AMA_reasons_why_offshore_not_approved__c =  $scope.rootObject.amaAgreementObj.AMA_reasons_why_offshore_not_approved__c;
+						
+						$scope.rootObject.isProcessing = true;
+						$('#el_loading').css('display','block');
+						
+						CNT_TPA_AMAOffshoreTemplate.saveAMAResponseForOffshore($scope.rootObject.AMAResponseforOffshore,JSON.stringify($scope.rootObject.amaObject),function(result, event) { 
+							
+							if(event.type == 'exception')
+							{
+								hideLoading();                                
+								$scope.$log.info('Exception: ' + event.message);
+								$scope.rootObject.isProcessing = false;
+								return false;                                    
+							}else if(result != null && result == 'success'){
+								$scope.rootObject.offshoreSuccessMessage = 'Congratulations, Your response has been submitted.';
+								angular.element($('#controllerPage')).scope().applyChanges();
+								return true;
+							}else if(result != null && result == 'alreadySubmittedResponse'){
+								 $scope.rootObject.offshoreErrorMessage = 'Sorry, you have already submitted your response.';;
+								 angular.element($('#controllerPage')).scope().applyChanges();
+								 return true;
+							 }else{
+								 $scope.rootObject.isProcessing = false;
+								 hideLoading();                            
+								 $scope.$log.info('Event Type: ' + result);
+								 return false;
+							 }
+							 if(!$scope.$$phase) {
+								 $scope.$apply();
+							 }
+							 hideLoading();
+						},
+						{escape: false});
+					}
+					
+					$scope.popupAlert = function(msg, truePart)
+					{
+						popup(msg, {'animate':true}, 
+						function(r)
+						{
+							if(r && truePart != null)
+								truePart();
+						});
+					}
+					
+					$scope.getFormattedValue = function(label){
+						var addText = label;
+						if(addText!= null && addText!= '')
+							return addText.split(';').join(', ');
+						else
+							return addText;
+					};
+					
+					
+					
+					$scope.updateTechnologyToaccess = function(technology){
+						if($scope.rootObject.technologiesValues.indexOf(technology) == -1){
+							$scope.rootObject.technologiesValues.push(technology);
+						} 
+						else{
+							$scope.rootObject.technologiesValues.splice($scope.rootObject.technologiesValues.indexOf(technology),1);
+						}
+					};
+					
+					
+					$scope.applyChanges = function()
+					{
+						if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+							$scope.$apply();
+					}
+					
+					
+					function getParameterByName(name) 
+					{
+						name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+						var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+						return results == null ? "" : results[1].replace(/\+/g, " ");
+					}
+					
+				}]);
+            
+            $(document).ready(function(){
+                
+            });
+            
+            myapp.directive('ngConfirmClick', [
+                function(){
+                    return {
+                        link: function (scope, element, attr) {
+                            var msg = attr.ngConfirmClick || "Are you sure?";
+                            var clickAction = attr.confirmedClick;
+                            element.bind('click',function (event) {
+                                popup(msg, {'verify':true, 'animate':true}, function(r)
+                                      {
+                                          if(r) {
+                                              scope.$eval(clickAction);
+                                          }
+                                      });
+                            });
+                        }
+                    };
+                }]);
+				
+            var popupAlert = function(msg, truePart)
+			{
+            popup(msg, {'animate':true}, 
+            function(r)
+            {
+                if(r && truePart != null)
+                    truePart();                    
+            });
+			}
+            
+            </script>
+        </head>
+        <body id="pageBody" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+			<c:VFC_TPA_LoadingImage />
+            <apex:form id="theForm">
+                <div id="ng-app" ng-app="AMARevisedOffshoreProcess">
+                    <div id="controllerPage" ng-controller="controllerPage">
+                        
+                        <div style="margin:40px; background-color: white; border-radius: 5px;" id="block1" ng-if="rootObject.viewMode == 'offshore' && (rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  == 'Awaiting Vendor Response: AMA Offshore Consent form has been sent to Vendor' || rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  == 'Awaiting AMA Response: Offshore Consent form requires AMA review/approval')  && rootObject.offshoreErrorMessage =='' && rootObject.offshoreSuccessMessage== ''">
+                            <apex:outputPanel >
+                                <apex:pageBlock >
+                                    <apex:pageblocksection collapsible="false" columns="1" >
+                                        <div style="margin:40px;">
+                                            
+                                            <div ng-if="rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  == 'Awaiting Vendor Response: AMA Offshore Consent form has been sent to Vendor' && rootObject.type == 'VSubmit'">
+                                                <p>The following is the AMA Offshore Consent Request Form.</p><br/>
+                                                <p>ACTION: Please read carefully and populate “Section f” and your contact information at the bottom acknowledging the information contained in this request form is accurate.  {!$Label.TPA_IQVIA_Keyword} will provide the form to the AMA for their review and approval upon your submission.  You will be advised of approval or asked additional questions if necessary.</p><br/> 
+                                            </div>
+                                            <div ng-if="rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  == 'Awaiting AMA Response: Offshore Consent form requires AMA review/approval' && rootObject.type == 'DBLSubmit'">
+                                                
+                                                <p> AMA ACTION REQUESTED: </p><br/>
+                                                <p class="indent"> <span style="color: #FF7F00;">Step 1 – </span>Review </p>
+                                                <p class="indent"> <span style="color: #FF7F00;">Step 2 – </span>Decision</p>
+                                                <p class="indent"> <span style="color: #FF7F00;">Step 3 – </span>Submit to {!$Label.TPA_IQVIA_Keyword}</p><br/><br/> 
+                                                
+                                                
+                                                <p> <span style="color: #FF7F00;">Step 1:</span> Please review Vendor inputs – they have selected “Other” in “Section f” of the AMA Offshore Consent form </p><br/>
+                                                
+                                                
+                                            </div><br/>
+                                            <div>
+                                                <p style="text-align:center;"><b>CONSENT TO ACCESS TO AMA-PPD FROM OFFSHORE LOCATION</b></p><br/><br/>
+                                                <p>THIS CONSENT TO ACCESS TO AMA-PPD FROM OFFSHORE LOCATION (the “Consent") is made and entered into as of {{rootObject.amaAgreementObj.Date_vendor_responded_for_offshore__c}}, by and between {!$Label.TPA_IQVIA_Keyword} (“DBL”) and {{rootObject.amaAgreementObj.Vendor_Legal_Name__c}} (“Third Party Support User”).</p> <br/> 
+                                                <p>WHEREAS, DBL and Third Party Support User are parties to a {{rootObject.amaAgreementObj.Contract_Type__c}} Third Party Support Agreement for the use of data from the American Medical Association’s Physician Professional Database (“AMA-PPD”); and </p><br/>
+                                                <p>WHEREAS, Third Party Support User wishes to permit employees of <input placeholder="Ex-US Legal Entity Name" type="text" class="textbox" style ="min-width: 150px;margin-left:20px;" ng-model="rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c" size="{{rootObject.amaAgreementObj.Ex_US_Legal_Entity_Name__c.length}}" ng-disabled="rootObject.type == 'DBLSubmit'"/> (“Third Party Support User”) to access AMA-PPD from a location outside of the United States in order to perform services on behalf of User-Customer: and </p><br/>
+                                                <p>WHEREAS, the Third Party Support User Agreement prohibits disclosure of AMA-PPD to third parties and transmission, storage or use of AMA-PPD outside of the United States.</p><br/>
+                                                <p>NOW THEREFORE, for good and valuable consideration, receipt of which is hereby acknowledged, the parties agree as follows below.</p><br/>
+                                            </div><br/>
+                                            
+                                            
+                                            <div class="slds-text-longform">
+                                                <ol type="a" class="slds-list_ordered">
+                                                    <li><p class="indent"> DBL hereby agrees that Third Party Support User may provide access to AMA-PPD to employees of the Third Party Support User who are located outside of the United States in accordance with the following:</p></li><br/>
+                                                    <ol class="slds-list_ordered" type="a">
+                                                        <li> Only Third Party Support User employees located at Third Party Support User facilities in {{getFormattedValue(rootObject.amaAgreementObj.Vendor_employee_access_data_in_country__c)}} may access and use AMA-PPD.</li><br/>
+                                                        
+                                                        <li> The AMA-PPD that may be accessed is limited to the AMA-PPD Licensed Variables identified in Section 3.</li><br/>
+                                                        
+                                                        <li> Third Party Support User employees may access and use the AMA-PPD only to perform the following services on behalf of User-Customer (the “Business Purpose”):<br/><br/>
+                                                            
+                                                            {{getFormattedValue(rootObject.amaAgreementObj.AMA_Services_Provided__c)}} <br/></li><br/>
+                                                        
+                                                        <li> User-Customer and Third Party Support User must be parties to an agreement that contains provisions regarding the confidentiality and nondisclosure of AMA-PPD no less stringent than those contained in the License Agreement. Third Party Support User provider shall maintain reasonable physical, technical and administrative measures to prevent unauthorized disclosure of the AMA-PPD.</li><br/>
+                                                        
+                                                        <li> The AMA-PPD must remain in the United States and may not be downloaded, printed, stored, processed, or transmitted on or by systems located outside of the United States.</li><br/>
+                                                        
+                                                        <li> User-Customer may permit Third Party Support User’s employees to access and use AMA-PPD only by means of a secure session using one of the following technologies (please select): <br/>
+                                                            <div ng-if="rootObject.type == 'VSubmit'">
+                                                                <span  ng-repeat="x in rootObject.accessTechnologyList">
+                                                                    <label>
+                                                                        <div class="slds-checkbox">
+                                                                            <input type="checkbox" name="options" id="{{ x }}" ng-model="all" ng-change="updateTechnologyToaccess(x)"/>
+                                                                            <label class="slds-checkbox__label" for="{{ x }}">
+                                                                                <span class="slds-checkbox_faux"></span>
+                                                                                <span class="slds-form-element__label">{{ x }}</span>
+                                                                            </label>
+                                                                        </div>
+                                                                        <input class="textbox slds-input slds-size_1-of-2"  type="text" ng-if = "x=='Other' && rootObject.technologiesValues.indexOf(x) != -1"  
+                                                                               ng-model="rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c" 
+                                                                               size="{{rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c.length}}"/>
+                                                                        <ul>
+                                                                            <li ng-show = "x.indexOf('Other') != -1"> (selecting “Other” requires DBL review before signature.)</li>
+                                                                        </ul>
+                                                                    </label>
+                                                                    <br/>
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            <div ng-if="rootObject.type == 'DBLSubmit'">
+                                                                <span  ng-repeat="x in rootObject.accessTechnologyList">
+                                                                    <label>
+                                                                        <div class="slds-checkbox">
+                                                                            <input id="{{ x }}" type="checkbox" ng-model="all"  ng-checked ="rootObject.technologiesValues.indexOf(x) != -1"  ng-disabled="true" />
+                                                                            <label class="slds-checkbox__label" for="{{ x }}">
+                                                                                <span class="slds-checkbox_faux"></span>
+                                                                                <span class="slds-form-element__label">{{ x }}</span>
+                                                                            </label>
+                                                                        </div>
+                                                                        <input class="textbox slds-input slds-size_1-of-2"  type="text" ng-if = "x=='Other' && rootObject.technologiesValues.indexOf(x) != -1"  
+                                                                               ng-model="rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c" 
+                                                                               size="{{rootObject.amaAgreementObj.Other_technology_to_access_AMA_PPD__c.length}}"/>
+                                                                        <ul>
+                                                                            <li ng-show = "x.indexOf('Other') != -1"> (selecting “Other” requires DBL review before signature.)</li>
+                                                                        </ul>
+                                                                    </label>
+                                                                    <br/>
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                        
+                                                        <li> Third Party Support User must disable download and print functionality so as to prevent download and printing of AMA-PPD at Third Party Support User’s offshore location.</li><br/>
+                                                    </ol><br/>
+                                                    
+                                                    <li><p class="indent"> Except as expressly stated in this Consent, User-Customer shall not disclose AMA-PPD to Third Party Support User or provide Third Party Support User with access to AMA-PPD. </p></li><br/>
+                                                    
+                                                    <li><p class="indent"> The American Medical Association is a third party beneficiary of this Consent to Offshore Access to AMA-PPD. The AMA-PPD Licensed Variables to be accessed by the Third Party Support User are as listed below. </p><br/>
+													   
+                                                        <p class="indent">AMA-PPD Licensed Variables requested: </p><br/>    
+                                                        <table class="list slds-table slds-table--bordered slds-border_left slds-border_right slds-table_col-bordered slds-no-row-hover">
+                                                            <tr>
+                                                                <td>AMA-PPD</td>
+                                                                <td>
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-checked ="true" ng-disabled="true"/>
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                                <td>M.E.</td>
+                                                                <td>
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-checked ="rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c.indexOf('Medical Education Number (ME#)') != -1" ng-disabled="true"/>
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                                <td>SPECIALTY </td>
+                                                                <td>
+                                                                    
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-checked ="rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c.indexOf('Specialty') != -1" ng-disabled="true" />
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>D.E.A.</td>
+                                                                <td>
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-disabled="true"/>
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                                <td rowspan="3" colspan="4"/>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>N.P.I</td>
+                                                                <td>
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-disabled="true"/>
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>ST. LICENSE</td>
+                                                                <td>
+                                                                    <div class="slds-checkbox">
+                                                                        <input type="checkbox" ng-disabled="true"/>
+                                                                        <label class="slds-checkbox__label">
+                                                                            <span class="slds-checkbox_faux"></span>
+                                                                            <span class="slds-form-element__label"></span>
+                                                                        </label>
+                                                                    </div>
+                                                                </td>
+                                                                
+                                                            </tr>
+                                                        </table><br/><br/>
+                                                        
+                                                        
+                                                        <p class="indent">IN WITNESS WHEREOF, authorized representatives of the parties have executed this Addendum as of the dates set forth below their signatures.</p></li><br/>
+                                                </ol>
+                                            </div><br/>
+                                            <div >
+                                                <label>AGREED:</label><br/>
+                                                <div class="slds-grid slds-grid_vertical">
+                                                    <div class="slds-col slds-m-bottom_xx-small">
+                                                        <label>{{rootObject.amaAgreementObj.Vendor_Legal_Name__c}} (LICENSEE)</label>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3 slds-m-bottom_xx-small">
+                                                        <div class="slds-grid">
+                                                            <div class="slds-col slds-size_1-of-8"><label>Name: </label></div>
+                                                            <div class="slds-col slds-size_7-of-8">
+                                                                <input type="text" class="textbox slds-input" ng-model="rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c" size="{{rootObject.amaAgreementObj.Vendor_Name_who_requested_offshore__c.length}}"  ng-disabled="rootObject.type == 'DBLSubmit'"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3 slds-m-bottom_xx-small">
+                                                        <div class="slds-grid">
+                                                            <div class="slds-col slds-size_1-of-8"><label>Title: </label></div>
+                                                            <div class="slds-col slds-size_7-of-8">
+                                                                <input type="text" class="textbox slds-input" ng-model="rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c" size="{{rootObject.amaAgreementObj.Title_for_vendor_who_requested_offshore__c}}"  ng-disabled="rootObject.type == 'DBLSubmit'"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-col">
+                                                        <label>Date: </label><span style ="margin-left:20px;">{{rootObject.amaAgreementObj.Date_vendor_responded_for_offshore__c}}</span>
+                                                    </div>
+                                                </div>
+                                            </div><br/><br/>
+                                            
+                                            <div ng-if="rootObject.viewMode == 'offshore' && rootObject.amaAgreementDetailObject.Status_of_Offshore_Process__c  == 'Awaiting AMA Response: Offshore Consent form requires AMA review/approval' && rootObject.type == 'DBLSubmit'">
+                                                
+                                                <p><span style="color: #FF7F00;">Step 2:</span> Please provide your decision or additional questions.</p><br/> 
+                                                
+                                                <p>AMA Please respond with your decision:</p><br/>
+                                                
+                                                
+                                                <div style = "margin-left:10%;" >
+                                                    <div style = "padding-top:5px;">
+                                                        <div class="slds-checkbox">
+                                                            <input id="Specified Offshore Consent request approved" type="checkbox" ng-model="rootObject.AMAResponseforOffshore" ng-true-value="request approved" />
+                                                            <label class="slds-checkbox__label" for="Specified Offshore Consent request approved">
+                                                                <span class="slds-checkbox_faux"></span>
+                                                                <span class="slds-form-element__label">Specified Offshore Consent request approved</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div style = "padding-top:5px;"> 
+                                                        <div class="slds-grid slds-grid_vertical">
+                                                            <div class="slds-col">
+                                                                <div class="slds-checkbox">
+                                                                    <input id="Additional questions for Vendor requested by AMA:" type="checkbox" ng-model="rootObject.AMAResponseforOffshore" ng-true-value="Additional questions for Vendor" />
+                                                                    <label class="slds-checkbox__label" for="Additional questions for Vendor requested by AMA:">
+                                                                        <span class="slds-checkbox_faux"></span>
+                                                                        <span class="slds-form-element__label">Additional questions for Vendor requested by AMA:</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-col">
+                                                                <div class="slds-grid slds-size_1-of-2">
+                                                                    <div class="slds-col slds-size_1-of-2">
+                                                                        <span>Questions for Vendor Response: </span>
+                                                                    </div>
+                                                                    <div class="slds-col">
+                                                                        <textarea type="text" rows="1" class="slds-textarea" ng-model="rootObject.amaAgreementObj.Questions_for_Vendor_Response__c" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div style = "padding-top:5px;">
+                                                        <div class="slds-grid slds-grid_vertical">
+                                                            <div class="slds-col">
+                                                                <div class="slds-checkbox">
+                                                                    ​<input id="Offshore request not approved by AMA" type="checkbox" ng-model="rootObject.AMAResponseforOffshore" ng-true-value="not approved" />
+                                                                    <label class="slds-checkbox__label" for="Offshore request not approved by AMA">
+                                                                        <span class="slds-checkbox_faux"></span>
+                                                                        <span class="slds-form-element__label">Offshore request not approved by AMA</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-col">
+                                                                <div class="slds-grid slds-size_1-of-2">
+                                                                    <div class="slds-col slds-size_1-of-2">
+                                                                        <span>AMA reasons why: </span>
+                                                                    </div>
+                                                                    <div class="slds-col">
+                                                                        <textarea type="text" class="slds-textarea" rows="1" ng-model="rootObject.amaAgreementObj.AMA_reasons_why_offshore_not_approved__c"/>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div><br/>
+                                                </div>
+                                                <p><span style="color: #FF7F00;">Step 3:</span> Click “Submit” to notify {!$Label.TPA_IQVIA_Keyword} of your decision:</p><br/>  
+                                                
+                                            </div>
+                                            <div style = "text-align:center;">
+                                                <button class="btn btn-default slds-button slds-button_success" onclick="return false;" ng-if="rootObject.type == 'VSubmit'" ng-click="rootObject.saveOffshoreformforVendor();" ng-disabled="rootObject.isProcessing">Submit</button>
+                                                <button class="btn btn-default slds-button slds-button_success" onclick="return false;" ng-show="rootObject.type == 'DBLSubmit'" ng-click="rootObject.saveAMAResponse();" ng-disabled="rootObject.isProcessing">Submit</button>
+                                            </div><br/><br/>
+                                            <div>
+                                                <h5><b>{!$Label.TPA_IQVIA_Keyword} Third Party Request Related Details–</b></h5> 
+                                                <br/><br/>
+                                                <pre>TPA Request                             :  {{rootObject.TPA_Request_number}}</pre>
+                                                <pre>Vendor Legal Name                       :  {{rootObject.amaAgreementObj.Vendor_Legal_Name__c}}</pre>
+                                                <pre>Client Company Name                     :  {{rootObject.amaAgreementObj.Client__c}}</pre>
+                                                <pre>Agreement Start Date                    :  {{rootObject.amaAgreementObj.Agreement_Start_Date__c| date : "MM/dd/yyyy"}}</pre>
+                                                <pre>Initial Termination Date                :  {{rootObject.amaAgreementObj.Initial_Termination_Date__c | date : "MM/dd/yyyy"}}</pre>
+                                                <pre>Agreement End Date                      :  {{rootObject.amaAgreementObj.Agreement_End_Date__c | date : "MM/dd/yyyy"}}</pre>
+                                                <pre>Vendor employee access data in country  :  {{rootObject.amaAgreementObj.Vendor_employee_access_data_in_country__c}}</pre>
+                                                <pre>AMA Variables Requested                 :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c)}}</pre>
+                                                <pre>AMA Project USEs                        :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_Services_Provided__c)}}</pre>
+                                                <pre>How long will Vendor have access to Data:  {{rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c}}</pre>
+                                            </div><br/>
+                                            
+                                        </div>
+                                        
+                                    </apex:pageBlockSection>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+                            
+                        </div>
+                        
+                        
+                        <div style="margin:40px;" id="block3" ng-if="rootObject.viewMode == 'offshore' && rootObject.offshoreErrorMessage =='' && rootObject.offshoreSuccessMessage != '' ">
+                            
+                            <apex:outputPanel >
+                                <apex:pageBlock >
+                                    
+                                    <div  ng-if="rootObject.offshoreSuccessMessage !='' " class="slds-theme_success slds-p-around_small">
+                                        <div class="messageText slds-align_absolute-center">
+                                            <h2 id= 'msg'>{{rootObject.offshoreSuccessMessage}}</h2>
+                                        </div><br/>
+                                    </div>
+                                </apex:pageBlock>  
+                            </apex:outputPanel>
+                        </div>
+                        
+                        
+                        <div class="slds-theme_error" ng-if="rootObject.offshoreErrorMessage !=''" style="margin:40px;">
+                            <apex:outputPanel styleclass="slds-notify_container slds-is-relative ">
+                                <apex:pageBlock >
+                                    <div class="message errorM3 slds-notify__content " role="alert">
+                                        <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <h2 class="slds-text-heading_small">
+                                                            <div class="messageText">
+                                                                <span><h4>Errors</h4></span>
+                                                            </div>
+                                                        </h2>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5">
+                                                        <ul>
+                                                            <li>{{rootObject.offshoreErrorMessage}}</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+                        </div>
+                        
+                    </div>
+                </div>
+            </apex:form>
+        </body> -->
+    </html>
+    
+</apex:page>

@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Create_Content_Document</name>
+        <label>Create Content Document</label>
+        <locationX>50</locationX>
+        <locationY>1730</locationY>
+        <actionName>UTL_CLM_Flow_ActionHandler</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Loop_Through_Content_Documents</targetReference>
+        </connector>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <flowTransactionModel>Automatic</flowTransactionModel>
+        <inputParameters>
+            <name>action</name>
+            <value>
+                <stringValue>CreateContentDocument</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>agreementWrapper</name>
+            <value>
+                <elementReference>varA_Wrapper</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>UTL_CLM_Flow_ActionHandler</nameSegment>
+        <outputParameters>
+            <assignToReference>varR_contentVersions</assignToReference>
+            <name>contentVersions</name>
+        </outputParameters>
+    </actionCalls>
+    <actionCalls>
+        <name>FileUpload</name>
+        <label>FileUpload</label>
+        <locationX>50</locationX>
+        <locationY>974</locationY>
+        <actionName>UTL_CLM_Flow_ActionHandler</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Set_Wrapper</targetReference>
+        </connector>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <flowTransactionModel>Automatic</flowTransactionModel>
+        <inputParameters>
+            <name>action</name>
+            <value>
+                <stringValue>File</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>agreementId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>fileList</name>
+            <value>
+                <elementReference>varR_Files</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>inputString</name>
+            <value>
+                <stringValue>Upload File</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>UTL_CLM_Flow_ActionHandler</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Refresh</name>
+        <label>Refresh</label>
+        <locationX>666</locationX>
+        <locationY>2930</locationY>
+        <actionName>c:LXC_CLM_RefreshFlow</actionName>
+        <actionType>component</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>recordId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>c:LXC_CLM_RefreshFlow</nameSegment>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Add_Content_Version_Ids</name>
+        <label>Add Content Version Ids</label>
+        <locationX>138</locationX>
+        <locationY>1538</locationY>
+        <assignmentItems>
+            <assignToReference>varA_Wrapper.contentVersionIds</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Loop_Through_Document_Version_Details.Apttus__ContentVersionId__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Through_Document_Version_Details</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Content_Document_Links2</name>
+        <label>Set Content Document Links2</label>
+        <locationX>138</locationX>
+        <locationY>1946</locationY>
+        <assignmentItems>
+            <assignToReference>varT_contentDocumentStrings</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>forT_Link2</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Through_Content_Documents</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_File_List</name>
+        <label>Set File List</label>
+        <locationX>402</locationX>
+        <locationY>674</locationY>
+        <assignmentItems>
+            <assignToReference>varT_FileData</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Loop_Through_File_Repeater.File_Upload_R.fData</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_FileData</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <stringValue>~{!Loop_Through_File_Repeater.Document_Type_M}</stringValue>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varR_Files</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varT_FileData</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_FileData</assignToReference>
+            <operator>Assign</operator>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_contentDocumentStrings</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>forT_Link</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Through_File_Repeater</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Requestor_Email</name>
+        <label>Set Requestor Email</label>
+        <locationX>182</locationX>
+        <locationY>2438</locationY>
+        <assignmentItems>
+            <assignToReference>varT_EmailAdddress</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Get_IQVIA_Agreement.Requestor__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_EmailAdddress</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Get_IQVIA_Agreement.Related_Opportunity__r.Owner.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_Notification_and_Create_Email_Message</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Wrapper</name>
+        <label>Set Wrapper</label>
+        <locationX>314</locationX>
+        <locationY>1214</locationY>
+        <assignmentItems>
+            <assignToReference>varA_Wrapper.iqviaAgreement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Get_IQVIA_Agreement</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varA_Wrapper.docType</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Agreement Draft</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_If_User_Select_Document_Versions</targetReference>
+        </connector>
+    </assignments>
+    <choices>
+        <name>choice_Approval</name>
+        <choiceText>Approval</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Approval</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>choice_Draft</name>
+        <choiceText>Agreement Draft</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Agreement Draft</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>choice_Feedback</name>
+        <choiceText>Document for Feedback</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Document for Feedback</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>choice_Other</name>
+        <choiceText>Other Document</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Other Document</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>choice_Pricing_Document</name>
+        <choiceText>Pricing Document</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Pricing Document</stringValue>
+        </value>
+    </choices>
+    <constants>
+        <name>conT_Rule</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>&lt;hr style=&quot;margin-top: 0px;margin-bottom: 15px;&quot;&gt;</stringValue>
+        </value>
+    </constants>
+    <decisions>
+        <name>Check_if_File_Exists</name>
+        <label>Check if File Exists</label>
+        <locationX>314</locationX>
+        <locationY>866</locationY>
+        <defaultConnector>
+            <targetReference>Set_Wrapper</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Has_File</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_Files</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>FileUpload</targetReference>
+            </connector>
+            <label>Has File</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_If_User_Select_Document_Versions</name>
+        <label>Check If User Select Document Versions</label>
+        <locationX>314</locationX>
+        <locationY>1322</locationY>
+        <defaultConnector>
+            <targetReference>Update_IQVIA_Agreement</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Select</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_selectedDocVerDetails</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Loop_Through_Document_Version_Details</targetReference>
+            </connector>
+            <label>Select</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Requestor_Active</name>
+        <label>Is Requestor Active?</label>
+        <locationX>666</locationX>
+        <locationY>242</locationY>
+        <defaultConnector>
+            <targetReference>Inactive_Contact_Error</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Inactive</defaultConnectorLabel>
+        <rules>
+            <name>Active</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_IQVIA_Agreement.Requestor__r.IsActive</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Document_Version_Details_Records</targetReference>
+            </connector>
+            <label>Active</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Requestor_Active_Contact</name>
+        <label>Is Requestor Active?</label>
+        <locationX>314</locationX>
+        <locationY>2330</locationY>
+        <defaultConnector>
+            <targetReference>Send_Notification_and_Create_Email_Message</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Yes_Exists</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_IQVIA_Agreement.Requestor__r.IsActive</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Requestor_Email</targetReference>
+            </connector>
+            <label>Yes</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>forT_AccountLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) + {!Get_IQVIA_Agreement.Account__c}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) + {!Get_IQVIA_Agreement.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementType</name>
+        <dataType>String</dataType>
+        <expression>IF({!Get_IQVIA_Agreement.Original_Agreement__c} != null, TEXT({!Get_IQVIA_Agreement.Original_Agreement__r.Subtype__c}), TEXT({!Get_IQVIA_Agreement.Subtype__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>forT_EmailAddress</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE(SUBSTITUTE({!varT_EmailAdddress}, &quot;[&quot;, &quot;&quot;), &quot;]&quot;, &quot;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <name>forT_Link</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK({!Loop_Through_File_Repeater.File_Upload_R.title})),  &apos;&lt;a href=&quot;&apos;+ LEFT({!$Api.Partner_Server_URL_140}, FIND(&apos;.com&apos;, {!$Api.Partner_Server_URL_140}) + 4)+ &apos;sfc/servlet.shepherd/document/download/&apos;+ SUBSTITUTE(RIGHT(LEFT({!Loop_Through_File_Repeater.File_Upload_R.fData}, FIND(&apos;&quot;,&quot;conVerId&quot;&apos;, {!Loop_Through_File_Repeater.File_Upload_R.fData})), 20),  &apos;&quot;&apos;, &apos;&apos;) + &apos;&quot;&gt;&apos; + {!Loop_Through_File_Repeater.File_Upload_R.title} + &apos;&lt;/a&gt;(&apos;+ {!Loop_Through_File_Repeater.Document_Type_M}+&apos;)&lt;br/&gt;&apos;, &apos;&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>forT_Link2</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK({!Loop_Through_Content_Documents.ContentDocumentId})), &apos;&lt;a href=&quot;&apos; + LEFT({!$Api.Partner_Server_URL_140}, FIND(&apos;.com&apos;, {!$Api.Partner_Server_URL_140}) + 4) + &apos;sfc/servlet.shepherd/document/download/&apos; + 
+{!Loop_Through_Content_Documents.ContentDocumentId} + &apos;&quot;&gt; &apos; +{!Loop_Through_Content_Documents.Title} + &apos;&lt;/a&gt; (Agreement Draft)&lt;br/&gt;&apos;, &apos;&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>forT_OpportunityLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) +{!Get_IQVIA_Agreement.Related_Opportunity__c}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_TypeofRequest</name>
+        <dataType>String</dataType>
+        <expression>if({!Get_IQVIA_Agreement.Version_Number__c} &gt; 0, TEXT({!Get_IQVIA_Agreement.Subtype__c}), &apos;New Agreement&apos;)</expression>
+    </formulas>
+    <interviewLabel>CLM USBU Internal Business Review Screen Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM USBU Internal Business Review Screen Flow</label>
+    <loops>
+        <name>Loop_Through_Content_Documents</name>
+        <label>Loop Through Content Documents</label>
+        <locationX>50</locationX>
+        <locationY>1838</locationY>
+        <collectionReference>varR_contentVersions</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Set_Content_Document_Links2</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Update_IQVIA_Agreement</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <loops>
+        <name>Loop_Through_Document_Version_Details</name>
+        <label>Loop Through Document Version Details</label>
+        <locationX>50</locationX>
+        <locationY>1430</locationY>
+        <collectionReference>varR_selectedDocVerDetails</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Add_Content_Version_Ids</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Create_Content_Document</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <loops>
+        <name>Loop_Through_File_Repeater</name>
+        <label>Loop Through File Repeater</label>
+        <locationX>314</locationX>
+        <locationY>566</locationY>
+        <collectionReference>File_Repeater.AllItems</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Set_File_List</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Check_if_File_Exists</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <recordLookups>
+        <name>Get_IQVIA_Agreement</name>
+        <label>Get IQVIA Agreement</label>
+        <locationX>666</locationX>
+        <locationY>134</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Is_Requestor_Active</targetReference>
+        </connector>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>IQVIA_Agreement__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordRollbacks>
+        <name>Roll_back_update_records</name>
+        <label>Roll back update records</label>
+        <locationX>754</locationX>
+        <locationY>2330</locationY>
+        <connector>
+            <targetReference>Error_Screen</targetReference>
+        </connector>
+    </recordRollbacks>
+    <recordUpdates>
+        <name>Update_IQVIA_Agreement</name>
+        <label>Update IQVIA Agreement</label>
+        <locationX>314</locationX>
+        <locationY>2222</locationY>
+        <connector>
+            <targetReference>Is_Requestor_Active_Contact</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Roll_back_update_records</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value>
+                <elementReference>Get_IQVIA_Agreement.Requestor__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status_Category__c</field>
+            <value>
+                <stringValue>In Authoring</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value>
+                <stringValue>Feedback Awaited</stringValue>
+            </value>
+        </inputAssignments>
+        <object>IQVIA_Agreement__c</object>
+    </recordUpdates>
+    <screens>
+        <name>Error_Screen</name>
+        <label>Error Screen</label>
+        <locationX>754</locationX>
+        <locationY>2438</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Refresh</targetReference>
+        </connector>
+        <fields>
+            <name>Error_Text</name>
+            <fieldText>&lt;p&gt;&lt;strong style=&quot;color: rgb(0, 0, 0);&quot;&gt;An unexpected error has occurred. Please contact the support team for help.&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;strong style=&quot;color: rgb(0, 0, 0);&quot;&gt;Error Details&lt;/strong&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; :  &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);&quot;&gt;{!$Flow.FaultMessage}&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <nextOrFinishButtonLabel>Finish</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Inactive_Contact_Error</name>
+        <label>Inactive Contact Error</label>
+        <locationX>1018</locationX>
+        <locationY>350</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Create_Note</targetReference>
+        </connector>
+        <fields>
+            <name>Header_0</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;strong style=&quot;font-size: 18px;&quot;&gt;Business Feedback&lt;/strong&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Rule_0</name>
+            <fieldText>&lt;p&gt;{!conT_Rule}&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Error_Message</name>
+            <fieldText>&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;strong style=&quot;font-size: 14px; background-color: rgb(255, 255, 255); color: rgb(205, 33, 59);&quot;&gt;The Requester&apos;s contact to whom the Business Feedback is to be sent is inactive. Please connect with the support team to update the Requester field and then try to send for Business Review.&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;strong style=&quot;font-size: 14px; background-color: rgb(255, 255, 255); color: rgb(205, 33, 59);&quot;&gt;&lt;span class=&quot;ql-cursor&quot;&gt;﻿&lt;/span&gt;&lt;/strong&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <nextOrFinishButtonLabel>Finish</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Upload_file_Screen</name>
+        <label>Upload file Screen</label>
+        <locationX>314</locationX>
+        <locationY>458</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Loop_Through_File_Repeater</targetReference>
+        </connector>
+        <fields>
+            <name>Header</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;strong style=&quot;font-size: 18px;&quot;&gt;Business Feedback&lt;/strong&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Rule</name>
+            <fieldText>&lt;p&gt;{!conT_Rule}&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>File_Repeater</name>
+            <fieldType>Repeater</fieldType>
+            <fields>
+                <name>File_Upload_R</name>
+                <extensionName>c:lWC_CLM_FileUpload</extensionName>
+                <fieldType>ComponentInstance</fieldType>
+                <inputParameters>
+                    <name>label</name>
+                    <value>
+                        <stringValue>Upload the File</stringValue>
+                    </value>
+                </inputParameters>
+                <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                <isRequired>true</isRequired>
+                <storeOutputAutomatically>true</storeOutputAutomatically>
+            </fields>
+            <fields>
+                <name>Document_Type_M</name>
+                <choiceReferences>choice_Draft</choiceReferences>
+                <choiceReferences>choice_Other</choiceReferences>
+                <choiceReferences>choice_Approval</choiceReferences>
+                <choiceReferences>choice_Pricing_Document</choiceReferences>
+                <choiceReferences>choice_Feedback</choiceReferences>
+                <dataType>String</dataType>
+                <fieldText>Document Type</fieldText>
+                <fieldType>DropdownBox</fieldType>
+                <helpText>&lt;p&gt;&lt;span style=&quot;color: rgb(68, 68, 68); background-color: rgb(255, 255, 255);&quot;&gt;Select the type of files uploaded&lt;/span&gt;&lt;/p&gt;</helpText>
+                <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                <isRequired>true</isRequired>
+                <visibilityRule>
+                    <conditionLogic>and</conditionLogic>
+                    <conditions>
+                        <leftValueReference>File_Repeater.AllItems[$EachItem].File_Upload_R.fData</leftValueReference>
+                        <operator>Contains</operator>
+                        <rightValue>
+                            <stringValue>conVerId</stringValue>
+                        </rightValue>
+                    </conditions>
+                </visibilityRule>
+            </fields>
+            <fields>
+                <name>Document_Type_Opt</name>
+                <choiceReferences>choice_Draft</choiceReferences>
+                <choiceReferences>choice_Other</choiceReferences>
+                <choiceReferences>choice_Approval</choiceReferences>
+                <choiceReferences>choice_Pricing_Document</choiceReferences>
+                <choiceReferences>choice_Feedback</choiceReferences>
+                <dataType>String</dataType>
+                <fieldText>Document Type</fieldText>
+                <fieldType>DropdownBox</fieldType>
+                <helpText>&lt;p&gt;&lt;span style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;Select the type of files uploaded&lt;/span&gt;&lt;/p&gt;</helpText>
+                <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                <isDisabled>
+                    <booleanValue>true</booleanValue>
+                </isDisabled>
+                <isRequired>false</isRequired>
+                <visibilityRule>
+                    <conditionLogic>NOT(1)</conditionLogic>
+                    <conditions>
+                        <leftValueReference>File_Repeater.AllItems[$EachItem].File_Upload_R.fData</leftValueReference>
+                        <operator>Contains</operator>
+                        <rightValue>
+                            <stringValue>conVerId</stringValue>
+                        </rightValue>
+                    </conditions>
+                </visibilityRule>
+            </fields>
+            <isRequired>false</isRequired>
+        </fields>
+        <fields>
+            <name>Display_space</name>
+            <fieldText>&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Documents_Version_Details_Records</name>
+            <dataTypeMappings>
+                <typeName>T</typeName>
+                <typeValue>Apttus__DocumentVersionDetail__c</typeValue>
+            </dataTypeMappings>
+            <extensionName>flowruntime:datatable</extensionName>
+            <fieldType>ComponentInstance</fieldType>
+            <inputParameters>
+                <name>label</name>
+                <value>
+                    <stringValue>Document Version Records</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>selectionMode</name>
+                <value>
+                    <stringValue>MULTI_SELECT</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>minRowSelection</name>
+                <value>
+                    <numberValue>0.0</numberValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>shouldDisplayLabel</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>tableData</name>
+                <value>
+                    <elementReference>Get_Document_Version_Details_Records.varR_documentVersionDetails</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>columns</name>
+                <value>
+                    <stringValue>[{&quot;apiName&quot;:&quot;Title_Click_to_Download__c&quot;,&quot;guid&quot;:&quot;column-4336&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:0,&quot;label&quot;:&quot;Title (Click to Download)&quot;,&quot;type&quot;:&quot;customRichText&quot;},{&quot;apiName&quot;:&quot;Name&quot;,&quot;guid&quot;:&quot;column-591b&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:true,&quot;customHeaderLabel&quot;:&quot;Version&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:1,&quot;label&quot;:&quot;Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;CreatedDate&quot;,&quot;guid&quot;:&quot;column-3836&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:2,&quot;label&quot;:&quot;Created Date&quot;,&quot;type&quot;:&quot;customDateTime&quot;},{&quot;apiName&quot;:&quot;Apttus__Tags__c&quot;,&quot;guid&quot;:&quot;column-9246&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:true,&quot;customHeaderLabel&quot;:&quot;Created By&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:3,&quot;label&quot;:&quot;Tags&quot;,&quot;type&quot;:&quot;text&quot;}]</stringValue>
+                </value>
+            </inputParameters>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <outputParameters>
+                <assignToReference>varR_selectedDocVerDetails</assignToReference>
+                <name>selectedRows</name>
+            </outputParameters>
+        </fields>
+        <fields>
+            <name>Notes</name>
+            <fieldText>Notes</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+        </fields>
+        <nextOrFinishButtonLabel>Submit</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <start>
+        <locationX>540</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_IQVIA_Agreement</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Note</name>
+        <label>Create Note</label>
+        <locationX>666</locationX>
+        <locationY>2822</locationY>
+        <connector>
+            <targetReference>Refresh</targetReference>
+        </connector>
+        <flowName>CLM_Subflow_Create_Notes</flowName>
+        <inputAssignments>
+            <name>varT_Content</name>
+            <value>
+                <elementReference>Notes</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_Title</name>
+            <value>
+                <stringValue>Business Feedback</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <subflows>
+        <name>Get_Document_Version_Details_Records</name>
+        <label>Get Document Version Details Records</label>
+        <locationX>314</locationX>
+        <locationY>350</locationY>
+        <connector>
+            <targetReference>Upload_file_Screen</targetReference>
+        </connector>
+        <flowName>CLM_Subflow_Get_Document_Versions_Details</flowName>
+        <inputAssignments>
+            <name>recordId</name>
+            <value>
+                <elementReference>Get_IQVIA_Agreement.Conga_Agreement_Id__c</elementReference>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <subflows>
+        <name>Send_Notification_and_Create_Email_Message</name>
+        <label>Send Notification and Create Email Message</label>
+        <locationX>314</locationX>
+        <locationY>2630</locationY>
+        <connector>
+            <targetReference>Create_Note</targetReference>
+        </connector>
+        <flowName>CLM_Subflow_Send_Notfication</flowName>
+        <inputAssignments>
+            <name>varC_EmailRecipients</name>
+            <value>
+                <elementReference>varT_EmailAdddress</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_CCEmailRecipients</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailBody</name>
+            <value>
+                <elementReference>textT_EmailBody</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailSubject</name>
+            <value>
+                <elementReference>textT_EmailSubject</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_FromAddress</name>
+            <value>
+                <stringValue>clmintegration@iqvia.com</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_SenderType</name>
+            <value>
+                <stringValue>OrgWideEmailAddress</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <textTemplates>
+        <name>textT_EmailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>AGREEMENT REQUEST AWAITING BUSINESS FEEDBACK &lt;br /&gt;&lt;br /&gt;
+The contract manager assigned to your request {!Get_IQVIA_Agreement.FF_Agreement_Number__c} has sent it back to you
+for additional information. This request is now awaiting action from you.&lt;br /&gt;&lt;br /&gt;
+Please preview and address the comments below and/or within the agreement record/document. When you are ready to send
+it back to the contract manager, navigate to the agreement record (you may use the link below), click on the &apos;Submit
+Feedback&apos; button under the action panel, and upload the document or provide other information. The contract manager
+will then be notified to proceed with your request.&lt;br /&gt;&lt;br /&gt;
+&lt;table border=&quot;1&quot; style=&quot;border-collapse: collapse; border: 1px solid&quot;&gt;
+    &lt;tbody&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;Agreement&lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt;
+                &lt;a href=&quot;{!forT_AgreementLink}&quot;&gt;{!Get_IQVIA_Agreement.FF_Agreement_Number__c} - {!Get_IQVIA_Agreement.Name}&lt;/a&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;Client&lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt;
+            &lt;a href=&quot;{!forT_AccountLink}&quot;&gt;{!Get_IQVIA_Agreement.Account__r.Name}&lt;/a&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;Opportunity&lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt;
+            &lt;a href=&quot;{!forT_OpportunityLink}&quot;&gt;{!Get_IQVIA_Agreement.Related_Opportunity__r.Opportunity_Number__c} - {!Get_IQVIA_Agreement.Related_Opportunity__r.Name}&lt;/a&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;Type of Request&lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt; {!forT_TypeofRequest}&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;IQVIA Service Line&lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt;{!Get_IQVIA_Agreement.Primary_Business_Line1__c}&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr style=&quot;border-bottom: 1px solid;&quot;&gt;
+            &lt;td style=&quot;border-right: 1px solid&quot;&gt;Agreement Type &lt;/td&gt;
+            &lt;td style=&quot;padding-left:10px;&quot;&gt;{!forT_AgreementType}&lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br/&gt;
+&lt;i&gt;&lt;b&gt;Document: &lt;/b&gt;&lt;/br&gt;{!varT_contentDocumentStrings}&lt;/i&gt;
+&lt;br /&gt;
+&lt;i&gt;&lt;b&gt;Comments: &lt;/b&gt; {!Notes}&lt;/i&gt;&lt;br /&gt;
+&lt;br /&gt;
+Thank you,&lt;br /&gt;
+US Contracting Center (USCC)&lt;br /&gt;
+The CLM integration email &lt;b&gt;&lt;u&gt;is not&lt;/u&gt;&lt;/b&gt; an active or monitored email account, please reach out to USCC-CLM-Support@iqvia.com for any additional assistance.</text>
+    </textTemplates>
+    <textTemplates>
+        <name>textT_EmailSubject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Request Awaiting Feedback || Client: {!Get_IQVIA_Agreement.Account__r.Name} || Agreement : {!Get_IQVIA_Agreement.FF_Agreement_Number__c} - {!Get_IQVIA_Agreement.Name}</text>
+    </textTemplates>
+    <variables>
+        <name>FileUploadSkipped</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+    <variables>
+        <name>recordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varA_Wrapper</name>
+        <apexClass>AgreementWrapper</apexClass>
+        <dataType>Apex</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varR_contentVersions</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>ContentVersion</objectType>
+    </variables>
+    <variables>
+        <name>varR_Files</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varR_selectedDocVerDetails</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__DocumentVersionDetail__c</objectType>
+    </variables>
+    <variables>
+        <name>varT_ContentDocId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_contentDocIds</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_contentDocumentStrings</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_CountOfUploadedDocument</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+    </variables>
+    <variables>
+        <name>varT_EmailAdddress</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_FileData</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

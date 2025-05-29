@@ -1,0 +1,233 @@
+<apex:component controller="CNT_TPA_AMA_ContractDetailListView">
+<apex:includeLightning />
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <apex:slds />
+        <style>
+            .slds-scope .slds-table thead th {
+            cursor: pointer;
+            background-color: #F3F2F2;
+            }
+        </style>
+        <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}"/>
+    </html>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-size: cover; min-height: 100vh">
+        
+        <div class="slds-scope">
+            <apex:form >
+                <div class="slds-grid slds-wrap slds-gutters slds-align_absolute-center slds-m-left_x-small slds-m-top_x-small">
+                    
+                    <div class="slds-col slds-m-bottom_medium">
+                        <apex:outputPanel id="listViewComponent" styleclass="">
+                            <div class="slds-page-header slds-p-around_x-small" role="banner">
+                                <div class="slds-media">
+                                    <div class="slds-media__body">
+                                        <h1 class="slds-page-header__title slds-align-middle" title="{!viewName}">{!viewName}</h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <div class="slds-m-top_x-small">
+                            <div class="slds-card">
+                                <div class="slds-card__header slds-grid">
+                                    <header class="slds-media slds-media_center slds-has-flexi-truncate slds-grid">
+                                        <div class="slds-no-flex slds-col">
+                                            <apex:commandButton styleClass="slds-button slds-button_neutral" action="{!URLFOR($Action.AMA_Contract_Detail__c.New, $ObjectType.AMA_Contract_Detail__c)}" value="New TPA AMA Contract Details" title="test"/>
+                                            <button class="slds-button slds-button_neutral" onclick="refresh();return false;">Refresh</button>
+                                        </div>
+                                    </header>
+                                </div>
+                                <div class="slds-card__body">
+                                    <div class="tableWrapper">
+                                        <div class="slds-table_edit_container slds-is-relative">
+                                            <apex:outputPanel id="tabletorefresh">
+                                                <table id="datatable" class="slds-table slds-table_bordered slds-table_col-bordered slds-table_fixed-layout slds-table_resizable-cols slds-no-cell-focus slds-table_edit">
+                                                    <thead>
+                                                        <tr class="slds-line-height_reset">
+                                                            
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Name', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Name.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Name.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Name', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Client__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Client__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Client__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Client__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('DBL__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.DBL__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.DBL__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'DBL__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Client_Services_On_Behalf_Of__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Client_Services_On_Behalf_Of__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Client_Services_On_Behalf_Of__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Client_Services_On_Behalf_Of__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Contract_List_Type__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_List_Type__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Contract_List_Type__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Contract_List_Type__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Contract_Type__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_Type__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Contract_Type__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Contract_Type__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Max_Fee_Reached__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_List_Type__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Max_Fee_Reached__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Max_Fee_Reached__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Contract_End_Date__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_End_Date__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Contract_End_Date__c.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'Contract_End_Date__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Access__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Access__c.Label}&nbsp;&nbsp;
+                                                                    
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Storage__c.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Storage__c.Label}&nbsp;&nbsp;
+                                                                    
+                                                                </div>
+                                                            </th>
+                                                            
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CreatedDate', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.AMA_Contract_Detail__c.fields.CreatedDate.Label}">
+                                                                    {!$ObjectType.AMA_Contract_Detail__c.fields.CreatedDate.Label}&nbsp;&nbsp;
+                                                                    {!If(sortBy == 'CreatedDate', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                                </div>
+                                                            </th>
+                                                            <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CreatedDate', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                                <div title="Offering Country "> Last modified By </div>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <apex:repeat value="{!amaContractDetails}" var="amaContractDetail">
+                                                            <tr class="slds-hint-parent">
+                                                                
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Name.Label}">
+                                                                    <apex:outputLink styleclass="slds-cell-wrap" title="{!amaContractDetail.Name}" value="/{!amaContractDetail.Id}">{!amaContractDetail.Name}</apex:outputLink>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Client__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Client__c}" value="{!amaContractDetail.Client__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.DBL__c.Label}">
+                                                                    <apex:outputField styleclass="slds-cell-wrap" title="{!amaContractDetail.DBL__c}" value="{!amaContractDetail.DBL__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Client_Services_On_Behalf_Of__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Client_Services_On_Behalf_Of__c}" value="{!amaContractDetail.Client_Services_On_Behalf_Of__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_List_Type__c.Label}">
+                                                                    <apex:outputField styleclass="slds-cell-wrap" title="{!amaContractDetail.Contract_List_Type__c}" value="{!amaContractDetail.Contract_List_Type__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_Type__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Contract_Type__c}" value="{!amaContractDetail.Contract_Type__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Max_Fee_Reached__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Max_Fee_Reached__c}" value="{!amaContractDetail.Max_Fee_Reached__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Contract_End_Date__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Contract_End_Date__c}" value="{!amaContractDetail.Contract_End_Date__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Access__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Offshore_Access__c}" value="{!amaContractDetail.Offshore_Access__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.Offshore_Storage__c.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.Offshore_Storage__c}" value="{!amaContractDetail.Offshore_Storage__c}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.CreatedDate.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.CreatedDate}" value="{!amaContractDetail.CreatedDate}"/>
+                                                                </td>
+                                                                <td class="slds-cell-edit" data-label="{!$ObjectType.AMA_Contract_Detail__c.fields.CreatedDate.Label}">
+                                                                    <apex:outputLabel styleclass="slds-cell-wrap" title="{!amaContractDetail.CreatedBy.Name}" value="{!amaContractDetail.CreatedBy.Name}"/>
+                                                                </td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </tbody>
+                                                </table>
+                                                <apex:outputPanel rendered="{!amaContractDetails.size == 0}">
+                                                    <div class="slds-m-top_medium slds-text-heading_medium slds-text-color_destructive slds-text-align_center">--! No TPA Request Found !--</div>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-card__footer slds-p-top_x-small">
+                                    <div class="slds-grid">
+                                        <div class="slds-col slds-size_1-of-4">
+                                            <div class="slds-form-element slds-size_1-of-3">
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-select_container">
+                                                        <select class="slds-select" id="pageSize" onchange="changepageSize($('#pageSize').val()) ;"  >
+                                                            <option>15</option>
+                                                            <option>25</option>
+                                                            <option>50</option>
+                                                            <option>100</option>
+                                                            <option>200</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <apex:outputPanel id="refreshData" styleclass="slds-col slds-size_3-of-4">
+                                            <div class="slds-grid">
+                                                <div class="slds-col slds-size_2-of-3">
+                                                    <div class="slds-button-group slds-align_absolute-center" role="group">
+                                                        <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="◄" action="{!setAMAContractDetail.first}" disabled="{!!setAMAContractDetail.hasPrevious}" title="First" rerender="tabletorefresh,refreshData" status="status"/>
+                                                        <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="Prev" action="{!setAMAContractDetail.previous}" disabled="{!!setAMAContractDetail.hasPrevious}" title="Previous" rerender="tabletorefresh,refreshData" status="status"/>
+                                                        <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="Next" action="{!setAMAContractDetail.next}" disabled="{!!setAMAContractDetail.hasNext}" title="Next" rerender="tabletorefresh,refreshData" status="status"/>
+                                                        <apex:commandButton styleclass="slds-button slds-button_neutral" value="►" action="{!setAMAContractDetail.last}" disabled="{!!setAMAContractDetail.hasNext}" title="Last" rerender="tabletorefresh,refreshData" status="status"/>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-3">
+                                                    <div class="slds-m-top_small">
+                                                        <span class="slds-badge slds-size_1-of-2">Page {!currentPageNo} of {!If(CEILING(totalNoOfRec / pageSize) == 0, 1, CEILING(totalNoOfRec / pageSize))}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                          
+                </div>
+                
+                
+                <apex:actionFunction name="changepageSize" action="{!settableSize}" rerender="tabletorefresh,refreshData" status="status">
+                    <apex:param name="pSize" assignTo="{!pageSize}" value="" />
+                </apex:actionFunction>
+                <apex:actionFunction name="sorttable" action="{!sortData}" rerender="tabletorefresh,refreshData" status="status">
+                    <apex:param name="sortby" assignTo="{!sortBy}" value="" />
+                    <apex:param name="sortorder" assignTo="{!sortOrder}" value="" />
+                </apex:actionFunction>
+                <apex:actionstatus id="status">
+                    <apex:facet name="start">
+                        <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+                            <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </apex:facet>
+                </apex:actionstatus>
+            </apex:form>
+        </div>
+    </body>
+    
+</apex:component>

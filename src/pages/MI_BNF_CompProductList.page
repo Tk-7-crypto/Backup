@@ -1,0 +1,75 @@
+<apex:page standardController="MIBNF_Component__c" extensions="MI_BNF_Comp_Extension" showheader="false">
+<apex:form >
+ <apex:pageBlock id="MBNF_Header" mode="maindetail" rendered="{!oliList.size>0}">
+   <c:JQueryBlockUI />
+    <script>
+function DeleteConfirm(oliid,HiddenVariableId)
+{
+    var isConfirm = confirm("Click OK to drop the product from this Invoice or click Cancel to go back");
+    if (isConfirm)
+    {
+   
+       YUIShowLoading();
+   
+       deleteData(oliid,HiddenVariableId);  
+    }
+}
+function refreshWindow(){
+    YUIHideLoading();
+    window.parent.location.href=window.parent.location.href;
+   
+}
+
+</script>
+
+        <apex:pageMessages id="errorMessages" escape="false" rendered="false" />
+        <apex:actionFunction action="{!deleteproduct}" status="MyStatus" name="deleteData" rerender="theTable" oncomplete="refreshWindow();">
+                        <apex:param name="selectedInvoice" assignTo="{!selectedInvoice}" value="" />
+                        <apex:param name="MIBNF_CompId" assignTo="{!MIBNF_CompId}" value="" />
+                       
+        </apex:actionFunction>
+
+        <apex:actionStatus startText="Removing Product Please wait..." id="MyStatus" startStyle="color:red;font-weight:bold"></apex:actionStatus>
+     
+            <apex:dataTable style="width:100%;" border="0" value="{!oliList}" var="oli" id="theTable" cellspacing="3" cellpadding="6" bgcolor="#DCDCDC" rendered="{!oliList.size>0}">
+				<!-- updated by Ritesh Gupta -- Issue - 06365 -->
+                <apex:column width="100px" headerValue="" rendered="{!(IF((MIBNF_Component__c.BNF_Status__c == 'New' || MIBNF_Component__c.BNF_Status__c == 'Rejected' || MIBNF_Component__c.BNF_Status__c == 'LO Rejected' || MIBNF_Component__c.BNF_Status__c == 'RA Rejected' || MIBNF_Component__c.BNF_Status__c == 'SAP Rejected'), true, false) || MIBNF_Component__c.Addendum__c)}">
+
+                <apex:image value="{!$Resource.delete_img}" style="cursor:pointer;padding-top:5px;" id="btnCBNF" title="Drop Product from this Invoice"
+                          onclick="DeleteConfirm('{!oli.id}','{!MIBNF_CompId}');return false;" />
+                </apex:column>
+                <apex:column headerValue="#"><apex:outputText value="{!ROUND(oli.Position_Number__c,0)}"></apex:outputText></apex:column>
+                <apex:column width="220px" headerValue="Product Name"><apex:outputfield value="{!oli.PricebookEntry.Name}" /></apex:column>
+                <apex:column headerValue="Product Code"><apex:outputText value="{!oli.PricebookEntry.ProductCode}"></apex:outputText></apex:column>
+                <apex:column headerValue="Sales Price">{!oli.TotalPrice}</apex:column>
+                <apex:column headerValue="Data Period Start"><apex:outputfield value="{!oli.Product_Start_Date__c}" /></apex:column>
+                <apex:column headerValue="Data Period End"><apex:outputfield value="{!oli.Product_End_Date__c}" /></apex:column>
+                <apex:column headerValue="Billing Frequency">{!oli.Billing_Frequency__c}</apex:column>
+                <apex:column headerValue="Delivery Media">{!oli.Delivery_Media__c}</apex:column>     
+                <apex:column headerValue="Delivery Country">{!oli.Delivery_Country__c}</apex:column>   
+                <apex:column headerValue="WBS Code" rendered="{!wbsCodeCheck}">{!oli.WBS_R_Element__c}</apex:column> 
+                <apex:column headerValue="Delivery/Rpt Frequency">{!oli.Proj_Rpt_Frequency__c}</apex:column> 
+                <apex:column headerValue="Product Invoice Text">{!oli.Sales_Text__c}</apex:column> 
+                <apex:column headerValue="Discount %">{!oli.Discount_Percentage_Formula__c}</apex:column> 
+                <apex:column headerValue="Discount Reason / Surcharge Text">
+                <apex:outputpanel rendered="{!oli.Discount_Reason__c!=null}">{!oli.Discount_Reason__c}</apex:outputpanel>
+                <apex:outputpanel rendered="{!oli.Surcharge_Text__c!=null}">{!oli.Surcharge_Text__c}</apex:outputpanel>
+                </apex:column>    
+                <apex:column headerValue="PO line item number">{!oli.PO_line_item_number__c}</apex:column>
+                <apex:column headerValue="Nbr of Users">{!oli.Nbr_of_Users__c}</apex:column>      
+                <!-- Added By Sneha rathi Date: 21 dec 2012 : Adding column of Therapy_Area field ER-0303-->  
+                <apex:column headerValue="Therapy Area">{!oli.Therapy_Area__c}</apex:column>    
+                <apex:column headerValue="Other Ship To">{!oli.Other_Ship_To_Address__r.Name}</apex:column>
+                <apex:column headerValue="Prebilling?" rendered="{!isMIBNFPrebillingSalesCode}">{!oli.Prebilling__c}</apex:column>                 
+                <apex:column headerValue="Revised Sales Price" rendered="{!MIBNF_Component__c.Addendum__c}">{!oli.Revised_Price__c}</apex:column>
+               <apex:column headerValue="Cancel" rendered="{!MIBNF_Component__c.Addendum__c}"><apex:outputField value="{!oli.MIBNF_Cancel__c}" /></apex:column>
+             
+            </apex:dataTable>
+            <apex:outputPanel id="optPnl">
+            </apex:outputPanel>
+    
+
+  
+</apex:pageBlock>
+</apex:form> 
+</apex:page>

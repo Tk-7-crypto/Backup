@@ -1,0 +1,283 @@
+<apex:component language="{!language}" controller="EXT_TPA_CustomLandingPage">
+    <apex:slds />
+    <style>
+        .slds-scope .slds-table thead th{
+            cursor: pointer;
+            background-color: #F3F2F2;
+        }
+        .slds-form-element__control{
+            padding-left: 21% !important;
+        }
+    </style>
+    <script type="text/javascript">  
+        function refreshLandingPage() {
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.EXT_TPA_CustomLandingPage.isVendorUserProp}',function(result, event)
+            {
+                if(event.type == 'exception')
+                {
+                    if(event.message.indexOf('Remoting request invalid for your session.') != -1) {
+                        window.location.href = '/imshealthPortal/secur/logout.jsp';
+                    }                    
+                    return false;
+                }
+                else
+                {
+                    if(result) {
+                        window.location.href = '/imshealthPortal/secur/logout.jsp';
+                    }
+                    else {
+                        refresh();
+                    }
+                }
+            });            
+        }              
+        function disableStatus(){
+            var elemt3 = document.getElementById("pg:j_id45:j_id46:j_id49:timePeriod").value;
+            if(elemt3 == '--Select--'){
+                var elemt1 = document.getElementById("pg:j_id45:j_id46:j_id49:viewName").disabled = false;
+            }
+            else{
+                var elemt1 = document.getElementById("pg:j_id45:j_id46:j_id49:viewName").disabled = true;
+            }
+        }
+    </script>
+    
+    <div class="slds-scope">
+        <apex:form >
+            <div class="slds-grid slds-wrap slds-gutters slds-align_absolute-center"> 
+                <div class="slds-col slds-align-bottom">
+                    <div class="slds-grid slds-gutters slds-grid_vertical slds-grid_align-end">
+                        <!--<div class="slds-col slds-col_bump-left">
+                            <apex:outputlink value="{!URLFOR($Resource.TPA_Portal_User_Guide)}" target="_blank"><font color="blue" style="text-decoration: underline;">{!$Label.TPA_User_Guide_Link}</font></apex:outputlink>
+                        </div>-->
+                        <div class="slds-col slds-col_bump-left">
+                            <apex:outputlink value="{!$Label.TPA_Privacy_Policy_URL}" target="_blank"><font color="blue" style="text-decoration: underline;">{!$Label.TPA_Privacy_Policy}</font></apex:outputlink>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col slds-m-bottom_medium">
+                    <apex:outputPanel id="listViewComponent" >
+                        <div class="slds-page-header slds-p-around_x-small" role="banner">
+                            <div class="slds-media">
+                                <div class="slds-media__body">
+                                    <h1 class="slds-page-header__title slds-align-middle" title="{!$Label.TPA_Third_Party_Access_Portal}">{!$Label.TPA_Third_Party_Access_Portal}</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputPanel>
+                    <div class="slds-m-top_x-small">
+                        <div class="slds-card">
+                            <div class="slds-card__header slds-grid">
+                                <header class="slds-media slds-media_center slds-has-flexi-truncate slds-grid">
+                                    <div class="slds-no-flex slds-col">
+                                        <button id="jqxButton" class="slds-button slds-button_success" onclick="return false;">{!$Label.TPA_New_TPA_Request}</button>
+                                        &nbsp;&nbsp;
+                                        <button class="slds-button slds-button_brand" onclick="toggleSearchView();return false;">{!$Label.TPA_Search}</button>
+                                        &nbsp;&nbsp;
+                                        <button class="slds-button slds-button_neutral slds-p-around_x-small" onclick="refreshLandingPage();return false;" title="{!$Label.TPA_Refresh}">
+                                            <span class="slds-icon_container" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                                <svg aria-hidden="true" class="slds-icon slds-icon-text-default slds-icon_x-small">
+                                                    <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#refresh')}"></use>
+                                                </svg>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </header>
+                            </div>
+                            <div class="slds-card__header slds-m-left_small">
+                                <div class = "slds-text-heading_small" style = "color:var(--slds-g-color-palette-cloud-blue-70);">
+                                    <strong>{!$Label.TPA_Quick_Filters}</strong>
+                                </div>
+                                <div class = "slds-grid slds-gutters slds-m-top_small">
+                                    <div class="slds-col slds-size_1-of-4">
+                                        <apex:outputPanel >
+                                            <div class="slds-form-element slds-grid">
+                                                <label class="slds-form-element__label"><b>{!$Label.TPA_Show_Only_TPAs_Expiring_Within_the_Next}</b></label> 
+                                                <div class="slds-m-left_none">
+                                                    <div class="slds-select_container" style = "width: max-content;">
+                                                        <apex:selectList id="timePeriod" value="{!timePeriod}" multiselect="false" styleClass="ddViews slds-select" onchange="changeView($('#timePeriod').val());disableStatus();" size="1" >
+                                                            <apex:selectOptions value="{!duration}"/>
+                                                        </apex:selectList>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                    <div class = "slds-col slds-size_1-of-2">
+                                        <apex:outputPanel >
+                                            <div class="slds-form-element slds-p-left_none slds-grid" role="banner">
+                                                <label class="slds-form-element__label"><b>{!$Label.TPA_Find_Requests_by_Status}</b></label> 
+                                                <div class="slds-select_container">
+                                                    <apex:inputField id="viewName" styleClass="ddViews slds-select" value="{!tpaRequest.Status_View_of_Requests__c}" onchange="changeView($('#viewName').val());" >
+                                                    </apex:inputField>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-card__body">
+                                <div class="tableWrapper">
+                                    <div class="slds-table_edit_container slds-is-relative">
+                                        <apex:outputPanel id="tabletorefresh">
+                                            <table id="datatable" class="slds-table slds-table_bordered slds-table_col-bordered slds-table_fixed-layout slds-table_resizable-cols slds-no-cell-focus slds-table_edit">
+                                                <thead>
+                                                    <tr class="slds-line-height_reset">
+                                                        <th class="slds-text-title_caps slds-cell-edit slds-size_2-of-12" scope="col">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.Action__c.Label}">{!$ObjectType.TPA_Request__c.fields.Action__c.Label}</div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('TPA_Name_New__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$Label.TPA_Client_Request_Number}">
+                                                                {!$Label.TPA_Client_Request_Number}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'TPA_Name_New__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Client_Project_Name__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.Client_Project_Name__c.Label}">
+                                                                {!$ObjectType.TPA_Request__c.fields.Client_Project_Name__c.Label}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Client_Project_Name__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Request_Status__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap  slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.Request_Status__c.Label}">
+                                                                {!$ObjectType.TPA_Request__c.fields.Request_Status__c.Label}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Request_Status__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Client_Address__r.Name', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap  slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$Label.TPA_Client}">
+                                                                {!$Label.TPA_Client}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Client_Address__r.Name', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Service_Provider_f__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$Label.TPA_Vendor_Name}">
+                                                                {!$Label.TPA_Vendor_Name}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Service_Provider_f__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Service_Provider_Contact_f__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$Label.TPA_Vendor_Contact_Name}">
+                                                                {!$Label.TPA_Vendor_Contact_Name}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Service_Provider_Contact_f__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Agreement_Effective_Date_f__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.Agreement_Effective_Date_f__c.Label}">
+                                                                {!$ObjectType.TPA_Request__c.fields.Agreement_Effective_Date_f__c.Label}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Agreement_Effective_Date_f__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Expiration_Date__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.Expiration_Date__c.Label}">
+                                                                {!$ObjectType.TPA_Request__c.fields.Expiration_Date__c.Label}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'Expiration_Date__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                        <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CreatedById', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                            <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="{!$ObjectType.TPA_Request__c.fields.CreatedById.Label}">
+                                                                {!$ObjectType.TPA_Request__c.fields.CreatedById.Label}&nbsp;&nbsp;
+                                                                {!If(sortBy == 'CreatedById', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                            </div>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <apex:repeat value="{!tpaRequests}" var="tpaRequest">
+                                                        <tr class="slds-hint-parent">
+                                                            <td class="slds-cell-edit slds-size_2-of-12" data-label="{!$ObjectType.TPA_Request__c.fields.Action__c.Label}" scope="row">
+                                                                <apex:outputLabel styleclass="slds-cell-wrap" value="{!tpaRequest.Action__c}" escape="false"/>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Name.Label}">
+                                                                <apex:outputField styleclass="slds-cell-wrap" title="{!tpaRequest.Name}" value="{!tpaRequest.Name}"/>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Client_Project_Name__c.Label}">
+                                                                <apex:outputLabel styleclass="slds-cell-wrap" title="{!tpaRequest.Client_Project_Name__c}" value="{!tpaRequest.Client_Project_Name__c}"/>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Request_Status__c.Label}">
+                                                                <div class="slds-truncate" title="{!tpaRequest.Request_Status__c}">{!tpaRequest.Request_Status__c}</div>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Client_Address__c.Label}">
+                                                                <div class="slds-truncate" title="{!tpaRequest.Client_Address__r.Name}">{!tpaRequest.Client_Address__r.Name}</div>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Service_Provider_f__c.Label}">
+                                                                <div class="slds-truncate" title="{!tpaRequest.Service_Provider_f__c}" >{!tpaRequest.Service_Provider_f__c}</div>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Service_Provider_Contact_f__c.Label}">
+                                                                <div class="slds-truncate" title="{!tpaRequest.Service_Provider_Contact_f__c}" >{!tpaRequest.Service_Provider_Contact_f__c}</div>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Agreement_Effective_Date_f__c.Label}">
+                                                                <apex:outputField styleclass="slds-truncate" title="{!tpaRequest.Agreement_Effective_Date_f__c}" value="{!tpaRequest.Agreement_Effective_Date_f__c}"/>
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.Expiration_Date__c.Label}">
+                                                                <apex:outputField styleclass="slds-truncate" title="{!tpaRequest.Expiration_Date__c}" value="{!tpaRequest.Expiration_Date__c}" />
+                                                            </td>
+                                                            <td class="slds-cell-edit" data-label="{!$ObjectType.TPA_Request__c.fields.CreatedById.Label}">
+                                                                <div class="slds-truncate" >{!tpaRequest.CreatedBy.Name}</div>
+                                                            </td>
+                                                        </tr>
+                                                    </apex:repeat>
+                                                </tbody>
+                                            </table>
+                                            <apex:outputPanel rendered="{!tpaRequests.size == 0}">
+                                                <div class="slds-m-top_medium slds-text-heading_medium slds-text-color_destructive slds-text-align_center">--! No TPA Request Found !--</div>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-card__footer slds-p-top_x-small">
+                                <div class="slds-grid">
+                                    <div class="slds-col slds-size_1-of-4">
+                                        <div class="slds-form-element slds-size_1-of-3">
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-select_container">
+                                                    <select class="slds-select" id="pageSize" onchange="changepageSize($('#pageSize').val())">
+                                                        <option>15</option>
+                                                        <option>25</option>
+                                                        <option>50</option>
+                                                        <option>100</option>
+                                                        <option>200</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <apex:outputPanel id="refreshData" styleclass="slds-col slds-size_3-of-4">
+                                        <div class="slds-grid">
+                                            <div class="slds-col slds-size_2-of-3">
+                                                <div class="slds-button-group slds-align_absolute-center" role="group">
+                                                    <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="◄" action="{!setTPARequest.first}" disabled="{!!setTPARequest.hasPrevious}" title="First" rerender="tabletorefresh,refreshData"/>
+                                                    <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="{!$Label.TPA_Previous}" action="{!setTPARequest.previous}" disabled="{!!setTPARequest.hasPrevious}" title="Previous" rerender="tabletorefresh,refreshData"/>
+                                                    <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="{!$Label.TPA_Next}" action="{!setTPARequest.next}" disabled="{!!setTPARequest.hasNext}" title="Next" rerender="tabletorefresh,refreshData"/>
+                                                    <apex:commandButton styleclass="slds-button slds-button_neutral" value="►" action="{!setTPARequest.last}" disabled="{!!setTPARequest.hasNext}" title="Last" rerender="tabletorefresh,refreshData"/>
+                                                </div>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-3">
+                                                <div class="slds-m-top_small">
+                                                    <span class="slds-badge slds-size_1-of-2">Page {!currentPageNo} of {!If(CEILING(totalNoOfRec / pageSize) == 0, 1, CEILING(totalNoOfRec / pageSize))}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                          
+            </div>
+            <apex:actionFunction name="changeView" action="{!setView}" rerender="tabletorefresh,refreshData">
+                <apex:param name="vName" assignTo="{!viewName}" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="refresh" action="{!refreshTPAPage}"/>
+            <apex:actionFunction name="changepageSize" action="{!settableSize}" rerender="tabletorefresh,refreshData">
+                <apex:param name="pSize" assignTo="{!pageSize}" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="sorttable" action="{!sortData}" rerender="tabletorefresh,refreshData">
+                <apex:param name="sortby" assignTo="{!sortBy}" value="" />
+                <apex:param name="sortorder" assignTo="{!sortOrder}" value="" />
+            </apex:actionFunction>
+        </apex:form>
+    </div>
+    
+</apex:component>

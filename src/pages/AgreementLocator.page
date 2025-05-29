@@ -1,0 +1,450 @@
+<apex:page id="pg" controller="AgreementLocatorController" sidebar="false" lightningStylesheets="true" docType="html-5.0">
+    <!------------- Style Panel(For Help icon ) Begins------------>
+    <apex:slds /> 
+    <style type="text/css">
+        .imgclass:hover{
+            background-image: url(/img/help/helpOrbs.gif);
+            background-repeat: no-repeat;
+            width: 16px;
+            height: 15px;    
+            background-position: right;
+        
+        }
+        .imgclass{
+            background-image: url(/img/help/helpOrbs.gif);
+            background-repeat: no-repeat;
+            width: 16px;
+            height: 15px;
+        }
+    </style>
+    
+    <!------------- Style Panel Ends------------>
+    <head> 
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+        <script src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/jquery.tablesorter.js')}" />
+        <script src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/jquery.tablesorter.pager.js')}" />
+        
+        <!-- Enter Key Handling Begin-->        
+        <script>                  
+         document.body.onkeypress = function(e){
+                var keycode;  
+                if (window.event)  
+                    {  
+                       keycode = window.event.keyCode;  
+                    }  
+                else if (e)  
+                    {  
+                       keycode = e.which;
+                    }
+                if(keycode == 13)
+                    {
+                            
+                          enterkeycalling();// action function which rerender a particular div/section             
+                        return false;
+                    }
+                else
+                    return true;
+            }
+            
+        </script>
+        <!-- Enter Key Handling Ends
+             Style panel (applied on table)Begins - -->
+        <style>
+            body{ margin:0px; }
+            
+            #idh, #idh:visited { color:#000; text-decoration:none; }
+            
+            
+            #hycucdemosbody{ padding:10px 0; min-height:500px; }
+    
+            .tablesorter{
+                width:100%; 
+                border-collapse:collapse;
+            }
+            .tablesorter, .tablesorter td{
+                border: 1px solid #dad9c7;
+            }
+            .tablesorter thead{
+                background:#E6EEEE;
+                cursor:pointer;
+            }
+            th.header {
+                background-image: url('{!URLFOR($Resource.TableSorterPager, '/table-sorter/bg.gif')}');
+                cursor: pointer;
+                font-weight: bold;
+                background-repeat: no-repeat;
+                background-position: center right;
+                padding-right: 20px;
+                border: 1px solid #dad9c7;
+                margin-left: -1px;
+            }
+            th.headerSortDown {
+                background-image: url('{!URLFOR($Resource.TableSorterPager, '/table-sorter/desc.gif')}');
+                background-color: #C3C3C3;
+            }
+            th.headerSortUp {
+                background-image: url('{!URLFOR($Resource.TableSorterPager, '/table-sorter/asc.gif')}');
+                background-color: #C3C3C3;
+            }
+            #pagination{
+                margin:10px 0;
+                top: 0px  !important;
+                position: relative !important;
+            }
+            .pagedisplay{
+                width:35px;
+            }            
+        </style>
+        <!-- Style Panel ( applied on Table ) Ends -->        
+    </head>
+
+    <apex:outputPanel id="pageMsg">
+    <apex:PageMessages />
+    </apex:outputPanel>
+    <apex:form id="frm">
+    <apex:actionFunction name="enterkeycalling" action="{!displayList}"  reRender="agreementDetails,refreshButtonpanel,pageMsg" id="applyFilterBtn" status="status"/>
+    
+    <!-------------------------------  Filter Criteria Section Begins --PageBlock1------------------------------------------------------>
+    
+     <apex:pageBlock title="{!$Label.Select_Filters}" id="filtersBlock" mode="edit">
+     
+            <apex:pageBlockSection columns="1" id="pbs" >    
+            <apex:outputPanel >
+                <table border="0">
+                    <tr>
+                        <td>
+                            <b>
+                            <apex:outputPanel >
+                              <apex:outputLabel value="{!$Label.Quick_Search_by}"/>                                                       
+                                <img src="/s.gif" Class="imgclass" title="{!$Label.Quick_Search_Message}" />  
+                            </apex:outputPanel>
+                            </b>
+                        </td>
+                        <td>
+                            <apex:outputPanel >
+                                  <apex:outputPanel >
+                                  <apex:selectlist value="{!quickSearchby}" size="1">
+                                       <apex:selectOptions value="{!LstQuickSearchBy}" />
+                                  </apex:selectList>  
+                                </apex:outputPanel>                                  
+                                <apex:outputPanel style="float:top">
+                                 <apex:inputText value="{!quickSearchByStr}" />
+                                 </apex:outputPanel>
+                              </apex:outputPanel>
+                        </td>
+                        
+                        <!-- Added By Rakesh : 30 Oct 2013 : ER-530 : START -->
+                        <td>
+                            <apex:outputPanel id="AttachNumberTable1">      
+                                 <table >
+                                    <tr>
+                                        <td>
+                                            <b><apex:outputLabel value="{!$Label.Attach_Number}" /></b>&nbsp;&nbsp;
+                                        </td>
+                                        
+                                        <td>
+                                            <apex:outputPanel >
+                                                <apex:inputtext value="{!attachNumber}" id="attachNumber" size="12"> </apex:inputtext>
+                                            </apex:outputPanel> 
+                                              
+                                        </td>
+                                    </tr>
+                                 </table>
+                             </apex:outputPanel>    
+                        </td>
+                        <!-- END : ER-530  -->
+                        
+                    </tr>   
+                    
+                    <tr>
+                        <td>
+                            <apex:outputPanel >              
+                            <b> <apex:outputlabel value="{!$Label.ATC_Code}"/> </b>                             
+                            </apex:outputPanel>                  
+                        </td>               
+                        <td>
+                            <apex:outputPanel >              
+                             <apex:inputText value="{!atcCodeStr}" />                              
+                            </apex:outputPanel>                  
+                        </td>               
+                          
+                    </tr>
+                    
+                    <tr>
+                        <td>                                                   
+                            <b><apex:outputLabel value="{!$Label.Time_Frame}"/></b>
+                            <img src="/s.gif" Class="imgclass" title="{!$Label.Date_Range_to_filter_Message}" />
+                        </td>
+                        <td>
+                            <apex:outputPanel >                             
+                             <apex:selectlist value="{!timeFrame}" size="1">
+                                <apex:selectOptions value="{!lstTimeFrame}" />
+                             </apex:selectList>
+                            </apex:outputPanel>
+                        </td>
+                        <td>
+                             <apex:outputPanel id="dateTable1">      
+                                 <table >
+                                    <tr>
+                                        <td style="width:100px;">
+                                            <b><apex:outputLabel value="{!$Label.From}" /></b>
+                                        </td>
+                                        <td style="width:200px;">
+                                            <apex:outputPanel styleClass="dateInput dateOnlyInput">
+                                                <apex:input type="date" value="{!dataPeriodStart}" id="strtDt1" size="12" styleClass="slds-input"> </apex:input>
+                                            </apex:outputPanel> 
+                                             <!-- <apex:inputField value="{!filterDateValuesAgreement.Contract_Start_Date__c}" />--> 
+                                        </td>
+                                        <td style="width:100px;">
+                                            <b><apex:outputLabel value="{!$Label.To}" /></b>
+                                        </td>
+                                        <td style="width:200px;">
+                                            <apex:outputPanel styleClass="dateInput dateOnlyInput">
+                                                <apex:input type="date" value="{!dataPeriodEnd}" id="endDt1" size="12" styleClass="slds-input"> </apex:input>
+                                            </apex:outputPanel> 
+                                            <!-- <apex:inputField value="{!filterDateValuesAgreement.Contract_End_Date__c}" />--> 
+                                        </td> 
+                                    </tr>
+                                 </table>
+                             </apex:outputPanel>                                          
+                        </td>               
+                    </tr>
+                    <tr>
+                        <td>           
+                            <b> <apex:outputLabel value="{!$Label.Contract_Type}"/></b>
+                            <img src="/s.gif" Class="imgclass" title="{!$Label.Contract_Type_filter_Message}" />
+                        </td>
+                        <td>
+                            <apex:outputPanel > 
+                            <apex:selectlist value="{!contractType}" size="1">
+                                    <apex:selectOptions value="{!LstContractType}" />
+                                </apex:selectList>   
+                            </apex:outputPanel>                  
+                        </td>               
+                    </tr>  
+                    <tr>
+                        <td>           
+                            <b> <apex:outputLabel value="{!$Label.Agreement_Term}"/></b>
+                            <img src="/s.gif" Class="imgclass" title="{!$Label.Agreement_Term_Filter_Message}" />
+                        </td>
+                        <td>
+                            <apex:outputPanel > 
+                            <apex:selectlist value="{!agreementTerm}" size="1">
+                                    <apex:selectOptions value="{!LstAgreementTerm}" />
+                                </apex:selectList>   
+                            </apex:outputPanel>                  
+                        </td>               
+                    </tr>                                      
+                                        
+                    <tr>
+                        <td>
+                            <b><apex:outputLabel value="{!$Label.Agreement_Status}"/> </b>      
+                        </td>
+                        <td>
+                            <apex:outputPanel >   
+                                <apex:outputPanel id="rolePanel" >                      
+                                    <apex:selectlist value="{!active}" size="1">
+                                        <apex:selectOptions value="{!LstActive}" />
+                                    </apex:selectList>    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;                              
+                                    
+                                    <apex:actionStatus id="status">
+                                        <apex:facet name="start"> 
+                                            <apex:outputPanel > 
+                                                {!$Label.Searching}<img src="/apexpages/devmode/img/saveStatus.gif" />
+                                            </apex:outputPanel>  
+                                        </apex:facet>
+                                    </apex:actionStatus>                                  
+                                </apex:outputPanel>
+                            </apex:outputPanel>                  
+                        </td>               
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>                     
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>
+                            <apex:outputpanel id="refreshButtonpanel">            
+                                <apex:commandButton value="{!$Label.Reset_Filters}"   immediate="true"   action="{!resetFilters}" /><!-- reRender="filtersBlock,agreementDetails"/>-->
+                                <!-- Updated By:-Ekta ,Date-31st May,2013 ,Details:-Issue-00967 -->
+                                <!-------------------------------start------------------------------>
+                                <apex:commandButton value="{!$Label.Apply_Filters}"   action="{!applyFilter}"  reRender="agreementDetails,refreshButtonpanel,pageMsg" id="applyFilterBtn" status="status" />
+                               
+                                 <!-------------------------------End------------------------------>
+                                <apex:commandButton value="{!$Label.Export_to_Excel}" action="{!ExcelExport}" rendered="{!If(aggWrapperList.size == 0, false, true)}"/>                               
+                            </apex:outputpanel>
+                        </td>                       
+                    </tr>
+                </table>
+            </apex:outputPanel>     
+           </apex:pageBlockSection>                      
+     </apex:pageBlock>
+      
+     <!-------------------------------  Filter Criteria Section Ends --------------------------------------------------------
+     ---------------------------------  Result Section Begins  ---PAGEBLOCK-2----------------------------------------------------------->
+    <apex:outputPanel id="agreementDetails">
+    <apex:pageBlock title="{!$Label.Agreement_Summary_Details}" > 
+    <!-- Updated By:-Ekta ,Date-31st May,2013 ,Details:-Issue-00967 -->
+        <apex:outputLabel value="{!$Label.No_Agreement_Records}" rendered="{!If(totalAgreement == 0, true, false)}"/>                              
+        <b><I><apex:outputLabel value="{!$Label.Total_Agreements}: {!totalAgreement}" rendered="{!If(totalAgreement == 0, false, true)}"/></I></b>
+        
+        <!------------------------------------------RESULT TABLE SECTION----------------------------------------------------->
+        <apex:outputPanel rendered="{!If(totalAgreement == 0, false, true)}" >
+
+                <!------------- TABLE SORTER SCRIPT PANEL------------>
+            <script>
+                    $(document).ready(function(){           
+                        $("#myTable").tablesorter().tablesorterPager({container: $("#pagination")});
+                    });
+            </script>        
+            <div class="hycucdemosbody">
+                <!----------------RESULT TABLE SECTION---BEGINS------------>
+                <table id="myTable" class="tablesorter" border="1" cellpadding="3">
+                    <thead>    
+                        <th> {!$Label.Agreement_Name}</th>     
+                        <th> {!$Label.Account_Name}</th>
+                        <th> {!$Label.Account_Local_Name}</th>
+                        <th> {!$Label.Agreement_Number}</th>
+                        <th> {!$Label.Attach_Number}</th>
+                        <th> {!$Label.Agreement_Start_Date}</th>
+                        <th> {!$Label.Agreement_End_Date}</th>
+                        <th> {!$Label.Agreement_Term}</th>
+                        <th> {!$Label.Contract_Type}</th>
+                        <th> {!$Label.Agreement_Status}</th>
+                        <th> {!$Label.Company_Signed_Date}
+                            <apex:outputPanel >                                       
+                                <img src="/s.gif" Class="imgclass" title="{!$Label.Company_Signed_Date_Message}" />                                 
+                            </apex:outputPanel>
+                        </th>
+                        <th> {!$Label.Other_Party_Signed_Date}
+                            <apex:outputPanel >                                       
+                                <img src="/s.gif" Class="imgclass" title="{!$Label.Other_Party_Signed_Message}" />                                 
+                            </apex:outputPanel>
+                        </th> 
+                        <th> {!$Label.Product_Name} </th>
+                        <th> {!$Label.Data_Period_Start_Product} </th>
+                        <th> {!$Label.Data_Period_End_Product}</th>
+                        <th> {!$Label.ATC_Code}</th>
+                        <th> {!$Label.Data_Period_Start_ATC}</th>
+                        <th> {!$Label.Data_Period_End_ATC}</th>
+                        <th> {!$Label.Opportunity_Number}</th>        
+                    </thead>
+                    <tbody>
+                        <apex:repeat value="{!aggWrapperList}" var="agg">
+                        <tr>
+                            <td><apex:outputLink >
+                                    <span style="display:{!IF(agg.agreementName != null,'none','block')}">{!agg.agreementName}</span>
+                                    <a href="/{!agg.agreementId}" target="_blank">{!agg.agreementName}</a>
+                                </apex:outputLink></td>
+                            <td><apex:outputLink >
+                                <span style="display:{!IF(agg.agreementAccountName != null,'none','block')}">{!agg.agreementAccountName}</span>
+                                   <a href="/{!agg.agreementAccountId}" target="_blank">{!agg.agreementAccountName}</a>
+                               </apex:outputLink>
+                            </td>
+                            <td>{!agg.agreeAccLoclName}</td>
+                            <td>{!agg.agreementNumber}</td>
+                            <!-- updated By Rakesh : 30 Oct 2013 : ER-530  : START-->
+                            <!-- <td>{!agg.agreementAttachNo}</td> -->
+                            <td>{!agg.agliAttachNo}</td>
+                            <!-- End : ER-530 -->
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementSTARTDate}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementENDDate}" /></apex:outputText></td>
+                            <td>{!agg.agreementTerm}</td>
+                            <td>{!agg.agreeContractType}</td>
+                            <td><apex:outputText value="{!If(agg.agreementISActive, 'Active', 'InActive')}" /></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementCmpanySignedDate}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementOtherPartySignedDate}" /></apex:outputText></td>
+                            <td><apex:outputLink >
+                                    <span style="display:{!IF(agg.agreeLIProdName != null,'none','block')}">{!agg.agreeLIProdName}</span>
+                                    <a href="/{!agg.agreeLIProdId}" target="_blank">{!agg.agreeLIProdName}</a>
+                                </apex:outputLink> </td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreeLIDataMonthStart}" /></apex:outputText></td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreeLIDataMonthEnd}" /></apex:outputText></td>
+                            <td >{!agg.agreementLIATCcode}</td>
+                            <td ><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementLIATCstartDate}" /></apex:outputText></td>
+                            <td><apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!agg.agreementLIATCendDate}" /></apex:outputText></td>
+                            <td><apex:outputLink >
+                                 <span style="display:{!IF(agg.agreementRelatedOppNo != null,'none','block')}">{!agg.agreementRelatedOppNo}</span>
+                                 <a href="/{!agg.agreementRelatedOpportunityId}" target="_blank">{!agg.agreementRelatedOppNo}</a>
+                            </apex:outputLink></td>
+                        </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>  
+               
+               <!-- Added By:-Ekta ,Date-31st May,2013 ,Details:-Issue-00967 -->
+                
+               <!-----------------------------------------------start------------------------------------------------>    
+               <br/>
+               <apex:outputPanel >
+                        <apex:commandLink action="{!gotoFirstPage}" reRender="agreementDetails" rendered="{!IF(pageNum == 1,false,true)}"> 
+                            <apex:image id="theImage" value="/EXT/theme/sfdc/images/grid/page-first.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                        </apex:commandLink>
+                        
+                         <apex:image value="/EXT/theme/sfdc/images/grid/page-first-disabled.gif" width="20" height="20" style="vertical-align:bottom;" rendered="{!IF(pageNum == 1,true,false)}"/> 
+                        
+                        <apex:commandLink action="{!gotoPreviousPage}" reRender="agreementDetails" rendered="{!IF(pageNum == 1 ,false,true)}" >
+                            <apex:outputPanel >
+                                <apex:image value="/EXT/theme/sfdc/images/grid/page-prev.gif"  width="20" height="20"  style="vertical-align:bottom;" />  
+                                <apex:outputLabel style="vertical-align:text-top;">Previous</apex:outputLabel>
+                            </apex:outputPanel>
+                        </apex:commandLink>
+                        
+                         <apex:outputPanel rendered="{!IF(pageNum == 1,true,false)}">
+                            <apex:image value="/EXT/theme/sfdc/images/grid/page-prev-disabled.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                            <apex:outputLabel style="vertical-align:text-top;">Previous</apex:outputLabel>
+                        </apex:outputPanel>
+                        <apex:outputLabel style="vertical-align:text-top;">&nbsp;|&nbsp;</apex:outputLabel>
+                        
+                        <apex:commandLink action="{!gotoNextPage}" reRender="agreementDetails" rendered="{!IF(pageNum==totalPageNum ,false,true)}" >  
+                             <apex:outputLabel style="vertical-align:text-top;">Next</apex:outputLabel>
+                             <apex:image value="/EXT/theme/sfdc/images/grid/page-next.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                        </apex:commandLink>
+                        
+                         <apex:outputPanel rendered="{!IF(pageNum==totalPageNum ,true,false)}" >
+                            <apex:outputLabel style="vertical-align:text-top;" >Next</apex:outputLabel>
+                            <apex:image value="/EXT/theme/sfdc/images/grid/page-next-disabled.gif" width="20" height="20" style="vertical-align:bottom;"/>
+                        </apex:outputPanel>                               
+                        
+                        <apex:commandLink action="{!gotoLastPage}" reRender="agreementDetails" rendered="{!IF(pageNum==totalPageNum ,false,true)}">                
+                            <apex:image value="/EXT/theme/sfdc/images/grid/page-last.gif" width="20" height="20" style="vertical-align:bottom;"/> 
+                        </apex:commandLink>
+                         <apex:outputPanel rendered="{!IF(pageNum==totalPageNum ,true,false)}">
+                            <apex:image value="/EXT/theme/sfdc/images/grid/page-last-disabled.gif" width="20" height="20" style="vertical-align:bottom;"/> 
+                        </apex:outputPanel>
+                        <apex:outputLabel >&nbsp;&nbsp;</apex:outputLabel>                        
+                                       
+                </apex:outputPanel> 
+                  <!-----------------------------------------------End------------------------------------------------>   
+                
+                <!-- Updated By:-Ekta ,Date-31st May,2013 ,Details:-Issue-00967 -->
+                
+                <!-----------------------------------------------Start-----------------------------------------------> 
+                
+                <!----------------RESULT TABLE SECTION -----ENDS------------
+                  ----------------RESULT TABLE PAGINATION -BEGINS-------->
+               <div id="pagination" class="pager"  style='display:none;'>                    
+                       <img src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/first.png')}" class="first"/>
+                       <img src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/prev.png')}" class="prev"/>
+                       <input type="text" class="pagedisplay"/>
+                       <img src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/next.png')}" class="next"/>
+                       <img src="{!URLFOR($Resource.TableSorterPager, '/table-sorter/last.png')}" class="last"/>
+                       <select class="pagesize">
+                           <option selected="selected"  value="10">10</option>
+                           <option value="20">20</option>
+                           <option value="30">30</option>
+                           <option value="40">40</option>
+                           <option value="50">50</option>
+                       </select>                    
+                </div>   
+                <!----------------RESULT TABLE PAGINATION -ENDS------------>    
+                
+                <!-----------------------------------------------End------------------------------------------------> 
+           </div>      
+        </apex:outputPanel>                            
+    </apex:pageBlock>
+    </apex:outputPanel>
+  </apex:form>
+</apex:page>

@@ -1,0 +1,57 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" controller="CNT_CPQ_CreateBudget">
+    <aura:attribute name="showSpinner" type="Boolean" default="true" />
+    <aura:attribute name="name" type="String" />
+    <aura:attribute name="simpleRecord" type="object" />
+    <aura:attribute name="selectedBudgetTool" type="String" />
+    <aura:attribute name="BudgetExist" type="Boolean" default="false" />
+    <aura:attribute name="allDetailsObj" type="Object"/>
+    <aura:attribute name="relatedQuoteId" type="Id" />
+    <aura:attribute name="isBudgetToolEmpty" type="Boolean" default="false" />
+    <aura:attribute name="budgetList" type="List" />
+    <aura:attribute name="columns" type="List" />
+    <aura:attribute name="oppId" type="Id" />
+    <aura:attribute name="clinicalBidId" type="Id" />
+    <aura:attribute name="clonedBudget" type="Id" />
+    <aura:attribute name="showCreateBudget" type="Boolean" default="false" />
+    <aura:attribute name="selectedBudgetRecord" type="Object" />
+    <aura:attribute name="isPostAwardBid" type="Boolean" default="false"/>
+    <force:recordData aura:id="recordLoader" fields="Id, Name, Bid_History_Related_Opportunity__c, RecordTypeId, Record_Type_Developer_Name__c, Bid_History_Related_Opportunity__r.Legacy_Quintiles_Opportunity_Number__c, Is_there_a_Client_Bid_Grid__c, Opportunity_Type__c, Budget_Tools__c, Is_this_part_of_a_Program__c, Number_of_Scenarios__c, Record_Type_Developer_Name__c, Requested_Agreement_Type__c" recordId="{!v.recordId}" targetFields="{!v.simpleRecord}" recordUpdated="{!c.doInit}" />
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <aura:if isTrue="{!and(!v.isBudgetToolEmpty, !v.showCreateBudget)}">
+        <aura:if isTrue="{!v.budgetList.length > 0}">
+            <h3 class="slds-section__title slds-theme_shade">Select Budget to Clone</h3>
+            <br/>
+            <aura:html tag="style">
+                .modal-body{ height : 350px !important; }
+                .slds-modal__container{
+                    width: 90% !important;
+                    max-width: 80rem;
+                }
+            </aura:html>
+            <div style="height: 170px !important;">
+                <lightning:datatable data="{!v.budgetList}" columns="{!v.columns}" hideCheckboxColumn="false" keyField="Id" 
+                    onrowaction="{! c.handleRowAction }" maxRowSelection="1" selectedRows="{! v.selectedRows }" onrowselection="{!c.setBudgetToBeClonedId}" />
+            </div>
+            <br/>
+            <br/>
+            <div class="modal-footer slds-modal__footer slds-size_1-of-1">
+                <lightning:button label="Clone" variant="brand" onclick="{! c.cloneBudget }" aura:id="cloneButton" />
+            </div>
+        </aura:if>
+    </aura:if>
+    <aura:if isTrue="{!and(v.showCreateBudget, !v.isBudgetToolEmpty)}">
+        <c:LXC_CPQ_CreateBudgetScreen aura:id="childComp" 
+            selectedBudgetTool = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.pricingTool : v.simpleRecord.Budget_Tools__c)}" 
+            budgetName = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.quoteName : v.simpleRecord.Name)}"
+            oppId = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.oppId : v.simpleRecord.Bid_History_Related_Opportunity__c)}"
+            clinicalBid = "{!v.recordId}"
+            relatedQuoteId = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.Id : null)}"
+            parentScenario = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.scenario : null)}"
+            parentBudgetType = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.budgetType : null)}"
+            quoteRecord = "{!(v.isPostAwardBid == true ? v.simpleRecord : v.selectedBudgetRecord != null ? v.selectedBudgetRecord: v.simpleRecord)}"
+            isCreateFromBidHistory = "true"
+            budgetIteration = "{!(v.selectedBudgetRecord != null ? v.selectedBudgetRecord.budgetIteration : null)}"/>
+    </aura:if>
+</aura:component>

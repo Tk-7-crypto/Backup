@@ -1,0 +1,321 @@
+<apex:page tabStyle="Financial_Summary__c" id="pg" language="en" readOnly="true" controller="BidTeamDashboardController"
+      contentType="{!IF(!ISNULL($CurrentPage.parameters.xl) && $CurrentPage.parameters.xl == 'y','application/vnd.ms-excel#content.xls', 'text/html')}">
+   <head>
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/jquery.min.js')}" /> 
+        <apex:includeScript value="{!URLFOR($Resource.JQueryUI, 'jqueryUI/js/jquery-ui-1.8.6.custom.min.js')}"/> 
+        <apex:stylesheet value="{!URLFOR($Resource.JQueryUI, 'jqueryUI/css/ui-lightness/jquery-ui-1.8.6.custom.css')}"/>
+        
+        <apex:includeScript value="{!URLFOR($Resource.MyDashboardChartPlugin, 'dist/excanvas.min.js')}" />
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/jquery.jqplot.min.js')}" />
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.barRenderer.min.js')}" />
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.highlighter.min.js')}" />
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.pointLabels.min.js')}" />
+        
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.canvasTextRenderer.min.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.categoryAxisRenderer.min.js')}" />
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.canvasAxisTickRenderer.min.js')}" />
+        
+        <apex:includeScript value="{!URLFOR($Resource.PSAUserDashboard, 'dist/plugins/jqplot.categoryAxisRenderer.min.js')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.PSAUserDashboard, 'dist/jquery.jqplot.min.css')}" /> 
+         
+        <apex:stylesheet value="{!URLFOR($Resource.PSAUserDashboard, 'dist/jquery.jqplot.min.css')}" /> 
+        
+        
+
+        
+        
+   </head>
+         <script>
+         function addLoadEvent(func) {
+             var oldonload = window.onload;
+             if (typeof window.onload != 'function') {
+                 window.onload = func;
+             } else {
+                 window.onload = function() {
+                     if (oldonload) {
+                         oldonload();
+                     }
+                     func();
+                 }
+             }
+         }
+         
+         function CollapseSection() {
+             var rihElem = document.getElementById('pg:pb:rih');
+             var wihElem = document.getElementById('pg:pb:wih');
+             if(rihElem != null)
+                 twistSection(document.getElementById('pg:pb:rih').childNodes[0].childNodes[0]);
+             if(wihElem != null)
+                 twistSection(document.getElementById('pg:pb:wih').childNodes[0].childNodes[0]);
+         }
+         
+         addLoadEvent(CollapseSection);
+         
+         $(document).ready(function(){
+             initMethod();  
+         });
+         
+         function initMethod() {
+             
+             $.jqplot.config.enablePlugins = true;
+             <!-------     Chart - BEGIN ------------>
+                 // For horizontal bar charts, x an y values must will be "flipped"
+                 // from their vertical bar counterpart.
+                 /*var avg_mrgn_data = [
+                                    [[60.77,'s1']],
+                                    [[60.77,'s2']]];*/
+                /*var avg_mrgn_data = [[[23, "1"]], 
+                                     [[6, "2"]], [[22, "2"]], [[10, "2"]], [[10, "2"]]];//*/
+                var avg_mrgn_data = [
+                    [[0,1], [{!BidTeamTarget},2]], //target
+                    [[{!rihRecognizedTotal.amount},1], [0,2]], //RIH - Sum of FY Recognised
+                    [[{!rihUnRecognizedTotal.amount},1], [0,2]], //RIH - Sum of Unrecognised
+                    [[{!wnihTotal.amount},1], [0,2]],
+                    [[{!pipeline5Total.amount},1], [0,2]],//pipeline stage 5
+                    [[{!pipeline1To4Total.amount},1], [0,2]]];//pipeline stage 1-4
+            /*var avg_mrgn_data = [
+                                    [[0,1], [100,2]], //target
+                                    [[20,1], [0,2]], //RIH - Sum of FY Recognised
+                                    [[20,1], [0,2]], //RIH - Sum of Unrecognised
+                                    [[30,1], [0,2]],
+                                    [[40,1], [0,2]],//pipeline stage 5
+                                    [[60,1], [0,2]]];*/
+            var ticks = ["RIH & Opps", "Target"];
+            var pieDiv = document.getElementById('pg:pb:bidteam_chart');
+            if(avg_mrgn_data && avg_mrgn_data.length == 0){
+                
+                if(pieDiv != null ) {
+                    pieDiv.innerHTML = '<div style="margin:25%;font-family:arial;font-size: 12pt; ">No data Available </div>';
+                    pieDiv.style.textAlign='center';
+                    pieDiv.style.border='thin solid #808080';
+                    pieDiv.style.backgroundColor = '#FFFFFF';
+                }
+            } else {  
+                if(pieDiv != null ) { 
+                    var plot5 = $.jqplot('pg\\:pb\\:bidteam_chart', avg_mrgn_data , {
+                        animate: !$.jqplot.use_excanvas,
+                        title: '&nbsp;',
+                        stackSeries: true,
+                        seriesDefaults: {                            
+                            renderer:$.jqplot.BarRenderer,
+                            // Show point labels to the right ('e'ast) of each bar.
+                            // edgeTolerance of -15 allows labels flow outside the grid
+                            // up to 15 pixels.  If they flow out more than that, they
+                            // will be hidden.
+                            //pointLabels: { show: true, location: 'e', edgeTolerance: -15,ypadding: 12 },
+                            pointLabels: { show: false, location: 'e',edgeTolerance: 0 },
+                            // Rotate the bar shadow as if bar is lit from top right.
+                            shadowAngle: 135,
+                            // Here's where we tell the chart it is oriented horizontally.
+                            rendererOptions: {
+                                barDirection: 'horizontal',//,
+                                barWidth: 40,
+                                // Put a 30 pixel margin between bars.
+                                barMargin: 5
+                            }
+                        },
+                        series:[
+                            {label:'Bid Team Target: ${!BidTeamTargetAmount}',
+                             pointLabels: {
+                                 show: true,
+                                 location: 'w',
+                                 hideZeros: true
+                             }},                        
+                            {label:'Actuals: ${!RecognisedTotal}'},
+                            {label:'Contracted Revenue Yet to be Delivered: ${!UnRecognisedTotal}'},
+                            {label:'WNIH: ${!WnihTotalAmount}'},
+                            {label:'Pipeline Stage 5: ${!Pipeline5TotalAmount}'},
+                            {label:'Pipeline Stages 1-4: ${!Pipeline1To4TotalAmount}'}
+                        ],
+                        axes: {
+                            yaxis: {
+                                renderer: $.jqplot.CategoryAxisRenderer,
+                                ticks: ticks,
+                                tickOptions:{
+                                    fontSize: '8pt',
+                                    textColor: 'black'  
+                                }
+                            },
+                            xaxis: {
+                                //pad: 1.02, 
+                                //autoscale: true,
+                                numberTicks:6, 
+                                tickRenderer: $.jqplot.CanvasAxisTickRenderer ,
+                                tickOptions:{
+                                    formatString: "$%'d",
+                                    fontSize: '8pt',
+                                    fontWeight: 'bold',
+                                    pt2px: 1.6,
+                                    textColor: 'black'
+                                    //angle: -30  
+                                }//,
+                                //max: 110.00,
+                                //min: 0.00
+                            }
+                        },
+                        legend: {
+                            show: true,
+                            location: 'ne',
+                            showSwatch: true,
+                            placement: 'outsideGrid'
+                        } ,
+                        highlighter: {
+                            show: true,
+                            sizeAdjust: 7.5,
+                            showTooltip: true,
+                            tooltipLocation: 'nw',
+                            lineWidthAdjust: 15,
+                            tooltipOffset:15,
+                            lineWidthAdjust:5
+                        }
+                        
+                    });
+                }  
+            }
+            <!-------     Chart - END   ------------>
+                
+                //-- BEGIN ----------- Legend font adjustment code
+                //legend display is now 'ne' 
+                var labels1 = $('#pg\\:pb\\:bidteam_chart .jqplot-table-legend-label'); 
+            for(i = 0; i < labels1.length; i++){
+                labels1[i].style.fontSize = '8pt';
+                labels1[i].style.fontWeight = 'bold';
+            }
+            var legendTbl = $('#pg\\:pb\\:bidteam_chart .jqplot-table-legend'); 
+            legendTbl[0].style.width = '250px';
+            //-- END  ----------- Legend font adjustment code  
+            
+            //--- BEGIN - ---- point labels font adjustment - code not working
+            //jqplot-point-label jqplot-series-0 jqplot-point-1
+            var plabels = $('#pg\\:pb\\:bidteam_chart .jqplot-point-label'); 
+            //plabels[0].style.fontWeight = 'bold';
+            //plabels[0].style.fontColor = 'black';
+            // ---- END ----- point labels font adjustment
+            
+            $('#pg\\:pb\\:bidteam_chart').bind('jqplotDataMouseOver', function (ev, seriesIndex, pointIndex, data) { 
+                var labels = $('#pg\\:pb\\:bidteam_chart .jqplot-table-legend-label');
+                $('#pg\\:pb\\:bidteam_chart .jqplot-highlighter-tooltip')[0].style.fontSize = '8pt'; 
+                $('#pg\\:pb\\:bidteam_chart .jqplot-highlighter-tooltip')[0].innerHTML = labels[labels.length - seriesIndex - 1].innerHTML;    
+                for(i = 0; i < labels.length; i++)
+                    labels[i].style.background = '';
+                labels[labels.length - seriesIndex - 1].style.background = 'rgb(50%,50%,100%)';
+            }); 
+            
+            $('#pg\\:pb\\:bidteam_chart').bind('jqplotDataUnhighlight', function (ev, seriesIndex, pointIndex, data) { 
+                var labels1 = $('#pg\\:pb\\:bidteam_chart .jqplot-table-legend-label');
+                for(i = 0; i < labels1.length; i++)
+                    labels1[i].style.background = '';
+            });    
+            
+        }
+         
+         </script>
+    
+    <apex:form >
+        <div style="text-align: right;">
+            <apex:outputPanel rendered="{!if(contains($Profile.Name,'System Administrator'),true,false)}">
+                <apex:outputLabel value="Run As User Id : "></apex:outputLabel>
+                <apex:inputText value="{!userId}"/>
+                <apex:commandButton title="Go" value="Go" action="{!updateRunAsUser}"/>
+            </apex:outputPanel>
+        </div>
+    </apex:form>
+   
+   <!---------- BEGIN - Page Message Section  ------------------>
+   <apex:pageMessages escape="false"/>
+   
+   <apex:pageBlock title="Bid Team Report for {!currentUser.name}" id="pb" rendered="{!NOT(hasErrMsg)}">
+       <!---------- END - Page Message Section ---------------------->
+       
+       <!-------- BEGIN - Chart Section ---------------------------->
+       <apex:outputPanel id="bidteam_chart" layout="block" rendered="{!NOT(!ISNULL($CurrentPage.parameters.xl) && $CurrentPage.parameters.xl == 'y')}"
+                    style="margin-top: 20px; margin-left: 20px; width: 900px; height: 240px; position: relative;"> 
+           <apex:outputPanel layout="block" rendered="{!NOT(!ISNULL($CurrentPage.parameters.xl) && $CurrentPage.parameters.xl == 'y')}"        
+                    style="position: absolute; bottom: 20px;right: 20px;width: 900px; text-align: right;">
+                    <apex:outputLabel escape="false" value="RIH/Target: {!RihVsTargetPercentage}" style="background-color:#C2FBFE;text-color:white" />&nbsp;<p/>
+                    <apex:outputLabel escape="false" value="  Pipeline/To Go: {!PipelineToGoPercentage}"  style="background-color:#C2FBFE;text-color:white" />
+            </apex:outputPanel>
+        </apex:outputPanel>
+       <!-------- END - Chart Section ------------------------------>
+       
+       <!-------- BEGIN - Export to Excel Link --------------------->
+       <apex:outputpanel style="text-align:right;" layout="block" rendered="{!NOT(!ISNULL($CurrentPage.parameters.xl) && $CurrentPage.parameters.xl == 'y')}"  
+           >
+           <!--<apex:outputLink value="{!$Page.BidTeamDashboardExport}?runasid={!$CurrentPage.parameters.runasid}" title="Export To Excel">Export to Excel</apex:outputLink><p/>-->
+           <apex:outputLink value="{!$Page.BidTeamDashboardExport}?runasid={!currentUser.Id}" title="Export To Excel">Export to Excel</apex:outputLink><p/>
+       </apex:outputpanel>
+       <!-------- END - Export to Excel Link ----------------------->
+       
+       <!-------- BEGIN - RIH Section ------------------------------>
+       <apex:pageBlockSection columns="1" title="RIH [Actuals: $ {!RecognisedTotal}] [Contracted Revenue Yet To Be Delivered: $ {!UnRecognisedTotal}]" id="rih">
+           <apex:pageBlockTable value="{!rihList}" var="fs" id="OppListInHand" rendered="{!(AND(NOT(ISNULL(rihList)),(rihList.size > 0)) )}"
+                                                    style="border-collapse:collapse;">   
+                 <apex:column headerValue="#">   
+                        <apex:outputField value="{!fs.Opportunity__r.Opportunity_Number__c}"/>
+                        <apex:facet name="footer">TOTAL</apex:facet>
+                </apex:column>
+                <apex:column headerValue="Account" value="{!fs.Opportunity__r.AccountId}"/>   
+                <apex:column headerValue="Name" value="{!fs.Opportunity__c}"/> 
+                <apex:column headerValue="FY Recognised" value="{!fs.C_S_Recognised_Revenue__c}"> 
+                        <apex:facet name="footer">
+                            <apex:outputfield value="{!rihRecognizedTotal.amount}"/>
+                        </apex:facet>
+                </apex:column>
+                <apex:column headerValue="FY Unrecognised">   
+                        <apex:outputField value="{!fs.C_S_Unrecognised_Revenue__c}"/>
+                        <apex:facet name="footer">
+                            <apex:outputfield value="{!rihUnRecognizedTotal.amount}"/>
+                        </apex:facet>
+                </apex:column>
+                <apex:column headerValue="Actual Close Date" value="{!fs.Opportunity__r.Actual_Close_Date__c}"/>  
+           </apex:pageBlockTable>
+       </apex:pageBlockSection>
+       <!-------- END - RIH Section -------------------------------->
+       
+       <!-------- BEGIN - WNIH Section ----------------------------->
+       <apex:pageBlockSection columns="1" title="WNIH [$ {!WnihTotalAmount}]" id="wih">
+           <apex:pageBlockTable value="{!wnihList}" var="wfs" style="border-collapse:collapse;">   
+                <apex:column headerValue="Stage" value="{!wfs.Stage__c}"/> 
+                <apex:column headerValue="#" value="{!wfs.Opportunity__r.Opportunity_Number__c}">   
+                      <apex:facet name="footer">TOTAL</apex:facet>
+                </apex:column>
+                <apex:column headerValue="Account" value="{!wfs.Opportunity__r.AccountId}"/>   
+                <apex:column headerValue="Name" value="{!wfs.Opportunity__c}"/>   
+                <apex:column headerValue="FY Impact" value="{!wfs.FY_Impact__c}">   
+                    <apex:facet name="footer">
+                        <apex:outputfield value="{!wnihTotal.amount}"/>
+                    </apex:facet>
+                </apex:column>
+                <apex:column headerValue="Actual Close Date" value="{!wfs.Opportunity__r.Actual_Close_Date__c}"/> 
+             </apex:pageBlockTable> 
+       </apex:pageBlockSection>
+       <!-------- END - WNIH Section ------------------------------->
+       
+       <!-------- BEGIN - Pipeline Section ------------------------->
+       <apex:pageBlockSection columns="1" title="Pipeline [$ {!PipelineTotalAmount}]">
+           <apex:pageBlockTable value="{!pipelineList}" var="pfs" id="theList" style="border-collapse:collapse;">   
+                <apex:column headerValue="Stage">   
+                        <apex:outputText value="{!pfs.Stage__c}"/>
+                </apex:column>                                
+                <apex:column headerValue="#" value="{!pfs.Opportunity__r.Opportunity_Number__c}">  
+                        <apex:facet name="footer">TOTAL</apex:facet>
+                </apex:column>
+                <apex:column headerValue="Account" value="{!pfs.Opportunity__r.AccountId}"/> 
+                <apex:column headerValue="Name" value="{!pfs.Opportunity__c}"/> 
+                <apex:column headerValue="FY Impact" value="{!pfs.FY_Impact__c}"> 
+                        <apex:facet name="footer">
+                            <apex:outputfield value="{!pipelineTotal.amount}"/>
+                        </apex:facet>
+                </apex:column>
+                <apex:column headerValue="Expected Close Date" value="{!pfs.Opportunity__r.CloseDate}"/>  
+           </apex:pageBlockTable>
+       </apex:pageBlockSection>
+       <!-------- END - Pipeline Section --------------------------->
+   </apex:pageBlock>
+   
+   <p style="color:red;"><u><b> Disclaimer</b></u>: This dashboard displays data as of 6PM {!refreshDate} US Eastern time. 
+   It is designed to provide you, the user, with a good understanding of your performance and “bid team credit” using data gathered from various sources. 
+   Figures are based on information at a point in time and cannot be used for any other purposes and shall not be used as an appraisal or compensation tool. 
+   If you have any questions regarding data in your dashboard, please contact local Commercial Operations.
+    </p>
+</apex:page>

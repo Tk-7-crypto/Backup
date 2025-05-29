@@ -1,0 +1,109 @@
+<aura:component controller="CNT_PEP_AccountCertifications"
+                implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId"
+                access="global">
+    
+    <aura:attribute name="accountCertificationList" type="Partner_Certification__c[]"/>
+    <aura:attribute name="badgeList" type="Partner_Certification__c[]"/>
+    <aura:attribute name="partnerManager" type="Boolean" default="true" />
+    <aura:attribute name="badgeInstructions" type="String"/>
+    <aura:attribute name="empty" type="boolean" default="false"/>
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    
+    <aura:if isTrue="{!v.partnerManager}">
+        <div class="slds-box slds-theme_default" style="overflow-x: auto;white-space: nowrap;width:100%;max-width: 1110px;margin-left: 8%">
+            <div class="slds-media">
+                <div class="slds-media__body slds-align-middle">
+                    <aura:if isTrue="{!v.empty}">
+                        <p style="text-align:center;">{!$Label.c.No_Account_Certification_found}</p>
+                        <aura:set attribute="else">
+                            <lightning:layout verticalAlign="center" multipleRows="true">
+                                <aura:iteration items="{!v.accountCertificationList}" var="accountCertifications">
+                                    <lightning:layoutItem size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="4" padding="horizontal-large" flexibility="auto">
+                                        <div class="slds-m-vertical_small">
+                                            <img src="{!accountCertifications.Badge_URL__c}" class="customCertificationSize" height="200" width="200" onclick="{!c.newPopup1}"  data-id="{!accountCertifications.Certification_Name__c}" style="cursor: pointer"/> &nbsp; &nbsp;
+                                            {!accountCertifications.Name}  
+                                        </div>
+                                    </lightning:layoutItem>
+                                </aura:iteration>
+                            </lightning:layout>
+                        </aura:set>
+                    </aura:if>
+                </div>
+            </div>
+        </div>
+        <br></br><br></br>
+        
+        <aura:set attribute="else">
+            <div role="dialog" tabindex="-1" aria-labelledby="header42" aura:id="Modalbox2" class="slds-modal slds-modal_small">
+                <div class="slds-modal__container  slds-align_absolute-center">
+                    <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                        <p>{!$Label.c.Badge_Download_Unavailable}</p><br/> 
+                        <div align="center">
+                            <lightning:button label="Close"  onclick="{!c.closeNewModal2}" />                   
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="slds-box slds-theme_default" style="overflow-x: auto;white-space: nowrap;">
+                <div class="slds-media">
+                    <div class="slds-media__body slds-align-middle">
+                        <aura:if isTrue="{!v.empty}">
+                            <p style="text-align:center;">{!$Label.c.No_Account_Certification_found}</p>
+                            <aura:set attribute="else">
+                                <aura:iteration items="{!v.accountCertificationList}" var="accountCertifications">
+                                    <img src="{!accountCertifications.Badge_URL__c}" class="customCertificationSize" onclick="{!c.newPopup2}"  data-id="{!accountCertifications.Certification_Name__c}" style="cursor: pointer"/> &nbsp; &nbsp;
+                                </aura:iteration>
+                            </aura:set>
+                        </aura:if>
+                    </div>
+                </div>
+            </div>
+        </aura:set>
+        
+        
+        <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox1" class="slds-modal slds-modal_medium">
+            <div class="slds-modal__container">
+                <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                    
+                    <p align="center" class="customFont">{!$Label.c.Partner_Badge_Download}</p><br/>
+                    <p>{!$Label.c.Partner_Badge_Description}<lightning:button variant="base" label=" Click Here" onclick="{!c.goToPartnerBrandGuide}"/></p>
+                    <br/>
+                    <lightning:layout horizontalAlign="center">
+                        <lightning:layoutItem size="6">
+                            <p align="center">{!$Label.c.Badge_Variations}</p><br></br>
+                            <aura:iteration items="{!v.badgeList}" var="badgeList">
+                                <img src="{!badgeList.Badge_URL__c}" class="customImageSize" height="200" width="200"/><br></br><br></br>
+                            </aura:iteration>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="6">
+                            <p align="center">{!$Label.c.Download}</p><br></br>
+                            
+                            <aura:iteration items="{!v.badgeList}" var="badgeList">
+                                <div align="right" style="height:40px" class="slds-col">
+                                    
+                                    <lightning:button aura:id="JPEG" label="JPEG" class="slds-button slds-size_3-of-12" value="{!badgeList}"
+                                                      variant="brand" onclick="{!c.downloadBadge}" />
+                                    <lightning:button aura:id="PNG" label="PNG" class="slds-button slds-size_3-of-12" value="{!badgeList}"
+                                                      variant="brand" onclick="{!c.downloadBadge}" />
+                                    <lightning:button aura:id="SVG" label="SVG" class="slds-button slds-size_3-of-12" value="{!badgeList}"
+                                                      variant="brand" onclick="{!c.downloadBadge}" /> 
+                                </div>
+                                <br></br>
+                            </aura:iteration>
+                            
+                        </lightning:layoutItem>
+                    </lightning:layout><br></br>
+                    <div align="center">
+                        <lightning:button label="Close"  onclick="{!c.closeNewModal1}" />                   
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        
+
+    </aura:if>
+</aura:component>

@@ -1,0 +1,502 @@
+<aura:component controller="CNT_CSM_JiraLink" implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:hasSObjectName" access="global">
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="jiraLinkId" type="String" />
+    <aura:attribute name="isLinked" type="boolean" default="false" />
+
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+
+    <aura:attribute name="case" type="Object" />
+    <aura:attribute name="selectedtypeJiraLink" type="String" default="1" />
+    <aura:attribute name="jiraBaseUrls" type="String[]" access="global" />
+
+    <aura:attribute name="jiraProjects" type="Object" />
+    <aura:attribute name="jiraComments" type="Object" />
+    <aura:attribute name="jiraIssueTypes" type="Object" />
+    <aura:attribute name="jiraFixVersions" type="Object" />
+    <aura:attribute name="jiraFixVersionsAvailable" type="Boolean" default="false" />
+    <aura:attribute name="jiraTransitions" type="Object" />
+    <aura:attribute name="jiraAttachments" type="Object" />
+    <aura:attribute name="jiraAttachmentColumns" type="Object[]" default="[
+            {label: 'File Name', fieldName: 'content', type: 'url', typeAttributes: {label: { fieldName: 'filename' }}, sortable: true},
+            {label: 'Author', fieldName: 'author', type: 'text', sortable: true},
+            {label: 'Created date', fieldName: 'created', type: 'date', sortable: true},]" />
+    <aura:attribute name="jiraPriorities" type="Object" />
+    <aura:attribute name="jiraPrioritiesAvailable" type="Boolean" default="false" />
+    <aura:attribute name="jiraCustomers" type="Object" />
+    <aura:attribute name="jiraCustomerAvailable" type="Boolean" default="false" />
+    <aura:attribute name="jiraCountries" type="Object" />
+    <aura:attribute name="jiraCountryAvailable" type="Boolean" default="false" />
+    <aura:attribute name="jiraPSAProjectAvailable" type="Boolean" default="false" />
+
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+
+    <aura:attribute name="jiraCreateIssue" type="String" />
+    <aura:attribute name="formError" type="String" />
+
+    <aura:attribute name="os_username" type="String" default="addon_com.fde.jiraLink" />
+    <aura:attribute name="os_password" type="String" default="cegedim" />
+
+
+    <aura:attribute name="newJiraLink" type="CSM_QI_JiraLink__c" />
+    <aura:attribute name="simpleNewJiraLink" type="Object" />
+    <aura:attribute name="newJiraLinkError" type="String" />
+    <aura:attribute name="canEdit" type="boolean" default="false" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <force:recordData mode="EDIT" aura:id="jiraLinkRecord" layoutType="FULL" recordId="{!v.jiraLinkId}" targetRecord="{!v.newJiraLink}" targetFields="{!v.simpleNewJiraLink}" targetError="{!v.newJiraLinkError}" recordUpdated="{!c.jiraRecordUpdated}" fields="['CSM_User_Reporter__r.Name']" />
+    <!-- jira to link form -->
+    <article class="slds-card">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <!--<div class="slds-page-header"> -->
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon size="small" iconName="standard:link" />
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="JIRA Link">
+                            <span class="slds-text-heading_small">JIRA Link</span>
+                        </a>
+                    </h2>
+                    <aura:if isTrue="{!v.isLinked}">
+                    </aura:if>
+                </div>
+            </header>
+            <aura:if isTrue="{!v.canEdit}">
+                <div class="slds-no-flex">
+                    <lightning:buttonGroup>
+                        <aura:if isTrue="{!v.isLinked}">
+                            <lightning:button label="Unlink" iconName="utility:remove_link" iconPosition="left" onclick="{! c.deleteJiraRecord }" />
+                            <aura:set attribute="else">
+                                <lightning:button label="Add a link" iconPosition="left" onclick="{! c.openCreateJiraForm }" />
+                            </aura:set>
+                        </aura:if>
+                    </lightning:buttonGroup>
+                </div>
+            </aura:if>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <aura:if isTrue="{!v.isLinked}">
+                <dl class="slds-dl--horizontal">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Issue Key">Issue Key:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.jira_key__c}">
+                            <ui:outputURL target="_blank" value="{!v.simpleNewJiraLink.jira_base_url__c +'/browse/'+v.simpleNewJiraLink.jira_key__c}" label="{!v.simpleNewJiraLink.jira_key__c}" />
+                        </p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Issue type">Issue type:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.issue_type__c}">{!v.simpleNewJiraLink.issue_type__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Sprint">Sprint:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.Sprint__c}">{!v.simpleNewJiraLink.Sprint__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Summary">Summary:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.summary__c}">{!v.simpleNewJiraLink.summary__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Priotity">Priority:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.priority__c}">{!v.simpleNewJiraLink.priority__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Status">Status:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.status__c}">
+                            <span class="slds-badge">{!v.simpleNewJiraLink.status__c}</span>
+                        </p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Assignee">Assignee:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.assignee__c}">{!v.simpleNewJiraLink.assignee__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Reporter">Reporter:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.reporter__c}">{!v.simpleNewJiraLink.reporter__c}</p>
+                    </dd>
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Description">Description:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleNewJiraLink.description__c}">{!v.simpleNewJiraLink.description__c}</p>
+                    </dd>
+                    <aura:if isTrue="{!not(empty(v.simpleNewJiraLink.fixVersions__c))}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="FixVersions">FixVersions:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleNewJiraLink.fixVersions__c}">{!v.simpleNewJiraLink.fixVersions__c}</p>
+                        </dd>
+                    </aura:if>
+                    <aura:if isTrue="{!not(empty(v.simpleNewJiraLink.country__c))}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="Country">Country:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleNewJiraLink.country__c}">{!v.simpleNewJiraLink.country__c}</p>
+                        </dd>
+                    </aura:if>
+                    <aura:if isTrue="{!not(empty(v.simpleNewJiraLink.customer__c))}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="Customer">Customer:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleNewJiraLink.customer__c}">{!v.simpleNewJiraLink.customer__c}</p>
+                        </dd>
+                    </aura:if>
+                    <aura:if isTrue="{!not(empty(v.simpleNewJiraLink.PSA_Project__c))}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="PSA Project">PSA Project:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleNewJiraLink.PSA_Project__c}">{!v.simpleNewJiraLink.PSA_Project__c}</p>
+                        </dd>
+                    </aura:if>
+                    <aura:if isTrue="{!not(empty(v.simpleNewJiraLink.due_date__c))}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="PSA Project">Due Date:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleNewJiraLink.due_date__c}">{!v.simpleNewJiraLink.due_date__c}</p>
+                        </dd>
+                    </aura:if>
+                </dl>
+                <lightning:button label="Transitions / Comments / Attachments" iconName="utility:comments" iconPosition="left" onclick="{! c.openCommentsJiraForm }" />
+                <aura:set attribute="else">
+
+
+
+                    <div class="emptyStateMessage slds-card__body--inner">No JIRA issue is yet linked to this case</div>
+                </aura:set>
+            </aura:if>
+
+        </div>
+        <!-- </div> -->
+    </article>
+    <!-- End jira to link form -->
+
+
+
+
+
+
+    <div aura:id="modaldialog" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide" style="z-index: 9050">
+        <aura:if isTrue="{!v.isLinked}">
+            <div class="slds-modal__container">
+
+                <div class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{!c.closeCommentsJiraForm}">
+                        <lightning:icon iconName="utility:close" variant="close" />
+                    </button>
+                    <h2 class="slds-text-heading--medium">JIRA issue {! v.simpleNewJiraLink.jira_key__c}</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                    <aura:if isTrue="{!v.isLoading}">
+                        <div class="slds-spinner_container">
+                            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </aura:if>
+                    <div class="slds-page-header slds-page-header_record-home slds-m-bottom_medium">
+                        <div class="slds-page-header__row">
+                            <div class="slds-page-header__col-title">
+                                <div class="slds-media">
+                                    <div class="slds-media__figure">
+                                        <lightning:icon iconName="standard:link" />
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <div class="slds-page-header__name">
+                                            <div class="slds-page-header__name-title">
+                                                <h1>
+                                                    <span>JIRA</span>
+                                                    <span class="slds-page-header__title slds-truncate" title="{!v.simpleNewJiraLink.summary__c}">{!v.simpleNewJiraLink.summary__c}</span>
+                                                </h1>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <aura:if isTrue="{!v.canEdit}">
+                                <div class="slds-page-header__col-actions">
+                                    <aura:if isTrue="{! v.jiraTransitions.length gt 0 }">
+                                        <p class="slds-text-color_weak slds-text-body_small">Apply a JIRA transition</p>
+                                        <lightning:buttonGroup>
+                                            <aura:iteration items="{!v.jiraTransitions}" var="transition">
+                                                <lightning:button label="{! transition.name}" onclick="{! c.updateStatus }" value="{! transition.id}" />
+                                            </aura:iteration>
+                                        </lightning:buttonGroup>
+                                    </aura:if>
+                                </div>
+                            </aura:if>
+                        </div>
+                        <div class="slds-page-header__row slds-page-header__row_gutters">
+                            <div class="slds-page-header__col-details">
+                                <ul class="slds-page-header__detail-row">
+                                    <li class="slds-page-header__detail-block">
+                                        <div class="slds-text-title slds-truncate" title="Status">
+                                            <p class="slds-truncate" title="Status">Status</p>
+                                        </div>
+                                        <div class="slds-truncate" title="{!v.simpleNewJiraLink.status__c}">
+                                            <span class="slds-badge">{!v.simpleNewJiraLink.status__c}</span>
+                                        </div>
+                                    </li>
+                                    <li class="slds-page-header__detail-block">
+                                        <div class="slds-text-title slds-truncate" title="CSM Reporter">
+                                            <p class="slds-truncate" title="CSM Reporter">CSM Reporter</p>
+                                        </div>
+                                        <div class="slds-truncate" title="{!v.simpleNewJiraLink.CSM_User_Reporter__r.Name}">{!v.simpleNewJiraLink.CSM_User_Reporter__r.Name}</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <lightning:card class="slds-card_boundary slds-m-bottom_medium">
+                        <aura:set attribute="title">
+                            Attachments
+                        </aura:set>
+                        <div class="slds-form-element slds-card__body_inner">
+                            <div class="slds-form-element__control">
+                                <lightning:fileUpload label=" " title="Upload files" name="fileUploader" multiple="true" recordId="{!v.recordId}" onuploadfinished="{!c.handleUploadFinished}" />
+                            </div>
+                        </div>
+                        <aura:if isTrue="{! v.jiraAttachments.length gt 0 }">
+                            <c:LXC_CSM_datatable data="{! v.jiraAttachments }" columns="{! v.jiraAttachmentColumns}" hideCheckboxColumn="true" containerStyle="height:120px;" />
+                        </aura:if>
+                    </lightning:card>
+
+                    <lightning:card class="slds-card_boundary slds-m-bottom_medium">
+                        <aura:set attribute="title">
+                            Comments
+                        </aura:set>
+                        <div class="slds-feed slds-card__body_inner">
+                            <ul class="slds-feed__list">
+                                <aura:if isTrue="{!v.canEdit}">
+                                    <li class="slds-feed__item">
+                                        <lightning:textarea name="jiraComment" aura:id="txtComment" value="" label="New Jira Comment" messageWhenValueMissing="This field is required." required="true" />
+                                        <div class="slds-float--right">
+                                            <lightning:button variant="brand" label="Add Comment" onclick="{!c.addJiraComment}" disabled="{!v.isLoading}" />
+                                        </div>
+                                    </li>
+                                </aura:if>
+                                <aura:iteration items="{!v.jiraComments}" var="comment" indexVar="index">
+                                    <li class="slds-feed__item">
+                                        <article class="slds-post">
+                                            <header class="slds-post__header slds-media">
+                                                <div class="slds-media__body">
+                                                    <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                                        <p>
+                                                            <a href="javascript:void(0);" title="{! comment.Author__c}">{! comment.Author__c}</a>
+                                                        </p>
+                                                    </div>
+                                                    <p class="slds-text-body_small">
+                                                        <a href="javascript:void(0);" title="Jira Comment Updated Date" class="slds-text-link_reset">
+                                                            <lightning:formattedDateTime value="{! comment.JiraCommentUpdatedDate__c}" year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit" />
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                            </header>
+                                            <div class="slds-post__content slds-text-longform">
+                                                <p>{! comment.Body__c}</p>
+                                            </div>
+                                        </article>
+                                    </li>
+                                </aura:iteration>
+                            </ul>
+                        </div>
+                    </lightning:card>
+                </div>
+                <div class="slds-modal__footer">
+                    <lightning:button variant="neutral" label="Cancel" onclick="{!c.closeCommentsJiraForm}" />
+                </div>
+            </div>
+
+
+            <aura:set attribute="else">
+                <div class="slds-modal__container">
+
+                    <div class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{!c.closeCreateJiraForm}">
+                            <lightning:icon iconName="utility:close" variant="close" />
+                        </button>
+                        <h2 class="slds-text-heading--medium">Create New JIRA Link</h2>
+                    </div>
+                    <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                        <!-- Display Lightning Data Service errors -->
+                        <aura:if isTrue="{!not(empty(v.newContactError))}">
+                            <div class="recordError">
+                                <ui:message title="Error" severity="error" closable="true">
+                                </ui:message>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{!not(empty(v.formError))}">
+                            <div class="recordError">
+                                <ui:message title="Error" severity="error" closable="true">
+                                    {!v.formError}
+                                </ui:message>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{!v.isLoading}">
+                            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                                    <div class="slds-spinner__dot-a"></div>
+                                    <div class="slds-spinner__dot-b"></div>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:select aura:id="jiraLinkField" name="jiraBaseUrl" label="Select your JIRA Platform" value="{!v.simpleNewJiraLink.jira_base_url__c}" onchange="{!c.changeJiraPlatform}" required="true">
+                                    <aura:iteration items="{!v.jiraBaseUrls}" var="jiraBaseUrl">
+                                        <option value="{!jiraBaseUrl}" text="{!jiraBaseUrl}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:input type="radio" onchange="{!c.handleRadioTypeJiraLinkClick}" label="Link with an existing JIRA issue" name="typeJiraLink" value="1" checked="true" />
+                                <lightning:input type="radio" onchange="{!c.handleRadioTypeJiraLinkClick}" label="Link with a new JIRA issue" name="typeJiraLink" value="3" />
+                            </div>
+                        </div>
+                        <aura:if isTrue="{!v.selectedtypeJiraLink=='1'}">
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <lightning:input aura:id="jiraLinkField" name="jiraIssueKey" label="Issue Key" value="{!v.simpleNewJiraLink.jira_key__c}" placeholder="ex JIR-123" required="true" />
+                                </div>
+                            </div>
+                            <aura:set attribute="else">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select aura:id="selectJiraProject" name="selectJiraProjects" label="Select your JIRA project" onchange="{!c.changeJiraProject}" value="{!v.jiraCreateIssue.selectedjiraProjectValue}" required="true">
+                                            <aura:iteration items="{!v.jiraProjects}" var="jiraProject" indexVar="index">
+                                                <option value="{!index}" text="{!jiraProject.name}" data-index="{!index}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="selectJiraIssueType" aura:id="selectJiraIssueType" label="Issue Type" value="{!v.jiraCreateIssue.selectedjiraIssueTypeValue}" onchange="{!c.changeJiraIssueType}" required="true" messageWhenValueMissing="You must specify a issue type of the issue.">
+                                            <aura:iteration items="{!v.jiraIssueTypes}" var="issueType">
+                                                <option text="{!issueType.name}" value="{!issueType.id}" selected="{!issueType.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                                <div class="slds-form-element" aura:id="blockPriority">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="selectJiraPriority" aura:id="selectJiraPriority" label="Priority" value="{!v.jiraCreateIssue.selectedjiraPriorityValue}" required="true" messageWhenValueMissing="You must specify a priority of the issue.">
+                                            <aura:iteration items="{!v.jiraPriorities}" var="priority">
+                                                <option text="{!priority.name}" value="{!priority.id}" selected="{!priority.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:input aura:id="field" value="{!v.jiraCreateIssue.summary}" label="Summary" name="summary" required="true" messageWhenValueMissing="You must specify a summary of the issue." />
+                                    </div>
+                                </div>
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:textarea aura:id="field" value="{!v.jiraCreateIssue.description}" name="descritpion" label="Description" required="true" messageWhenValueMissing="You must specify a description of the issue." />
+                                    </div>
+                                </div>
+
+                                <!-- 
+                                <div class="slds-form-element" aura:id="blockFixVersion">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="selectJiraFixVersion" aura:id="selectJiraFixVersion" label="Fix Version/s" value="{!v.jiraCreateIssue.selectedjiraFixVersionsValue}">
+                                            <option text="Select a value" value="" />
+                                            <aura:iteration items="{!v.jiraFixVersions}" var="fixVersion">
+                                                <option text="{!fixVersion.name}" value="{!fixVersion.id}" selected="{!fixVersion.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                                 -->
+                                <aura:if isTrue="{! v.jiraCustomerAvailable}">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="selectJiraCustomer" aura:id="selectJiraCustomer" label="Customer" value="{!v.jiraCreateIssue.selectedJiraCustomerValue}">
+                                            <option text="Select a value" value="" />
+                                            <aura:iteration items="{!v.jiraCustomers}" var="customer">
+                                                <option text="{!customer.value}" value="{!customer.id}" selected="{!customer.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{! v.jiraCountryAvailable}">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select name="selectJiraCountry" aura:id="selectJiraCountry" label="Country" value="{!v.jiraCreateIssue.selectedJiraCountryValue}">
+                                            <option text="Select a value" value="" />
+                                            <aura:iteration items="{!v.jiraCountries}" var="country">
+                                                <option text="{!country.value}" value="{!country.id}" selected="{!country.selected}" />
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </aura:if>
+                                <aura:if isTrue="{! v.jiraPSAProjectAvailable}">
+                                    <div class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <lightning:input aura:id="field" value="{!v.jiraCreateIssue.PSAProject}" label="PSA Project" name="PSAProject" required="false" />
+                                        </div>
+                                    </div>
+                                </aura:if>
+                                <div>
+                                    <c:LXC_CRM_lookup label="CSM User" object="User" value="{!v.simpleNewJiraLink.CSM_User_Reporter__c}" searchField="Name" placeholder="Select an user" iconName="standard:user" subtitleField="Name" order="Name" limit="5" loadingMessage="Loading..." errorMessage="Invalid input" required="false" aura:id="userlookup" />
+                                </div>
+                            </aura:set>
+                        </aura:if>
+                    </div>
+                    <div class="slds-modal__footer">
+                        <lightning:button variant="neutral" label="Cancel" onclick="{!c.closeCreateJiraForm}" />
+                        <lightning:button variant="brand" label="Submit" onclick="{!c.handleCreateJiraLinkClick}" disabled="{!v.isLoading}" />
+                    </div>
+                </div>
+            </aura:set>
+        </aura:if>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+    <aura:attribute name="cssStyle" type="String" />
+
+
+    <!-- Display Lightning Data Service errors, if any -->
+    <aura:if isTrue="{!not(empty(v.recordError))}">
+        <div class="recordError">
+            <ui:message title="Error" severity="error" closable="true">
+                {!v.recordError}
+            </ui:message>
+        </div>
+    </aura:if>
+
+
+</aura:component>

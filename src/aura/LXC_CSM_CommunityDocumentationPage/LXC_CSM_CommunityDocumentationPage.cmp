@@ -1,0 +1,54 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes,lightning:isUrlAddressable" access="global">
+    <aura:attribute name="topicId" type="String" />
+    <aura:attribute name="category" type="String" default="" />
+    <aura:attribute name="view_file" type="boolean" default="false" />
+    <aura:attribute name="view_article" type="boolean" default="false" />
+    <aura:attribute name="view_group" type="boolean" default="false" />
+    <aura:attribute name="isLoading" type="boolean" default="true" />
+    <aura:attribute name="view_file_prm" type="boolean" default="false" />
+    <aura:attribute name="view_product_file_prm" type="boolean" default="false" />
+    <aura:attribute name="oce_sales_articles" type="boolean" default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="partnerURL" type="boolean" access="global" default="false" />
+    <c:LXC_CSM_CommunityDocumentationMenu category="{! v.category }"  menuArticleIsActive="{!v.view_article}" menuFileIsActive="{!v.view_file}" menuGroupIsActive="{!v.view_group}" partnerURL="{!v.partnerURL}" view_file_prm="{!v.view_file_prm}" view_product_file_prm="{!v.view_product_file_prm}" oce_sales_articles="{!v.oce_sales_articles}"/>
+    <div class="container" Style="width:90%;margin-right :76px; max-width: 1250px;margin-left: 8%">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+            <aura:set attribute="else">
+                <aura:if isTrue="{! v.view_article}">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <aura:if isTrue="{!v.partnerURL}">
+                                <aura:if isTrue="{!v.oce_sales_articles}">
+                                    <h3 class="headerLabel">{!$Label.c.PRM_Sales_Collateral_Articles}</h3>
+                                    <aura:set attribute="else">
+                                        <h3 class="headerLabel">{!$Label.c.PRM_Technical_Documentation}</h3>
+                                    </aura:set>
+                                </aura:if>
+                                <c:LXC_CSM_CommunityArticles category="{! v.category }" maxShow="4" partnerURL="{!v.partnerURL}" oce_sales_articles="{!v.oce_sales_articles}"/>
+                                <aura:if isTrue="{! v.view_file_prm}">
+                                    <c:LXC_PEP_PortalFile/>
+                                </aura:if>
+                                <aura:set attribute="else">
+                                    <h3 class="card-title h3">Articles</h3>
+                                    <c:LXC_CSM_CommunityArticles category="{! v.category }" maxShow="8" />
+                                </aura:set>
+                            </aura:if>
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{! v.view_file}">
+                    <c:LXC_CSM_CommunityFilesExplorer type="Folder Name" folderName="{! v.category }" />
+                </aura:if>
+                <aura:if isTrue="{! v.view_group}">
+                    <c:LXC_CSM_CommunityGroups productName="{!v.category}"/>
+                </aura:if>
+            </aura:set>
+        </aura:if>
+    </div>
+</aura:component>

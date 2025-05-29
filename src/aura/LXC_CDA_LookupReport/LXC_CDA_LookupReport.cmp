@@ -1,0 +1,208 @@
+<aura:component implements="force:appHostable,lightning:isUrlAddressable" controller="CNT_CDA_LookupReportComnt">
+    <aura:attribute name="cdaRequests" type="CDA_Request__c[]" />
+    <aura:attribute name="pageNumber" type="string" default="1" />
+    <aura:attribute name="CancelledRequestId" type="string" default="" />
+    <aura:attribute name="currentPagesCount" type="string" default="10" />
+    <aura:attribute name="sortField" type="string" default="Name" />
+    <aura:attribute name="sortDirection" type="string" default="DESC" />
+    <aura:attribute name="searchFieldsMap" type="Map" />
+
+    <aura:attribute name="isPopupOpen" type="boolean" default="false" />
+    <aura:attribute name="popupType" type="String" />
+    <aura:attribute name="popupButtonMap" type="Map" />
+
+    <lightning:workspaceAPI aura:id="workspace" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="c:LXE_CDA_PaginationPageTotalChange" action="{!c.recordCounterChange}" />
+    <aura:handler event="c:LXE_CDA_PaginationPageChangeEvt" action="{!c.pageChange}" />
+    <aura:handler event="c:LXE_CDA_LandingPageSearchEvt" action="{!c.searchRequests}" />
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.reInit}" />
+
+    <lightning:spinner aura:id="mySpinner" alternativeText="Processing.." title="Processing.." variant="brand" size="large" class="slds-hide" />
+
+    <c:LXC_CDA_DownTimeMessage isMessageDownType="true" isShowHeader="true" />
+
+    <div class="slds-section slds-is-open" aura:id="searchSection">
+        <h3 class="slds-section__title">
+            <button class="slds-button slds-section__title-action" onclick="{!c.openSection}">
+                <lightning:icon aura:id="searchSectionIcon" class="slds-section__title-action-icon searchIcon slds-button__icon slds-button__icon_left"
+                    iconName="utility:switch" size="x-small" alternativeText="Open Search Section" />
+                <span class="slds-truncate slds-p-left_xx-small" title="Search CDA Requests">Search CDA Requests</span>
+            </button>
+        </h3>
+        <div class="slds-section__content">
+            <c:LXC_CDA_LandingPageSearchSection isLookupReportTab="true" />
+        </div>
+    </div>
+    
+    <div class="lookupReportPagination" aura:id="lookupPagId">
+        <div class="slds-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade">
+                <span class="slds-truncate slds-p-horizontal_small" title="CDA Requests" style="width:80%;">CDA Requests</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content">
+                <!--<div class="slds-theme_shade" style="padding:5px !important;">
+                <button class="slds-button slds-button_success" onclick="{!c.downloadCsv}">Download As CSV</button>
+                <button class="slds-button slds-button_outline-brand" onclick="{!c.doInit}">Refresh</button><br />
+                </div>-->
+                <table class="slds-table slds-table--bordered slds-table_col-bordered" role="grid">
+                    <thead>
+                        <tr class="slds-text-heading slds-line-height_reset">
+                            <!-- <th scope="col">
+                                <div title="Action">Action</div>
+                            </th> -->
+                            <th scope="col">
+                                <div title="CDA Id #">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Name">CDA
+                                        Id #</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-shrink slds-text-align_center" scope="col">
+                                <div title="CDA Request: Created Date">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CreatedDate">CDA Request: Created Date (MM/DD/YYYY)</button>
+                                </div>
+                            </th>
+                            <th class="slds-text-align_center" scope="col">
+                                <div title="CDA Type">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CDA_Type__c">CDA
+                                        Type</button>
+                                </div>
+                            </th>
+                            <th class="slds-text-align_center" scope="col">
+                                <div title="Status">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Status__c">Status</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-shrink slds-text-align_center" scope="col">
+                                <div title="CDA Effective Date">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}"
+                                            value="CDA_Effective_Date__c">CDA Effective Date (MM/DD/YYYY)</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Recipient Legal Entity Name">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Recipient_Account_Name_Formula__c">Recipient
+                                        Legal Entity Name</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap" scope="col">
+                                <div title="CDA Source">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CDA_Source__c">CDA Source</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap" scope="col">
+                                <div title="CDA Format">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CDA_Format__c">CDA Format</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="CDA Request: Created By">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}"
+                                            value="CreatedBy">CDA Request: Created By</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Protocol Number">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Protocol_Number__c">Protocol Number</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Protocol Title">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}"
+                                            value="Protocol_Title_Long_Textarea__c">Protocol Title</button>
+                                </div>
+                            </th>
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Project Description">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Project_Description_Long_Textarea__c">Project Description</button>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.cdaRequests}" var="request">
+                            <tr>
+                                <td>
+                                    <a id="{!request.Id}" onclick="{!c.navigateToRecord}">{!request.Name}</a>
+                                    <!-- <div title="{!request.Name}">{!request.Name}</div> -->
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CreatedDate}">
+                                        {!request.CreatedDate}
+                                        <!--<lightning:formattedDateTime value="{!request.CreatedDate}" month="2-digit" day="2-digit" year="2-digit" />-->
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-text-align_center" title="{!request.CDA_Type__c}">{!request.CDA_Type__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Status__c}">{!request.Status__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CDA_Effective_Date__c}">
+                                        {!request.CDA_Effective_Date__c}
+                                        <!--<lightning:formattedDateTime value="{!request.CDA_Effective_Date__c}" month="2-digit" day="2-digit" year="2-digit" />-->
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Recipient_Account_Name_Formula__c}">{!request.Recipient_Account_Name_Formula__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CDA_Source__c}">{!request.CDA_Source__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CDA_Format__c}">{!request.CDA_Format__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CreatedBy.Name}">{!request.CreatedBy.Name}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Protocol_Number__c}">{!request.Protocol_Number__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Protocol_Title_Long_Textarea__c}">{!request.Protocol_Title_Long_Textarea__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Project_Description_Long_Textarea__c}">{!request.Project_Description_Long_Textarea__c}</div>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                <!-- Footer with Pagination -->
+                <c:LXC_CDA_Pagination />
+                <!-- / Footer with Pagination -->
+            </div>
+        </div>
+    </div>
+
+    <aura:if isTrue="{!v.isPopupOpen}">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{! c.popupActionButton2 }" alternativeText="close"
+                        variant="bare-inverse" class="slds-modal__close" />
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p>
+                        <b>
+                            <aura:if isTrue="{!v.popupType == 'cancelRequestPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Are_you_sure_you_want_to_cancel_the_request}" />
+                            </aura:if>
+                        </b>
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button label="{!v.popupButtonMap.button1}" title="{!v.popupButtonMap.button1}" class="slds-button slds-button_outline-brand"
+                        onclick="{!c.popupActionButton1}" />
+                    <aura:if isTrue="{!v.popupButtonMap.button2 != null}">
+                        <lightning:button label="{!v.popupButtonMap.button2}" title="{!v.popupButtonMap.button2}" class="slds-button slds-button_outline-brand"
+                            onclick="{!c.popupActionButton2}" />
+                    </aura:if>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

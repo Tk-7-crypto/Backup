@@ -1,0 +1,165 @@
+<apex:page id="extUserActionPage" showHeader="false" title="{!$Label.site.site_login}" controller="CNT_TPA_ExternalUserAction"> 
+    
+    <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+    <script src="{!$Resource.TPAJquery}" type="text/javascript" />
+    <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript" />
+    
+    <script>
+        //*** Wait Panel Start ***//
+        
+        YAHOO.namespace("force.com");
+        
+        YAHOO.force.com.buildWaitPanel = function() 
+        {
+            document.body.className = document.body.className + " yui-skin-sam";
+            YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                "waitPanel",  // The id of our dialog container
+                { 
+                    width           :   "300px", // You can play with this until it is right
+                    visible         :   false,   // Should be invisible when rendered
+                    draggable       :   false,   // Make the dialog draggable
+                    close           :   false,   // Do not include a close title button
+                    modal           :   true,    // Make it modal
+                    fixedCenter     :   true,    // Keep centered if window is scrolled
+                    zindex          :   40,      // Make sure it is on top of everything
+                    constraintoviewport: true,
+                    
+                    // This line adds the appear/disapper fade effect
+                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                });
+            
+            // header
+            YAHOO.force.com.waitPanel.setHeader('{!JSENCODE($Label.TPA_Please_wait)}');// text updated by sumita  dabas issue 5222 27 august 2014
+            // set image
+            YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+            // Render the dialog to the document.body level of the DOM
+            YAHOO.force.com.waitPanel.render(document.body);
+        }
+        
+        /**
+        * Callback when the action button is clicked
+        */
+        function onActionClick() 
+        {
+            // show the modal panel
+            if(YAHOO.force.com.waitPanel != null)
+                YAHOO.force.com.waitPanel.show();
+            // return false to allow the action to proceed
+            return false;
+        }
+        
+        /**
+        * Callback when the action is completed
+        */
+        function onActionComplete() 
+        {
+            // hide the modal panel
+            //hideRequiredInput();
+            if(YAHOO.force.com.waitPanel != null)
+                YAHOO.force.com.waitPanel.hide();
+            window.scrollTo(0,0);
+        }
+    
+        YAHOO.force.com.onDOMReady = function() 
+        {
+            // add our custom skin css to the body tag
+            document.body.className = document.body.className + " yui-skin-sam";  
+            
+            // build the wait panel
+            YAHOO.force.com.buildWaitPanel();
+        }
+        
+        // build the tree as soon as the DOM is in a usable state
+        YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady); 
+        //*** Wait Panel End ***//
+        function getParameterByName(name) 
+        {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+    
+        $(document).ready(function(){
+            onActionClick();
+            
+            var extAction = getParameterByName('actionType');
+            var userName = getParameterByName('userName');
+            var userPass = getParameterByName('userPass');
+            
+            //Added for site to community logic submission start
+            if(extAction != 'tpasitelinkaccess') {
+                $.removeCookie("apex__extUserActionVal");
+                var pcsf = getParameterByName('PCSF'); //Processing Country Submittin From
+                var cpn = getParameterByName('CPN'); //client project name
+                var ceacc = getParameterByName('CEACC'); //confirmation related emails to additional client contacts
+                var vcfn = getParameterByName('VCFN'); //Vendor Contact First Name
+                var vcln = getParameterByName('VCLN'); //Vendor Contact Last Name
+                var vctn = getParameterByName('VCTN'); //Vendor Contact Telephone Number
+                var vce = getParameterByName('VCE'); //Vendor Contact Email
+                var pvsdav = getParameterByName('PVSDAV'); //primary vendor sharing the data with any additional vendors
+                var dasd = getParameterByName('DASD'); //Data Access Start Date
+                var daed = getParameterByName('DAED'); //Data Access End Date
+                var dpsd = getParameterByName('DPSD'); //Data Period Start Date
+                var dped = getParameterByName('DPED'); //Data Period End Date
+                var prov = getParameterByName('PROV'); //providing the requested offerings to the vendor
+                var fod = getParameterByName('FOD'); //Frequency of delivery
+                var fodot = getParameterByName('FODOT'); //Other frequency of delivery text
+                if(extAction != null && extAction == 'ExtNewReq')
+                {
+                    var cookieVal = 'extAction=' + extAction;
+                    if(pcsf != null && pcsf.length > 0)
+                        cookieVal += '&PCSF=' + pcsf;
+                    if(cpn != null && cpn.length > 0)
+                        cookieVal += '&CPN=' + cpn;
+                    if(ceacc != null && ceacc.length > 0)
+                        cookieVal += '&CEACC=' + ceacc;
+                    if(vcfn != null && vcfn.length > 0)
+                        cookieVal += '&VCFN=' + vcfn;
+                    if(vcln != null && vcln.length > 0)
+                        cookieVal += '&VCLN=' + vcln;
+                    if(vctn != null && vctn.length > 0)
+                        cookieVal += '&VCTN=' + vctn;
+                    if(vce != null && vce.length > 0)
+                        cookieVal += '&VCE=' + vce;
+                    if(pvsdav != null && pvsdav.length > 0)
+                        cookieVal += '&PVSDAV=' + pvsdav;
+                    if(dasd != null && dasd.length > 0)
+                        cookieVal += '&DASD=' + dasd;
+                    if(daed != null && daed.length > 0)
+                        cookieVal += '&DAED=' + daed;
+                    if(dpsd != null && dpsd.length > 0)
+                        cookieVal += '&DPSD=' + dpsd;
+                    if(dped != null && dped.length > 0)
+                        cookieVal += '&DPED=' + dped;
+                    if(prov != null && prov.length > 0)
+                        cookieVal += '&PROV=' + prov;
+                    if(fod != null && fod.length > 0)
+                        cookieVal += '&FOD=' + fod;
+                    if(fodot != null && fodot.length > 0)
+                        cookieVal += '&FODOT=' + fodot;
+                    setCookie('apex__extUserActionVal',cookieVal);
+                }
+                else if(extAction != null && extAction == 'ExtLogin') {
+                    setCookie('apex__extUserActionVal','extAction='+extAction);
+                }
+            }
+            console.log(0);
+            if((extAction == 'ExtLogin' || extAction == 'ExtNewReq') && userPass != null && userPass.length > 0 && userName != null && userName.length > 0) {
+                $("[id$=loginButton]").click();
+            }
+            else if(extAction == 'tpasitelinkaccess') {
+                $("[id$=loginButton]").click();console.log(1);
+            }
+            //Added for site to community logic submission end
+        });
+        
+    </script>
+    <apex:define name="body">
+        <apex:form id="loginForm" forceSSL="true">
+            <apex:commandButton style="display:none;" action="{!login}" value="{!$Label.site.login_button}" id="loginButton"/>
+        </apex:form>
+    </apex:define>
+</apex:page>

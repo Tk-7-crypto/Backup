@@ -1,0 +1,1078 @@
+<apex:page standardController="Opportunity" extensions="BNFOpptyListLockedGrid" tabStyle="BNF2__c" id="thePage" standardStylesheets="true" action="{!Init}" showHeader="false" sidebar="false">
+<c:AutoCompleteWidget />
+    <c:JQueryBlockUI />
+    <!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- Start -->
+    <apex:outputpanel id="jsautocomplete">
+         <style>
+            .ui-autocomplete {
+                max-height: 100px;
+                max-width: 200px;
+                overflow-y: auto;
+                /* prevent horizontal scrollbar */
+                overflow-x: hidden;
+            }
+            
+            /* IE 6 doesn't support max-height
+             * we use height instead, but this forces the menu to always be this tall
+             */
+            * html .ui-autocomplete {
+                height: 100px;
+            }
+        </style> 
+        <script type="text/javascript"> 
+            var revenueCountryLeftPartId = "#thePage\\:theForm\\:theBlock\\:cm\\:comp\\:nlkdrptblk\\:";
+            var revenueCountryRightPartId = "\\:nlkddatatbl\\:0\\:col21";
+            var startDateDivId = '';
+            var endDateDivId = '';
+            var optLineItemIdGlobal = '';
+            $( function() {
+                var listJSON = {!isProfitCenterReadOnlyListJSON};
+                var size = '{!opptyLineItem2.size}';
+                for(i = 0 ; i < size ; i++) {
+                    $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).combobox();
+                    $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).next().width('180px');
+                    // ritesh gupta
+                    $('.ui-autocomplete-input').focusout(
+                        function(e){ 
+                            var autocomplete = $(this).data("autocomplete");
+                            autocomplete.selectedItem = this.value;
+                            return false;
+                           }
+                    );
+                    
+                    if(listJSON[i]) {
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().attr('disabled','disabled');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().attr('disabled','disabled');
+                        //$(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().css('pointer-events','none');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().css('opacity','0.5');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().css({'opacity':'0.5','pointer-events':'none'});
+                    }
+                }
+                
+                    
+            }); 
+            function setRevenueCountryId(saveType) {
+                YUIShowLoading();
+                var jsonMapStr = '{!revenueCountryMapJSON}';
+                if(jsonMapStr != null && jsonMapStr != ''){
+                    var jsonMap = JSON.parse(jsonMapStr);
+                    var jsonKeys = Object.keys(jsonMap);
+                    var size = '{!opptyLineItem2.size}';
+                    for(i = 0 ; i < size ; i++) {
+                        var revenueCountry = $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).next().val();
+                        if(revenueCountry != null && revenueCountry != '' && jsonKeys.indexOf(revenueCountry) == -1) {
+                            alert("Incorrect Profit Center \'" + revenueCountry + "\'");
+                            YUIHideLoading();
+                            return false;
+                        } 
+                    }
+                }
+                if(saveType == 'saveAfterValidated')
+                    saveNow();
+                else
+                    saveNowPartial();
+            }
+        </script>
+    </apex:outputpanel>
+    <!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- End -->
+    <script type="text/javascript">
+        
+  var txtId = '';
+  function changeRevisePrice(revisedPrice){
+    document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:1:nlkddatatbl:0:col19").value = revisedPrice;
+  }
+  function openLookup(baseURL, width, modified, searchParam){
+    var originalbaseURL = baseURL;
+    var originalwidth = width;
+    var originalmodified = modified;
+    var originalsearchParam = searchParam;
+ 
+    var lookupType = baseURL.substr(baseURL.length-3, 3);
+    if (modified == '1') baseURL = baseURL + searchParam;
+ 
+    var isCustomLookup = false;
+ 
+    // Following "a1A" is the lookup type for Address object
+    var addressPrefix = '{!addressPrefix}';
+    if(lookupType == addressPrefix){
+      
+      var urlArr = baseURL.split("&");
+      
+
+      if(urlArr.length > 2) {
+        urlArr = urlArr[1].split('=');
+        txtId = urlArr[1];
+      }
+ 
+      // Following is the url of Custom Lookup page. You need to change that accordingly
+      baseURL = "/apex/OLI_Address_Selector?txt=" + txtId + '&id={!bnf.id}';
+ 
+      // Following is the id of apex:form control "theForm". You need to change that accordingly
+      baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.theForm}");
+      if (modified == '1') {
+        baseURL = baseURL + "&lksearch=" + searchParam;
+      }
+ 
+      // Following is the ID of inputField that is the lookup to be customized as custom lookup
+      if(txtId.indexOf('CAddress') > -1 ){
+        isCustomLookup = true;
+       
+      }
+    }
+ 
+    //override SFDC lookup window
+    if(isCustomLookup == true){
+       var addressdetails='&lookup=false';
+       
+       if(document.getElementById(decodeURIComponent(txtId) + '_lkid').value!='' && document.getElementById(decodeURIComponent(txtId) + '_lkid').value!='000000000000000')
+       {
+         addressdetails='&lookup=true';
+         addressdetails= '&addressid='+ document.getElementById(decodeURIComponent(txtId) + '_lkid').value;
+         addressdetails=addressdetails+ '&addressname='+ encodeURIComponent(document.getElementById(decodeURIComponent(txtId)).value);
+       }
+       if(document.getElementById(decodeURIComponent(decodeURIComponent(txtId)) + '1_lkid').value!='' && document.getElementById(decodeURIComponent(txtId) + '1_lkid').value!='000000000000000')
+       {
+          addressdetails=addressdetails + '&sapaddressid='+document.getElementById(decodeURIComponent(txtId) + '1_lkid').value;
+          addressdetails=addressdetails+ '&sapaddressname='+encodeURIComponent(document.getElementById(decodeURIComponent(txtId) + '1').value);
+       }
+       
+       openPopup(baseURL + addressdetails, "lookup", 500, 480, "width="+width+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+                             
+       
+    }
+    else {
+      if (modified == '1') originalbaseURL = originalbaseURL + originalsearchParam;
+        openPopup(originalbaseURL, "lookup", 500, 480, "width="+originalwidth+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+    } 
+  }
+    //Receive data from custom lookup and fill 
+    window.receiveDataFromPopup = function(data) {
+        if(data != null)
+       {
+            if(data[0]!=null && data[0]!='')
+            {
+                document.getElementById(decodeURIComponent(txtId) + '_lkid').value=data[0];
+                document.getElementById(decodeURIComponent(txtId) + '_lkold').value=data[1];
+                document.getElementById(decodeURIComponent(txtId) + '_mod').value=1;
+                document.getElementById(decodeURIComponent(txtId)).value=data[1];
+
+            }
+            else
+            {
+                document.getElementById(decodeURIComponent(txtId) + '_lkid').value='';
+                document.getElementById(decodeURIComponent(txtId) + '_lkold').value='';
+                document.getElementById(decodeURIComponent(txtId) + '_mod').value=0;
+                document.getElementById(decodeURIComponent(txtId)).value='';
+            }
+            
+            if(data[2]!=null && data[2]!='')
+            {
+                document.getElementById(decodeURIComponent(txtId) + '1_lkid').value=data[2];
+                document.getElementById(decodeURIComponent(txtId) + '1').value=data[3];
+                document.getElementById(decodeURIComponent(txtId) + '1_lkold').value=data[3];
+                document.getElementById(decodeURIComponent(txtId) + '1_mod').value=1;
+               
+            }
+            else
+            {
+                document.getElementById(decodeURIComponent(txtId) + '1_lkid').value='';
+                document.getElementById(decodeURIComponent(txtId) + '1').value='';
+                document.getElementById(decodeURIComponent(txtId) + '1_lkold').value='';
+                document.getElementById(decodeURIComponent(txtId) + '1_mod').value=0;
+            }
+            
+        }
+};
+
+var TotalPricefordiscount;
+var Discountcolid;
+var RevisedPriceUpdate;
+
+function jslistprice(salesprice,colid,col,isRevised)
+{
+//alert('jslistprice colid: ' + colid + 'col: ' + col + 'isRevised: ' + isRevised);
+document.getElementById(colid.substring(0,colid.lastIndexOf(":")+1) + 'DiscountStatus.start').style.display='block';
+Discountcolid=colid;
+TotalPricefordiscount=salesprice;
+RevisedPriceUpdate=isRevised;
+var thisprice=document.getElementById(colid).value;
+var index= colid.substr(colid.indexOf("nlkdrptblk") + 11,(colid.indexOf("nlkddatatbl")-1)-(colid.indexOf("nlkdrptblk") + 11));
+var regex = new RegExp(" ", 'g');
+var finalprice= thisprice.replace(/\s+/g, '');
+//console.log('***xxx*****'+ finalprice);
+setListPrice(finalprice,index,isRevised);
+//Disable the rest of the
+ $(".listpricecls").each(function() {
+     
+    document.getElementById($(this).attr('id')).disabled=true;
+ 
+ 
+ });
+ 
+ $(".revisedpricecls").each(function() {
+     
+   document.getElementById($(this).attr('id')).disabled=true;
+ 
+ });
+ 
+return false;
+}
+
+// After AJAX request complete
+function actioncomplete()
+{
+ $(".listpricecls").each(function() {
+     
+   document.getElementById($(this).attr('id')).disabled=false;
+ 
+ });
+ 
+ $(".revisedpricecls").each(function() {
+     
+   document.getElementById($(this).attr('id')).disabled=false;
+ 
+ });
+ 
+ 
+document.getElementById(Discountcolid.substring(0,Discountcolid.lastIndexOf(":")+1) + 'DiscountStatus.start').style.display='none';
+//calculateDiscount(TotalPricefordiscount,Discountcolid,'col10',RevisedPriceUpdate);
+
+return false;
+}
+
+ function openAddSchedulePopup(OliId_in,StartDateId,EndDateId) {
+        oliId = document.getElementById("{!$Component.theForm.oppLiId}").value;
+        StartDate = document.getElementById(StartDateId).value;
+        EndDate = document.getElementById(EndDateId).value;     
+        //alert('URL Encoded: ' + encodeURIComponent(StartDate ));
+        //alert('End date id: ' + EndDateId);
+        //window.open( "/apex/AddBillingSchedule?id=" + oliId + "&bnfid={!bnf.id}", oliId, "status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1" );
+        //alert("StartDateId = " +StartDate + ", EndDate = " + EndDate);
+        window.open( "/apex/AddProductBillingSchedule?id=" + oliId + "&bnfid={!bnf.id}" + "&startdate=" + StartDate +"&enddate=" + EndDate , oliId, "status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1" );
+// pseudo code for date - Sam Duncan         window.open( "/apex/AddProductBillingSchedule?id=" + oliId + "&bnfid={!bnf.id}&startdate=" + urlencode(startdate), oliId, "status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1" );
+ }
+ 
+     function showDiv(){
+        document.getElementById("{!$Component.theForm.loadingDiv}").style.display = "none";
+        document.getElementById("{!$Component.theForm.addScheduleDiv}").style.display = "block";
+    }
+     function getBNFInfo(e, id) {
+            var infoDiv = document.getElementById("{!$Component.theForm.addScheduleDiv}");
+            if(navigator.appName.indexOf("Microsoft") != -1){
+                infoDiv.style.left=event.clientX + document.documentElement.scrollLeft -10 +'px';
+                infoDiv.style.top=event.clientY + document.body.scrollTop -120 + 'px';
+            } else {
+                infoDiv.style.left=e.pageX -10 +'px';
+                infoDiv.style.top=e.pageY -120 +'px';
+            }
+            document.getElementById("{!$Component.theForm.oppLiId}").value = id;
+            
+            var loadingDiv = document.getElementById("{!$Component.theForm.loadingDiv}");
+            if(navigator.appName.indexOf("Microsoft") != -1){
+                loadingDiv.style.left=event.clientX + document.documentElement.scrollLeft -10 +'px';
+                loadingDiv.style.top=event.clientY + document.body.scrollTop -120 + 'px';
+            } else {
+                loadingDiv.style.left=e.pageX + 20 +'px';
+                loadingDiv.style.top=e.pageY -100 +'px';
+            }
+
+            loadingDiv.style.display = "block";
+            showBNFInfo(id);
+    }
+    function editBillingSchDetails(OliId_in,StartDateId,EndDateId){
+        startDateDivId = StartDateId;
+        endDateDivId = EndDateId;
+        optLineItemIdGlobal = OliId_in;
+    }
+    function openPopUpBlockOnEditClick(){
+        oliId = optLineItemIdGlobal;
+        StartDate = document.getElementById(startDateDivId).value;
+        EndDate = document.getElementById(endDateDivId).value;     
+        //alert('URL Encoded: ' + encodeURIComponent(StartDate ));
+        //alert('End date id: ' + EndDateId);
+        //window.open( "/apex/AddBillingSchedule?id=" + oliId + "&bnfid={!bnf.id}", oliId, "status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1" );
+        //alert("StartDateId = " +StartDate + ", EndDate = " + EndDate);
+        window.open( "/apex/AddProductBillingSchedule?id=" + oliId + "&bnfid={!bnf.id}" + "&startdate=" + StartDate +"&enddate=" + EndDate , oliId, "status = 1, height = 500, width = 1000, resizable = 0, scrollbars = 1" );
+    }
+    function hideDiv() {
+        var infoDiv = document.getElementById("{!$Component.theForm.addScheduleDiv}");
+        infoDiv.style.display = "none";
+    }
+
+//  START added by Sam Duncan 2015-05-08
+function opendlg(OliId,RevisedPriceId,ListPriceId, StartDateId, EndDateId)
+{ 
+    StartDate = document.getElementById(StartDateId).value;
+    EndDate = document.getElementById(EndDateId).value; 
+    //alert("startDate = " + StartDate + ", endDate = " + EndDate );
+    var lookUpWindowOpen = false;
+    if(!lookUpWindowOpen)
+    {
+        //updated by Ghanshyam Saini - chrome issue in window.open and window.showModalDialog
+        // YUIShowLoading();
+        
+        lookUpWindowOpen = true;
+        var windowWidth=450;
+        var windowHeight=500;
+        var centerWidth = (window.screen.width - windowWidth) / 2;
+        var centerHeight = (window.screen.height - windowHeight) / 2;        
+        lookupwindow = window.open('/apex/revised_revenue_schedule?id='+ OliId + '&startdate=' + StartDate + '&enddate=' + EndDate + '&RevisedPriceId=' + RevisedPriceId + '&ListPriceId=' + ListPriceId +'&OriginalRevSchedules=' + '{!IF(bnf.Addendum__c==false,'true','false')}','ShowMessage','Width=' + windowWidth + 'px,Height=' + windowHeight + 'px,center=yes,Top=' + centerHeight +',Left=' + centerWidth + ',scrollbars=yes');                         
+    } 
+    return false;
+}
+ 
+ 
+function jsrevisedprice(colid,col)
+{
+
+    var index= colid.substr(colid.indexOf("nlkdrptblk") + 11,(colid.indexOf("nlkddatatbl")-1)-(colid.indexOf("nlkdrptblk") + 11));
+    //alert('Index: ' + index);
+    setRevisedPrice(index);
+    //alert('setRevisedPrice done');
+    //Disable the rest of the
+    /*$(".listpricecls").each(function() {        
+    document.getElementById($(this).attr('id')).disabled=true;                
+    });
+    
+    $(".revisedpricecls").each(function() {        
+    document.getElementById($(this).attr('id')).disabled=true;        
+    });*/
+    
+    return false;
+}
+
+function DisableSaveButton(Disable)
+{
+   // alert('Save Button Id: ' + document.getElementById('thePage:theForm:theBlock:j_id37:SaveButton').disabled);
+    if (Disable)
+    {
+        document.getElementById('thePage:theForm:theBlock:j_id37:SaveButton').disabled = true;
+        document.getElementById('thePage:theForm:theBlock:j_id37:SaveButton').defaultValue= 'Updating...';
+    }
+    else
+    {
+        document.getElementById('thePage:theForm:theBlock:j_id37:SaveButton').disabled = false;
+        document.getElementById('thePage:theForm:theBlock:j_id37:SaveButton').defaultValue= 'Save';
+    }
+}
+ //  END added by Sam Duncan 2015-05-08
+
+</script>
+<apex:outputpanel id="jspanel">
+<script>
+$(document).ready(function() {
+        $(".SAPContact").each(function() {
+          $(this).attr('readOnly','true');
+          $(this).next().next().css('display','none');
+        });
+        
+       var i=0;
+        var j=0;
+        var isRevisedBNF='{bnf.Addenum__c}';
+         var locale='{!LocalekeyFormat}';
+            $(".listpricecls").each(function() {
+             
+              var RevisedPrice='';
+              
+              if(document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col19")!=null)
+                RevisedPrice=document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col19").value;
+
+              if($(this).val()!='' && RevisedPrice=='')
+              {
+                  var salesprice=document.getElementById("thePage:theForm:theBlock:cm:comp:rptblk:" + i + ":datatbl:0:salesprice").getAttribute("title");
+                  var listpricestr=$(this).val();
+                  var salespricestr=salesprice;
+                  //$(this).val(listpricestr.replace(/\s+/g, ''));
+                  if(locale=='Locale_Format1')
+                  {
+                     listpricestr=listpricestr.replace(",","");
+                     salespricestr=salespricestr.replace(",","");
+                   
+                  }
+                  if(locale=='Locale_Format2')
+                  {
+                     listpricestr=listpricestr.replace(".","");
+                     listpricestr=listpricestr.replace(",",".");
+                     salespricestr=salespricestr.replace(",",".");
+                     
+                  }
+                  
+                  if(locale=='Locale_Format3')
+                  {
+                    listpricestr=listpricestr.replace("'","");
+                    salespricestr=salespricestr.replace("'","");
+                  //  console.log('*******calc 9.0****'+ locale);
+                  }
+                  
+                  if(locale=='Locale_Format4')
+                  {
+                     listpricestr=listpricestr.replace(/\s+/g, '');
+                     listpricestr=listpricestr.replace(",",'.');
+                     salespricestr=salesprice.replace(/\s+/g, '');
+                     salespricestr=salespricestr.replace(",",'.');
+                   //  console.log('*******calc 9.0****'+ locale);
+                  }
+                  
+                  if(locale=='Locale_Format5')
+                  {
+                     listpricestr=listpricestr.replace(",",'');
+                     listpricestr=listpricestr.replace("\\",'.');
+                     salespricestr=salesprice.replace(",",'');
+                     salespricestr=salespricestr.replace("\\",'.');
+                   //  console.log('*******calc 9.0****'+ locale);
+                  }
+                  
+                  if(locale=='Locale_Format6')
+                  {
+                     listpricestr=listpricestr.replace(/\s+/g, '');
+                     listpricestr=listpricestr.replace("-",'.');
+                     salespricestr=salesprice.replace(/\s+/g, '');
+                     salespricestr=salespricestr.replace("-",'.');
+                  //   console.log('*******calc 9.0****'+ locale);
+                  }
+                  
+                  if(locale=='Locale_Format7')
+                  {
+                     listpricestr=listpricestr.replace(" ",'');
+                     salespricestr=salespricestr.replace(" ",'');
+                    // console.log('*******calc 9.0****'+ locale);
+                  }
+                  
+
+                   
+                 
+                 // console.log('*******calc 2.0****'+ i + '******locale is***' + locale + '*****'+ listpricestr + '******'+ salespricestr + '******'+(parseFloat(listpricestr) - parseFloat(salespricestr)));
+                  if((parseFloat(listpricestr) - parseFloat(salespricestr))==0)
+                  {
+                    //  console.log('*******calc 2.0****'+ i + '*****'+ listpricestr + '******'+ salespricestr + '******');
+                      if(document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col10")!=null)
+                      {
+                            document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col10").selectedIndex = 0; 
+                            document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col10").disabled=true; 
+                      }
+                  }
+                  
+                discountpercentage= document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col8");
+                
+                var calculatedpercentage= new Number(parseFloat(((parseFloat(listpricestr)-parseFloat(salespricestr))/parseFloat(listpricestr))*100));
+                if(calculatedpercentage>0)
+                    discountpercentage.innerHTML=calculatedpercentage.toPrecision(4) + '%';
+                else
+                   discountpercentage.innerHTML='';
+                  
+                  
+              }
+              else
+              {
+                  document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:col8").innerHTML='';
+                  
+              }
+              i++;
+              
+            });
+        
+        
+            //Revised price function
+            $(".revisedpricecls").each(function() {
+             
+              if($(this).val()!='')
+
+              {
+                  var salesprice=$(this).val();
+                  var salespricestr=salesprice;
+                
+                  var listpricestr=document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col7").value;
+                  
+                  if(locale=='Locale_Format1')
+                  {
+                     listpricestr=listpricestr.replace(",","");
+                     salespricestr=salespricestr.replace(",","");
+                    
+                  }
+                  if(locale=='Locale_Format2')
+                  {
+                     listpricestr=listpricestr.replace(".","");
+                     listpricestr=listpricestr.replace(",",".");
+                     salespricestr=salespricestr.replace(".","");
+                     salespricestr=salespricestr.replace(",",".");
+                  
+                  }
+                  
+                  if(locale=='Locale_Format3')
+                  {
+                    listpricestr=listpricestr.replace("'","");
+                    salespricestr=salespricestr.replace("'","");
+                 
+                  }
+                  
+                  if(locale=='Locale_Format4')
+                  {
+                     listpricestr=listpricestr.replace(/\s+/g, '');
+                     listpricestr=listpricestr.replace(",",'.');
+                     salespricestr=salesprice.replace(/\s+/g, '');
+                     salespricestr=salespricestr.replace(",",'.');
+                  
+                  }
+                  
+                  if(locale=='Locale_Format5')
+                  {
+                     listpricestr=listpricestr.replace(",",'');
+                     listpricestr=listpricestr.replace("\\",'.');
+                     salespricestr=salesprice.replace(",",'');
+                     salespricestr=salespricestr.replace("\\",'.');
+                  
+                  }
+                  
+                  if(locale=='Locale_Format6')
+                  {
+                     listpricestr=listpricestr.replace(/\s+/g, '');
+                     listpricestr=listpricestr.replace("-",'.');
+                     salespricestr=salesprice.replace(/\s+/g, '');
+                     salespricestr=salespricestr.replace("-",'.');
+                 
+                  }
+                  
+                  if(locale=='Locale_Format7')
+                  {
+                     listpricestr=listpricestr.replace(" ",'');
+                     salespricestr=salespricestr.replace(" ",'');
+                   
+                  }
+                 
+                  if((parseFloat(listpricestr) - parseFloat(salespricestr))==0)
+                  {
+                      if(document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col10")!=null)
+                      {
+                            document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col10").selectedIndex = 0; 
+                            document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col10").disabled=true; 
+                      }
+                  }
+                  else
+                  {
+                      if(document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col10")!=null)
+                          document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col10").disabled=false; 
+                  }
+
+                discountpercentage= document.getElementById("thePage:theForm:theBlock:cm:comp:nlkdrptblk:" + j + ":nlkddatatbl:0:col8");
+                var calculatedpercentage= new Number(parseFloat(((parseFloat(listpricestr)-parseFloat(salespricestr))/parseFloat(listpricestr))*100));
+                //console.log('*******Discount Cal***page***********'+ listpricestr + '******'+ salespricestr + '******'+calculatedpercentage);
+                if(calculatedpercentage>0)
+                    discountpercentage.innerHTML=calculatedpercentage.toPrecision(4) + '%';
+                else
+                   discountpercentage.innerHTML='';
+                  
+                 
+              }
+              
+              
+              j++;
+              
+            });
+
+        
+        $(".discountreason").each(function() {
+            console.log('discountreason');
+            colid='col10';
+            var thisid= $(this).attr('id');
+            var currentval=$(this).val();
+            if(document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden')!=null &&
+            document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden')!='')
+            {
+                  var selecteditem =document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid)
+                  var exists = false;
+                  var itemindex = 0;
+                  
+                  if(selecteditem.options!=null)
+                  {
+                        for (indexitem = 1 ; indexitem  <= selecteditem .options.length - 1 ; indexitem ++ )
+                        {
+                                if (selecteditem.options[indexitem ].value ==document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden').value)
+                                {
+                                    exists = true;
+                                    itemindex=indexitem;
+                                    break;
+                                }
+                        }
+                                
+                         if(exists) {
+                            document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid).remove(itemindex);
+                        }
+                  }
+                
+            
+            }
+            
+            
+            
+            
+           // alert(document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden').value));
+        
+        });
+               
+});
+</script>
+</apex:outputpanel>
+<!-- <apex:page Controller="BNFOpptyListLockedGrid1" tabStyle="BNF2__c" id="thePage" standardStylesheets="true"> -->
+    <apex:sectionHeader title="BNF {!bnf.Name} Opportunity Product">
+        <apex:form id="theForm">
+            <!--a href="javascript:(window.open('/apex/BNFGlossary','width=20','height=500'))">Click Here for the Glossary/a-->
+            <a href="/servlet/servlet.FileDownload?file={!glossaryDocumentId}" target="_blank">For further explanation, click here for glossary</a>
+            <apex:pageBlock id="theBlock">
+                <script type="text/javascript">
+                    YUIHideLoading();
+                </script>
+                <apex:pageMessages id="Mess"/>
+                <apex:pageBlockButtons location="top" >
+                    <!-- Updated by Dheeraj -- Issue-10593 -- 23 march 2017  -->
+                    <apex:actionFunction action="{!save}" reRender="theBlock,jspanel,jsautocomplete" name="saveNow" />
+                    <apex:commandButton value="Final Save" onclick="this.blur();setTimeout(function(){setRevenueCountryId('saveAfterValidated');}, 500);" reRender="dummy" id="SaveButton" ></apex:commandButton>
+                  
+                    <apex:actionFunction action="{!savePartial}" reRender="theBlock,jspanel,jsautocomplete" name="saveNowPartial" />
+                    <apex:commandButton value="Save Draft" onclick="this.blur();setTimeout(function(){setRevenueCountryId('saveNowPartial');}, 500);" reRender="dummy" id="SaveButtonPartial" ></apex:commandButton>
+
+                    <apex:commandButton value="Cancel" action="{!cancel}" onclick="YUIShowLoading()"></apex:commandButton>                    
+                </apex:pageBlockButtons>
+                
+                <apex:outputpanel id="dummy"/>
+                <!-- BEGIN - Contract Start Date and End Date Section -->                
+                <apex:pageBlockSection columns="3" id="theGrid" showHeader="false" rendered="{!!PreventEdit}">
+                   <apex:pageBlockSectionItem >
+                            <apex:outputpanel >
+                            <apex:outputLabel value="Contract Start Date" style="font-weight:bold" ></apex:outputLabel>&nbsp;
+                            <apex:outputfield value="{!bnf.Contract_Start_Date__c}"/><br/><br/>
+                            <apex:outputLabel value="Contract End Date" style="font-weight:bold"></apex:outputLabel>&nbsp;
+                            <apex:outputfield value="{!bnf.Contract_End_Date__c}"/>
+                            </apex:outputpanel>
+                  </apex:pageBlockSectionItem>
+                  
+                  <apex:pageBlockSectionItem >
+                        <apex:pageBlockSectionItem > &nbsp;</apex:pageBlockSectionItem>
+                  </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem />                                       
+                </apex:pageBlockSection>
+                <!-- END - Contract Start Date and End Date Section -->
+                
+                <c:LockedGridComponent addendum1="{!bnf.Addendum__c }" lokcedColList1="{!lokcedColList}" unLockedColList1="{!unLockedColList}" idHierarchy="{!$Component.thePage.theForm.theBlock.cm}"
+                                           objItemList1="{!opptyLineItem2}" var="opptyLineItem" totalUnLockedWidthtopass="totalUnLockedWidth" id="cm" rendered="{!!PreventEdit}">
+                    <apex:dataTable var="opptyLineItem" styleClass="list" cellspacing="0" cellpadding="0" border="0" onRowMouseOver="hiOn(this);" onRowMouseOut="hiOff(this);"
+                                                              value="{!act}" width="{!totalUnLockedWidth - 3}px;" id="nlkddatatbl" rowClasses="mycolheight"> 
+                        
+                        <!-- <apex:column width="{!unLockedColList[0].colWidth - 1}">
+                            <apex:outputField value="{!opptyLineItem.PricebookEntry.Name}" id="col0" style="text-align:right;"/>
+                        </apex:column> -->
+                        
+                        <apex:column width="{!unLockedColList[0].colWidth - 1}">
+                            <!-- Updated By Dheeraj Kumar -- Issue-11149 - 21-Aug 2017-->
+                            <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' || bnf.Addendum__c == true,'requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' || bnf.Addendum__c == true,'requiredBlock','')}" layout="block" />
+                                <apex:inputField value="{!opptyLineItem.Product_Start_Date__c}" id="col0" onchange="replicateCheck('col0','{!unLockedColList[0].colHdrId}')" style="text-align:right;"/>
+                                <apex:outputpanel rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP' && (isNewBnf == True &&  bnf.Addendum__c != true)}">
+                                    <script type="text/javascript">
+                                    document.getElementById("{!$Component.col0}").disabled = 'disabled';
+                                    </script>
+                                </apex:outputpanel>
+                            </apex:outputPanel>
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[1].colWidth - 1}" >
+                            <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' ,'requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' ,'requiredBlock','')}" layout="block" />
+                                <apex:inputField value="{!opptyLineItem.Product_End_Date__c}" id="col1" style="text-align:right" onchange="replicateCheck('col1','{!unLockedColList[1].colHdrId}')"  />
+                                <apex:outputpanel rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP'}">
+                                    <script type="text/javascript">
+                                    document.getElementById("{!$Component.col1}").disabled = 'disabled';
+                                    </script>
+                                </apex:outputpanel>
+                            </apex:outputPanel>
+                        </apex:column> 
+                        
+                        <apex:column width="{!unLockedColList[2].colWidth - 1 }" >
+                            <apex:actionRegion renderRegionOnly="true">
+                            <!--     <apex:inputField value="{!opptyLineItem['Delivery_Media__c']}" id="col2" required="true"  style="width : {!unLockedColList[2].colWidth - 10}px;" onchange="replicateCheck('col2','{!unLockedColList[2].colHdrId}')" />
+                            -->
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.product2.Material_Type__c!='ZREP','requiredInput','')}"
+                                layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.product2.Material_Type__c!='ZREP','requiredBlock','')}"
+                                    layout="block" />
+
+                                        <apex:selectList id="col2" styleClass="clsDelivery_Media" value="{!opptyLineItem.Delivery_Media__c}" multiselect="false" size="1"  style="width : {!unLockedColList[2].colWidth - 10}px;" onchange="replicateCheck('col2','{!unLockedColList[2].colHdrId}')">
+                                                                 <apex:selectOptions value="{!DeliveryMedia_Map[opptyLineItem.id]}"></apex:selectOptions>  
+                                                        </apex:selectList>
+                                    </apex:outputpanel>
+                                    <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP',true,false)}">
+                                                        <script type="text/javascript">
+                                                            document.getElementById("{!$Component.col2}").disabled = true;
+                                                    </script>
+                                    </apex:outputpanel>
+
+                            </apex:actionRegion>
+                        </apex:column>
+                        
+
+                        
+                        <apex:column width="{!unLockedColList[3].colWidth - 1}" >                                
+                          
+                                  <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+                                        opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                                       <apex:outputtext value="Set By {!IF(bnf.Addendum__c,'Revised ','')} Revenue Schedule"/>   <br/>                            
+                                   </apex:outputpanel>
+                                 <apex:actionRegion renderRegionOnly="true">
+            
+                                <apex:outputPanel rendered="{!opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC'}" styleClass="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC','requiredInput','')}"
+                                layout="block">
+                                <apex:outputPanel styleClass="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC','requiredBlock','')}" layout="block" />
+
+                                        <apex:selectList id="col3" value="{!opptyLineItem.Proj_Rpt_Frequency__c}" multiselect="false" size="1"  style="width : {!unLockedColList[3].colWidth - 10}px;" onchange="replicateCheck('col3','{!unLockedColList[3].colHdrId}')">
+                                            <apex:selectOptions value="{!DeliveryFrequency_Map[opptyLineItem.id]}"></apex:selectOptions>  
+                                        </apex:selectList>
+                                    </apex:outputpanel>
+                               
+
+                            </apex:actionRegion>      
+                            <apex:inputField value="{!opptyLineItem.Revenue_Schedule_Error_Msg__c}" id="DummyRevenueScheduleField"/>
+                               <script type="text/javascript">
+                                           document.getElementById("{!$Component.DummyRevenueScheduleField}").style.display='none';
+                               </script>                      
+                            <apex:commandLink id="rev_sched_link2" onclick="opendlg('{!opptyLineItem.id}','{!$Component.col19}','{!$Component.col7}','{!$Component.col0}','{!$Component.col1}');return false;" value="{!IF(bnf.Addendum__c==true,'Edit Revised Rev Schedule','Edit Rev Schedule Dates')}" 
+                            rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP' || opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'}"></apex:commandLink>
+                        </apex:column>                        
+                        
+                       <apex:column width="{!unLockedColList[4].colWidth - 1}" >
+                        <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+                                        opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                                       <apex:outputtext value="Set By Billing Schedule"/>                               
+                                   </apex:outputpanel>
+                        <apex:outputPanel rendered="{! opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC'}" styleClass="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC','requiredInput','')}"
+                                layout="block">
+                                <apex:outputPanel styleClass="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC','requiredBlock','')}"
+                                    layout="block" />                                                          
+                            <!-- Updated By Dheeraj Kumar -- Issue-11149 - 21-Aug 2017-->
+                            <apex:inputField value="{!opptyLineItem.Billing_Frequency__c}" id="col4" style="width : {!unLockedColList[4].colWidth - 10}px;"  >
+                                <apex:actionSupport event="onchange" rerender="billingdatepanel" onsubmit="replicateCheck('col4','{!unLockedColList[4].colHdrId}')"/> 
+                            </apex:inputField>                                                                     
+                            </apex:outputpanel>
+                            <apex:outputText rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC',true,false)}">
+                               <br/><a href='#' onMouseOver='getBNFInfo(event, "{!opptyLineItem.id}")' onMouseOut="hideDiv()" onclick="openAddSchedulePopup('{!opptyLineItem.id}','{!$Component.col0}','{!$Component.col1}');return false;">Edit Billing Schedule</a>
+                            </apex:outputText>
+                            <apex:inputField value="{!opptyLineItem.Billing_Schedule_Error_Msg__c}" id="DummyField"/>
+                            <script type="text/javascript">
+                                       document.getElementById("{!$Component.DummyField}").style.display='none';
+                            </script>
+                          
+                        </apex:column>                                                                                                                                          
+                        
+                        <apex:column width="{!unLockedColList[5].colWidth - 1 }" >                                
+                            <apex:inputField value="{!opptyLineItem.Sales_Text__c}" id="col5"/>
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[6].colWidth - 1 }">
+                            <apex:inputField value="{!opptyLineItem.PO_Number__c}" id="col6" style="width : {!unLockedColList[6].colWidth - 10}px;"/>
+                        </apex:column>
+                        <!---  YLi add List Price ---->
+                       <apex:column width="{!unLockedColList[7].colWidth - 1 }">
+
+                       <div class="{!if((opptyLineItem.PricebookEntry.Product2.Offering_Type__c !='Management Consulting') 
+      && (opptyLineItem.PricebookEntry.Product2.Offering_Type__c !=$Label.CES_TOT_Offering_Type) && US_SalesOrg == false,'requiredInput','')}">
+                            <div class="{!if((opptyLineItem.PricebookEntry.Product2.Offering_Type__c !='Management Consulting') 
+      && (opptyLineItem.PricebookEntry.Product2.Offering_Type__c !=$Label.CES_TOT_Offering_Type) && US_SalesOrg == false,'requiredBlock','')}"></div>   
+                      
+                      <apex:inputField onchange="return jslistprice({!ROUND(opptyLineItem.Totalprice,2)},this.id,'col10',0);" styleclass="listpricecls" value="{!opptyLineItem.List_Price__c}" id="col7" style="width : {!unLockedColList[7].colWidth - 15  }px;">
+                        </apex:inputField>
+                         </div>
+
+                      
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[8].colWidth - 1}" >                                
+                                <apex:outputField id="col8" value="{!opptyLineItem.Discount_Percentage_Formula__c}" />
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[9].colWidth - 1 }" >                                
+                          <!-- <apex:outputField value="{!opptyLineItem.Discount_Amount_Formula__c}" id="col9"/>   -->
+                          <apex:outputPanel id="Discountpanel">
+                          <apex:outputtext value="{!opptyLineItem.CurrencyISOCode} {!if(Text(opptyLineItem.List_Price__c)=='','0.0',if(!bnf.Addendum__c || (opptyLineItem.Revised_Price__c==null || ISblank(opptyLineItem.Revised_Price__c)),NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Totalprice,2),0),NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Revised_Price__c,2),0)))}" id="col9"></apex:outputtext> 
+                         
+                          </apex:outputPanel>
+
+                        </apex:column>
+                        
+                       <apex:column width="{!unLockedColList[10].colWidth - 1}">                                
+                           <apex:outputPanel id="Discountreasonpanel" style="float:left;">
+                            <div class="{!if((bnf.Addendum__c && (!isblank(opptyLineItem.Revised_Price__c))),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Revised_Price__c,2),0)) == 0.00||((opptyLineItem.PricebookEntry.Product2.Offering_Type__c =='Management Consulting' ||opptyLineItem.PricebookEntry.Product2.Offering_Type__c ==$Label.CES_TOT_Offering_Type)&&(TEXT(opptyLineItem.List_Price__c)=='')),'','requiredInput'),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.TotalPrice,2),0)) == 0.00||((opptyLineItem.PricebookEntry.Product2.Offering_Type__c =='Management Consulting' ||opptyLineItem.PricebookEntry.Product2.Offering_Type__c ==$Label.CES_TOT_Offering_Type)&&(TEXT(opptyLineItem.List_Price__c)=='')),'','requiredInput'))}">
+                            <div class="{!if((bnf.Addendum__c && (!isblank(opptyLineItem.Revised_Price__c))),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Revised_Price__c,2),0)) == 0.00||((opptyLineItem.PricebookEntry.Product2.Offering_Type__c =='Management Consulting' ||opptyLineItem.PricebookEntry.Product2.Offering_Type__c ==$Label.CES_TOT_Offering_Type)&&(TEXT(opptyLineItem.List_Price__c)=='')),'','requiredBlock'),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.TotalPrice,2),0)) == 0.00||((opptyLineItem.PricebookEntry.Product2.Offering_Type__c =='Management Consulting' ||opptyLineItem.PricebookEntry.Product2.Offering_Type__c ==$Label.CES_TOT_Offering_Type)&&(TEXT(opptyLineItem.List_Price__c)=='')),'','requiredBlock'))}"></div>   
+                            <apex:inputField styleclass="discountreason" value="{!opptyLineItem.Discount_Reason__c}"
+                            rendered="{!if(opptyLineItem.Revised_Price__c==null || ISblank(opptyLineItem.Revised_Price__c),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.TotalPrice,2),0)) >= 0,true,false),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Revised_Price__c,2),0)) >= 0,true,false))}" style="width : {!unLockedColList[10].colWidth - 40}px;" id="col10" onchange="replicateCheck('col10','{!unLockedColList[10].colHdrId}')"/>
+                            
+                            <apex:inputfield id="surchargetext" value="{!opptyLineItem.Surcharge_Text__c}"
+                            rendered="{!if(opptyLineItem.Revised_Price__c==null || ISblank(opptyLineItem.Revised_Price__c),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.TotalPrice,2),0)) < 0,true,false),if((NULLVALUE(ROUND(opptyLineItem.List_Price__c,2),0) - NULLVALUE(ROUND(opptyLineItem.Revised_Price__c,2),0)) < 0,true,false))}" onchange="replicateCheck('surchargetext','{!unLockedColList[10].colHdrId}')"/>
+                            </div>
+                           <apex:inputhidden value="{!Surchargetext[opptyLineItem.id]}" id="surchargehidden"/>
+                            </apex:outputPanel>
+                             <apex:actionStatus id="DiscountStatus">
+                                  <apex:facet name="start">
+                                        <apex:outputPanel > 
+                                             <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                         </apex:outputPanel>
+                                  </apex:facet>
+                               <apex:facet name="stop">
+                                     
+                              </apex:facet>
+                            </apex:actionStatus>
+                         </apex:column>
+
+                        <apex:column width="{!unLockedColList[11].colWidth - 1 }" >                                
+                          <apex:outputPanel id="POLineItemPanel">
+                          <apex:inputField value="{!opptyLineItem.PO_line_item_number__c}" id="col24"/>
+                          </apex:outputPanel>
+
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[12].colWidth - 1  }" >
+                            <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c =='ZPLI' ||
+                                                          opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c == 'ZPLU','requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c =='ZPLI' ||
+                                                              opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c == 'ZPLU','requiredBlock','')}" layout="block" />
+                                <apex:inputField value="{!opptyLineItem.Nbr_of_Users__c}" id="col11" style="width : {!unLockedColList[12].colWidth - 20}px;" onchange="replicateCheck('col11','{!unLockedColList[12].colHdrId}')" />
+                                <apex:outputPanel rendered="{!opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c !='ZPLI' && opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c != 'ZPLU'}">
+                                    <script type="text/javascript">
+                                    document.getElementById("{!$Component.col11}").disabled = 'disabled';
+                                    </script>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:column>
+                        
+                         <apex:column width="{!unLockedColList[13].colWidth - 1 }" >                                
+                        <!--    <apex:inputField value="{!opptyLineItem.Other_Ship_To__c }" id="col12" style="width : {!unLockedColList[13].colWidth - 20 }px;" onchange="replicateCheck('col12','{!unLockedColList[13].colHdrId}')"/> -->
+                           <apex:inputField value="{!opptyLineItem.Other_Ship_To_Address__c}" id="CAddress"/><br/>
+                           <apex:inputField value="{!opptyLineItem.Other_Ship_To_SAP_Contact__c}" id="CAddress1" styleclass="SAPContact"/>
+                            
+                        </apex:column>
+                        
+                         <apex:column width="{!unLockedColList[14].colWidth - 1}" breakBefore="">
+                          <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+            opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='' &&
+            opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                               <apex:outputtext value="Set By Billing Schedule"/> <br/>                              
+                           </apex:outputpanel>
+                            <apex:outputpanel id="billingdatepanel" rendered="{!opptyLineItem.Pricebookentry.product2.Material_Type__c!='ZREP' &&  opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c !='ZLIC'}">
+                           
+                           <div class="{!if((opptyLineItem.Billing_Frequency__c=='Once'),'requiredInput','')}">
+                            <div class="{!if((opptyLineItem.Billing_Frequency__c=='Once'),'requiredBlock','')}"></div>   
+                                <apex:inputField value="{!opptyLineItem.Billing_Date__c }" id="BillingDate" 
+                                      onblur="this.x = 0;this.onfocus = function (){DatePicker.pickDate(true, this.id, false);}"
+                                      onclick="if( !(this.x == 1)) {getElementById('datePicker').style.left = (event.clientX) + 'px'; this.x = 1; this.onfocus = this.onclick;} else {this.x = 0; this.onfocus = function (){DatePicker.pickDate(true, this.id, false);} }"/>
+                            </div>
+                            </apex:outputpanel>
+                               
+                                                        
+                              <apex:outputText rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+            opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='' &&
+            opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                               <a href='#' onMouseOver='getBNFInfo(event, "{!opptyLineItem.id}");editBillingSchDetails("{!opptyLineItem.id}","{!$Component.col0}","{!$Component.col1}");' onMouseOut="hideDiv()" onclick="openAddSchedulePopup('{!opptyLineItem.id}','{!$Component.col0}','{!$Component.col1}');return false;">Edit Billing Schedule</a>
+                            </apex:outputText>
+                        </apex:column>
+                        
+                       
+                        
+                        <apex:column id="ColumnDeliveryDate" width="{!unLockedColList[15].colWidth - 1}">
+                         <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+                                        opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                               <apex:outputtext value="Set By {!IF(bnf.Addendum__c,'Revised ','')}Revenue Schedule"/>                               
+                           </apex:outputpanel>
+                            <apex:inputField rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC',true,false)}" value="{!opptyLineItem.Delivery_Date__c}" 
+                                      onblur="this.x = 0;this.onfocus = function (){DatePicker.pickDate(true, this.id, false);}"
+                                      onclick="if( !(this.x == 1)) {getElementById('datePicker').style.left = (event.clientX) + 'px'; this.x = 1; this.onfocus = this.onclick;} else {this.x = 0; this.onfocus = function (){DatePicker.pickDate(true, this.id, false);} }"/>
+                            <br/>
+                            <apex:commandLink id="rev_sched_link" onclick="opendlg('{!opptyLineItem.id}','{!$Component.col19}','{!$Component.col7}','{!$Component.col0}','{!$Component.col1}');return false;" value="{!IF(bnf.Addendum__c==true,'Edit Revised Rev Schedule','Edit Rev Schedule Dates')}" 
+                            rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP' || opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'}"></apex:commandLink>
+
+                        </apex:column>            
+                        
+                        <apex:column width="{!unLockedColList[16].colWidth - 1 }">                                
+                            <!--  <apex:inputField value="{!opptyLineItem.Sale_Type__c}" style="width : {!unLockedColList[16].colWidth - 10}px;" id="col15" /> -->
+                            <apex:outputPanel styleClass="requiredInput" layout="block">
+                                <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                <apex:selectList id="col15"  value="{!opptyLineItem.Sale_Type__c}" multiselect="false" size="1"  style="width : {!unLockedColList[16].colWidth - 10}px;" onchange="replicateCheck('col15','{!unLockedColList[16].colHdrId}')">
+                                    <apex:selectOptions value="{!SaleTypePickListOptions}"></apex:selectOptions>  
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </apex:column>
+                        
+                        <apex:column width="{!unLockedColList[17].colWidth - 1}">
+                            <apex:actionRegion >
+                                <!-- <apex:inputField value="{!opptyLineItem.Revenue_Type__c}" style="width : {!unLockedColList[17].colWidth - 10}px;" id="col16"> 
+                                    <!--<apex:actionSupport event="onchange" rerender="BillingDate" immediate="false"/>
+                                    </apex:inputField> -->
+                                <apex:outputPanel styleClass="requiredInput" layout="block">
+                                    <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                    <apex:selectList id="col16"  value="{!opptyLineItem.Revenue_Type__c}" multiselect="false" size="1"  style="width : {!unLockedColList[17].colWidth - 10}px;" onchange="replicateCheck('col16','{!unLockedColList[17].colHdrId}')">
+                                        <apex:selectOptions value="{!RevenueTypePickListOption}"></apex:selectOptions>  
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:actionRegion>
+                        </apex:column>
+                        
+                         <apex:column width="{!unLockedColList[18].colWidth - 1  }" >
+                             <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP' || (opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB' && 
+                                        opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'),true,false)}">
+                               <apex:outputtext value="Not Applicable"/>                               
+                           </apex:outputpanel>
+                            <apex:inputField rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZPUB' &&
+                                               opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c!='ZLIC',true,false)}" value="{!opptyLineItem.Invoice_Lag_to_Data_Period__c}" style="width : {!unLockedColList[17].colWidth - 10}px;" id="col17"/>
+                        </apex:column>                        
+                        
+                        <apex:column width="{!unLockedColList[19].colWidth - 1 }" >
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.product2.Material_Type__c!='ZREP','requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.product2.Material_Type__c!='ZREP','requiredBlock','')}" layout="block" />
+                                        <!--Updated by Dheeraj -- Issue-11063 -- 11 July 2017-->
+                                        <!--<apex:inputField value="{!opptyLineItem.Therapy_Area__c}" required="true" id="colTA" />-->
+                                    <apex:selectList id="therapyAreaOptions" styleClass="clsTherapy_Area" value="{!opptyLineItem.Therapy_Area__c}" multiselect="false" size="1" style="width : {!unLockedColList[2].colWidth - 10}px;" onchange="replicateCheck('therapyAreaOptions','{!unLockedColList[2].colHdrId}')">
+                                        <apex:selectOptions value="{!oliIdToTherapyAreaOptionsMap[opptyLineItem.id]}"></apex:selectOptions>  
+                                    </apex:selectList>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.product2.Material_Type__c=='ZREP',true,false)}">
+                                    <script type="text/javascript">
+                                           document.getElementById("{!$Component.therapyAreaOptions}").disabled = true;
+                                    </script>
+                                </apex:outputpanel>
+                        </apex:column>                        
+                        
+                        <!-- Added by Ritesh Gupta : Issue :07072 : add field Audit_Subscription_Status__c -->
+                        <apex:column width="{!unLockedColList[20].colWidth - 1 }" >
+                           
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Offering_Type__c=='National Tracking','requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.PricebookEntry.Product2.Offering_Type__c=='National Tracking','requiredBlock','')}" layout="block" />
+                                        <apex:inputField value="{!opptyLineItem.Audit_Subscription_Status__c}" id="colASS" />
+                                </apex:outputpanel>
+                               
+                                <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.Product2.Offering_Type__c!='National Tracking',true,false)}">
+                                    <script type="text/javascript">
+                                           document.getElementById("{!$Component.colASS}").disabled = true;
+                                    </script>
+                                </apex:outputpanel>
+                        </apex:column> 
+                        
+                            <!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- Start -->
+                        <apex:column width="{!unLockedColList[21].colWidth - 1 }">
+                            <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.Product2.Material_Group_1__c =='MAN','requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.Product2.Material_Group_1__c =='MAN','requiredBlock','')}" layout="block" />
+                                   <apex:selectList value="{!opptyLineItem.ProfitCenter__c}" id="col21" size="1"> 
+                                       <apex:selectOptions value="{!profitCenterOptions}"></apex:selectOptions> 
+                                   </apex:selectList> 
+                            </apex:outputPanel>
+                        </apex:column>
+                        <!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- End -->
+
+                        <apex:column width="{!unLockedColList[22].colWidth - 1 }" rendered="{!isPrebillingSalesCode}" >                                
+                            <apex:inputField value="{!opptyLineItem.Prebilling__c}" id="col22"/>
+                        </apex:column>
+
+                        <apex:column width="200px" rendered="{!bnf.Addendum__c}">
+                            <!-- START Added by Sam Duncan 2015-05-08 -->
+                            <apex:outputPanel id="RevisedPricePanel">
+                             <!-- END Added by Sam Duncan 2015-05-08 -->
+                            <apex:inputField value="{!opptyLineItem.Revised_Price__c}" id="col19" onchange="return jslistprice({!ROUND(opptyLineItem.Totalprice,2)},this.id,'col10',1);" styleclass="revisedpricecls"/>
+
+                             <!-- START Added by Sam Duncan 2015-05-08 -->
+                             <apex:outputpanel rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP' || opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'}">
+                                    <script type="text/javascript">
+                                           document.getElementById("{!$Component.col19}").disabled = true;
+                                    </script>
+                                </apex:outputpanel>
+                            </apex:outputPanel>
+                            
+                            <apex:commandLink id="rev_sched_link3" onclick="opendlg('{!opptyLineItem.id}','{!$Component.col19}','{!$Component.col7}','{!$Component.col0}','{!$Component.col1}');return false;" value="{!IF(bnf.Addendum__c==true,'Edit Revised Rev Schedule','Edit Rev Schedule Dates')}" 
+                            rendered="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZREP' || opptyLineItem.PricebookEntry.Product2.Item_Category_Group__c=='ZLIC'}"></apex:commandLink>
+
+                            <!-- END Added by Sam Duncan 2015-05-08 -->
+                        </apex:column>
+                        
+                        
+                        <apex:column width="50px;" rendered="{!bnf.Addendum__c}">
+                            <apex:inputField style="width:50px" value="{!opptyLineItem.Cancel__c}" id="col20"/>
+                        </apex:column>
+
+
+
+
+
+
+                        <!---  end of YLi add List Price ---->
+                        
+                    </apex:dataTable>
+                </c:LockedGridComponent>
+            </apex:pageBlock>
+            <apex:actionFunction name="setListPrice" action="{!CalculateSurcharge}" rerender="Mess,Discountpanel,Discountreasonpanel,jspanel" status="DiscountStatus" immediate="true" oncomplete="return actioncomplete();">
+                                    <apex:param id="pricevalue" name="pricevalue" value="" />
+                                     <apex:param id="itemindex" name="itemindex" value="" />
+                                     <apex:param id="isRevised" name="isRevised" value="" />
+                                                                                      
+            </apex:actionFunction>
+            
+             <!-- START Added by Sam Duncan 2015-05-08 -->
+            <apex:actionFunction name="setRevisedPrice" action="{!CalculateRevisedPrice}" rerender="RevisedPricePanel" immediate="true" oncomplete="DisableSaveButton(false)">
+                                     <apex:param id="itemindex2" name="itemindex2" value="" />                                                                                      
+            </apex:actionFunction>
+            <!-- END Added by Sam Duncan 2015-05-08 -->
+            
+            <!-- Billing Schedule code : 21 July 2014 : Himanshu -->
+            <apex:outputPanel id="loadingDiv" layout="block" style="display:none;position:absolute;padding: 5px;background-color: white;">
+            <apex:actionStatus startText=" Loading ..." startStyle="font-weight:bold;font-size:14px;" stopText="" id="counterStatus"/>
+            </apex:outputPanel>
+            <apex:outputPanel id="addScheduleDiv" layout="block" style="display:none;position:absolute;border:4px solid #1797C0;padding: 5px;background-color: white;" onMouseOver="showDiv();" onMouseOut="hideDiv()">
+            <apex:outputPanel id="innerAddScheduleDiv" layout="block">
+            <apex:pageBlock title="Opportunity Line Item Details" >
+                    <apex:facet name="header">
+                        <apex:outputPanel style="padding-left:15px;font-weight:bold;font-size:14px;">Opportunity Line Item Details</apex:outputPanel>
+                    </apex:facet>
+                   <apex:panelGrid columns="2" >
+                        <apex:outputLabel value="{!$ObjectType.Product2.fields.Name.label} : " for="prodName"/>
+                        <apex:outputField value="{!oppLi.PriceBookEntry.Product2.Name}" id="prodName"/>
+                        <apex:outputLabel value="{!$ObjectType.Product2.fields.ProductCode.label} : " for="prodCode"/>
+                        <apex:outputField value="{!oppLi.PriceBookEntry.Product2.ProductCode}" id="prodCode"/>
+                        <apex:outputLabel value="{!$ObjectType.OpportunityLineItem.fields.TotalPrice.label} : " for="totalPrice"/>
+                        <apex:outputField value="{!oppLi.TotalPrice}" id="totalPrice"/>            
+                    </apex:panelGrid>
+                </apex:pageBlock>
+                <apex:pageBlock title="Billing Schedule Details" id="table">
+                <apex:facet name="header">
+                    <apex:outputPanel style="padding-left:15px;font-weight:bold;font-size:14px;">Billing Schedule Details</apex:outputPanel>
+                </apex:facet>
+                
+                <apex:commandButton id="editBillSch" value="Edit" reRender="table" onclick="openPopUpBlockOnEditClick();return false;"/>
+                
+                <apex:pageBlockTable value="{!billingSchList}" var="billingSch" >
+                 <apex:column headerValue="Billing Date" width="180">
+                    <apex:outputField value="{!billingSch.Billing_Date__c}"/>
+                </apex:column>
+                <apex:column headerValue="Billing Amount ({!oppLi.CurrencyIsoCode})" width="40">               
+                <apex:outputField value="{!billingSch.Billing_Amount__c}" />                    
+                </apex:column>  
+                </apex:pageBlockTable>
+                </apex:pageBlock>
+                <apex:pageBlock title="Billing Schedules Summary" id="summary" >
+                    <apex:facet name="header">
+                        <apex:outputPanel style="padding-left:15px;font-weight:bold;font-size:14px;">Billing Schedules Summary</apex:outputPanel>
+                    </apex:facet>
+            
+                    <apex:panelGrid columns="1" >
+                        <apex:outputText value=" Total Billing Schedule Amount : {!billScheduleAmt} {!oppLi.CurrencyIsoCode}" />
+                        <apex:outputText value=" No. of Billing Schedules : {!billScheduleNum}" /> 
+                    </apex:panelGrid>
+                </apex:pageBlock>
+            </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:actionFunction name="showBNFInfo" action="{!showBNFInfo}" status="counterStatus" immediate="true" reRender="innerAddScheduleDiv" oncomplete="showDiv();">
+                <apex:param value="" name="oppLiId" assignTo="{!oppLiId}"/>
+            </apex:actionFunction>
+            <apex:inputHidden id="oppLiId" value="{!oppLiId}"/>
+        </apex:form>  
+    </apex:sectionHeader> 
+</apex:page>

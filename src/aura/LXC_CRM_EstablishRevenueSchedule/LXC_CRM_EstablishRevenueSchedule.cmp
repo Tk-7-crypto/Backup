@@ -1,0 +1,137 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="CNT_CRM_OpportunityProductSearch">
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <aura:attribute name="isRevenueVisible" type="Boolean" default="false"/>
+    <aura:attribute name="oliWrapper" type="OpportunityLineItemWrapper[]" />
+    <aura:attribute name="oppLineItem" type="OpportunityLineItem" />
+    <aura:attribute name="olisWrapper" type="OpportunityLineItemScheduleWrapper[]" />
+    <aura:attribute name="olisList" type="OpportunityLineItemSchedule[]" />
+    <aura:attribute name="oliScheduleHeaders" type="List" default="Date,Revenue,Comments"/>
+    <aura:handler event="c:LXE_CRM_OpenRevenueScheduleEvent" action="{!c.fadeInRevenueModel}"/>
+    <aura:attribute name="establishButton" type="string" default="Establish"/>
+    <aura:attribute name="scheduleType" type="List" />
+    <aura:attribute name="installmentPeriod" type="List"/>
+    <aura:attribute name="decimalPlace" type="Decimal"/>
+    <aura:attribute name="decimalPlaceStep" type="Decimal"/>
+    <!--Start-->
+    <aura:handler event="c:AddRevenueScheduleConfirmEvent" action="{!c.handleApplicationEvent}"/>
+ 	   
+    <lightning:overlayLibrary aura:id="overlayLib"/>
+    <!--End-->
+    <aura:if isTrue="{!v.isRevenueVisible}">
+        <div id="establish-model" >
+            <section aura:id="revenueSch" role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal  slds-modal_large">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                    <lightning:buttonIcon class="slds-modal__close slds-button_icon-inverse" iconName="utility:close" variant="bare" alternativeText="Close" iconClass="dark" onclick="{!c.closeModel}"/>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                            <span class="slds-page-header__title">Revenue Schedule - {!v.oppLineItem.Product2.Name}</span>
+                        </h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap slds-grid_pull-padded">
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Opportunity :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">{!v.oppLineItem.Opportunity.Name}</div>
+                            </div>
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Start Date<sup class="slds-text-color_error slds-text-heading_small">&nbsp;*&nbsp;</sup> :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">
+                                     <!-- <ui:inputDate aura:id="text-input-start-date" displayDatePicker="true" format="dd/MM/yyyy"/> -->
+                                     <lightning:input type="date" aura:id="text-input-start-date" dateStyle = "short" />
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Revenue ({!v.oppLineItem.CurrencyIsoCode})<sup class="slds-text-color_error slds-text-heading_small">&nbsp;*&nbsp;</sup> :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">
+                                    <lightning:input type="number" variant="label-hidden" step="any" aura:id="text-input-revenue" placeholder="" onblur="{!c.setRevenueAmount}"/>
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2 ">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Schedule Type<sup class="slds-text-color_error slds-text-heading_small">&nbsp;*&nbsp;</sup> :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">
+                                    <lightning:select variant="label-hidden" aura:id="select-input-scheduleType">
+                                        <aura:iteration items="{!v.scheduleType}" var="item">
+                                            <option>{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Installment Period<sup class="slds-text-color_error slds-text-heading_small">&nbsp;*&nbsp;</sup> :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">
+                                    <lightning:select variant="label-hidden" aura:id="select-input-installmentPeriod" onchange="{!c.disabledNumInstallment}">
+                                        <aura:iteration items="{!v.installmentPeriod}" var="item">
+                                            <option>{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_right slds-size_3-of-8">Number of Installments<sup class="slds-text-color_error slds-text-heading_small">&nbsp;*&nbsp;</sup> :</div>
+                                <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_5-of-8">
+                                    <lightning:input type="number" min="1" max="156" variant="label-hidden" aura:id="text-input-numberOfInstallment" placeholder="" value="12"/>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="model-establish" class="slds-button slds-button_brand slds-align_absolute-center" onclick="{!c.establish}">{!v.establishButton}</button>
+                        
+                        <aura:if isTrue="{!v.olisList.length > 0}">
+                            <h3 class="slds-section__title">
+                                <span class="slds-truncate" title="Section Title">Revenue Schedule</span>
+                            </h3>
+                            <div class="marginButton slds-align_absolute-center">
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.loadMore}">Load More</button>
+                                <!--<button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.saveAndClose}">Save &amp; Close</button>-->
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.handleSave}">Save</button>
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.delete}">Delete</button>
+                            </div>
+                            <table class="slds-table slds-table_bordered slds-table_resizable-cols slds-table--header-fixed" role="grid">
+                                <thead>
+                                    <tr>
+                                        <aura:iteration items="{!v.oliScheduleHeaders}" var="header">
+                                            <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link_reset" tabindex="0">
+                                                    <span class="slds-assistive-text">Sort </span>
+                                                    <span class="slds-truncate" title="{!header}">{!header}</span>
+                                                    <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                                </a>
+                                            </th>
+                                        </aura:iteration>
+                                    </tr>
+                                </thead>
+                                <tbody class="">
+                                    <aura:iteration items="{!v.olisList}" var="scheduleRecord" indexVar="ind">
+                                        <tr class="slds-hint-parent">
+                                            <td role="gridcell">
+                                                <lightning:input type="date"  aura:id="dateField" dateStyle = "short" value="{!scheduleRecord.ScheduleDate}"/>
+                                                <!--<ui:inputDate aura:id="dateField" value="{!scheduleRecord.ScheduleDate}" displayDatePicker="true" format="dd/MM/yyyy"/>
+                                                   <lightning:input type="date" label="ScheduleDate" class="slds-truncate" name="date" value="{!scheduleRecord.schRecord.ScheduleDate}" variant="label-hidden" />-->
+                                            </td>
+                                            <td role="gridcell" class="">
+                                                <!--<ui:inputNumber value="{!scheduleRecord.Revenue}"/>-->
+                                                <lightning:input type="number" name="number" step="{!v.decimalPlaceStep}" value="{!scheduleRecord.Revenue}" class="slds-truncate" label="Number" variant="label-hidden" />
+                                            </td>
+                                            <td role="gridcell">
+                                                <lightning:input name="input" type="text" value="{!scheduleRecord.Description}" variant="label-hidden" maxlength="80"/>
+                                            </td>
+                                        </tr>
+                                    </aura:iteration>
+                                </tbody>
+                            </table>
+                            <div class="marginButton slds-align_absolute-center">
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.loadMore}">Load More</button>
+                                <!--<button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.saveAndClose}">Save &amp; Close</button>-->
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.handleSave}">Save</button>
+                                <button id="model-cancel" class="slds-button slds-button_brand" onclick="{!c.delete}">Delete</button>
+                            </div>
+                        </aura:if>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button id="model-cancel" class="slds-button slds-button_neutral" onclick="{!c.closeModel}">Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop"  aura:id="backdrop"></div>
+        </div>
+    </aura:if>
+</aura:component>

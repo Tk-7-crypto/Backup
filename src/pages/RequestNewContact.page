@@ -1,0 +1,65 @@
+<apex:page standardController="SAP_Contact__c" extensions="SAP_Contact_MDM_Extension" showHeader="{!ShowHeaderAndSidebar}" sidebar="{!ShowHeaderAndSidebar}" tabStyle="SAP_Contact__c" lightningStylesheets="true">
+   <apex:form id="NewContactRequestForm">
+   <apex:sectionHeader title="New SAP Contact Request for Address {!Address.Name} (SAP Code {!Address.SAP_Reference__c})" /> 
+   <apex:outputPanel id="SubmitPanel">
+   <apex:outputPanel rendered="{!NOT(RequestSubmitted)}">
+   <apex:pageBlock title="Submit New Contact Request" rendered="{!NOT(RequestSubmitted)}">
+   <apex:pageBlockButtons location="top">
+   <apex:actionStatus id="SaveAndSubmitStatus" >    
+                    <apex:facet name="stop">    
+                        <apex:commandButton value="Submit Request" action="{!SendNewContactRequestNotificationEmail}" reRender="SubmitPanel,ResultsPanel" status="SaveAndSubmitStatus"/> 
+                    </apex:facet>    
+                    <apex:facet name="start">                            
+                        Processing ...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>                        
+   </apex:actionStatus>
+   <apex:commandButton value="Cancel" onClick="if({!NOT(ShowHeaderAndSidebar)}){window.top.close();}" action="{!GoBack}" immediate="true"/>
+   </apex:pageBlockButtons>
+    <apex:pageMessages escape="false" id="UserMessages"></apex:pageMessages>       
+    <apex:pageBlockSection columns="2" title="Contact Details">
+    <apex:pageBlockSectionItem >
+    <apex:outputLabel value="Title"></apex:outputLabel>
+    <apex:selectList value="{!SAP_Contact.Title__c}" size="1"><apex:selectOptions value="{!Titles}"></apex:selectOptions></apex:selectList>
+    </apex:pageBlockSectionItem>
+    <br/>
+    <apex:inputField value="{!SAP_Contact.Academic_Title__c}"/>
+    <apex:inputField value="{!SAP_Contact.Language__c}" rendered="{!LocalLanguageRendered}"/>
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!SAP_Contact.First_Name__c}" />
+    <apex:inputField value="{!SAP_Contact.Title_Local__c}" rendered="{!LocalLanguageRendered}"/>
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!SAP_Contact.Last_Name__c}" required="true"/>    
+    <apex:inputField value="{!SAP_Contact.First_Name_Local__c}" rendered="{!LocalLanguageRendered}"/>
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!SAP_Contact.Department__c}"/>    
+    <apex:inputField value="{!SAP_Contact.Last_Name_Local__c}" rendered="{!LocalLanguageRendered}"/>
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!SAP_Contact.Function__c}"/>    
+    <apex:inputField value="{!SAP_Contact.Department_Local__c}" rendered="{!LocalLanguageRendered}"/>
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>       
+    <apex:inputField value="{!SAP_Contact.Email__c}" required="true" />
+    <apex:inputField value="{!SAP_Contact.Function_Local__c}" rendered="{!LocalLanguageRendered}"/>   
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>
+    <apex:inputField value="{!SAP_Contact.Description__c}"/>
+    <apex:inputHidden value="{!SAP_Contact.Name}" rendered="{!LocalLanguageRendered}"/>  
+    <apex:pageBlockSectionItem rendered="{!!LocalLanguageRendered}"></apex:pageBlockSectionItem>	
+    <apex:outputField value="{!Address.Name}"/>
+    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+    <apex:outputField value="{!Address.SAP_Reference__c}"/>
+    </apex:pageBlockSection>
+   </apex:pageBlock>
+   </apex:outputPanel>
+   </apex:outputPanel>
+   
+   <apex:outputPanel id="ResultsPanel">
+   <apex:outputPanel rendered="{!RequestSubmitted}">
+   <apex:pageBlock title="Submit New Address Request Submitted" rendered="{!RequestSubmitted}">
+   <apex:pageBlockButtons location="top">
+   <apex:commandButton onClick="if({!NOT(ShowHeaderAndSidebar)}){window.top.close();}" value="OK" action="{!GoBack}"/>
+   </apex:pageBlockButtons>
+   <apex:pageMessages escape="false" id="UserMessages2"></apex:pageMessages>   
+   </apex:pageBlock>
+   </apex:outputPanel>
+   </apex:outputPanel>  
+   </apex:form>
+</apex:page>

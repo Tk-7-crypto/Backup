@@ -1,0 +1,267 @@
+<apex:page sidebar="false" showheader="false" controller="CNT_CDA_CDAAccountLookupController">
+    <!-- Added by Vikram Singh under CR-11576 Start -->
+    <style>
+        input[type=text] {
+            width: 250px !important;
+        }
+    </style>
+    <!-- Added by Vikram Singh under CR-11576 End -->
+    <!-- *** Jquery library reference *** -->
+    <script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>
+    <!-- *** Jquery library reference *** -->
+    <script language="javascript">
+        function setFocuson() {
+            // bring popup window to front
+            window.focus();
+            //var ele = document.getElementById('{!$Component.form.block.section.schoolName}');
+            var ele = $("[id$=searchScholarshipBtn]");
+            if (ele) {
+                ele.focus();
+            }
+        }
+
+        function fillIn(id, name, governingLaw, governingLawName, address, isCompititorFlag) {    //Updated by Vikram Singh under CR-11576, CR-12167
+
+            var winMain = window.opener;
+            if (null == winMain) {
+                winMain = window.parent.opener;
+            }
+
+            ele = winMain.document.getElementById('{!$CurrentPage.parameters.idfield}');
+            ele.value = id;
+
+            var ele = winMain.document.getElementById('{!$CurrentPage.parameters.namefield}');
+            ele.value = name;
+
+            CloseWindow(id, name, governingLaw, governingLawName, address, isCompititorFlag); //Updated by Vikram Singh under CR-11576, CR-12167
+        }
+
+        function CloseWindowSchoolNotFound() {
+            var winMain = window.opener;
+            if (null == winMain) {
+                winMain = window.parent.opener;
+            }
+            winMain.closeLookupPopupSchoolNotFound();
+        }
+
+        function CloseWindow(id, name, governingLaw, governingLawName, address, isCompititorFlag) {   //Updated by Vikram Singh under CR-11576, CR-12167
+            var winMain = window.opener;
+            if (null == winMain) {
+                winMain = window.parent.opener;
+            }
+            winMain.closeLookupPopup(id, name, governingLaw, governingLawName, address, '{!entityType}', isCompititorFlag);   //Updated by Vikram Singh under CR-11576, CR-12167
+        }
+
+        function checkBoxCheck(checkVal) {
+            var winMain = window.opener;
+            winMain.assignCheckBox(checkVal, '{!entityType}');
+            CloseWindow();
+        }
+
+        function searchWithEnter(ev) {
+            if (window.event && window.event.keyCode == 13 || ev.which == 13) {
+                doSearch();
+                return false;
+            } else {
+                return true;
+            }
+        }
+    </script>
+    <apex:messages />
+    <apex:form id="form">
+
+        <apex:actionFunction name="doSearch" action="{!runQuery}" rerender="resultBlock,checkBox,query"/>
+        <div style="">
+            <apex:pageBlock title="{!IF(entityType == 'governingLaw', 'CDA Approved Governing Laws', IF(entityType == 'qiLegalEntity', 'IQVIA', entityType)+' Legal Entities')}" id="block">    <!-- Updated by Vikram Singh under CR-11576 --> <!-- Updated by Vikram Singh under CR-11613 -->
+                <apex:pageBlockSection id="section" columns="1">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!IF(entityType == 'governingLaw', 'CDA Approved Governing Law Name', IF(entityType == 'qiLegalEntity', 'IQVIA', entityType)+' Legal Entity Name')}"></apex:outputLabel>   <!-- Updated by Vikram Singh under CR-11576 --> <!-- Updated by Vikram Singh under CR-11613 -->
+                        <apex:outputPanel layout="block" style="display:inline-block;">
+                            <apex:inputText id="searchBox" value="{!recipientAccountName}" onkeypress="return searchWithEnter(event);"/>
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <apex:commandButton value="Search" action="{!runQuery}" rerender="resultBlock,checkBox,query" id="searchScholarshipBtn" onkeypress="return searchWithEnter(event);"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+
+                    <!-- <apex:outputLabel style="font-weight:bold" value="Address" ></apex:outputLabel> -->
+                    <!-- <apex:outputLabel style="font-weight:bold" value="City"></apex:outputLabel>
+                   <apex:outputLabel style="font-weight:bold" value="{!if(recordType == 'College','College Name','School Name')}"></apex:outputLabel>
+
+                   <apex:outputLabel style="font-weight:bold" value=""></apex:outputLabel>
+                   <apex:outputLabel style="font-weight:bold" value=""></apex:outputLabel>
+                   <apex:inputfield label="" value="{!schoolLookupfields.Country__c }" onkeypress="return searchWithEnter(event);"/>
+                   <apex:inputfield label="" value="{!schoolLookupfields.EnrollmentrxRx__High_School_State__c }" onkeypress="return searchWithEnter(event);"/>
+                   <apex:inputText value="{!city}" id="city" onkeypress="return searchWithEnter(event);"/>
+                   <apex:inputText value="{!schoolName}" id="schoolName" onkeypress="return searchWithEnter(event);"/> -->
+                    <!-- <apex:commandButton value="Clear" action="{!clearSearch}" rerender="section,resultBlock,checkBox,query" /> -->
+                </apex:pageBlockSection>
+
+                <apex:pageBlockSection id="checkBox" rendered="{!IF(entityType != 'qiLegalEntity' && entityType != 'governingLaw', true, false)}" columns="1">  <!-- Updated by Vikram Singh under CR-11576 -->
+                    <apex:outputText rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType != 'qiLegalEntity' && entityType != 'governingLaw', true, false)}" value="If you cannot find your {!entityType} Account in your search results below, check the {!entityType} Account Not Found box."/>    <!-- Updated by Vikram Singh under CR-11576 -->
+
+                    <apex:pageBlockSectionItem rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Recipient', true, false)}">
+                        <apex:outputPanel >
+                            <apex:outputLabel escape="false" Style="font-weight:bold;vertical-align:5px;" value="{!entityType} Account Not Found"/>
+                            <apex:inputCheckbox style="height:15px;width:15px;" value="{!isRecipientAccountFound}" onclick="checkBoxCheck(this.checked);" rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Recipient', true, false)}"></apex:inputCheckbox>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+
+                    <apex:pageBlockSectionItem rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Customer', true, false)}">
+                        <apex:outputPanel >
+                            <apex:outputLabel escape="false" Style="font-weight:bold;vertical-align:5px;" value="{!entityType} Account Not Found"/>
+                            <apex:inputCheckbox style="height:15px;width:15px;" value="{!isRecipientAccountFound}" onclick="checkBoxCheck(this.checked);" rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Customer', true, false)}"></apex:inputCheckbox>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+
+                    <apex:pageBlockSectionItem rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Sponsor', true, false)}">
+                        <apex:outputPanel >
+                            <apex:outputLabel escape="false" Style="font-weight:bold;vertical-align:5px;" value="{!entityType} Account Not Found"/>
+                            <apex:inputCheckbox style="height:15px;width:15px;" value="{!isRecipientAccountFound}" onclick="checkBoxCheck(this.checked);" rendered="{! (CDAAccounts.size == 0 || (idsearchPerformed && CDAAccounts.size >0)) && IF(entityType == 'Sponsor', true, false)}"></apex:inputCheckbox>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+
+            <apex:pageBlock id="resultBlock">
+                <apex:pageBlockSection id="pbsResultBlock" columns="1" rendered="{!idsearchPerformed}">
+                    <apex:pageBlockTable id="pbtResultBlock" value="{!CDAAccounts}" var="account" rendered="{!entityType != 'qiLegalEntity' && entityType != 'governingLaw'}">  <!-- Updated by Vikram Singh under CR-11576 -->
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Name" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Name" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputLink value="#" onclick="fillIn('{!account.Id}', '{!JSENCODE(account.Name)}', '', '', '{!account.Complete_Address__c}' ,'{!account.Competitor_flag__c}')">{!account.Name}</apex:outputLink>    <!-- Updated by Vikram Singh under CR-12167 -->
+                        </apex:column>
+
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Address" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Complete_Address__c" assignTo="{!sortField}"/> <!-- Updated by Vikram Singh under CR-11576 -->
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!account.Complete_Address__c}"/>
+                        </apex:column>
+
+                        <!-- Added by Vikram Singh under CR-11576 Start -->
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="IsCompetitor?" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Competitor_flag__c" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!account.Competitor_flag__c}"/>
+                        </apex:column>
+                        <!-- Added by Vikram Singh under CR-11576 End -->
+
+                    </apex:pageBlockTable>
+
+                    <!-- Updated by Vikram Singh under CR-11576 Start -->
+                    <apex:pageBlockTable id="pbtResultBlockQiLegalEntity" value="{!QILegalEntity}" var="account" rendered="{!entityType == 'qiLegalEntity'}">
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Name" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Name" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputLink value="#" onclick="fillIn('{!account.Id}', '{!JSENCODE(account.Name)}', '{!account.Location_of_Governing_Law__c}', '{!JSENCODE(account.Location_of_Governing_Law__r.Name)}', '{!account.QI_Legal_Entity_Address__c}')">{!account.Name}</apex:outputLink>   <!-- Updated by Vikram Singh under CR-11576, CR-12167 -->
+                        </apex:column>
+
+                        <!-- Added by Vikram Singh under CR-11576 Start -->
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Governing Law" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Location_of_Governing_Law__c" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!account.Location_of_Governing_Law__c}"/>
+                        </apex:column>
+                        <!-- Added by Vikram Singh under CR-11576 End -->
+
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Address" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="QI_Legal_Entity_Address__c" assignTo="{!sortField}"/> <!-- Updated by Vikram Singh under CR-11576 -->
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!account.QI_Legal_Entity_Address__c}"/>
+                        </apex:column>
+                    </apex:pageBlockTable>
+                    <!-- Updated by Vikram Singh under CR-11576 End -->
+
+                    <!-- Added by Vikram Singh under CR-11576 Start -->
+                    <apex:pageBlockTable id="pbtResultBlockGoverningLaw" value="{!GoverningLaw}" var="account" rendered="{!entityType == 'governingLaw'}">
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Name" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Name" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputLink value="#" onclick="fillIn('{!account.Id}', '{!JSENCODE(account.Name)}', '{!account.Court_of_Jurisdiction__c}')">{!account.Name}</apex:outputLink>
+                        </apex:column>
+
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink value="Court of Jurisdiction" action="{!toggleSort}" rerender="resultBlock">
+                                    <!-- Value attribute should have field (API Name) to sort in asc or desc order -->
+                                    <apex:param name="sortField" value="Court_of_Jurisdiction__c" assignTo="{!sortField}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!account.Court_of_Jurisdiction__c}"/>
+                        </apex:column>
+                    </apex:pageBlockTable>
+                    <!-- Added by Vikram Singh under CR-11576 End -->
+
+                    <apex:outputPanel layout="block" style="width: 98%; display: inline-flex;" rendered="{!IF(entityType == 'qiLegalEntity', QILegalEntity.size, IF(entityType == 'governingLaw', GoverningLaw.size, CDAAccounts.size)) > 0 && idsearchPerformed}"> <!-- Updated by Vikram Singh under CR-11576 -->
+                        <div align="left" style="width:25%;">
+                            <apex:selectList value="{!size}" multiselect="false" size="1" style="margin-left: 5px;" onchange="perPageRecord();">
+                                <apex:selectOptions value="{!recordsPerPage}"/>
+                            </apex:selectList>
+                            <apex:outputLabel value=" Records per page" rendered="{!IF(entityType == 'qiLegalEntity', QILegalEntity.size, IF(entityType == 'governingLaw', GoverningLaw.size, CDAAccounts.size)) > 0}"/>    <!-- Updated by Vikram Singh under CR-11576 -->
+                        </div>
+                        <div align="center" style="width:43%;">
+                            <apex:outputLabel value="Page# {!setCon.pageNumber} "/>
+                            <apex:commandButton status="fetchStatus" reRender="pbsResultBlock" value="First" action="{!setCon.first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>
+                            <apex:commandButton status="fetchStatus" reRender="pbsResultBlock" value="Previous" action="{!setCon.previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+                            <apex:commandButton status="fetchStatus" reRender="pbsResultBlock" value="Next" action="{!setCon.next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+                            <apex:commandButton status="fetchStatus" reRender="pbsResultBlock" value="Last" action="{!setCon.last}" disabled="{!!setCon.hasNext}" title="Last Page"/>
+                        </div>
+                        <div align="right" style="width:30%;">
+                            <apex:outputLabel >
+                                showing {!(setCon.pageNumber * size) + 1 - size} - {!IF((setCon.pageNumber * size) > noOfRecords, noOfRecords, (setCon.pageNumber * size))} of {!noOfRecords} total records
+                            </apex:outputLabel>
+                        </div>
+                        <apex:outputPanel >
+                            <apex:actionStatus id="fetchStatus">
+                                <apex:facet name="start">
+                                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.25; z-index: 1000; background-color: black;">
+                                        &nbsp;
+                                    </div>
+                                    <div style="position: fixed; left: 0; top: 0; bottom: 0; right: 0; z-index: 1001; margin: 15% 50%">
+                                        <div style="display: inline-block; padding: 2px; background-color: #fff; width: 125px;">
+                                            <img src="/img/loading.gif" style="float: left; margin: 8px;"/>
+                                            <span style="display: inline-block; padding: 10px 0px;">Please Wait...</span>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionStatus>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+
+            <apex:actionFunction action="{!runQuery}" name="perPageRecord" reRender="resultBlock"/>
+            <button type="button" onclick="CloseWindow();" style="float: right; margin-right: 20px;">Close Window</button>
+        </div>
+    </apex:form>
+    <script>
+        setFocuson();
+    </script>
+</apex:page>

@@ -1,0 +1,203 @@
+<apex:page standardController="Renewal_Task__c" extensions="EXT_CRM_OpportunityRenewal_PDetail" tabStyle="Renewal_Task__c" showHeader="false" sidebar="false">
+  <head>
+      <title>Awaiting Detail</title>
+      <base target="_self" />
+  </head>
+  <script>
+    var isIE = (navigator.appName.indexOf("Microsoft") != -1);
+    
+    function openDatePicker(outerDiv){
+        if(isIE){
+            var fields = outerDiv.getElementsByTagName('INPUT');
+            fields[0].focus();
+            return false;
+        } else
+            return true;
+        
+    }
+    
+    function getParameterByName(name) {
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                        results = regex.exec(location.search);
+                    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+           
+    </script>
+  <apex:form >
+  <apex:pageBlock title="Please confirm the product detail information">
+    <apex:outputPanel id="saveButton">      
+         <script>
+        
+         if('{!isSaveSuccessful}' == 'true'){ 
+
+             var isChromium = window.chrome,
+             vendorName = window.navigator.vendor;
+             if(getParameterByName('openFrom') != null && getParameterByName('openFrom') == 'lightning'){
+                 window.parent.opener.location.href = '/lightning/n/Renewal_Dashboard';
+                 window.parent.close();
+             }else{
+                 if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc.") {
+                     window.parent.opener.location.href = '{!$Page.VFP_CRM_OpportunityRenewal_Dashboard}' + '?dashBoardCurrentPage='+getParameterByName('currentPage')+'&sortDir='+getParameterByName('sortingDir')+'&sortField='+getParameterByName('sortingField');
+                     window.parent.close();
+                 } else { 
+                     var attrs = window.dialogArguments;
+                     attrs.parWindow.location = '{!$Page.VFP_CRM_OpportunityRenewal_Dashboard}' + '?dashBoardCurrentPage='+attrs.dashboardStatus.currentPage+'&sortDir='+attrs.dashboardStatus.sortingDir+'&sortField='+attrs.dashboardStatus.sortingField;
+                     window.close();
+                 }
+             }
+          }
+         </script>
+         <apex:pageMessages escape="false"></apex:pageMessages>
+    </apex:outputPanel>
+    
+    <apex:pageBlockButtons >    
+         <apex:actionStatus startText="Requesting..." id="status"/> 
+         <apex:commandButton value="Save" action="{!saveProducts}" status="status" reRender="saveButton"/>    
+         <apex:commandButton value="Cancel" onclick="window.close();" /> 
+    </apex:pageBlockButtons>
+  <apex:outputPanel rendered="{!(ISNULL(rtdWrappperList)) || rtdWrappperList.size == 0}">  
+         <apex:outputLabel >All products attached to the original opportunity are no longer active. This opportunity cannot be cloned with products. Please click "Save" to continue to clone the opportunity without products.</apex:outputLabel>
+  </apex:outputPanel>
+  <apex:panelGrid rendered="{! (!ISNULL(rtdWrappperList)) && rtdWrappperList.size != 0}" columns="1" id="theGrid" rules="all" border="1" width="100%">     
+          <apex:repeat value="{!rtdWrappperList}" var="rtdw">
+              <apex:variable var="isReqd" value="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'|| opp.StageName=='6a - Closed Won')}"  />                     
+              <apex:pageBlock >                 
+                  <apex:pageBlockSection title="Product {!rtdw.rtd.ProductCode__c}" columns="4" > 
+                     
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.Product_Name__c.label}" for="Product_Name__c"/>
+                    <apex:outputField value="{!rtdw.rtd.Product_Name__c}"/>
+                    </apex:pageBlockSectionItem>    
+
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.ProductCode__c.label}" for="ProductCode__c"/>
+                    <apex:outputField value="{!rtdw.rtd.ProductCode__c}" />
+                    </apex:pageBlockSectionItem>
+                     
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!IF(rtdw.OLI.Configured_Product__c, true, false)}">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.TotalPrice__c.label}" for="TotalPrice__c"/>
+                    <apex:outputField value="{!rtdw.rtd.TotalPrice__c}" rendered="{!IF(rtdw.OLI.Configured_Product__c, true, false)}"/>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!IF(rtdw.OLI.Configured_Product__c, false, true)}">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.TotalPrice__c.label}" for="TotalPrice__c"/>
+                    <apex:inputField required="true" value="{!rtdw.rtd.TotalPrice__c}" rendered="{!IF(rtdw.OLI.Configured_Product__c, false, true)}"/>
+                    </apex:pageBlockSectionItem>
+                    
+                     <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.Expect_Round_up_Total_Price__c.label}" for="Expect_Round_up_Total_Price__c"/>
+                    <apex:outputField value="{!rtdw.rtd.Expect_Round_up_Total_Price__c}"/>
+                    </apex:pageBlockSectionItem>
+ 
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Delivery_Country__c.label}" for="Delivery_Country__c"/>
+                    <apex:inputField required="true" value="{!rtdw.OLI.Delivery_Country__c}"/>
+                    <!--
+                    <apex:outputPanel styleClass="requiredInput" >  
+                         <apex:selectList required="true" value="{!rtdw.rtd.Territory__c}" size="1" >                            
+                            <apex:selectOptions value="{!territoryOptions}" />
+                         </apex:selectList> 
+                         <apex:outputPanel styleClass="requiredBlock"/>
+                     </apex:outputPanel>
+                    -->
+                    </apex:pageBlockSectionItem> 
+                    
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!IF(rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB', true, false)}">
+                    <apex:outputLabel value="{!$ObjectType.OpportunityLineItem.fields.Product_Start_Date__c.label}" for="Product_Start_Date__c"/>
+                    <apex:outputPanel onclick="return openDatePicker(this);">
+                    <apex:inputField value="{!rtdw.rtd.Data_Month_Start__c}"   required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}" />
+                    </apex:outputPanel>
+                    </apex:pageBlockSectionItem>  
+                    
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.OpportunityLineItem.fields.Product_End_Date__c.label}" for="Product_End_Date__c"/>
+                    <apex:outputPanel onclick="return openDatePicker(this);">
+                    <apex:inputField value="{!rtdw.rtd.Data_Month_End__c}"   required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}" />
+                    </apex:outputPanel>
+                    </apex:pageBlockSectionItem>                     
+                                                            
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Revenue_Type__c.label}" for="Revenue_Type__c"/>
+                    <apex:inputField required="true" value="{!rtdw.OLI.Revenue_Type__c}" />
+                    <!--
+                    <apex:outputPanel styleClass="requiredInput" > 
+                         <apex:selectList required="true" value="{!rtdw.rtd.Revenue_Type__c}" size="1">
+                            <apex:selectOptions value="{!revTypeOptions}"/>
+                         </apex:selectList> 
+                         <apex:outputPanel styleClass="requiredBlock"/>
+                    </apex:outputPanel> 
+                    -->
+                    </apex:pageBlockSectionItem>
+
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Delivery_Media__c.label}" for="Delivery_Media__c"/>
+                    <apex:inputField required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}" value="{!rtdw.OLI.Delivery_Media__c}"/>
+                    <!--
+                    <apex:outputPanel styleClass="{!IF(isReqd, 'requiredInput', '')}"> 
+                     <apex:selectList required="{!IF(isReqd, true, false)}" value="{!rtdw.rtd.Delivery_Media__c}" size="1" style="width: 150px;">
+                        <apex:selectOptions value="{!delMediaOptions }"/>
+                     </apex:selectList> 
+                     <apex:outputPanel styleClass="requiredBlock"/>
+                     </apex:outputPanel> 
+                    -->
+                    </apex:pageBlockSectionItem>                     
+                    
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Proj_Rpt_Frequency__c.label}" for="Proj_Rpt_Frequency__c"/>
+                    <apex:inputField required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}" value="{!rtdw.OLI.Proj_Rpt_Frequency__c}"/>
+                    <!--
+                    <apex:outputPanel styleClass="{!IF(isReqd, 'requiredInput', '')}">
+                     <apex:selectList required="{!IF(isReqd, true, false)}" value="{!rtdw.rtd.Proj_Rpt_Frequency__c}" size="1" style="width: 150px;">
+                        <apex:selectOptions value="{!delRptOptions}"/>
+                     </apex:selectList> 
+                     <apex:outputPanel styleClass="requiredBlock"/>
+                     </apex:outputPanel>
+                    -->
+                    </apex:pageBlockSectionItem>
+                                        
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Winback__c.label}" for="Winback__c"/>
+                    <apex:inputField value="{!rtdw.OLI.Winback__c}"/>
+                    <!--
+                    <apex:selectList value="{!rtdw.rtd.Winback__c}" size="1">
+                        <apex:selectOptions value="{!winbackOptions }"/>
+                    </apex:selectList> 
+                    -->
+                    </apex:pageBlockSectionItem>                     
+                    
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.OpportunityLineItem.fields.Product_Invoice_Text__c.label}" for="Product_Invoice_Text__c"/>
+                    <apex:inputField value="{!rtdw.OLI.Product_Invoice_Text__c}"/>
+                    </apex:pageBlockSectionItem>  
+                                         
+                     
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%" rendered="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'}">
+                    <apex:outputLabel value="{!$ObjectType.opportunitylineitem.fields.Output_Format__c.label}" for="Output_Format__c"/>
+                    <apex:outputPanel >
+                    <apex:inputField required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}" value="{!rtdw.OLI.Output_Format__c}"/>
+                    </apex:outputPanel>
+                    <!--
+                    <apex:outputPanel styleClass="{!IF(isReqd, 'requiredInput', '')}" > 
+                        <apex:selectList value="{!rtdw.rtd.Output_Format__c}" multiselect="true" size="4" required="{!rtdw.OLI.PricebookEntry.Product2.Material_Type__c=='ZPUB'&&(opp.StageName=='5 - Negotiate Contract Ts & Cs'||opp.StageName=='6a - Closed Won')}">
+                            <apex:selectOptions value="{!opFormatOptions }"/>
+                         </apex:selectList> 
+                         <apex:outputPanel styleClass="requiredBlock"/>
+                     </apex:outputPanel> 
+                    -->
+                    </apex:pageBlockSectionItem> 
+                     
+                    <apex:pageBlockSectionItem dataStyle="width:10%" labelStyle="width:10%">
+                    <apex:outputLabel value="{!$ObjectType.Renewal_Task_Change_Detail__c.fields.Sale_Type__c.label}" for="Sale_Type__c"/>
+                    <apex:outputField value="{!rtdw.rtd.Sale_Type__c}"/>
+                    </apex:pageBlockSectionItem>
+                    
+                 </apex:pageBlockSection> 
+              </apex:pageBlock>          
+          </apex:repeat>
+      
+  </apex:panelGrid>
+  
+  </apex:pageBlock>
+  </apex:form>
+</apex:page>

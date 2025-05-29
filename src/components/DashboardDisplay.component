@@ -1,0 +1,2753 @@
+<apex:component controller="DashboardDisplayController" id="customComp">
+
+    <apex:attribute name="FilterData" description="Contains filter Options"
+        type="SalesTeam_DashboardFilterClass" assignTo="{!filterCriteria}"
+        required="true" />
+
+    <!-- Section for Showing Component data if not excel export -->
+    <apex:outputPanel id="DataBlock" rendered="{!Not(isExcelExport)}">
+
+
+
+        <apex:pageBlock id="Impersonateblk">
+            <!-- Filters added as component body -->
+            <apex:componentBody id="compBody" />
+        </apex:pageBlock>
+        <!-- Section to display Filters used, Graph, option to toggle between Forecast Category and Stage graph & option for export to excel -->
+        <apex:pageBlock id="dataDashboard">
+
+            <apex:pageBlockSection title="My Dashboard" collapsible="false"></apex:pageBlockSection>
+
+            <apex:outputPanel id="filterCriteriaPanel"
+                rendered="{!If(lstFilterCriteria.size == 0, false, true)}">
+
+                <br />
+                <apex:outputLabel value="Filter Criteria: "
+                    style="font-weight:bold;" />
+                <br />
+                <br />
+                <apex:repeat value="{!lstFilterCriteria}" var="Filtr">
+                    <apex:outputLabel value="{!Filtr}" />
+                    <br />
+                    <br />
+                </apex:repeat>
+
+            </apex:outputPanel>
+            <br />
+            <div align="center">
+            <!-- Sneha - 26 Sept -- Issue-00362 -- Action added -->
+                <apex:selectRadio value="{!filterCriteria.selGraphOptn}"
+                    layout="lineDirection">
+                    <apex:selectOptions value="{!GraphOptions}" />
+                    <apex:actionSupport event="onclick"
+                        reRender="Dash,detailOp,dataDashboard,dashboardComponentPanel,compBody" action="{!toggleStageFC}"
+                        onSubmit="javascript:YUIShowLoading(); "
+                        onComplete="YUIHideLoading(); " />
+                </apex:selectRadio>
+            </div>
+            <br />
+
+            <apex:pageBlockSection id="Dash" columns="1">
+            <!--  columns="{!If(filterCriteria.selGraphOptn == 'Stage', 1, 2)}">  --> 
+                <!-- This dashboard displays values in the legend -->
+                <!--  <apex:flash id="flashDashboardFC" 
+                        src="{!$Resource.SalesDashboard_ForecastCategory}" width="775" height="370"
+                        flashvars="sid={!$Api.Session_ID}&surl={!$Api.Partner_Server_URL_190}&spass={!passValueFC}" rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}"/>  
+                
+                <apex:flash id="flashDashboard"
+                    src="{!$Resource.SalesTeam_Dashboard}" width="775" height="370"
+                    flashvars="sid={!$Api.Session_ID}&surl={!$Api.Partner_Server_URL_190}&spass={!passValueStage}" rendered="{!filterCriteria.selGraphOptn == 'Stage'}"/>
+              
+            <script>    
+                if(document.getElementsByTagName('embed')[0] != null)
+                {
+                    if(navigator.appVersion.indexOf("Chrome") != -1)
+                    {           
+                        document.getElementsByTagName('embed')[0].width = "800";
+                    }
+                    else
+                    {
+                        document.getElementsByTagName('embed')[0].width = "775";
+                    }
+                } 
+            </script> -->
+
+                <apex:outputPanel layout="block" style="max-height:420px; max-width:1100px;">
+                
+                    <div id="chart1" style="width: 1000px; height:400px;"></div>
+                    
+                    <!-- Issue-00362 -->
+                    <apex:outputPanel layout="block"
+                            style="width:310px; padding:5px; font-size:13px; overflow:auto; position:relative; top: -440px; left:756px;">
+                        <div align="{!IF(PlanVsCurrentOption.size == 3, 'right','left')}">
+                            <apex:selectRadio value="{!filterCriteria.planVsCurrentSelectedOptn}"
+                            layout="lineDirection">
+                            <apex:selectOptions value="{!PlanVsCurrentOption}" />
+                            <apex:actionSupport event="onclick" action="{!resetFilter_AdjTarget}"
+                                reRender="Dash,IdBudgetpb,dashboardComponentPanel,compBody"
+                                onSubmit="javascript:YUIShowLoading(); "
+                                onComplete="YUIHideLoading(); " />
+                            </apex:selectRadio>
+                        </div>
+                      </apex:outputPanel>
+                     
+                    <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Stage'}"
+                        layout="block"
+                        style="border:2px solid; width:258px; max-height:120px; padding:5px; font-size:13px; line-height:20px; overflow:auto; position:relative; top: -245px; left:756px; border-color: grey;">
+                        <apex:outputLabel escape="false" value="{!StagePlanKPI}" />
+                    </apex:outputPanel><br/>
+                    
+                    <!-- added by anjali - begin - Adjusted Target -->
+                    <apex:outputPanel rendered="{!AND(filterCriteria.planVsCurrentSelectedOptn == filterCriteria.ADJ_TARGET,
+                                                  filterCriteria.selGraphOptn == 'Stage')}"
+                        layout="block"
+                        style="border:2px solid; width:258px; max-height:110px; padding:5px; font-size:13px; line-height:20px; overflow:auto; position:relative; top: -250px; left:756px; border-color: grey;">
+                        <b>Secured Revenue KPIs</b><br/>
+                        <apex:outputLabel escape="false" value="{!secRevKPI}" />
+                    </apex:outputPanel>
+                    <!-- added by anjali - end - Adjusted Target -->                    
+                    
+                    <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}" layout="block"
+                            style="border:2px solid; max-height:55px;  width:240px; padding:5px; font-size:13px; line-height:20px; overflow:auto; border-color: grey; position:relative; top: -275px; left:756px;">
+                            <apex:outputLabel escape="false" value="{!FcForecastKPI}" />
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}" layout="block"
+                        style="border:2px solid; max-height: 95px; width:240px; padding:5px; font-size:13px; line-height:20px; overflow:auto; border-color: grey; position:relative; top: -250px; left:756px;">
+                        <apex:outputLabel escape="false" value="{!FcPlanKPI}" />
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <script>
+                   var $q2 = jQuery.noConflict();
+                   jQuery(document).ready(function($q2) { 
+                    
+                   var dataVal = '{!graphValues}';
+                   dataVal = dataVal.substring(dataVal.indexOf('[') + 1, dataVal.indexOf(']'));
+                   var dataValArr = dataVal.split(',');
+                   var numOfValues = dataValArr.length;
+                   
+                    var s1 = new Array(numOfValues);
+                    var ticks = new Array();
+                    
+                    var a = [[0, "1"], [parseFloat(dataValArr[0]), "2"]];
+                    var b = [[parseFloat(dataValArr[1]), "1"], [0, "2"]];
+                    var c = [[parseFloat(dataValArr[2]), "1"], [0, "2"]];
+                    var d = [[parseFloat(dataValArr[3]), "1"], [0, "2"]];
+                    var e = [[parseFloat(dataValArr[4]), "1"], [0, "2"]];
+                    var f = [[parseFloat(dataValArr[5]), "1"], [0, "2"]];
+                    
+                   
+                    //Issue-00362: Plan Vs Current Forecast
+                    var planVsCurrent = '{!filterCriteria.planVsCurrentSelectedOptn}';
+                    if('{!filterCriteria.selGraphOptn}' == 'Forecast Category')
+                    {
+                        if('{!filterCriteria.showOnTrack}' == 'true')
+                        {
+                            var g = [[parseFloat(dataValArr[6]), "1"], [0, "2"]];
+                            s1 = [a, b, c, d, e, f, g]; 
+                        }
+                        else
+                            s1 = [a, b, c, d, e, f]; 
+                        ticks = ['Forecast Category', planVsCurrent];  
+                    }
+                    else
+                    {
+                        var g = [[parseFloat(dataValArr[6]), "1"], [0, "2"]];
+                        var h = [[parseFloat(dataValArr[7]), "1"], [0, "2"]];
+                        s1 = [a, b, c, d, e, f, g, h];
+                        ticks = ['In Hand & Opps', planVsCurrent];  
+                    }
+                    
+                    var colorArr = new Array(numOfValues);
+                    colorArr[0] = '#FF9900';
+                    colorArr[1] = '#006633';
+                    colorArr[2] = '#00CC00';
+                    colorArr[3] = '#330099';
+                    colorArr[4] = '#3333FF';
+                    if('{!filterCriteria.showOnTrack}' == 'false' && '{!filterCriteria.selGraphOptn}' == 'Forecast Category')
+                    {
+                        colorArr[5] = '#990099';
+                        colorArr[6] = '#FF66FF';
+                    }
+                    else
+                    {
+                        colorArr[5] = '#3399FF';
+                        colorArr[6] = '#990099';
+                        colorArr[7] = '#FF66FF';
+                    }
+                    
+                    
+                    var legendVal = '{!graphLegendLabels}';
+                    legendVal = legendVal.substring(legendVal.indexOf('[') + 1, legendVal.indexOf(']'));
+                    var legendValArr = legendVal.split(',');
+                    var arr = new Array(numOfValues);
+                    for(i=0; i< numOfValues; i++)
+                    {
+                       arr[i] = {label:$q2.trim(legendValArr[i] + ' (USD) - $' + addCommas(parseFloat(dataValArr[i]).toFixed(0))), color: colorArr[i]};
+                    }
+                     function addCommas(nStr)
+                    {
+                        nStr += '';
+                        x = nStr.split('.');
+                        x1 = x[0];
+                        x2 = x.length > 1 ? '.' + x[1] : '';
+                        var rgx = /(\d+)(\d{3})/;
+                        while (rgx.test(x1)) {
+                            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+                        }
+                        return x1 + x2;
+                    }
+               
+                    var plot1 = $q2.jqplot('chart1', s1, {
+                    stackSeries: true, 
+                    seriesDefaults: {
+                        renderer:$q2.jqplot.BarRenderer,
+                        shadowAngle: 135,
+                        rendererOptions: {  barWidth: 40,
+                                            barDirection: 'horizontal'
+                        },
+                        fillToZero: true,
+                        fillAxis: 'x',
+                        useNegativeColors: false,
+                        shadow: false
+                    },
+                    series: arr,
+                    axes: {
+                        yaxis: {
+                            renderer: $q2.jqplot.CategoryAxisRenderer,
+                            rendererOptions: {  
+                                                tickOptions: {  mark: null,
+                                                                fontSize: 14
+                                                             },
+                                                ticks : ticks
+                            }
+                        },
+                        xaxis: {
+                            tickOptions: {formatString: "$%'.0f",
+                            fontSize: 12                                                                    
+                        },
+                        numberTicks: 5
+                        }
+                    },
+                    grid: {
+                        drawGridlines: false,
+                        drawBorder: true,
+                        shadow: false
+                    },
+                    legend: {
+                      show: true,
+                      location: 'ne',
+                      placement: 'outsideGrid',
+                      rowSpacing : '0.5em'
+                    } 
+                    });
+                    
+                    /*
+                    ,
+                    highlighter: {
+                        show: true,
+                        showTooltip: true,
+                        formatString:'%s',
+                        tooltipOffset: 15
+                    } 
+                    */
+                    
+                    $q2('#chart1').bind('jqplotDataMouseOver', function (ev, seriesIndex, pointIndex, data) { 
+                        var labels = $q2('#chart1 .jqplot-table-legend-label');      
+                        this.title = labels[labels.length - seriesIndex - 1].innerHTML;
+                    }); 
+                    
+                    $q2('#chart1').bind('jqplotDataUnhighlight', function (ev, seriesIndex, pointIndex, data) { 
+                    
+                        this.title =  '';
+                    });
+                    
+                });
+            </script>
+
+
+            </apex:pageBlockSection>
+
+
+            <c:SalesTeam_DashboardDisclaimer refreshDt="{!filterCriteria.refreshDate}" />
+
+            <table width="100%">
+                <tr>
+                    <td align="right"><apex:commandLink action="{!ExcelExport}"
+                            title="Export To Excel" immediate="true" target="_self">Export to Excel</apex:commandLink></td>
+                </tr>
+            </table>
+
+        </apex:pageBlock> 
+        <!-- Graph sections ends here -->
+
+        <apex:outputPanel id="detailOp">
+            <!-- Section to display pipeline (Opp Stage 1 to 5) data or IMS Forecast Category = 'Pipeline' -->
+            <apex:outputPanel id="IDPipelinepb">
+                <apex:pageBlock >
+                    <apex:OutputLabel id="pipelineValLabel">
+                        <b>Pipeline : &nbsp; <apex:outputField value="{!Pipeline_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IDPipeline" columns="1"
+                        title="Pipeline Details" collapsible="True">
+                        <apex:outputPanel id="IDPipelinePanel">
+                            <apex:pageBlockTable id="TablePipeline" value="{!pipelineData}"
+                                var="Opp">
+                                <apex:column width="5%">
+
+                                    <apex:facet name="header">
+                                        <apex:actionRegion >
+                                            <apex:selectList value="{!filterCriteria.selectedPipeStageOptn}" size="1"
+                                                rendered="{!filterCriteria.selGraphOptn == 'Stage'}">
+                                                <apex:selectOptions value="{!lstStage}" />
+                                                <apex:actionSupport event="onchange"
+                                                    reRender="IDPipelinePanel,pipelineValLabel"
+                                                    onSubmit="javascript:YUIShowLoading();"
+                                                    onComplete="YUIHideLoading();  " action="{!pipelinePageInitialise}">
+                                                    <apex:param value="Pipe" assignTo="{!calledFrom}"
+                                                        name="context" />
+                                                </apex:actionSupport>
+                                            </apex:selectList>
+
+                                            <apex:outputText value="Stage"
+                                                rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}" />
+
+                                        </apex:actionRegion>
+                                    </apex:facet>
+                                    <apex:outputText value="{!Opp.Opportunity_Stage__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="#" width="5%">
+                                    <apex:outputText value="{!Opp.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(Opp.Opportunity__c != null, true, false)}">
+                                        <a href="/{!Opp.Opportunity__r.AccountId}" target="_blank">{!Opp.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(Opp.Opportunity__c == null, true, false)}"
+                                        value="{!Opp.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(Opp.Sales_Specialist__r.AE_Name__c, FIND('(',Opp.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(Opp.I_A_Specialist__r.AE_Name__c, FIND('(',Opp.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!Opp.Opportunity__r.Owner.Name}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Product Name" width="15%">
+                                    <apex:outputText value="{!Opp.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="20%">
+                                    <apex:outputLink >
+                                        <a href="/{!Opp.Opportunity__c}" target="_blank">{!Opp.Opportunity__r.Name}</a>
+                                    </apex:outputLink>&nbsp;  
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!Opp.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!Opp.Gross_Q1_Value__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q2 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!Opp.Gross_Q2_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q3 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!Opp.Gross_Q3_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q4 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!Opp.Gross_Q4_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="FY Impact" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!Opp.Gross_FY_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!Opp.Gross_YTD_CQ_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Expected Close Date" width="10%">
+                                    <apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!Opp.Opportunity__r.CloseDate}" />
+                                    </apex:outputText> &nbsp;
+                            </apex:column>
+
+                                <apex:column rendered="{!filterCriteria.selGraphOptn == 'Stage'}"
+                                    headerValue="Forecast category" width="20%">
+                                    <apex:outputText value="{!Opp.IMS_Forecast_Category__c}" />
+                            &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Next Step" width="20%">
+                                    <apex:outputText value="{!Left(Opp.Opportunity__r.NextStep,80)}" />
+                            &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Probability" width="20%">
+                                    <apex:outputField value="{!Opp.Opportunity__r.Probability}" />
+                            &nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+
+                            <apex:outputtext rendered="{!If(pipelineData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+
+                            <!-- Grid to show Pagination info & buttons -->
+                            <apex:panelGrid columns="4"
+                                rendered="{!If(pipelineData.size != 0, true, false)}"
+                                width="100%">
+                                <apex:OutputLabel value="{!pipelinepaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(pipelinepaginator.hasPrev)}" value="First"
+                                        rerender="IDPipelinePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Pipe" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(pipelinepaginator.hasPrev)}" value="Previous"
+                                        rerender="IDPipelinePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Pipe" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(pipelinepaginator.hasNxt)}" value="Next"
+                                        rerender="IDPipelinePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Pipe" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(pipelinepaginator.hasNxt)}" value="Last"
+                                        rerender="IDPipelinePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Pipe" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!pipelinepaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDPipeline}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+
+            <!-- pipeline (Opp Stage 1 to 5) ends here -->
+            
+            
+            <!-- best case section begins here -->
+            <apex:outputPanel id="IDBestCasepb">
+                <apex:pageBlock rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}">
+                    <apex:OutputLabel >
+                        <b>Best Case : &nbsp; <apex:outputField value="{!BestCase_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IDBestCasePBS" columns="1"
+                        title="Best Case Details" collapsible="True">
+                        <apex:outputPanel id="IDBestCasePanel">
+                            <apex:pageBlockTable id="TableBestCase" value="{!BestCaseFCData}"
+                                var="bc">
+                                <apex:column headerValue="Stage" width="5%">
+                                    <apex:outputText value="{!bc.Opportunity_Stage__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="#" width="5%">
+                                    <apex:outputText value="{!bc.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(bc.Opportunity__c != null, true, false)}">
+                                        <a href="/{!bc.Opportunity__r.AccountId}" target="_blank">{!bc.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(bc.Opportunity__c == null, true, false)}"
+                                        value="{!bc.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(bc.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',bc.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(bc.Sales_Specialist__r.AE_Name__c, FIND('(',bc.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(bc.I_A_Specialist__r.AE_Name__c, FIND('(',bc.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!bc.Opportunity__r.Owner.Name}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Product Name" width="15%">
+                                    <apex:outputText value="{!bc.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="20%">
+                                    <apex:outputLink >
+                                        <a href="/{!bc.Opportunity__c}" target="_blank">{!bc.Opportunity__r.Name}</a>
+                                    </apex:outputLink>&nbsp;  
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!bc.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!bc.Gross_Q1_Value__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q2 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!bc.Gross_Q2_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q3 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!bc.Gross_Q3_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q4 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!bc.Gross_Q4_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="FY Impact" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!bc.Gross_FY_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!bc.Gross_YTD_CQ_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Expected Close Date" width="10%">
+                                    <apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!bc.Opportunity__r.CloseDate}" />
+                                    </apex:outputText> &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Next Step" width="20%">
+                                    <apex:outputText value="{!Left(bc.Opportunity__r.NextStep,80)}" />
+                            &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Probability" width="20%">
+                                    <apex:outputField value="{!bc.Opportunity__r.Probability}" />
+                            &nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+
+                            <apex:outputtext rendered="{!If(BestCaseFCData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+
+                            <apex:panelGrid columns="4"
+                                rendered="{!If(BestCaseFCData.size != 0, true, false)}"
+                                width="100%">
+                                <apex:OutputLabel value="{!bestCaseFCPaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(bestCaseFCPaginator.hasPrev)}" value="First"
+                                        rerender="IDBestCasePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="BestCase" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(bestCaseFCPaginator.hasPrev)}"
+                                        value="Previous" rerender="IDBestCasePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="BestCase" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(bestCaseFCPaginator.hasNxt)}" value="Next"
+                                        rerender="IDBestCasePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="BestCase" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(bestCaseFCPaginator.hasNxt)}" value="Last"
+                                        rerender="IDBestCasePanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="BestCase" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!bestCaseFCPaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDBestCasePBS}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+            <!-- best case section ends here -->
+            
+            <!-- On Track section starts here -->
+            <apex:outputPanel id="IDOnTrackpb">
+                <apex:pageBlock rendered="{!And(filterCriteria.selGraphOptn == 'Forecast Category', filterCriteria.showOnTrack)}">
+                    <apex:OutputLabel >
+                        <b>On Track : &nbsp; <apex:outputField value="{!OnTrack_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IDOnTrackPBS" columns="1"
+                        title="On Track Details" collapsible="True">
+                        <apex:outputPanel id="IDOnTrackPanel">
+                            <apex:pageBlockTable id="TableOnTrack" value="{!OnTrackFCData}"
+                                var="ot">
+                                <apex:column headerValue="Stage" width="5%">
+                                    <apex:outputText value="{!ot.Opportunity_Stage__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="#" width="5%">
+                                    <apex:outputText value="{!ot.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(ot.Opportunity__c != null, true, false)}">
+                                        <a href="/{!ot.Opportunity__r.AccountId}" target="_blank">{!ot.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(ot.Opportunity__c == null, true, false)}"
+                                        value="{!ot.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(ot.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',ot.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(ot.Sales_Specialist__r.AE_Name__c, FIND('(',ot.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(ot.I_A_Specialist__r.AE_Name__c, FIND('(',ot.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!ot.Opportunity__r.Owner.Name}" /> &nbsp;
+                               
+                            </apex:column>
+
+                                <apex:column headerValue="Product Name" width="15%">
+                                    <apex:outputText value="{!ot.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="20%">
+                                    <apex:outputLink >
+                                        <a href="/{!ot.Opportunity__c}" target="_blank">{!ot.Opportunity__r.Name}</a>
+                                    </apex:outputLink>&nbsp;  
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!ot.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!ot.Gross_Q1_Value__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q2 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!ot.Gross_Q2_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q3 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!ot.Gross_Q3_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q4 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!ot.Gross_Q4_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="FY Impact" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!ot.Gross_FY_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!ot.Gross_YTD_CQ_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Expected Close Date" width="10%">
+                                    <apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!ot.Opportunity__r.CloseDate}" />
+                                    </apex:outputText> &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Next Step" width="20%">
+                                    <apex:outputText value="{!Left(ot.Opportunity__r.NextStep,80)}" />
+                            &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Probability" width="20%">
+                                    <apex:outputField value="{!ot.Opportunity__r.Probability}" />
+                            &nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+
+                            <apex:panelGrid columns="4" width="100%">
+                                <apex:OutputLabel value="{!onTrackFCPaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(onTrackFCPaginator.hasPrev)}" value="First"
+                                        rerender="IDOnTrackPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="OnTrack" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(onTrackFCPaginator.hasPrev)}" value="Previous"
+                                        rerender="IDOnTrackPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="OnTrack" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(onTrackFCPaginator.hasNxt)}" value="Next"
+                                        rerender="IDOnTrackPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="OnTrack" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(onTrackFCPaginator.hasNxt)}" value="Last"
+                                        rerender="IDOnTrackPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="OnTrack" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!onTrackFCPaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDOnTrackPBS}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+            <!-- On track section ends here -->
+
+            <!-- Commit Section starts here -->
+            <apex:outputPanel id="IDCommitpb">
+                <apex:pageBlock rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}">
+                    <apex:OutputLabel >
+                        <b>Commit : &nbsp; <apex:outputField value="{!Commit_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IDCommitPBS" columns="1"
+                        title="Commit Details" collapsible="True">
+                        <apex:outputPanel id="IDCommitPanel">
+                            <apex:pageBlockTable id="TableCommit" value="{!CommitFCData}"
+                                var="com">
+                                <apex:column headerValue="Stage" width="5%">
+                                    <apex:outputText value="{!com.Opportunity_Stage__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="#" width="5%">
+                                    <apex:outputText value="{!com.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(com.Opportunity__c != null, true, false)}">
+                                        <a href="/{!com.Opportunity__r.AccountId}" target="_blank">{!com.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(com.Opportunity__c == null, true, false)}"
+                                        value="{!com.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(com.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',com.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(com.Sales_Specialist__r.AE_Name__c, FIND('(',com.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(com.I_A_Specialist__r.AE_Name__c, FIND('(',com.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!com.Opportunity__r.Owner.Name}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Product Name" width="15%">
+                                    <apex:outputText value="{!com.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="20%">
+                                    <apex:outputLink >
+                                        <a href="/{!com.Opportunity__c}" target="_blank">{!com.Opportunity__r.Name}</a>
+                                    </apex:outputLink>&nbsp;  
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!com.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!com.Gross_Q1_Value__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q2 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!com.Gross_Q2_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q3 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!com.Gross_Q3_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q4 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!com.Gross_Q4_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="FY Impact" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!com.Gross_FY_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!com.Gross_YTD_CQ_Value__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Expected Close Date" width="10%">
+                                    <apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!com.Opportunity__r.CloseDate}" />
+                                    </apex:outputText> &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Next Step" width="20%">
+                                    <apex:outputText value="{!Left(com.Opportunity__r.NextStep,80)}" />
+                            &nbsp;
+                            </apex:column>
+                                <apex:column headerValue="Probability" width="20%">
+                                    <apex:outputField value="{!com.Opportunity__r.Probability}" />
+                            &nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+
+                            <apex:outputtext rendered="{!If(CommitFCData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+
+
+                            <apex:panelGrid columns="4" width="100%"
+                                rendered="{!If(CommitFCData.size != 0, true, false)}">
+                                <apex:OutputLabel value="{!commitFCPaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(commitFCPaginator.hasPrev)}" value="First"
+                                        rerender="IDCommitPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Commit" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(commitFCPaginator.hasPrev)}" value="Previous"
+                                        rerender="IDCommitPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Commit" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(commitFCPaginator.hasNxt)}" value="Next"
+                                        rerender="IDCommitPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Commit" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(commitFCPaginator.hasNxt)}" value="Last"
+                                        rerender="IDCommitPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Commit" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!commitFCPaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDCommitPBS}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+            <!-- Commit Section end here -->
+
+            
+
+
+            <!-- Section to display pipeline (opp stage 6a) data -->
+            <apex:outputpanel id="IDPipeline2pb">
+                <apex:pageBlock >
+                    <apex:OutputLabel >
+                        <b>WNIH : &nbsp; <apex:outputField value="{!Wnih_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+                    <apex:pageBlockSection id="IDPipeline2" columns="1"
+                        title="WNIH Details" collapsible="True">
+                        <apex:outputpanel id="IDPipeline2Panel">
+                            <apex:pageBlockTable id="TablePipeline2" value="{!wnihData}"
+                                var="Oppwon">
+
+                                <apex:column headerValue="#" width="10%">
+                                    <apex:outputText value="{!Oppwon.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(Oppwon.Opportunity__c != null, true, false)}">
+                                        <a href="/{!Oppwon.Opportunity__r.AccountId}" target="_blank">{!Oppwon.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(Oppwon.Opportunity__c == null, true, false)}"
+                                        value="{!Oppwon.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(Oppwon.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Oppwon.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(Oppwon.Sales_Specialist__r.AE_Name__c, FIND('(',Oppwon.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(Oppwon.I_A_Specialist__r.AE_Name__c, FIND('(',Oppwon.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!Oppwon.Opportunity__r.Owner.Name}" /> &nbsp;
+                        </apex:column>
+
+                                <apex:column headerValue="Product Name" width="10%">
+                                    <apex:outputText value="{!Oppwon.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="10%">
+                                    <apex:outputLink >
+                                        <a href="/{!Oppwon.Opportunity__c}" target="_blank">{!Oppwon.Opportunity__r.Name}</a>
+                                    </apex:outputLink>&nbsp; 
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!Oppwon.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!Oppwon.Gross_Q1_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q2 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!Oppwon.Gross_Q2_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q3 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!Oppwon.Gross_Q3_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q4 Impact" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!Oppwon.Gross_Q4_Value__c}" />
+                                </apex:column>
+
+
+
+                                <apex:column headerValue="FY Impact" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!Oppwon.Gross_FY_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!Oppwon.Gross_YTD_CQ_Value__c}" />&nbsp;
+                        </apex:column>
+
+                                <apex:column headerValue="Actual Close Date" width="10%">
+                                    <apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!Oppwon.Opportunity__r.Actual_Close_Date__c}" />
+                                    </apex:outputText> &nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+                            <apex:outputtext rendered="{!If(wnihData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+
+                            <!-- Grid to show Pagination info & buttons -->
+                            <apex:panelGrid columns="4"
+                                rendered="{!If(wnihData.size != 0, true, false)}" width="100%">
+                                <apex:OutputLabel value="{!wnihPaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(wnihPaginator.hasPrev)}" value="First"
+                                        rerender="IDPipeline2Panel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="WNIH" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(wnihPaginator.hasPrev)}" value="Previous"
+                                        rerender="IDPipeline2Panel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="WNIH" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(wnihPaginator.hasNxt)}" value="Next"
+                                        rerender="IDPipeline2Panel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="WNIH" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(wnihPaginator.hasNxt)}" value="Last"
+                                        rerender="IDPipeline2Panel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="WNIH" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!wnihPaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputpanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDPipeline2}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputpanel>
+            <!-- pipeline (Opp stage 6a) ends here -->
+
+
+            <!-- Section to display Revenue Data -->
+            <apex:outputpanel id="IDInHandpb">
+                <apex:pageBlock >
+                    <apex:OutputLabel >
+                        <b>In Hand : &nbsp; <apex:outputField value="{!Rih_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IDInHand" title="In Hand Details"
+                        columns="1" collapsible="true">
+
+                        <apex:outputPanel id="IDInHandPanel">
+                            <apex:pageBlockTable id="OppListInHand" value="{!revenueData}"
+                                var="OppIH">
+
+                                <apex:column headerValue="#" width="5%">
+                                    <apex:outputText value="{!OppIH.Opportunity__r.Opportunity_Number__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Account" width="15%">
+                                    <apex:outputLink rendered="{!If(OppIH.Opportunity__c != null, true, false)}">
+                                        <a href="/{!OppIH.Opportunity__r.AccountId}" target="_blank">{!OppIH.Account_Name__c}</a>
+                                    </apex:outputLink>
+                                    <apex:outputText rendered="{!If(OppIH.Opportunity__c == null, true, false)}"
+                                        value="{!OppIH.Account_Name__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}"
+                                    width="10%" rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(OppIH.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',OppIH.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(OppIH.Sales_Specialist__r.AE_Name__c, FIND('(',OppIH.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(OppIH.I_A_Specialist__r.AE_Name__c, FIND('(',OppIH.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!OppIH.Opportunity__r.Owner.Name}" /> &nbsp;
+                        </apex:column>
+
+                                <apex:column headerValue="Product Name" width="10%">
+                                    <apex:outputText value="{!OppIH.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Opp Name" width="10%">
+                                    <apex:outputLink >
+                                        <a href="/{!OppIH.Opportunity__c}" target="_blank">{!OppIH.Opportunity__r.Name}</a>
+
+                                    </apex:outputLink>&nbsp;  
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!OppIH.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 Revenue" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!OppIH.Gross_Q1_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q2 Revenue" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!OppIH.Gross_Q2_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q3 Revenue" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!OppIH.Gross_Q3_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q4 Revenue" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!OppIH.Gross_Q4_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="FY Revenue" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!OppIH.Gross_FY_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!OppIH.Gross_YTD_CQ_Value__c}" />&nbsp;
+                            </apex:column>
+
+                            </apex:pageBlockTable>
+                            <apex:outputtext rendered="{!If(revenueData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+                            <!-- Grid to show Pagination info & buttons -->
+                            <apex:panelGrid columns="4"
+                                rendered="{!If(revenueData.size != 0, true, false)}"
+                                width="100%">
+                                <apex:OutputLabel value="{!revenuePaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(revenuePaginator.hasPrev)}" value="First"
+                                        rerender="IDInHandPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Rev" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(revenuePaginator.hasPrev)}" value="Previous"
+                                        rerender="IDInHandPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Rev" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(revenuePaginator.hasNxt)}" value="Next"
+                                        rerender="IDInHandPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Rev" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(revenuePaginator.hasNxt)}" value="Last"
+                                        rerender="IDInHandPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Rev" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!revenuePaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                        PageBlockSectionCollapse('{!$Component.IDInHand}');
+                    </script>
+                        <br />
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputpanel>
+            <!-- revenue section data ends here -->
+
+            <!-- Issue-00362 : Label Changes for Plan vs Current Forecast -->
+            <!-- Section to display Budget Data -->
+            <apex:outputPanel id="IdBudgetpb" rendered="{!filterCriteria.planVsCurrentSelectedOptn != filterCriteria.ADJ_TARGET}">
+                <apex:pageBlock >
+                    <apex:OutputLabel >
+                        <b><apex:outputLabel value="{!filterCriteria.planVsCurrentSelectedOptn}"/> : &nbsp; <apex:outputField value="{!Budget_Total.Gross_Q1_Value__c}" />
+                        </b>
+                    </apex:OutputLabel>
+
+                    <apex:pageBlockSection id="IdBudget" title="{!filterCriteria.planVsCurrentSelectedOptn} Details"
+                        collapsible="true" columns="1">
+                        <apex:outputPanel id="IdBudgetPanel">
+                            <apex:pageBlockTable id="TablePipelineBudget"
+                                value="{!budgetData}" var="OppBud">
+
+                                <apex:column headerValue="Account" width="20%">
+
+                                    <apex:outputText value="{!OppBud.Account_Name__c}" />&nbsp; 
+                        
+                            </apex:column>
+
+                                <apex:column headerValue="Executive Name" width="10%"
+                                    rendered="{!And(filterCriteria.QueryLevel != 'AE', filterCriteria.HierarchyLevel != 'Profit Centre' )}">
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(OppBud.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',OppBud.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(OppBud.Sales_Specialist__r.AE_Name__c, FIND('(',OppBud.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(OppBud.I_A_Specialist__r.AE_Name__c, FIND('(',OppBud.I_A_Specialist__r.AE_Name__c) - 1)}" /> &nbsp;
+                        </apex:column>
+
+                                <apex:column headerValue="Product Name" width="20%">
+                                    <apex:outputText value="{!OppBud.Product_Name__c}" />&nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Profit Cntr">
+                                    <apex:outputText value="{!OppBud.Profit_Centre_Code__c}" /> &nbsp;
+                            </apex:column>
+
+                                <apex:column headerValue="Q1 {!filterCriteria.planVsCurrentSelectedOptn}" width="10%"
+                                    rendered="{!filterCriteria.showQ1}">
+                                    <apex:outputField value="{!OppBud.Gross_Q1_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q2 {!filterCriteria.planVsCurrentSelectedOptn}" width="10%"
+                                    rendered="{!filterCriteria.showQ2}">
+                                    <apex:outputField value="{!OppBud.Gross_Q2_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q3 {!filterCriteria.planVsCurrentSelectedOptn}" width="10%"
+                                    rendered="{!filterCriteria.showQ3}">
+                                    <apex:outputField value="{!OppBud.Gross_Q3_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="Q4 {!filterCriteria.planVsCurrentSelectedOptn}" width="10%"
+                                    rendered="{!filterCriteria.showQ4}">
+                                    <apex:outputField value="{!OppBud.Gross_Q4_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="FY {!filterCriteria.planVsCurrentSelectedOptn}" width="10%"
+                                    rendered="{!filterCriteria.showFY}">
+                                    <apex:outputField value="{!OppBud.Gross_FY_Value__c}" />
+                                </apex:column>
+
+                                <apex:column headerValue="YTD CQ"
+                                    rendered="{!filterCriteria.showYTDCQ}">
+                                    <apex:outputField value="{!OppBud.Gross_YTD_CQ_Value__c}" />&nbsp;
+                        </apex:column>
+
+                            </apex:pageBlockTable>
+                            <apex:outputtext rendered="{!If(budgetData.size == 0, true, false)}"> No matching records found. </apex:outputtext>
+                            <!-- Grid to show Pagination info & buttons -->
+                            <apex:panelGrid columns="3"
+                                rendered="{!If(budgetData.size != 0, true, false)}" width="100%">
+                                <apex:OutputLabel value="{!planPaginator.recStr}" />
+                                <apex:PanelGroup >
+                                    <apex:commandButton action="{!first}"
+                                        disabled="{!Not(planPaginator.hasPrev)}" value="First"
+                                        rerender="IdBudgetPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading();  ">
+                                        <apex:param value="Bud" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!previous}"
+                                        disabled="{!Not(planPaginator.hasPrev)}" value="Previous"
+                                        rerender="IdBudgetPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Bud" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!next}"
+                                        disabled="{!Not(planPaginator.hasNxt)}" value="Next"
+                                        rerender="IdBudgetPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Bud" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:commandButton action="{!last}"
+                                        disabled="{!Not(planPaginator.hasNxt)}" value="Last"
+                                        rerender="IdBudgetPanel"
+                                        onClick="javascript:YUIShowLoading(); "
+                                        onComplete="YUIHideLoading(); ">
+                                        <apex:param value="Bud" assignTo="{!calledFrom}"
+                                            name="context" />
+                                    </apex:commandButton>
+                                    <apex:outputLabel value="   " />
+                                </apex:PanelGroup>
+                                <apex:Outputlabel value="Page {!planPaginator.currentPage}" />
+                            </apex:panelGrid>
+                        </apex:outputPanel>
+                        <script>
+                    PageBlockSectionCollapse('{!$Component.IdBudget}');
+                </script>
+                        <br />
+                    </apex:pageBlockSection>
+                    <!-- Budget section ends here -->
+                </apex:pageBlock>
+            </apex:outputPanel>
+
+
+        </apex:outputPanel>
+
+    </apex:outputPanel>
+
+
+
+
+
+    <!-- ---------------------------------------------------- Excel Layout ---------------------------------------------------- -->
+
+    <apex:outputPanel rendered="{!isExcelExport}">
+        <table>
+            <tr></tr>
+            <tr>
+                <td colspan="2">Data as of 6PM {!filterCriteria.refreshDate} US
+                    Eastern time</td>
+            </tr>
+
+            <tr></tr>
+
+            <tr>
+                <td colspan="2">
+                    <h3>Filter Criteria</h3>
+                </td>
+            </tr>
+
+            <tr>
+                <td><b>Time Period</b></td>
+                <td>{!filterCriteria.Quarter}</td>
+            </tr>
+
+            <tr>
+                <td><b>Offering Group</b></td>
+                <td><apex:OutputText value="{!filterCriteria.OfferingGroup}"
+                        rendered="{!If(filterCriteria.OfferingGroup.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.OfferingGroup.size != 0, false, true)}" />
+                </td>
+            </tr>
+
+            <tr>
+                <td><b>Offering Segment</b></td>
+                <td><apex:OutputText value="{!filterCriteria.OfferingSegment}"
+                        rendered="{!If(filterCriteria.OfferingSegment.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.OfferingSegment.size != 0, false, true)}" /></td>
+            </tr>
+
+            <tr>
+                <td><b>Offering Type</b></td>
+                <td><apex:OutputText value="{!filterCriteria.OfferingType}"
+                        rendered="{!If(filterCriteria.OfferingType.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.OfferingType.size != 0, false, true)}" /></td>
+            </tr>
+
+            <tr>
+                <td><b>COE Name</b></td>
+                <td><apex:OutputText value="{!filterCriteria.COEName}"
+                        rendered="{!If(filterCriteria.COEName.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.COEName.size != 0, false, true)}" /></td>
+            </tr>
+
+            <tr>
+                <td><b>Account</b></td>
+                <td><apex:OutputText value="{!parentAccountName}"
+                        rendered="{!If(parentAccountName.size != 0, true, false)}" /> <apex:OutputText value="All"
+                        rendered="{!If(parentAccountName.size != 0, false, true)}" /></td>
+            </tr>
+
+            <tr>
+                <td><b>Service Line</b></td>
+                <td><apex:OutputText value="{!filterCriteria.ServiceLine}"
+                        rendered="{!If(filterCriteria.ServiceLine.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.ServiceLine.size != 0, false, true)}" />
+                </td>
+            </tr>
+
+            <tr>
+                <td><b>Service Line Group</b></td>
+                <td><apex:OutputText value="{!filterCriteria.ServiceLineGroup}"
+                        rendered="{!If(filterCriteria.ServiceLineGroup.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.ServiceLineGroup.size != 0, false, true)}" />
+                </td>
+            </tr>
+            
+            <tr>
+                <td><b>Global Product</b></td>
+                <td><apex:OutputText value="{!filterCriteria.GlobalProduct}"
+                        rendered="{!If(filterCriteria.GlobalProduct.size != 0, true, false)}" />
+                    <apex:OutputText value="All"
+                        rendered="{!If(filterCriteria.GlobalProduct.size != 0, false, true)}" />
+                </td>
+            </tr>
+
+        </table>
+        <br />
+        <br />
+
+        <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Stage'}">
+            <table>
+                <tr>
+                    <td><b>Gap vs {!filterCriteria.planVsCurrentSelectedOptn}: $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!GapvsBudget}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>Won of {!filterCriteria.planVsCurrentSelectedOptn}: <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!WonofBudget}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>Pipeline Coverage(all) : <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!PipelineCoverageAll}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>Pipeline Coverage(3 to 5) : <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!PipelineCoverage3to5}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                
+                <!-- Update by: Sneha Date: 30 Jan, 2013 -- Added Japan KPI's -->
+                <apex:outputPanel rendered="{!filterCriteria.isJapaneseUser}">
+                 <tr>
+                    <td><b>RIH vs Plan : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!RIHvsPlan}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                     <apex:outputPanel rendered="{!filterCriteria.planVsCurrentSelectedOptn != filterCriteria.ADJ_TARGET}">
+                         <tr>
+                            <td><b>Secured vs Plan : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                        <apex:param value="{!SecuredvsPlan}" />
+                                    </apex:outputText>
+                            </b></td>
+                        </tr>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                
+                <!-- Update by Anjali - Sec Rev KPIs - BEGIN -->
+                <apex:outputPanel rendered="{!filterCriteria.planVsCurrentSelectedOptn == filterCriteria.ADJ_TARGET}">
+                    <tr>
+                        <td><b>Secured Revenue : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                    <apex:param value="{!secRev}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr>
+                    <tr>
+                        <td><b>{!filterCriteria.planVsCurrentSelectedOptn} - Secured Revenue : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                    <apex:param value="{!adjMinusSecRev}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr>
+                    <tr>
+                        <td><b>Secured of Adj Tgarget : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                    <apex:param value="{!wonOfSecRev}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr>
+                    <tr>
+                        <td><b>Pipeline (1 to 4) vs Sec Rev Gap : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                    <apex:param value="{!pipeLineCoverage}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr>
+                    <!-- Issue - 02020 - remove this
+                    <tr>
+                        <td><b>Pipeline Coverage (1 to 4) vs Secured Revenue : $ <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                    <apex:param value="{!pipeLineCoverage1_4}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr> -->
+                </apex:outputPanel>
+                <!-- Update by Anjali - Sec Rev KPIs - END -->
+            </table>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}">
+            <table>
+                <tr>
+                    <td><b>Commit Forecast : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!CommitForecast}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <!-- Changes added by anjali - adjusted target - BEGIN -->
+                <apex:outputPanel rendered="{!filterCriteria.planVsCurrentSelectedOptn == filterCriteria.ADJ_TARGET}">
+                    <tr>
+                        <td><b>Commit Stage(1 to 4) : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                    <apex:param value="{!commitFC1_4}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr>
+                    <!-- Issue-02088 Remove This KPI 
+                    <tr>
+                        <td><b>Commit Stage (Stage5/WnIH/InHand) : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                    <apex:param value="{!commitFc5_6_WNIH}" />
+                                </apex:outputText>
+                        </b></td>
+                    </tr> -->
+                </apex:outputPanel>
+                <!-- Changes added by anjali - adjusted target - END -->
+                
+                <apex:outputPanel rendered="{!filterCriteria.showOnTrack}">
+                <tr>
+                    <td><b>On Track Forecast : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!OnTrackForecast}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr></apex:outputPanel>
+                <tr>
+                    <td><b>Best Case Forecast : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!BestCaseForecast}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+            </table>
+
+            <br />
+            <br />
+
+            <table>
+                <tr>
+                    <td><b> Commit Gap vs {!filterCriteria.planVsCurrentSelectedOptn}: $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!commitGapVsPlan}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>Commit % of {!filterCriteria.planVsCurrentSelectedOptn}: <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!commitPlanPCT}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <apex:outputPanel rendered="{!filterCriteria.showOnTrack}">
+                <tr>
+                    <td><b> On Track Gap vs {!filterCriteria.planVsCurrentSelectedOptn}: $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!onTrackGapVsPlan}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>On Track % of {!filterCriteria.planVsCurrentSelectedOptn}: <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!onTrackPlanPCT}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                </apex:outputPanel>
+                <tr>
+                    <td><b> Best Case Gap vs {!filterCriteria.planVsCurrentSelectedOptn}: $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                                <apex:param value="{!bestCaseGapVsPlan}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+                <tr>
+                    <td><b>Best Case % of {!filterCriteria.planVsCurrentSelectedOptn}: <apex:outputText value="{0,Number, ####,###,###.##}%">
+                                <apex:param value="{!bestCasePlanPCT}" />
+                            </apex:outputText>
+                    </b></td>
+                </tr>
+            </table>
+
+        </apex:outputPanel>
+        <br />
+        <br />
+
+        <!-- <table>
+            <tr>
+                <td><b>YTD Plan : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                    <apex:param value="{!YTDPlan}" />
+                </apex:outputText></b></td>
+            </tr>
+            <tr>
+                <td><b>YTD RIH : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                    <apex:param value="{!YTDInHand}" />
+                </apex:outputText></b></td>
+            </tr>
+            <tr>
+                <td><b>YTD Gap : $ <apex:outputText value="{0,Number, ####,###,###.##}">
+                    <apex:param value="{!YTDGap}" />
+                </apex:outputText></b></td>
+            </tr>
+        </table>
+        <br />
+        <br />    -->
+
+        <apex:outputPanel >
+            <apex:OutputLabel >
+                <b> Pipeline : </b>
+                <apex:outputField value="{!Pipeline_Total.Gross_Q1_Value__c}" />
+            </apex:OutputLabel>
+            <table>
+                <tr>
+                    <th>Stage</th>
+                    <th>#</th>
+                    <th>Account</th>
+                    <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                        <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                    </apex:outputPanel>
+                    <th>Product Name</th>
+                    <th>Opp Name</th>
+                    <th>Profit Cntr</th>
+                    <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                        <th>Q1 Impact(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                        <th>Q1 Impact({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                        <th>Q2 Impact(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                        <th>Q2 Impact({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                        <th>Q3 Impact(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                        <th>Q3 Impact({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                        <th>Q4 Impact(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                        <th>Q4 Impact({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                        <th>FY Impact(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                        <th>FY Impact({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                        <th>YTD CQ(USD)</th>
+                    </apex:outputpanel>
+                    <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                        <th>YTD CQ({!dualCurrency})</th>
+                    </apex:outputpanel>
+                    <th>Expected Close Date</th>
+                    <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Stage'}">
+                        <th>Forecast category</th>
+                    </apex:outputPanel>
+                    <th>Next Step</th>
+                    <th>Probability</th>
+                </tr>
+                <apex:repeat value="{!pipelineDataExcel}" var="pipeList">
+                    <apex:repeat value="{!pipeList}" var="Opp">
+                        <tr>
+                            <td>
+                                <!-- <apex:outputText value="{!LEFT(Opp.Opportunity__r.StageName, 1)}" />  
+--> <apex:outputText value="{!Opp.Opportunity_Stage__c}" />
+                            </td>
+
+                            <td><apex:outputText value="{!Opp.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                            <td><apex:outputText value="{!Opp.Account_Name__c}" /></td>
+                            <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                        value="{!Left(Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                        value="{!Left(Opp.Sales_Specialist__r.AE_Name__c, FIND('(',Opp.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                        value="{!Left(Opp.I_A_Specialist__r.AE_Name__c, FIND('(',Opp.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                        value="{!Opp.Opportunity__r.Owner.Name}" /></td>
+                            </apex:outputPanel>
+
+                            <td><apex:outputText value="{!Opp.Product_Name__c}" /></td>
+                            <td><apex:outputText value="{!Opp.Opportunity__r.Name}" /></td>
+                            <td><apex:outputText value="{!Opp.Profit_Centre_Code__c}" />
+                            </td>
+                            <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                <td><apex:outputText value="{!Opp.Gross_Q1_Value__c}" /></td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q1_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                <td><apex:outputText value="{!Opp.Gross_Q2_Value__c}" /></td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q2_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                <td><apex:outputText value="{!Opp.Gross_Q3_Value__c}" /></td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q3_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                <td><apex:outputText value="{!Opp.Gross_Q4_Value__c}" /></td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q4_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                <td><apex:outputText value="{!Opp.Gross_FY_Value__c}" /></td>
+                            </apex:outputpanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_FY_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                <td><apex:outputText value="{!Opp.Gross_YTD_CQ_Value__c}" />
+                                </td>
+                            </apex:outputPanel>
+
+                            <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_YTD_CQ_Value__c}" />
+                                </td>
+                            </apex:outputpanel>
+
+                            <td><apex:outputText value="{0, date, d/MM/yy}">
+                                    <apex:param value="{!Opp.Opportunity__r.CloseDate}" />
+                                </apex:outputText></td>
+
+                            <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Stage'}">
+                                <td><apex:outputText value="{!Opp.IMS_Forecast_Category__c}" /></td>
+                            </apex:outputPanel>
+                            <td><apex:outputText value="{!Left(Opp.Opportunity__r.NextStep,80)}" /></td>
+                            <td><apex:outputField value="{!Opp.Opportunity__r.Probability}" /></td>
+
+                        </tr>
+                    </apex:repeat>
+                </apex:repeat>
+            </table>
+
+            <apex:outputtext rendered="{!If(pipelineDataExcel.size == 0, true, false)}"> No matching 
+records found. </apex:outputtext>
+            <br />
+            <br />
+
+            </apex:outputpanel>
+
+            
+                
+                <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}">
+                        <apex:OutputLabel >
+                            <b> Best Case : </b>
+                            <apex:outputField value="{!BestCase_Total.Gross_Q1_Value__c}" />
+                        </apex:OutputLabel>
+                        <table>
+                            <tr>
+                                <th>Stage</th>
+                                <th>#</th>
+                                <th>Account</th>
+                                <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                                </apex:outputPanel>
+                                <th>Product Name</th>
+                                <th>Opp Name</th>
+                                <th>Profit Cntr</th>
+                                <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                    <th>Q1 Impact(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                    <th>Q1 Impact({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                    <th>Q2 Impact(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                    <th>Q2 Impact({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                    <th>Q3 Impact(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                    <th>Q3 Impact({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                    <th>Q4 Impact(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                    <th>Q4 Impact({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                    <th>FY Impact(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                    <th>FY Impact({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                                    <th>YTD CQ(USD)</th>
+                                </apex:outputpanel>
+                                <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                    <th>YTD CQ({!dualCurrency})</th>
+                                </apex:outputpanel>
+                                <th>Expected Close Date</th>
+                                <th>Next Step</th>
+                                <th>Probability</th>
+                            </tr>
+                            <apex:repeat value="{!BestCaseFCDataExcel}" var="BestCaseFCList">
+                                <apex:repeat value="{!BestCaseFCList}" var="Opp">
+                                    <tr>
+                                        <td>
+                                            <!-- <apex:outputText value="{!LEFT(Opp.Opportunity__r.StageName, 1)}" />  
+--> <apex:outputText value="{!Opp.Opportunity_Stage__c}" />
+                                        </td>
+
+                                        <td><apex:outputText value="{!Opp.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                                        <td><apex:outputText value="{!Opp.Account_Name__c}" /></td>
+                                        <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                            <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                                    value="{!Left(Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                                    value="{!Left(Opp.Sales_Specialist__r.AE_Name__c, FIND('(',Opp.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                                    value="{!Left(Opp.I_A_Specialist__r.AE_Name__c, FIND('(',Opp.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                                    value="{!Opp.Opportunity__r.Owner.Name}" /></td>
+                                        </apex:outputPanel>
+
+                                        <td><apex:outputText value="{!Opp.Product_Name__c}" /></td>
+                                        <td><apex:outputText value="{!Opp.Opportunity__r.Name}" /></td>
+                                        <td><apex:outputText value="{!Opp.Profit_Centre_Code__c}" />
+                                        </td>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                            <td><apex:outputText value="{!Opp.Gross_Q1_Value__c}" /></td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q1_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                            <td><apex:outputText value="{!Opp.Gross_Q2_Value__c}" /></td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q2_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                            <td><apex:outputText value="{!Opp.Gross_Q3_Value__c}" /></td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q3_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                            <td><apex:outputText value="{!Opp.Gross_Q4_Value__c}" /></td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q4_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                            <td><apex:outputText value="{!Opp.Gross_FY_Value__c}" /></td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_FY_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                            <td><apex:outputText value="{!Opp.Gross_YTD_CQ_Value__c}" /></td>
+                                        </apex:outputPanel>
+
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_YTD_CQ_Value__c}" />
+                                            </td>
+                                        </apex:outputpanel>
+
+                                        <td><apex:outputText value="{0, date, d/MM/yy}">
+                                                <apex:param value="{!Opp.Opportunity__r.CloseDate}" />
+                                            </apex:outputText></td>
+                                        <td><apex:outputText value="{!Left(Opp.Opportunity__r.NextStep,80)}" /></td>
+                                        <td><apex:outputField value="{!Opp.Opportunity__r.Probability}" /></td>
+
+                                    </tr>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </table>
+
+                        <apex:outputtext rendered="{!If(BestCaseFCDataExcel.size == 0, true, false)}"> No matching 
+records found. </apex:outputtext>
+                        <br />
+                        <br />
+
+                        </apex:outputpanel>
+
+
+
+                <apex:outputPanel rendered="{!And(filterCriteria.selGraphOptn == 'Forecast Category', filterCriteria.showOnTrack)}">
+                    <apex:OutputLabel >
+                        <b> On Track : </b>
+                        <apex:outputField value="{!OnTrack_Total.Gross_Q1_Value__c}" />
+                    </apex:OutputLabel>
+                    <table>
+                        <tr>
+                            <th>Stage</th>
+                            <th>#</th>
+                            <th>Account</th>
+                            <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                            </apex:outputPanel>
+                            <th>Product Name</th>
+                            <th>Opp Name</th>
+                            <th>Profit Cntr</th>
+                            <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                <th>Q1 Impact(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                <th>Q1 Impact({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                <th>Q2 Impact(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                <th>Q2 Impact({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                <th>Q3 Impact(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                <th>Q3 Impact({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                <th>Q4 Impact(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                <th>Q4 Impact({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                <th>FY Impact(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                <th>FY Impact({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                                <th>YTD CQ(USD)</th>
+                            </apex:outputpanel>
+                            <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                <th>YTD CQ({!dualCurrency})</th>
+                            </apex:outputpanel>
+                            <th>Expected Close Date</th>
+                            <th>Next Step</th>
+                            <th>Probability</th>
+                        </tr>
+                        <apex:repeat value="{!OnTrackFCDataExcel}" var="OnTrackFCList">
+                            <apex:repeat value="{!OnTrackFCList}" var="Opp">
+                                <tr>
+                                    <td>
+                                        <!-- <apex:outputText value="{!LEFT(Opp.Opportunity__r.StageName, 1)}" />  
+--> <apex:outputText value="{!Opp.Opportunity_Stage__c}" />
+                                    </td>
+
+                                    <td><apex:outputText value="{!Opp.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                                    <td><apex:outputText value="{!Opp.Account_Name__c}" /></td>
+                                    <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                        <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                                value="{!Left(Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                            <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                                value="{!Left(Opp.Sales_Specialist__r.AE_Name__c, FIND('(',Opp.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                            <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                                value="{!Left(Opp.I_A_Specialist__r.AE_Name__c, FIND('(',Opp.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                            <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                                value="{!Opp.Opportunity__r.Owner.Name}" /></td>
+                                    </apex:outputPanel>
+
+                                    <td><apex:outputText value="{!Opp.Product_Name__c}" /></td>
+                                    <td><apex:outputText value="{!Opp.Opportunity__r.Name}" /></td>
+                                    <td><apex:outputText value="{!Opp.Profit_Centre_Code__c}" />
+                                    </td>
+
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                        <td><apex:outputText value="{!Opp.Gross_Q1_Value__c}" /></td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q1_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                        <td><apex:outputText value="{!Opp.Gross_Q2_Value__c}" /></td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q2_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                        <td><apex:outputText value="{!Opp.Gross_Q3_Value__c}" /></td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q3_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                        <td><apex:outputText value="{!Opp.Gross_Q4_Value__c}" /></td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q4_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                        <td><apex:outputText value="{!Opp.Gross_FY_Value__c}" /></td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_FY_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                        <td><apex:outputText value="{!Opp.Gross_YTD_CQ_Value__c}" />
+                                        </td>
+                                    </apex:outputPanel>
+
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_YTD_CQ_Value__c}" />
+                                        </td>
+                                    </apex:outputpanel>
+
+                                    <td><apex:outputText value="{0, date, d/MM/yy}">
+                                            <apex:param value="{!Opp.Opportunity__r.CloseDate}" />
+                                        </apex:outputText></td>
+                                    <td><apex:outputText value="{!Left(Opp.Opportunity__r.NextStep,80)}" /></td>
+                                    <td><apex:outputField value="{!Opp.Opportunity__r.Probability}" /></td>
+
+                                </tr>
+                            </apex:repeat>
+                        </apex:repeat>
+                    </table>
+
+                    <apex:outputtext rendered="{!If(OnTrackFCDataExcel.size == 0, true, false)}"> No matching 
+records found. </apex:outputtext>
+                    <br />
+                    <br />
+
+                    </apex:outputpanel>
+
+                    <apex:outputPanel rendered="{!filterCriteria.selGraphOptn == 'Forecast Category'}">
+                <apex:OutputLabel >
+                    <b> Commit : </b>
+                    <apex:outputField value="{!Commit_Total.Gross_Q1_Value__c}" />
+                </apex:OutputLabel>
+                <table>
+                    <tr>
+                        <th>Stage</th>
+                        <th>#</th>
+                        <th>Account</th>
+                        <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                            <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                        </apex:outputPanel>
+                        <th>Product Name</th>
+                        <th>Opp Name</th>
+                        <th>Profit Cntr</th>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                            <th>Q1 Impact(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                            <th>Q1 Impact({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                            <th>Q2 Impact(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                            <th>Q2 Impact({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                            <th>Q3 Impact(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                            <th>Q3 Impact({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                            <th>Q4 Impact(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                            <th>Q4 Impact({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                            <th>FY Impact(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                            <th>FY Impact({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                            <th>YTD CQ(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                            <th>YTD CQ({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <th>Expected Close Date</th>
+                        <th>Next Step</th>
+                        <th>Probability</th>
+                    </tr>
+                    <apex:repeat value="{!CommitFCDataExcel}" var="commitFCList">
+                        <apex:repeat value="{!commitFCList}" var="Opp">
+                            <tr>
+                                <td>
+                                    <!-- <apex:outputText value="{!LEFT(Opp.Opportunity__r.StageName, 1)}" />  
+--> <apex:outputText value="{!Opp.Opportunity_Stage__c}" />
+                                </td>
+
+                                <td><apex:outputText value="{!Opp.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                                <td><apex:outputText value="{!Opp.Account_Name__c}" /></td>
+                                <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                            value="{!Left(Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Opp.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                        <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                            value="{!Left(Opp.Sales_Specialist__r.AE_Name__c, FIND('(',Opp.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                        <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                            value="{!Left(Opp.I_A_Specialist__r.AE_Name__c, FIND('(',Opp.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                        <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                            value="{!Opp.Opportunity__r.Owner.Name}" /></td>
+                                </apex:outputPanel>
+
+                                <td><apex:outputText value="{!Opp.Product_Name__c}" /></td>
+                                <td><apex:outputText value="{!Opp.Opportunity__r.Name}" /></td>
+                                <td><apex:outputText value="{!Opp.Profit_Centre_Code__c}" />
+                                </td>
+
+                                <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                    <td><apex:outputText value="{!Opp.Gross_Q1_Value__c}" /></td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q1_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                    <td><apex:outputText value="{!Opp.Gross_Q2_Value__c}" /></td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q2_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                    <td><apex:outputText value="{!Opp.Gross_Q3_Value__c}" /></td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q3_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                    <td><apex:outputText value="{!Opp.Gross_Q4_Value__c}" /></td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_Q4_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                    <td><apex:outputText value="{!Opp.Gross_FY_Value__c}" /></td>
+                                </apex:outputpanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_FY_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                    <td><apex:outputText value="{!Opp.Gross_YTD_CQ_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Opp.id].Gross_YTD_CQ_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <td><apex:outputText value="{0, date, d/MM/yy}">
+                                        <apex:param value="{!Opp.Opportunity__r.CloseDate}" />
+                                    </apex:outputText></td>
+                                <td><apex:outputText value="{!Left(Opp.Opportunity__r.NextStep,80)}" /></td>
+                                <td><apex:outputField value="{!Opp.Opportunity__r.Probability}" /></td>
+
+                            </tr>
+                        </apex:repeat>
+                    </apex:repeat>
+                </table>
+
+                <apex:outputtext rendered="{!If(commitFCDataExcel.size == 0, true, false)}"> No matching 
+records found. </apex:outputtext>
+                <br />
+                <br />
+
+                </apex:outputpanel>
+
+                        <apex:outputpanel >
+                            <apex:OutputLabel >
+                                <b> WNIH : </b>
+                                <apex:outputField value="{!Wnih_Total.Gross_Q1_Value__c}" />
+                            </apex:OutputLabel>
+                            <table>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Account</th>
+                                    <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                        <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                                    </apex:outputPanel>
+                                    <th>Product Name</th>
+                                    <th>Opp Name</th>
+                                    <th>Profit Cntr</th>
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                        <th>Q1 Impact(USD)</th>
+                                        </apex:outputPanel>
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                            <th>Q1 Impact({!dualCurrency})</th>
+                                        </apex:outputpanel>
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                            <th>Q2 Impact(USD)</th>
+                                            </apex:outputPanel>
+                                            <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                                <th>Q2 Impact({!dualCurrency})</th>
+                                            </apex:outputpanel>
+                                            <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                                <th>Q3 Impact(USD)</th>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                                    <th>Q3 Impact({!dualCurrency})</th>
+                                                </apex:outputpanel>
+                                                <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                                    <th>Q4 Impact(USD)</th>
+                                                    </apex:outputPanel>
+                                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                                        <th>Q4 Impact({!dualCurrency})</th>
+                                                    </apex:outputpanel>
+
+                                                    <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                                        <th>FY Impact(USD)</th>
+                                                        </apex:outputPanel>
+
+                                                        <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                                            <th>FY Impact({!dualCurrency})</th>
+                                                        </apex:outputpanel>
+
+                                                        <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                                                            <th>YTD CQ(USD)</th>
+                                                        </apex:outputpanel>
+                                                        <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                                            <th>YTD CQ({!dualCurrency})</th>
+                                                        </apex:outputpanel>
+                                                        <th>Actual Close Date</th>
+                                </tr>
+                                <apex:repeat value="{!wnihDataExcel}" var="wnihList">
+                                    <apex:repeat value="{!wnihList}" var="Oppwon">
+                                        <tr>
+                                            <td><apex:outputText value="{!Oppwon.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                                            <td><apex:outputText value="{!Oppwon.Account_Name__c}" /></td>
+
+                                            <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                                <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                                        value="{!Left(Oppwon.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',Oppwon.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                                        value="{!Left(Oppwon.Sales_Specialist__r.AE_Name__c, FIND('(',Oppwon.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                                        value="{!Left(Oppwon.I_A_Specialist__r.AE_Name__c, FIND('(',Oppwon.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                                    <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                                        value="{!Oppwon.Opportunity__r.Owner.Name}" /></td>
+                                            </apex:outputPanel>
+
+
+                                            <td><apex:outputText value="{!Oppwon.Product_Name__c}" /></td>
+                                            <td><apex:outputText value="{!Oppwon.Opportunity__r.Name}" /></td>
+                                            <td><apex:outputText value="{!Oppwon.Profit_Centre_Code__c}" /></td>
+
+                                            <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                                <td><apex:outputText value="{!Oppwon.Gross_Q1_Value__c}" /></td>
+                                                </apex:outputPanel>
+
+                                                <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_Q1_Value__c}" />
+                                                    </td>
+                                                </apex:outputpanel>
+
+
+                                                <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                                    <td><apex:outputText value="{!Oppwon.Gross_Q2_Value__c}" /></td>
+                                                    </apex:outputPanel>
+
+                                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                                        <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_Q2_Value__c}" />
+                                                        </td>
+                                                    </apex:outputpanel>
+
+
+                                                    <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                                        <td><apex:outputText value="{!Oppwon.Gross_Q3_Value__c}" /></td>
+                                                        </apex:outputPanel>
+
+                                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                                            <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_Q3_Value__c}" />
+                                                            </td>
+                                                        </apex:outputpanel>
+
+
+                                                        <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                                            <td><apex:outputText value="{!Oppwon.Gross_Q4_Value__c}" /></td>
+                                                            </apex:outputPanel>
+
+                                                            <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                                                <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_Q4_Value__c}" />
+                                                                </td>
+                                                            </apex:outputpanel>
+
+
+                                                            <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                                                <td><apex:outputText value="{!Oppwon.Gross_FY_Value__c}" /></td>
+                                                                </apex:outputPanel>
+
+                                                                <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_FY_Value__c}" />
+                                                                    </td>
+                                                                </apex:outputpanel>
+
+                                                                <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                                                    <td><apex:outputText value="{!Oppwon.Gross_YTD_CQ_Value__c}" /></td>
+                                                                </apex:outputPanel>
+
+                                                                <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                                                    <td><apex:outputText value="{!convertedDualCurrencyMap[Oppwon.id].Gross_YTD_CQ_Value__c}" />
+                                                                    </td>
+                                                                </apex:outputpanel>
+
+
+                                                                <td><apex:outputText value="{0, date, d/MM/yy}">
+                                                                        <apex:param value="{!Oppwon.Opportunity__r.Actual_Close_Date__c}" />
+                                                                    </apex:outputText></td>
+                                        </tr>
+                                    </apex:repeat>
+                                </apex:repeat>
+                            </table>
+                            <apex:outputtext rendered="{!If(wnihDataExcel.size == 0, true, false)}"> No matching records 
+found. </apex:outputtext>
+                            <br />
+                            <br />
+                            <br />
+                    </apex:outputPanel>
+
+                    <apex:outputpanel >
+                        <apex:OutputLabel >
+                            <b>In Hand : </b>
+                            <apex:outputField value="{!Rih_Total.Gross_Q1_Value__c}" />
+                        </apex:OutputLabel>
+                        <table>
+                            <tr>
+                                <th>#</th>
+                                <th>Account</th>
+                                <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                    <th><apex:outputText value="{!If(filterCriteria.HierarchyLevel == 'Profit Centre' ,'Opp Owner' ,'Executive Name')}" /></th>
+                                </apex:outputPanel>
+                                <th>Product Name</th>
+                                <th>Opp Name</th>
+                                <th>Profit Cntr</th>
+                                <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                    <th>Q1 Revenue(USD)</th>
+                                    </apex:outputPanel>
+                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                        <th>Q1 Revenue({!dualCurrency})</th>
+                                    </apex:outputpanel>
+                                    <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                        <th>Q2 Revenue(USD)</th>
+                                        </apex:outputPanel>
+                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                            <th>Q2 Revenue({!dualCurrency})</th>
+                                        </apex:outputpanel>
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                            <th>Q3 Revenue(USD)</th>
+                                            </apex:outputPanel>
+                                            <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                                <th>Q3 Revenue({!dualCurrency})</th>
+                                            </apex:outputpanel>
+                                            <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                                <th>Q4 Revenue(USD)</th>
+                                                </apex:outputPanel>
+                                                <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                                    <th>Q4 Revenue({!dualCurrency})</th>
+                                                </apex:outputpanel>
+                                                <!-- <th>YTD Revenue (USD)</th>
+                                <apex:outputpanel rendered="{!haveDualCurrency}">
+                                        <th>YTD Revenue({!dualCurrency})</th>
+                                </apex:outputpanel> -->
+                                                <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                                    <th>FY Revenue(USD)</th>
+                                                    </apex:outputPanel>
+                                                    <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                                        <th>FY Revenue({!dualCurrency})</th>
+                                                    </apex:outputpanel>
+                                                    <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                                                        <th>YTD CQ(USD)</th>
+                                                    </apex:outputpanel>
+                                                    <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                                        <th>YTD CQ({!dualCurrency})</th>
+                                                    </apex:outputpanel>
+                            </tr>
+
+                            <apex:repeat value="{!revenueDataExcel}" var="revenueList">
+                                <apex:repeat value="{!revenueList}" var="OppIH">
+                                    <tr>
+                                        <td><apex:outputText value="{!OppIH.Opportunity__r.Opportunity_Number__c}" /></td>
+
+                                        <td><apex:outputText value="{!OppIH.Account_Name__c}" /></td>
+                                        <apex:outputPanel rendered="{!filterCriteria.QueryLevel != 'AE'}">
+                                            <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                                    value="{!Left(OppIH.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',OppIH.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                                    value="{!Left(OppIH.Sales_Specialist__r.AE_Name__c, FIND('(',OppIH.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                                    value="{!Left(OppIH.I_A_Specialist__r.AE_Name__c, FIND('(',OppIH.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                                <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Profit Centre'}"
+                                                    value="{!OppIH.Opportunity__r.Owner.Name}" /></td>
+                                        </apex:outputPanel>
+
+                                        <td><apex:outputText value="{!OppIH.Product_Name__c}" /></td>
+
+                                        <td><apex:outputText value="{!OppIH.Opportunity__r.Name}" />
+                                        </td>
+
+                                        <td><apex:outputText value="{!OppIH.Profit_Centre_Code__c}" /></td>
+
+                                        <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                                            <td><apex:outputText value="{!OppIH.Gross_Q1_Value__c}" />
+                                            </td>
+                                            </apex:outputPanel>
+
+                                            <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                                <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_Q1_Value__c}" />
+                                                </td>
+                                            </apex:outputpanel>
+
+                                            <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                                                <td><apex:outputText value="{!OppIH.Gross_Q2_Value__c}" />
+                                                </td>
+                                                </apex:outputPanel>
+
+                                                <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_Q2_Value__c}" />
+                                                    </td>
+                                                </apex:outputpanel>
+
+                                                <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                                                    <td><apex:outputText value="{!OppIH.Gross_Q3_Value__c}" /></td>
+                                                    </apex:outputPanel>
+
+                                                    <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                                        <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_Q3_Value__c}" />
+                                                        </td>
+                                                    </apex:outputpanel>
+
+                                                    <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                                                        <td><apex:outputText value="{!OppIH.Gross_Q4_Value__c}" /></td>
+                                                        </apex:outputPanel>
+
+                                                        <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                                            <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_Q4_Value__c}" />
+                                                            </td>
+                                                        </apex:outputpanel>
+
+                                                        <!-- <td><apex:outputText value="{!OppIH.YTD__c}" /></td>
+                                        <apex:outputpanel rendered="{!haveDualCurrency}" >
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].YTD__c}" /></td>
+                                            </apex:outputpanel>  -->
+
+                                                        <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                                                            <td><apex:outputText value="{!OppIH.Gross_FY_Value__c}"
+                                                                    rendered="{!filterCriteria.showFY}" /></td>
+                                                            </apex:outputPanel>
+
+                                                            <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                                                <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_FY_Value__c}" />
+                                                                </td>
+                                                            </apex:outputpanel>
+
+                                                            <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                                                <td><apex:outputText value="{!OppIH.Gross_YTD_CQ_Value__c}" /></td>
+                                                            </apex:outputPanel>
+
+                                                            <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                                                <td><apex:outputText value="{!convertedDualCurrencyMap[OppIH.id].Gross_YTD_CQ_Value__c}" />
+                                                                </td>
+                                                            </apex:outputpanel>
+                                    </tr>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </table>
+                        <apex:outputtext rendered="{!If(revenueDataExcel.size == 0, true, false)}"> No matching records 
+found. </apex:outputtext>
+
+                        <br />
+                        <br />
+                        <br />
+                </apex:outputPanel>
+
+
+                <apex:OutputLabel rendered="{!filterCriteria.planVsCurrentSelectedOptn != filterCriteria.ADJ_TARGET}" >
+                    <b> {!filterCriteria.planVsCurrentSelectedOptn}: </b>
+                    <apex:outputField value="{!Budget_Total.Gross_Q1_Value__c}" />
+                </apex:OutputLabel>
+                <table>
+                    <tr>
+                        <!--  <th>Profit Center</th>  -->
+                        <th>Account</th>
+                        <apex:outputPanel rendered="{!And(filterCriteria.QueryLevel != 'AE',  filterCriteria.HierarchyLevel != 'Profit Centre')}">
+                            <th>Executive Name</th>
+                        </apex:outputPanel>
+                        <th>Product Name</th>
+                        <th>Profit Cntr</th>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ1}">
+                            <th>Q1 {!filterCriteria.planVsCurrentSelectedOptn}(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                            <th>Q1 {!filterCriteria.planVsCurrentSelectedOptn}({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ2}">
+                            <th>Q2 {!filterCriteria.planVsCurrentSelectedOptn}(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                            <th>Q2 {!filterCriteria.planVsCurrentSelectedOptn}({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ3}">
+                            <th>Q3 {!filterCriteria.planVsCurrentSelectedOptn}(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                            <th>Q3 {!filterCriteria.planVsCurrentSelectedOptn}({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showQ4}">
+                            <th>Q4 {!filterCriteria.planVsCurrentSelectedOptn}(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                            <th>Q4 {!filterCriteria.planVsCurrentSelectedOptn}({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <!-- <th>YTD Plan (USD)</th>
+                <apex:outputpanel rendered="{!haveDualCurrency}">
+                            <th>YTD Plan({!dualCurrency})</th>
+                </apex:outputpanel>  -->
+                        <apex:outputpanel rendered="{!filterCriteria.showFY}">
+                            <th>FY {!filterCriteria.planVsCurrentSelectedOptn}(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                            <th>FY {!filterCriteria.planVsCurrentSelectedOptn}({!dualCurrency})</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!filterCriteria.showYTDCQ}">
+                            <th>YTD CQ(USD)</th>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                            <th>YTD CQ({!dualCurrency})</th>
+                        </apex:outputpanel>
+                    </tr>
+
+                    <apex:repeat value="{!budgetDataExcel}" var="budgetList">
+                        <apex:repeat value="{!budgetList}" var="OppBud">
+
+                            <tr>
+
+
+                                <td><apex:outputText value="{!OppBud.Account_Name__c}" /></td>
+                                <apex:outputPanel rendered="{!And(filterCriteria.QueryLevel != 'AE', filterCriteria.HierarchyLevel != 'Profit Centre')}">
+                                    <td><apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Team'}"
+                                            value="{!Left(OppBud.Sales_Team_Hierarchy_AE__r.AE_Name__c, FIND('(',OppBud.Sales_Team_Hierarchy_AE__r.AE_Name__c) - 1)}" />
+                                        <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'Sales Specialist'}"
+                                            value="{!Left(OppBud.Sales_Specialist__r.AE_Name__c, FIND('(',OppBud.Sales_Specialist__r.AE_Name__c) - 1)}" />
+                                        <apex:outputText rendered="{!filterCriteria.HierarchyLevel == 'I&A Specialist'}"
+                                            value="{!Left(OppBud.I_A_Specialist__r.AE_Name__c, FIND('(',OppBud.I_A_Specialist__r.AE_Name__c) - 1)}" />
+                                    </td>
+                                </apex:outputPanel>
+
+
+                                <td><apex:outputText value="{!OppBud.Product_Name__c}" /></td>
+                                <td><apex:outputText value="{!OppBud.Profit_Centre_Code__c}" /></td>
+
+                                <apex:outputPanel rendered="{!filterCriteria.showQ1}">
+                                    <td><apex:outputText value="{!OppBud.Gross_Q1_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ1, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_Q1_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputPanel rendered="{!filterCriteria.showQ2}">
+                                    <td><apex:outputText value="{!OppBud.Gross_Q2_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ2, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_Q2_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+
+                                <apex:outputPanel rendered="{!filterCriteria.showQ3}">
+                                    <td><apex:outputText value="{!OppBud.Gross_Q3_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ3, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_Q3_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+
+                                <apex:outputPanel rendered="{!filterCriteria.showQ4}">
+                                    <td><apex:outputText value="{!OppBud.Gross_Q4_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showQ4, haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_Q4_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <!-- <td><apex:outputText value="{!OppBud.YTD__c}" /></td>
+                                        <apex:outputpanel rendered="{!haveDualCurrency}" >
+                                            <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].YTD__c}" /></td>
+                                            </apex:outputpanel> -->
+
+
+                                <apex:outputPanel rendered="{!filterCriteria.showFY}">
+                                    <td><apex:outputText value="{!OppBud.Gross_FY_Value__c}" />
+                                    </td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showFY, 
+haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_FY_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                                <apex:outputPanel rendered="{!filterCriteria.showYTDCQ}">
+                                    <td><apex:outputText value="{!OppBud.Gross_YTD_CQ_Value__c}" /></td>
+                                </apex:outputPanel>
+
+                                <apex:outputpanel rendered="{!And(filterCriteria.showYTDCQ, 
+haveDualCurrency)}">
+                                    <td><apex:outputText value="{!convertedDualCurrencyMap[OppBud.id].Gross_YTD_CQ_Value__c}" />
+                                    </td>
+                                </apex:outputpanel>
+
+                            </tr>
+
+                        </apex:repeat>
+                    </apex:repeat>
+                </table>
+                <apex:outputtext rendered="{!If(budgetDataExcel.size == 0, true, false)}"> No matching records 
+found. </apex:outputtext>
+                <br />
+                <br />
+                <br />
+
+            </apex:outputPanel>
+</apex:component>

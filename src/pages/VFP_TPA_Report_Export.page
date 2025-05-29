@@ -1,0 +1,612 @@
+<apex:page controller="CNT_TPA_Report_Export" extensions="CNT_TPA_AllTPA_Country_Workbook,CNT_TPA_PendingReport,CNT_TPA_TATReport" readOnly="true" lightningStylesheets="true">
+    <apex:slds />
+    <!-- *** JQuery Custom Popup reference *** -->
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    <!-- *** JQuery Custom Popup reference *** -->
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}"/>
+    <script type="text/javascript">
+    	var remoteCallCounter = 0;
+    	var resultList = [];
+    	var reportType = '{!reportType}';
+    	fetchData(null);
+    	function fetchData(lastRecordCreatedId){
+            if(remoteCallCounter == 0)
+                showLoading();
+            var remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.loadRecords}';
+            if(reportType == 'Workbook'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.loadOffRecords}';
+            }
+            else if(reportType == 'TAT2'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.loadTAT2Records}';
+            }
+            else if(reportType == 'PendingReport'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_PendingReport.fetchRequests}';
+            }else if(reportType == 'LEwO'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.loadLegalEntitywithOffRecords}';
+			}
+            else if(reportType == 'TATReport'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_TATReport.searchRequest}';
+            }
+            else if(reportType == 'TPSAReport'){
+            	remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.loadTPSAReport}';
+            }
+            else if(reportType == 'ManualVendor'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_Report_Export.manualVendorApproval}';
+            }
+            else if(reportType == 'ATPACW'){
+                remoteAction = '{!$RemoteAction.CNT_TPA_AllTPA_Country_Workbook.searchData}';
+            }
+            Visualforce.remoting.Manager.invokeAction(
+            	remoteAction,
+                lastRecordCreatedId,
+                "{!JSENCODE(query)}",
+                function(result, event){
+                    if(event.type == 'exception')
+                	{
+                    	hideLoading();
+                        showPopup('<b>Export Timed Out</b> - Please try with more filters',function (){});
+                        return false;                                    
+                    }
+                    else
+                    {   var recordsLen = false;
+                        if(result != null){
+                            if(reportType == 'TAT2'){
+                                resultList = resultList.concat(result.resultData);
+                                recordsLen = (result.noOfTPAReqProcessed == 4000);
+                            }
+                            else if(reportType == 'TATReport'){
+                                resultList = resultList.concat(result.resultData);
+                                recordsLen = (result.noOfTPAReqProcessed == 1000);
+                            }
+                            else if(reportType == 'ATPACW'){
+                                resultList = resultList.concat(result);
+                                recordsLen = (result.noOfTPAReqProcessed == 2000);
+                            }else if(reportType == 'ManualVendor'){
+                                var noOfReqToProcess = '{!$Setup.TPA_Settings__c.TPA_Manual_Vendor_Approval_Size__c}';
+                                if(noOfReqToProcess == '' || noOfReqToProcess == null || typeof(noOfReqToProcess) == 'undefined') {
+                                    noOfReqToProcess = 1000; 
+                                }
+                                recordsLen = (result.noOfTPAReqProcessed == noOfReqToProcess);
+                                resultList = resultList.concat(result.resultData);
+                            }
+                            else{
+                                resultList = resultList.concat(result);
+                                recordsLen = (result.length == 1000);
+                            }
+                        }
+                        if(recordsLen)
+                        {
+                            remoteCallCounter++;
+                            if(reportType == 'TAT2'){
+                                fetchData(result.lastReqId);
+                            }
+                            else if(reportType == 'TATReport'|| reportType == 'ManualVendor') {
+                                fetchData(result.lastReqId);
+                            }
+                            else{
+                            	fetchData(result[result.length - 1].Id);
+                            }
+							return false;
+                  		}
+                 		else{
+                            exportData(resultList);
+                    	}
+               		}
+                },
+                {escape: true}
+            );
+                
+        }
+        function parseHTML(value) {
+            var t = document.createElement('template');
+            var doc = new DOMParser().parseFromString(value, "text/html");
+            //console.log(doc.documentElement.textContent);
+            //console.log(value);
+            t.innerHTML = doc.documentElement.textContent;
+            //t.innerHTML = t.textContent;
+            return t.innerHTML.replace(/<[^>]+>/g, '');
+        }
+    	function exportData(arrData){
+        	if(arrData == null || arrData.length == 0){
+                hideLoading();
+            	showPopup('No Data to Export !',function (){
+            		window.history.back();
+            	});
+            	return false;
+            }
+            var CSV = '';
+            //Set Report title in first row or line
+            if(reportType == 'CDL')
+            	CSV += 'TPA Detail Report by Client' + '\r\n\n';
+            else if(reportType == 'ITPR')
+            	CSV += 'TPA Detail Report by TPA Number' + '\r\n\n';
+            else if(reportType == 'Workbook')
+            	CSV += 'ALL TPA Workbook Offering' + '\r\n\n';
+            else if(reportType == 'VOL')
+            	CSV += 'TPA Vendor with Offering License' + '\r\n\n';
+            else if(reportType == 'TAT2')
+            	CSV += 'TPA Requests Submitted Via Portal' + '\r\n\n';
+            else if(reportType == 'PendingReport')
+            	CSV += 'Pending TPA Report' + '\r\n\n';
+            else if(reportType == 'LEwO')
+                CSV += 'Legal Entity with Offering' + '\r\n\n';
+            else if(reportType == 'TATReport')
+                CSV = 'Turnaround Time TPA Report' + '\r\n\n';
+            else if (reportType == 'TPSAReport')
+                CSV = 'TPA Generate TPSA Report' + '\r\n\n';
+            else if(reportType == 'ManualVendor')
+                CSV = 'TPA Manual Vendor Approval Report' + '\r\n\n';
+            else if(reportType == 'ATPACW')
+                CSV = 'All TPA Country Workbook' + '\r\n\n';
+            else
+            	return false;
+            
+            //This condition will generate the Label/Header
+            var row = "";                    
+            //This loop will extract the label from 1st index of on array
+            var seperatorDelimiterType = isIE() ? '~' : ',';
+            if(reportType == 'CDL')
+            {
+                row += 'TPA Number' + seperatorDelimiterType + 'Current Status' + seperatorDelimiterType + 'Client' + seperatorDelimiterType + 'Requesting Country' + seperatorDelimiterType + 'Requesting For Country' + seperatorDelimiterType + 'Date Submitted' + seperatorDelimiterType + 'Data Access Start Date' + seperatorDelimiterType;
+            	row += 'Data Access End Date' + seperatorDelimiterType+ 'Vendor Name' + seperatorDelimiterType + 'Vendor Address' + seperatorDelimiterType + 'Client Contact Name' + seperatorDelimiterType;
+            }
+            else if(reportType == 'ITPR'){
+                row += 'TPA Number' + seperatorDelimiterType + 'Client Name' + seperatorDelimiterType + 'Client Address' + seperatorDelimiterType + 'Client Contact Name' + seperatorDelimiterType + 'Vendor Name' + seperatorDelimiterType + 'Vendor Address' + seperatorDelimiterType + 'Vendor Contact Name' + seperatorDelimiterType;
+            	row += 'Vendor Contact Email' + seperatorDelimiterType+ 'Authorized Signer' + seperatorDelimiterType + 'Current Status' + seperatorDelimiterType + 'Client submission date / time' + seperatorDelimiterType;
+                row += 'Vendor submission date / time' + seperatorDelimiterType+ 'Date / time request went into Review by IQVIA' + seperatorDelimiterType + 'Date / time agreement was sent for vendor signature' + seperatorDelimiterType + 'Date / time executed agreement was received' + seperatorDelimiterType;
+                row += 'Effective date' + seperatorDelimiterType+ 'End date' + seperatorDelimiterType + 'Manual review reasons' + seperatorDelimiterType + 'How long has it been in the current state (*In Days)' + seperatorDelimiterType;
+                row += 'TP Processor assigned' + seperatorDelimiterType+ 'Assigned TP Processor' + seperatorDelimiterType + 'Internal Pending Status' + seperatorDelimiterType + 'Access to executed agreement PDF' + seperatorDelimiterType;
+            }
+            else if(reportType == 'Workbook'){
+            	row += 'Country Of Offering' + seperatorDelimiterType + 'TP Processor Email' + seperatorDelimiterType + 'Primary Offerings' + seperatorDelimiterType + 'Secondary Offerings' + seperatorDelimiterType + 'Restricted Data flag' + seperatorDelimiterType + 'IQVIA Legal Entity' + seperatorDelimiterType + 'Legal Entity Signer Name' + seperatorDelimiterType;
+            }
+            else if(reportType == 'VOL'){
+            	row += 'Vendor Name' + seperatorDelimiterType + 'TPA#' + seperatorDelimiterType + 'Client Name' + seperatorDelimiterType;
+                row += 'Country of Offering' + seperatorDelimiterType + 'Primary Offering' + seperatorDelimiterType + 'Secondary Offering' + seperatorDelimiterType;
+            }
+            else if(reportType == 'TAT2'){
+            	row += 'Status From' + seperatorDelimiterType + 'Status To' + seperatorDelimiterType + 'Status Duration(Days)' + seperatorDelimiterType +'TPA #' + seperatorDelimiterType + 'Submitting Country' + seperatorDelimiterType + 'Client Name' + seperatorDelimiterType;
+                row += 'Use Category(ies)' + seperatorDelimiterType + 'Use(s) selected' + seperatorDelimiterType + 'Offering Category(ies)' + seperatorDelimiterType;
+                row += 'Vendor Name' + seperatorDelimiterType + 'Prescriber Level Data' + seperatorDelimiterType + 'Required Manual Approval' + seperatorDelimiterType + 'Reason for Manual Trigger' + seperatorDelimiterType + 'Last Modified By' + seperatorDelimiterType;
+            }
+            else if(reportType == 'PendingReport'){
+            	row += 'TPA Number' + seperatorDelimiterType + 'Current Status' + seperatorDelimiterType + 'Client' + seperatorDelimiterType +'Vendor Name' + seperatorDelimiterType + 'Vendor Country' + seperatorDelimiterType;
+                row += 'Use Category(ies)' + seperatorDelimiterType + 'Use(s) selected' + seperatorDelimiterType + 'Offering Category(ies)' + seperatorDelimiterType;
+                row += 'Prescriber Level Data' + seperatorDelimiterType + 'Number of Days' + seperatorDelimiterType + 'Days Range' + seperatorDelimiterType + 'Required Manual Approval' + seperatorDelimiterType + 'Reason for Manual Trigger' + seperatorDelimiterType + 'Last Modified By' + seperatorDelimiterType;
+            }
+            else if(reportType == 'LEwO'){
+                row += 'Country Of Offering' + seperatorDelimiterType + 'Primary Offering' + seperatorDelimiterType + 'Secondary Offering' + seperatorDelimiterType + 'Linked IQVIA Legal Entity Name' + seperatorDelimiterType + 'Address of Entity' + seperatorDelimiterType + 'Authorized Signer(s)' + seperatorDelimiterType;
+			}
+            else if(reportType == 'TATReport'){
+                row += 'Status From' + seperatorDelimiterType + 'Status To' + seperatorDelimiterType + 'Status Duration(Days)' + seperatorDelimiterType +'TPA #' + seperatorDelimiterType + 'Submitting Country' + seperatorDelimiterType + 'Client Name' + seperatorDelimiterType;
+                row += 'Use Category(ies)' + seperatorDelimiterType + 'Use(s) selected' + seperatorDelimiterType + 'Offering Category(ies)' + seperatorDelimiterType;
+                row += 'Vendor Name' + seperatorDelimiterType + 'Prescriber Level Data' + seperatorDelimiterType;
+                row += 'Required Manual Approval' + seperatorDelimiterType + 'Reason for Manual Trigger' + seperatorDelimiterType + 'Last Modified By' + seperatorDelimiterType;
+            }
+            else if(reportType == 'TPSAReport'){
+                row += 'TPA#' + seperatorDelimiterType + 'Vendor Name' + seperatorDelimiterType + 'Client Name' + seperatorDelimiterType;
+                row += 'Data Access Start Date' + seperatorDelimiterType + 'Data Access End Date' + seperatorDelimiterType + 'InEffect Date' + seperatorDelimiterType + 'Comment' + seperatorDelimiterType;
+            }
+            else if(reportType == 'ManualVendor'){
+                row += 'TPA#' + seperatorDelimiterType + 'Vendor Name' + seperatorDelimiterType + 'Client Company Name' + seperatorDelimiterType +'Use selected' + seperatorDelimiterType + 'Offering Country' + seperatorDelimiterType  + 'Offering selected' + seperatorDelimiterType + 'Always Approved' + seperatorDelimiterType;
+                row += 'Date Created' + seperatorDelimiterType ;
+            }
+            else if(reportType == 'ATPACW'){
+                row += 'TP Processor' + seperatorDelimiterType + 'Country Code' + seperatorDelimiterType + 'Category of Offering' + seperatorDelimiterType + 'Offering Primary Level Display Name' + seperatorDelimiterType;
+                row += 'Offering Secondary Level Display Name'  + seperatorDelimiterType + 'Description Text of Offering (if applicable)'  + seperatorDelimiterType + 'Offering IQVIA Legal Name' + seperatorDelimiterType + 'IQVIA Legal Entity Contracted Under' + seperatorDelimiterType + 'IQVIA Legal Entity Address' + seperatorDelimiterType + 'Authorized Signer' + seperatorDelimiterType;
+                row += 'Commercial Manager' + seperatorDelimiterType + 'Commercial Manager Email Address'  + seperatorDelimiterType + 'Secondary Commercial Owner Name' + seperatorDelimiterType + 'Secondary Commercial Owner Email'  + seperatorDelimiterType +  'Does the provisioning of the offer required an Additional external lisence or data supplier confirmation?' + seperatorDelimiterType;
+                row += 'AMA License Required?' + seperatorDelimiterType + 'Is there a fee associated with Third Party Access?' + seperatorDelimiterType + 'Required Manual Review?' + seperatorDelimiterType + 'Does this offering required additional data protection terms of the 3rd party?' + seperatorDelimiterType;
+                row += 'Offering Additional Term' + seperatorDelimiterType + 'Does this offering require additional information to be captured and/or displayed on the TLLA?' + seperatorDelimiterType + '"if yes, provide the question, the answer format,valid values(if limited),and reason"' + seperatorDelimiterType;
+            }
+            row = row.slice(0, -1);
+            //append Label row with line break
+            CSV += row + '\r\n';
+                
+            //1st loop is to extract each row
+            for (var i = 0; i < arrData.length; i++) {
+            	var row = "";
+                if(reportType == 'CDL')
+                {
+                	row += '"' + (arrData[i]['Name'] == null ? '' : arrData[i]['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Request_Status__c'] == null ? '' : arrData[i]['Request_Status__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((arrData[i]['Client_Address__r'] == null || arrData[i]['Client_Address__r']['Name'] == null) ? '' : arrData[i]['Client_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Client_Contact_Territory__c'] == null ? '' : arrData[i]['Client_Contact_Territory__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Secondary_Client_Contact_Territory__c'] == null ? '' : arrData[i]['Secondary_Client_Contact_Territory__c']) + '"' + seperatorDelimiterType;
+                    //console.log(getDateInJS(arrData[i]['CreatedDate'])+'-->');
+                    row += '"' + getDateInJS(arrData[i]['CreatedDate'],'-') + '"' + seperatorDelimiterType;
+                    row += '"' + getDateInJS(arrData[i]['Data_Access_Start_Date__c'],'-') + '"' + seperatorDelimiterType;
+                    row += '"' + getDateInJS(arrData[i]['Data_Access_End_Date__c'],'-') + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Vendor_Company_Name__c'] == null ? '' : arrData[i]['Vendor_Company_Name__c'])+ '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Service_Provider_Billing_Address__c'] == null ? '' : arrData[i]['Service_Provider_Billing_Address__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((arrData[i]['ClientContact__r'] == null || arrData[i]['ClientContact__r']['Name'] == null) ? '' : arrData[i]['ClientContact__r']['Name']) + '"' + seperatorDelimiterType;
+
+	         	}
+                else if(reportType == 'ITPR')
+                {
+                    row += '"' + (arrData[i]['Name'] == null ? '' : arrData[i]['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((arrData[i]['Client_Address__r'] == null || arrData[i]['Client_Address__r']['Name'] == null) ? '' : arrData[i]['Client_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Client_Billing_Address__c'] == null ? '' : arrData[i]['Client_Billing_Address__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((arrData[i]['ClientContact__r'] == null || arrData[i]['ClientContact__r']['Name'] == null) ? '' : arrData[i]['ClientContact__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((arrData[i]['Service_Provider_Address__r'] == null || arrData[i]['Service_Provider_Address__r']['Name'] == null) ? '' : arrData[i]['Service_Provider_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Service_Provider_Billing_Address__c'] == null ? '' : arrData[i]['Service_Provider_Billing_Address__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Service_Provider_Contact_f__c'] == null ? '' : arrData[i]['Service_Provider_Contact_f__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Vendor_e_mail__c'] == null ? (arrData[i]['Vendor_Contact_Email_Client__c']) : arrData[i]['Vendor_e_mail__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Authorized_Signer_Full_Name__c'] == null ? '' : arrData[i]['Authorized_Signer_Full_Name__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Request_Status__c'] == null ? '' : arrData[i]['Request_Status__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Client_Request_Submission__c'] == null ? '' : getDateTimeInJS(arrData[i]['Client_Request_Submission__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Vendor_App_Submitted__c'] == null ? '' : getDateTimeInJS(arrData[i]['Vendor_App_Submitted__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['In_IMS_Review__c'] == null ? '' : getDateTimeInJS(arrData[i]['In_IMS_Review__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Sent_for_Signature__c'] == null ? '' : getDateTimeInJS(arrData[i]['Sent_for_Signature__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Signature_Received__c'] == null ? '' : getDateTimeInJS(arrData[i]['Signature_Received__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Agreement_Effective_Date__c'] == null ? '' : getDateInJS(arrData[i]['Agreement_Effective_Date__c'],'/')) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Data_Access_End_Date__c'] == null ? '' : getDateInJS(arrData[i]['Data_Access_End_Date__c'],'/')) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Manual_Trigger_Reasons__c'] == null ? '' : arrData[i]['Manual_Trigger_Reasons__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + getDaysofCurrentState(arrData[i]) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['TP_Processor_Name__c'] == null ? '' : arrData[i]['TP_Processor_Name__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['TPA_Assigned_TP_Processor__c'] == null ? '' : (arrData[i]['TPA_Assigned_TP_Processor__r']['Name'] == null ? '' : arrData[i]['TPA_Assigned_TP_Processor__r']['Name'] )) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Internal_Pending_Status__c'] == null ? '' : arrData[i]['Internal_Pending_Status__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['TPA_Doc_Link__c'] == null ? '' : arrData[i]['TPA_Doc_Link__c']) + '"' + seperatorDelimiterType;
+                    
+	         	}
+                else if(reportType == 'Workbook'){
+                	row += '"' + (arrData[i]['offCountry'] == null ? '' : arrData[i]['offCountry']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['TPProcessorEmail'] == null ? '' : arrData[i]['TPProcessorEmail']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['priOffName'] == null ? '' : arrData[i]['priOffName']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['SecOffName'] == null ? '' : arrData[i]['SecOffName']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['isResData'] == null ? '' : arrData[i]['isResData']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['legalEntityUnder'] == null ? '' : arrData[i]['legalEntityUnder']) + '"' + seperatorDelimiterType;
+            		row += '"' + (arrData[i]['iqviaLegalName'] == null ? '' : arrData[i]['iqviaLegalName']) + '"' + seperatorDelimiterType;
+                }
+                else if(reportType == 'VOL'){
+                    var reqDetails = '';
+                    if(arrData[i]['Service_Provider_Address__r']!=null){
+                   		reqDetails += '"' + (arrData[i]['Service_Provider_Address__r']['Name'] == null ? '' : arrData[i]['Service_Provider_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                   	}
+                    else{
+                    	reqDetails += '" "' + seperatorDelimiterType;
+                   	}
+                    reqDetails += '"' + (arrData[i]['Name'] == null ? '' : arrData[i]['Name']) + '"' + seperatorDelimiterType;
+                    reqDetails += '"' + (arrData[i]['Client_Full_Name__c'] == null ? '' : arrData[i]['Client_Full_Name__c']) + '"' + seperatorDelimiterType;
+                    		
+                    if(arrData[i]['Data_Assets__r'] != null){
+                    	for(var j=0;j<arrData[i]['Data_Assets__r'].length;j++){
+                            var priRow = '';
+                            var tempDa = arrData[i]['Data_Assets__r'][j];
+                            var secDAExistedFlag = false;
+                            if(arrData[i]['TPA_Tertiary_Data_Assets__r'] != null){
+                            	for(var k=0;k<arrData[i]['TPA_Tertiary_Data_Assets__r'].length;k++){
+                                    var tempSecDa = arrData[i]['TPA_Tertiary_Data_Assets__r'][k];
+                                    var secRow='';
+                                    if(tempDa['Id'] == tempSecDa['TPA_Data_Asset__c']){
+                                        secDAExistedFlag = true;
+                                    	secRow += '"' + (tempSecDa['BU__c'] == null ? '' : tempSecDa['BU__c']) + '"' + seperatorDelimiterType;
+                    					secRow += '"' + (tempDa['Asset_Name__c'] == null ? '' : tempDa['Asset_Name__c']) + '"' + seperatorDelimiterType;
+                    					secRow += '"' + (tempSecDa['Secondary_Asset_Name__c'] == null ? '' : tempSecDa['Secondary_Asset_Name__c']) + '"';
+                                        CSV += reqDetails + secRow + '\r\n';
+                                    }
+                                }
+                            }
+                            if(!secDAExistedFlag){
+                            	priRow += '"' + (tempDa['BU__c'] == null ? '' : tempDa['BU__c']) + '"' + seperatorDelimiterType;
+                    			priRow += '"' + (tempDa['Asset_Name__c'] == null ? '' : tempDa['Asset_Name__c']) + '"' + seperatorDelimiterType;
+                    			priRow += '" "';
+                                CSV += reqDetails + priRow + '\r\n';
+                            }
+                        }
+                    }
+                }
+                else if(reportType == 'TAT2'){
+                	row += '"' + (arrData[i]['fromStatus'] == null ? '' : arrData[i]['fromStatus']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['toStatus'] == null ? '' : arrData[i]['toStatus']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['statusDuration'] == null ? '' : arrData[i]['statusDuration']) + '"' + seperatorDelimiterType;
+                    
+					var reqVar = arrData[i]['objAgreement'];
+                    row += '"' + (reqVar['Name'] == null ? '' : reqVar['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (reqVar['Secondary_Client_Contact_Territory__c'] == null ? '' : reqVar['Secondary_Client_Contact_Territory__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + ((reqVar['Client_Address__r'] == null || reqVar['Client_Address__r']['Name'] == null) ? '' : reqVar['Client_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['useCategories'] == null ? '' : arrData[i]['useCategories']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['usesSelected'] == null ? '' : arrData[i]['usesSelected']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offeringCategories'] == null ? '' : arrData[i]['offeringCategories']) + '"' + seperatorDelimiterType;
+                            
+                    if(reqVar['Service_Provider_Address__r']!=null){
+                    	row += '"' + (reqVar['Service_Provider_Address__r']['Name'] == null ? '' : reqVar['Service_Provider_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    }
+                    else{
+                    	row += '" "' + seperatorDelimiterType;
+                    }
+                    row += '"' + (reqVar['AMA_USPrescriberData__c'] == null ? 'N' : getYNFromBookean(reqVar['AMA_USPrescriberData__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (reqVar['Is_Manually_Approved__c'] == null ? 'N' : getYNFromBookean(reqVar['Is_Manually_Approved__c'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (reqVar['Manual_Trigger_Reasons__c'] == null ? '' : reqVar['Manual_Trigger_Reasons__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (reqVar['LastModifiedBy']['Name'] == null ? '' : reqVar['LastModifiedBy']['Name']) + '"' + seperatorDelimiterType;
+                            
+                }
+                else if(reportType == 'LEwO'){
+					row += '"' + (arrData[i]['offCountry'] == null ? '' : arrData[i]['offCountry']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['priOffName'] == null ? '' : arrData[i]['priOffName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['SecOffName'] == null ? '' : arrData[i]['SecOffName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['iqviaLegalName'] == null ? '' : arrData[i]['iqviaLegalName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['legalEntityAddress'] == null ? '' : arrData[i]['legalEntityAddress']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['legalEntityUnder'] == null ? '' : arrData[i]['legalEntityUnder']) + '"' + seperatorDelimiterType;
+				}
+                else if(reportType == 'PendingReport'){
+                	row += '"' + (arrData[i]['tpaName'] == null ? '' : arrData[i]['tpaName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['tStatus'] == null ? '' : arrData[i]['tStatus']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['clientName'] == null ? '' : arrData[i]['clientName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['vendorName'] == null ? '' : arrData[i]['vendorName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['vendorCountry'] == null ? '' : arrData[i]['vendorCountry']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['purposesCategory'] == null ? '' : arrData[i]['purposesCategory']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['purposesName'] == null ? '' : arrData[i]['purposesName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offeringCategory'] == null ? '' : arrData[i]['offeringCategory']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['prescriberData'] == null ? 'N' : getYNFromBookean(arrData[i]['prescriberData'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['numberOfDays'] == null ? '' : arrData[i]['numberOfDays']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['daysRange'] == null ? '' : arrData[i]['daysRange']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['manualApproval'] == null ? 'N' : getYNFromBookean(arrData[i]['manualApproval'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['manualTriggerReason'] == null ? '' : arrData[i]['manualTriggerReason']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['lastModified'] == null ? '' : arrData[i]['lastModified']) + '"' + seperatorDelimiterType; 
+                }
+                else if(reportType == 'TATReport') {
+                    row += '"' + (arrData[i]['fromStatus'] == null ? '' : arrData[i]['fromStatus']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['toStatus'] == null ? '' : arrData[i]['toStatus']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['duration'] == null ? '' : arrData[i]['duration']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['tpaName'] == null ? '' : arrData[i]['tpaName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['submittimgCountry'] == null ? '' : arrData[i]['submittimgCountry']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['clientName'] == null ? '' : arrData[i]['clientName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['purposesCategory'] == null ? '' : arrData[i]['purposesCategory']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['purposesName'] == null ? '' : arrData[i]['purposesName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offeringCategory'] == null ? '' : arrData[i]['offeringCategory']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['vendorName'] == null ? '' : arrData[i]['vendorName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['prescriberData'] == null ? '' : arrData[i]['prescriberData']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['manualApproval'] == null ? '' : arrData[i]['manualApproval']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['manualTriggerReason'] == null ? '' : arrData[i]['manualTriggerReason']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['lastModified'] == null ? '' : arrData[i]['lastModified']) + '"' + seperatorDelimiterType;
+                }
+				else if(reportType == 'TPSAReport'){
+                    if(typeof arrData[i]['Attachments'] === 'undefined'){
+                        continue;
+                    } 
+                    var TPSAReportReason = '';
+                    for(var j = 0 ; j < arrData[i]['Attachments'].length ; j++){
+                    	if(arrData[i]['Attachments'][j]['Name'].indexOf('{!completedKeyword}') > -1){
+                            break;
+                        }
+                        if(arrData[i]['Signature_Under_Validation__c'] != null) {
+                            TPSAReportReason = 'Agreement Wet Signed.';
+                        } else {
+                            TPSAReportReason = 'Manual Review Required.';
+                        } 
+                    }
+                    row += '"' + (arrData[i]['Name'] == null ? '' : arrData[i]['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Service_Provider_Address__r']['Name'] == null ? '' : arrData[i]['Service_Provider_Address__r']['Name']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Client_Full_Name__c'] == null ? '' : arrData[i]['Client_Full_Name__c']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Data_Access_Start_Date__c'] == null ? '' : getDateInJS(arrData[i]['Data_Access_Start_Date__c'],'/')) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['Data_Access_End_Date__c'] == null ? '' : getDateInJS(arrData[i]['Data_Access_End_Date__c'],'/')) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['In_Effect_Date__c'] == null ? '' : getDateInJS(arrData[i]['In_Effect_Date__c'],'/')) + '"' + seperatorDelimiterType;
+                    row += '"' + (TPSAReportReason == null ? '' : TPSAReportReason) + '"' + seperatorDelimiterType;
+	
+                }
+                else if(reportType == 'ManualVendor'){
+                	row += '"' + (arrData[i]['TPANumber'] == null ? '' : arrData[i]['TPANumber']) + '"' + seperatorDelimiterType;
+                    
+                    if(arrData[i]['vendorName'] != null ){
+                        let newData = new DOMParser().parseFromString(arrData[i]['vendorName'], 'text/html');
+                        row += '"' + (newData == null ? '' : newData.documentElement.textContent.replace(/"/g, '""')) + '"' + seperatorDelimiterType;
+                    }else{
+                        row += '"' +  ''  + '"' + seperatorDelimiterType;
+                    }
+                    if(arrData[i]['clientName'] != null ){
+                        let newData = new DOMParser().parseFromString(arrData[i]['clientName'], 'text/html');
+                        row += '"' + (newData == null ? '' : newData.documentElement.textContent.replace(/"/g, '""')) + '"' + seperatorDelimiterType;
+                    }else{
+                        row += '"' +  ''  + '"' + seperatorDelimiterType;
+                    }
+                        
+                    //row += '"' + (arrData[i]['clientName'] == null ? '' : arrData[i]['clientName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['use'] == null ? '' : arrData[i]['use']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['OfferingCountry'] == null ? '' : arrData[i]['OfferingCountry']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offering'] == null ? '' : arrData[i]['offering']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isApproved'] == null ? '' : arrData[i]['isApproved']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['CreatedDate'] == null ? '' : getDateInJS(arrData[i]['CreatedDate'],'/')) + '"' + seperatorDelimiterType;    
+                }
+                else if(reportType == 'ATPACW'){
+                    row += '"' + (arrData[i]['TPProcessorName'] == null ? '' : arrData[i]['TPProcessorName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offCountry'] == null ? '' : parseHTML(arrData[i]['offCountry'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['offCategory'] == null ? '' : arrData[i]['offCategory']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['priOffName'] == null ? '' : arrData[i]['priOffName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['SecOffName'] == null ? '' : arrData[i]['SecOffName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['descriptionText'] == null ? '' : parseHTML(arrData[i]['descriptionText'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['iqviaLegalName'] == null ? '' : arrData[i]['iqviaLegalName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['legalEntityUnder'] == null ? '' : arrData[i]['legalEntityUnder']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['legalEntityAddress'] == null ? '' : arrData[i]['legalEntityAddress']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['authorizeSigner'] == null ? '' : arrData[i]['authorizeSigner']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['comManagerName'] == null ? '' : arrData[i]['comManagerName']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['comManagerEmail'] == null ? '' : arrData[i]['comManagerEmail']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['secondaryCommOwner'] == null ? '' : arrData[i]['secondaryCommOwner']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['secondaryCommEmail'] == null ? '' : arrData[i]['secondaryCommEmail']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isExtLicReq'] == null ? '' : arrData[i]['isExtLicReq']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isAMARequired'] == null ? '' : arrData[i]['isAMARequired']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isfeeAssociated'] == null ? '' : arrData[i]['isfeeAssociated']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isManualReviewRequired'] == null ? '' : arrData[i]['isManualReviewRequired']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isDataProtectionRequired'] == null ? '' : arrData[i]['isDataProtectionRequired']) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['additionalTerm'] == null ? '' : parseHTML(arrData[i]['additionalTerm'])) + '"' + seperatorDelimiterType;
+                    row += '"' + (arrData[i]['isaddInfoOnTLLA'] == null ? '' : arrData[i]['isaddInfoOnTLLA']) + '"' + seperatorDelimiterType;
+                    
+                }
+                if(row.length == 0 && reportType != 'VOL' ){
+                    hideLoading();
+                    return false;
+                }
+                
+                if(reportType != 'VOL'){
+                	row.slice(0, row.length - 1);
+                    CSV += row + '\r\n';
+                }
+       		}
+            
+            if (CSV == '') {        
+            	//alert("Invalid data");
+                return;
+            }
+                
+                //Generate a file name
+            var fileName = '';
+            if(reportType == 'CDL')
+            	fileName = "ClientDetailsListing";
+            else if(reportType == 'ITPR')
+            	fileName = "TpaRequestDetailsByIndividualThirdPartyRequest";
+            else if(reportType == 'Workbook')
+            	fileName = "ALL TPA Workbook Offering";
+            else if(reportType == 'VOL')
+            	fileName = "TPA_Vendor_Offering_Licenses";
+            else if(reportType == 'TAT2')
+            	fileName = "TPA Requests Turn Around Time";
+           	else if(reportType == 'LEwO')
+                fileName = "Legal Entity with Offering";
+            else if(reportType == 'PendingReport')
+            	fileName = "Pending TPA Report";
+            else if(reportType == 'TATReport')
+                fileName = "TAT TPA Report";
+            else if(reportType == 'TPSAReport')
+                fileName = "TPA_Generate_TPSA_Report";
+            else if(reportType == 'ManualVendor')
+                fileName = 'TPA Manual Vendor Approval Report';
+            else if(reportType == 'ATPACW')
+                fileName = 'All TPA Country Workbook';
+            //this will remove the blank-spaces from the title and replace it with an underscore
+                
+            if (isIE()) {
+            	var oWin = window.open("text/html", "replace");
+
+                oWin.document.write('sep=~\r\n' + CSV);
+                oWin.document.close();
+                fileName = (fileName + ".csv");
+                oWin.document.execCommand('SaveAs', true, fileName);
+                oWin.close();
+           	}
+            else
+            {
+		        //Initialize file format you want csv or xls
+                var uri = 'data:text/csv;charset=utf-8,' + escape(CSV).replace(/%u2122/g, "");
+                    
+                var blobdata = new Blob(["\uFEFF" + CSV],{type : 'data:text/csv;charset=utf-8'});
+                var link = document.createElement("a");
+                link.target = '_top';
+                link.setAttribute("href", window.URL.createObjectURL(blobdata));
+                link.setAttribute("download", fileName + ".csv");
+                    
+                //set the visibility hidden so it will not effect on your web-layout
+                link.style = "visibility:hidden";
+                //link.download = fileName + ".csv";
+                    
+                //this part will append the anchor tag and remove it after automatic click
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+          	}
+            hideLoading();
+            showPopup('Report Exported Successfully !',function (){
+            	var parentPageUrl      = document.referrer;
+                if(parentPageUrl.indexOf('.lightning.force.com') > 0){
+                    window.history.back();
+                    console.log('light');
+                }
+                else{
+                    window.history.go(-2);
+                }
+
+                
+            });
+        }
+    
+    	function getYNFromBookean (boolValue){
+        	if(boolValue){
+            	return 'Y';
+            }
+            return 'N';
+        }
+    	function getDaysofCurrentState(recDetails){
+        	var statusMap = new Map();
+            statusMap.set('Awaiting Vendor Signature','Sent_for_Signature__c');
+            statusMap.set('Awaiting Vendor Submission','Client_Request_Submission__c');
+            statusMap.set('Cancelled','Expired_Date__c');
+            statusMap.set('In Effect','In_Effect_Date__c');
+            statusMap.set('In Review by IQVIA','In_IMS_Review__c');
+            statusMap.set('Signature Under Validation','Signature_Under_Validation__c');
+            statusMap.set('TPA Approved Awaiting AMA Approval','TPA_Approved_Awaiting_AMA_Approval__c');
+            statusMap.set('In Auto Approval Process','Vendor_App_Submitted__c');
+            var fieldValue = statusMap.get(recDetails['Request_Status__c']);
+            console.log(recDetails);
+            
+            console.log(fieldValue+'//'+recDetails[fieldValue]);
+            if(fieldValue != null && recDetails[fieldValue] != null){
+                var statusDate = new Date(recDetails[fieldValue]);
+                var currentDate = new Date();
+            	var dayInMs = 1000*60*60*24;
+                var offset = -5.0;
+            	var serverDate;
+            	var utc;
+            	utc = currentDate.getTime() + (currentDate.getTimezoneOffset() * 60000);
+            	currentDate = new Date(utc + (3600000*offset));
+                
+                utc = statusDate.getTime() + (statusDate.getTimezoneOffset() * 60000);
+                serverDate = new Date(utc + (3600000*offset));
+				statusDate = serverDate;
+            
+                var daysDiff = Math.round((currentDate-statusDate)/dayInMs);
+                return 'From '+daysDiff + (daysDiff == 1 ? ' Day ' : ' Days ') +' in '+recDetails['Request_Status__c'];
+            }
+            return 'From 1 Day in '+ recDetails['Request_Status__c'];
+        }
+    
+    	function getDateInJS(dateInJS,separator){
+      		if(typeof dateInJS == 'number'){
+            	dateInJS = new Date(dateInJS);
+                var dateJstoStr = '' + (dateInJS.getMonth() + 1) + separator + dateInJS.getDate() + separator + dateInJS.getFullYear() ;
+                return dateJstoStr;
+            }
+            return dateInJS;
+	    }
+    
+    	function getDateTimeInJS(dateInJS){
+            
+            dateInJS = new Date(dateInJS);
+            console.log(dateInJS);
+            var utc = dateInJS.getTime() + (dateInJS.getTimezoneOffset() * 60000);
+            dateInJS = new Date(utc + (3600000*(-5.0)));
+            console.log(dateInJS);
+            var dateJstoStr = '' + (dateInJS.getMonth() + 1) + '/' + dateInJS.getDate() + '/' + dateInJS.getFullYear() +' '+ (dateInJS.getHours()%12) + ':' + dateInJS.getMinutes() + (dateInJS.getHours() >= 12 ? ' PM' : ' AM');
+            return dateJstoStr;
+        }
+    	function isIE(userAgent) {
+            var ua = window.navigator.userAgent;
+            return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+        }
+    	function showLoading() {
+           
+            console.log("show calling");
+            //document.getElementById("ldsSpinner").classList.remove("slds-hide");
+        }
+
+        function hideLoading() {
+           
+            console.log("hide calling");
+            document.getElementById("ldsSpinner").classList.add("slds-hide");
+        }
+    
+    	function showPopup(msg, truePart){
+        	popup(msg, {'animate':true}, function(r)
+            {
+            	if(r)
+                	truePart();
+            });
+        }
+    </script>
+    <body>
+    	<div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+        	<div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+            	<div class="slds-spinner__dot-a"></div>
+            	<div class="slds-spinner__dot-b"></div>
+        	</div>
+    	</div>
+    </body>
+</apex:page>

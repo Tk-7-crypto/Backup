@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Email_Notification_To_Agreement_Owner_On_Review_Cycle_Completion</name>
+        <label>Send Email Notification To Agreement Owner On Review Cycle Completion</label>
+        <locationX>50</locationX>
+        <locationY>242</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>varR_NewRecord.Apttus__AgreementId__r.Owner:User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>textT_Subject</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>textT_EmailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <name>Is_Review_Cycle_Status_Changed</name>
+        <label>Is Review Cycle Status Changed ?</label>
+        <locationX>182</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Completed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_OldRecord.Apttus__LatestReviewCycleStatus__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Progress</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Apttus__LatestReviewCycleStatus__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Completed</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Email_Notification_To_Agreement_Owner_On_Review_Cycle_Completion</targetReference>
+            </connector>
+            <label>Completed</label>
+        </rules>
+    </decisions>
+    <description>CLMCMA-13354 : Flow to send notification when the Review Process is completed.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>forT_AgreementLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!varR_NewRecord.Apttus__AgreementId__c}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_CheckIfOpportunityNull</name>
+        <dataType>String</dataType>
+        <expression>if(ISBLANK({!varR_NewRecord.Apttus__AgreementId__r.Apttus__Related_Opportunity__c}),&apos;&apos;, &apos;&lt;a href=&quot;&apos;+{!forT_OpportunityLink}+&apos;&quot;&gt;&apos;+{!varR_NewRecord.Apttus__AgreementId__r.Opportunity_Number__c}+&apos;/ &apos;+{!varR_NewRecord.Apttus__AgreementId__r.Apttus__Related_Opportunity__r.Legacy_Quintiles_Opportunity_Number__c}+&apos;/ &apos;+{!varR_NewRecord.Apttus__AgreementId__r.Apttus__Related_Opportunity__r.Name}+&apos;&lt;/a&gt;&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>forT_DocumentVersionLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!forT_DownloadLink}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_DownloadLink</name>
+        <dataType>String</dataType>
+        <expression>if({!varR_NewRecord.Apttus__LatestVersionId__r.Apttus__IsTransient__c} == FALSE,
+ if({!varR_NewRecord.Apttus__LatestVersionId__r.Apttus__FileType__c} == &quot;ContentDocument&quot;,
+ &quot;/sfc/servlet.shepherd/version/download/&quot; + {!varR_NewRecord.Apttus__LatestVersionId__r.Apttus__ContentVersionId__c},
+ &quot;/servlet/servlet.FileDownload?file=&quot; + {!varR_NewRecord.Apttus__LatestVersionId__r.Apttus__ContentId__c}) ,&quot;&quot; )</expression>
+    </formulas>
+    <formulas>
+        <name>forT_OpportunityLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!varR_NewRecord.Apttus__AgreementId__r.Apttus__Related_Opportunity__r.Id}</expression>
+    </formulas>
+    <interviewLabel>CLM Subflow : Review Cycle Complete Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : Review Cycle Complete Notification</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Review_Cycle_Status_Changed</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <textTemplates>
+        <name>textT_EmailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>&lt;p&gt;Hello,&lt;/p&gt;
+&lt;p&gt;The Document Review has been completed for the following agreement document:&lt;/p&gt;
+&lt;p&gt;Agreement: &lt;a href=&quot;{!forT_AgreementLink}&quot;&gt;{!varR_NewRecord.Apttus__AgreementId__r.Apttus__FF_Agreement_Number__c}/ {!varR_NewRecord.Apttus__AgreementId__r.Name}&lt;/a&gt;&lt;br&gt;
+Opportunity: {!forT_CheckIfOpportunityNull}&lt;br&gt;
+Agreement Start Date: {!varR_NewRecord.Apttus__AgreementId__r.Apttus__Contract_Start_Date__c}&lt;br&gt;
+Agreement Owner: {!varR_NewRecord.Apttus__AgreementId__r.Owner:User.Full_User_Name__c}&lt;br&gt;
+Agreement Document – &lt;a href=&quot;{!forT_DocumentVersionLink}&quot;&gt;{!varR_NewRecord.Apttus__Title__c}&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Please open the Document in X-Author and accept or reject the changes to finalize the document.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;Thanks,&lt;/p&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <name>textT_Subject</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>Document Review has been completed for Agreement {!varR_NewRecord.Apttus__AgreementId__r.Apttus__FF_Agreement_Number__c}</text>
+    </textTemplates>
+    <variables>
+        <name>varR_NewRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__DocumentVersion__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__DocumentVersion__c</objectType>
+    </variables>
+</Flow>

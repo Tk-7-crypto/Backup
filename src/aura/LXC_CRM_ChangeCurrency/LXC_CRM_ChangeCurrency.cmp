@@ -1,0 +1,57 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" controller="CNT_CRM_ChangeCurrency">
+    <aura:attribute name="OpportunityId" type="Id" default="{!v.recordId}"/>
+    <aura:attribute name="OppFields" type="List" default="['Id', 'Name', 'CurrencyIsoCode', 'StageName', 'In_Hand_Stage_Entry__c']"/>
+    <aura:attribute name="CurrentCurrency" type="String" />
+    <aura:attribute name="CurrencyList" type="CurrencyType[]" />
+    <aura:attribute name="CurrencyMap" type="Map" />
+    <aura:attribute name="CurrencyISOList" type="List" />
+    <aura:attribute name="RequestedCurrencyType" type="CurrencyType" />
+    <aura:attribute name="RequestedCurrencyIsoCode" type="String" />
+    <aura:attribute name="OpportunityName" type="String"/>
+    <aura:attribute name="errors" type="List" />
+    <aura:attribute name="HasProxyObject" type="boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="targetOpp" type="Opportunity" default="{}"/>
+    <c:LXC_CRM_Spinner />
+    <force:recordData recordId="{!v.recordId}" fields="{!v.OppFields}" mode="EDIT" targetFields="{!v.targetOpp}" recordUpdated="{!c.handleRecordUpdated}"/>
+    <div id="maincontainer" style="height:55vh;">
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Opportunity <span class="slds-truncate">{!v.targetOpp.Name}</span> Currency</h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_small slds-modal_large slds-scrollable_y" id="modal-content-id-1">
+            <div class="slds-m-around_small">
+                <aura:if isTrue="{!v.errors.length > 0}">
+                    <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                        <ul>
+                            <aura:iteration items="{!v.errors}" var="error">
+                                <li>{!error}</li>
+                            </aura:iteration>
+                        </ul>
+                    </div>
+                </aura:if>
+            </div>
+            <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap slds-grid_pull-padded">
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-1 ">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Current Currency</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <lightning:input aura:id="currentCurrency" type="text" label="Current Currency" name="Current Currency" value="{!v.CurrentCurrency}"  maxlength="120" disabled="true"/>
+                    </div>
+                </div>
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-1">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Select Currency</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <lightning:select aura:id="requestedCurrency" name="SelectCurrency" label="Select Currency" value="{!v.RequestedCurrencyIsoCode}" variant="label-hidden" disabled="{!v.HasProxyObject}">
+                            <aura:iteration items="{!v.CurrencyISOList}" var="currency" >
+                                <option value="{!currency}" text="{!currency}" selected="{! currency == v.RequestedCurrencyIsoCode}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="slds-modal__footer slds-align_absolute-center ">
+            <button class="slds-button slds-button_brand " onclick="{!c.closeQuickAction}">Cancel</button>
+            <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.changeCurrency}" aura:id="changeBtn" disabled="{!v.errors.length > 0}">Change</button>
+        </footer>
+    </div>
+</aura:component>

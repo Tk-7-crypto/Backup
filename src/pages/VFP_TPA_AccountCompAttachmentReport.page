@@ -1,0 +1,265 @@
+<apex:page controller="CNT_TPA_AccountCompAttachmentReport" id="pageId" title="Manual Vendor Approval Report" tabStyle="TPA_Request__c" readOnly="true" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.jqGrid.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/grid.locale-en.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/jquery-ui.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/ui.jqgrid.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.base.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.office.css')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcalendar.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdatetimeinput.js')}" />
+    
+    <!-- *** JQuery UI Library reference *** -->
+    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+    <!-- *** JQuery UI Library reference *** -->
+    
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" />
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    
+    <!-- *** JQuery Custom Popup reference *** -->
+	<script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    <!-- *** JQuery Custom Popup reference *** -->
+    
+    <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+        <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+
+    <script type="text/javascript">
+        
+        $(document).ready(function(){
+            validate();
+            
+		});
+        function showGrid(jsonData) {
+            if( jsonData.length == 0 )
+            {
+				hideLoading();
+				showPopup('There are no request for the matching criteria.',function (){});
+				return;
+            }
+            console.log(jsonData);
+            $("#gridContainer").html('');
+            $('#gridContainer').prepend('<table id="jqGrid"></table><div id="jqGridPager"></div>');
+            $("#jqGrid").jqGrid( 
+            {
+                data: jsonData,
+                datatype: 'local',
+                colModel: [
+                    { label: 'Account Name', datafield: 'reqIdLink', name: 'AccName',index: 'AccName',key: true,autowidth: true, summaryType:'count', summaryTpl : 'Total Records : {0}'},
+                    { label: 'Account Compliance Name', name: 'accCompName',index: 'accCompName',formatter: 'showlink', formatter:function (cellvalue, options, rowObject) {
+
+return rowObject.reqIdLink ;
+ 
+}},
+                    { label: 'Attachment Name', name: 'attName', index: 'attName', autowidth: true},
+                    { label: 'Created By', name: 'CreteatedUser', index: 'CreteatedUser'},
+                    { label: 'Date Created', name: 'CreatedDate', index: 'CreatedDate', key: true, formatter: 'date', formatoptions: {srcformat: "U/1000", newformat: 'm/d/Y'}, searchoptions: {      dataInit: function(el) {
+                                $(el).datepicker({
+                                    changeYear: true,
+                                    changeMonth: true,
+                                    showButtonPanel: true,
+                                    dateFormat: 'yy-mm-dd'
+                                });
+                            } }},
+                ],
+                loadonce: false,
+                viewrecords: true,
+                autowidth:true,
+                height: 420,
+                rowNum: 20,
+                gridView: true,
+                rowList : [20,30,50],
+                sortname: 'AccName',
+                pager: "#jqGridPager",
+                footerrow: true,
+                userDataOnFooter: true,
+                grouping: true,
+                loadComplete: function() {
+                      //  var ids = $("#jqGrid").jqGrid('getDataIDs');
+                        var rowIDs = jQuery("#jqGrid").getDataIDs(); 
+                        for (var i=0;i<rowIDs.length;i=i+1){ 
+                            rowData=jQuery("#jqGrid").getRowData(rowIDs[i]);
+                            var trElement = jQuery("#"+ rowIDs[i],jQuery('#jqGrid'));
+                            console.log('rowData' + rowData);
+                            // if (rowData.statusID > 5) { 
+                            //     trElement.removeClass('ui-widget-content');
+                            //     trElement.addClass('rowColorRED');
+                            // }else{ 
+                            // if (rowData.statusID == 1){
+                            //     trElement.removeClass('ui-widget-content');
+                            //     trElement.addClass('rowColorGREEN');
+                            // }
+                            // }
+                        }
+                    }
+            });
+            console.log('show grid');
+            hideLoading();
+            $("#groupSection").css("display", "");
+            groupByClick();
+          } 
+       
+
+       function groupByClick(){
+        var groupByText = 'AccName';
+                    var groupVal = '';
+                    // show loading message
+                    $("#jqGrid")[0].grid.beginReq();
+                    $("#jqGrid").jqGrid('groupingRemove', true);
+                    
+                    switch( groupByText ) {
+                        case 'AccName':
+                            groupVal = "Account Name";
+                            $("#jqGrid").jqGrid(
+                                'groupingGroupBy',
+                                [groupByText],
+                                {   
+                                    groupText: [groupVal+": <b>{0}</b>"],
+                                    groupOrder: ["asc"],
+                                    groupSummary: [true],
+                                    groupCollapse: false 
+                                }
+                            );
+                            break;
+                        
+                    }
+                    // hide the show message
+                    $("#jqGrid")[0].grid.endReq();
+                    // refresh the grid
+                    $("#jqGrid").trigger('reloadGrid');
+
+       }
+        
+        
+        function callServerMethod( ) {
+        Visualforce.remoting.Manager.invokeAction(
+            '{!$RemoteAction.CNT_TPA_AccountCompAttachmentReport.searchData}', 
+            function(result, event) {
+                if(event.type == 'exception')
+                {
+                    console.log('Error: ' + event.message);
+                    hideLoading();
+                    return false;
+                }else {
+                    if((result == null || result.resultData.length == 0 ) && ( reportResult == '' || reportResult.length == 0 )) {
+                        hideloading();
+                        showPopup('There are no Account data With Certificate Document.', function(){});
+                        return false;
+                    }else if ((result != null && result.resultData.length > 0) && (reportResult.length == 0)){
+                        reportResult = result.resultData;
+                    }
+                }
+                
+                console.log('reportResult:::' + reportResult); 
+                //var data = new Array();
+                              // update the loaded records. Dynamically add EmployeeName and EmployeeID fields. 
+                              for (var i = 0; i < reportResult.length; i++) {
+                                  var tempReqReference = reportResult[i];
+                                  tempReqReference.reqIdLink = '<a style = "text-decoration: underline;" href="https://' + window.location.host + '/' + tempReqReference.id + '" target="blank">' + tempReqReference.accCompName + '</a>';
+                              }                             
+                showGrid(reportResult);
+            }, 
+            { escape: false, timeout: 120000 });
+            
+        };
+        function validate()
+        {
+           showLoading();
+				reportResult = "";
+				$("#gridContainer").html('');
+				$("#groupSection").css("display", "none");
+				callServerMethod();
+            
+        }
+        
+		function showPopup(msg, truePart){
+        popup(msg, {'animate':true}, function(r)
+              {
+                  if(r)
+                      truePart();
+              });
+		}
+
+    </script>
+    <style>
+        #ui-datepicker-div .ui-datepicker {
+           background: white;
+        }
+
+        #ui-datepicker-div .ui-state-default, #ui-datepicker-div .ui-widget-content .ui-state-default, #ui-datepicker-div .ui-widget-header .ui-state-default {
+            background: #CCCBCE;
+            font-weight: normal;
+            color: black;
+        }
+        
+        #ui-datepicker-div .ui-widget-header {
+            border: 1px solid #4297d7;
+            background: #CCCBCE;
+            color: black;
+            font-weight: bold;
+        }
+        
+        #ui-datepicker-div .ui-datepicker-prev{ display: none; }
+        #ui-datepicker-div .ui-datepicker-next{ display: none; }
+        </style>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <apex:form id="formId" styleclass="slds-m-around_small">
+        <c:VFC_TPA_LoadingImage />
+            <apex:outputPanel id="tableSection">
+                <apex:pageBlock title="TPA Master agreement Certificate" id="tableBlock" >
+                  
+                    <apex:pageBlockSection columns="1" >
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel >
+                                <div id="gridContainer">
+                                    <table id="jqGrid"></table>
+                                    <div id="jqGridPager"></div>
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection> 
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+    <style>
+        .ui-jqgrid tr.jqgrow td
+        {
+            white-space: normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        .ui-jqgrid tr.jqfoot td
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        .ui-jqgrid .ui-jqgrid-hbox {
+            float: none;
+            padding-right: 0 !;
+        }
+        body .list, body .list table, body .detailList, body .detailList table, body .listViewport table, body .listViewport table table, .slds-vf-scope .list, .slds-vf-scope .list table, .slds-vf-scope .detailList, .slds-vf-scope .detailList table, .slds-vf-scope .listViewport table, .slds-vf-scope .listViewport table table {
+            min-width: auto;
+        }
+        body .list thead tr, body .detailList thead tr, body .listViewport table thead tr, .slds-vf-scope .list thead tr, .slds-vf-scope .detailList thead tr, .slds-vf-scope .listViewport table thead tr {
+            letter-spacing: 0;
+        }
+        .fm-button {
+            height: auto;
+            display: initial;
+            margin: auto;
+        }
+        .ui-pg-selbox{
+            color: black !important;
+        }
+        .ui-jqdialog .ui-jqdialog-titlebar {
+            padding: inherit;
+            height: auto;
+        }
+    </style>
+</apex:page>

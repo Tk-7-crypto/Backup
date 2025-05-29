@@ -1,0 +1,86 @@
+<template>
+
+	<template if:true={showSpinner}>
+		<lightning-spinner></lightning-spinner>
+	</template>
+	<div if:true={showError} class="slds-notify slds-notify_alert slds-alert_error" style="justify-content:flex-start">
+		<ul style="text-align: left;" class="slds-list_dotted">
+			<lightning-icon icon-name="utility:error" alternative-text="Error!" variant="inverse" title="errors">
+			</lightning-icon> Errors:
+
+			<template for:each={errorMsg} for:item="err">
+				<li key={err}> {err} </li>
+			</template>
+		</ul>
+	</div>
+	<lightning-card variant="Narrow" title="">
+		<strong slot="title">Select BNF Address Details </strong>
+		<div class="slds-p-vertical_x-small" if:true={showAdditionalSearchFilter}>
+			<div class="slds-grid slds-wrap slds-p-vertical_x-small">
+				<lightning-combobox class="slds-size_1-of-3 slds-p-horizontal_small" data-id="searchCountry"
+					label="Select country" value={accountRegionTerritory} options={countryOptions}>
+				</lightning-combobox>
+				<lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" data-id="searchName"
+					label="Customer Name Contains" type="text" onkeypress={handleEnter}> </lightning-input>
+				<lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" data-id="searchCity"
+					label="City Name Contains" type="text" onkeypress={handleEnter}> </lightning-input>
+			</div>
+			<lightning-button class="slds-m-around_x-small" variant="brand" label="Search" title="Search"
+				onclick={handleSearch}>
+			</lightning-button>
+		</div>
+		<table if:true={showSearchResult}
+			class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+			<thead class="slds-line-height_reset" style="font-weight:bold">
+				<th class="slds-cell-fixed" scope="col"> Name </th>
+				<th class="slds-cell-fixed" scope="col"> SAP Customer Code </th>
+				<th class="slds-cell-fixed" scope="col"> Street </th>
+				<th class="slds-cell-fixed" scope="col"> City </th>
+				<th class="slds-cell-fixed" scope="col"> Other Ship To </th>
+			</thead>
+			<tbody>
+				<template if:true={serachResultAddressList} for:each={serachResultAddressList} for:item="add"
+					for:index="index">
+					<tr class="slds-hint-parent" key={add.Id} style="vertical-align: top;">
+						<td data-label="Name" class="slds-truncate" scope="row">{add.displayName}</td>
+						<td data-label="SAP Customer Code" class="slds-truncate">{add.SAP_Reference__c}</td>
+						<td data-label="Street" class="slds-truncate">{add.displayStreet}</td>
+						<td data-label="City" class="slds-truncate">{add.displayCity}</td>
+						<td data-label="Other Ship To" class="slds-truncate">
+							<lightning-input data-index={index} onchange={handleAddressChange} variant="label-hidden"
+								data-id={add.Id} type="checkbox" data-type="checkbox" class="slds-truncate">
+							</lightning-input>
+						</td>
+					</tr>
+				</template>
+			</tbody>
+		</table>
+		<div slot="footer">
+			<lightning-button variant="base" label={filterLabel} title={filterLabel} onclick={switchSearchFilter}>
+			</lightning-button>
+		</div>
+	</lightning-card>
+	<lightning-card>
+		<strong slot="title">Selected Addresses and Contacts 2 </strong>
+		<lightning-button class="slds-m-left_x-small" variant="brand" label="Ok" title="Ok" onclick={handleOk}
+			slot="actions">
+		</lightning-button>
+		<lightning-button class="slds-m-left_x-small" variant="base" label="Cancel" title="Cancel"
+			onclick={handleCancel} slot="actions">
+		</lightning-button>
+		<div class="slds-p-horizontal_small slds-grid slds-wrap slds-table_bordered">
+			<strong class="slds-size_1-of-6 slds-p-around_x-small"> Ship To Address : </strong>
+			<div class="slds-size_2-of-6 slds-p-around_x-small">
+				<lightning-formatted-rich-text value={addressDetails}></lightning-formatted-rich-text>
+			</div>
+			<strong class="slds-size_1-of-6 slds-p-around_x-small">Other Ship To Contact :</strong>
+			<div class="slds-size_2-of-6 slds-p-around_x-small">
+				<lightning-combobox disabled={disableSapContactSelection} onchange={handleSapContactChange}
+					value={selectedSapContactId} options={sapContactOptions}>
+				</lightning-combobox>
+			</div>
+
+		</div>
+	</lightning-card>
+
+</template>

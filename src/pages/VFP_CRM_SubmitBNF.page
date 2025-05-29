@@ -1,0 +1,56 @@
+<apex:page standardController="BNF2__c" extensions="EXT_CRM_SubmitBNF">
+    <apex:form >
+        <script>
+            window.onload = function () {
+                var isErrorFound = false;
+                if('{!currentBNFRecord.BNF_Status__c}' == "Accepted"){
+                    isErrorFound = true;
+                    alert("You cannot submit a BNF when it has already been Accepted. Please have the Revenue Analyst reject the existing BNF if you need to re-submit this BNF."); 
+                }
+                else if('{!currentBNFRecord.Revenue_Analyst__c}' == ''){
+                    isErrorFound = true;
+                    alert("Revenue Analyst is required when you submit BNF");
+                }
+                else if('{!currentBNFRecord.Client__r.PO_Number__c}' == 'true' && '{!currentBNFRecord.Client_PO_Number__c}' == '') {
+                    isErrorFound = true;
+                    alert("You must enter Client PO Number");
+                }
+                else if('{!currentBNFRecord.Cover_Sheet_Company__r.Cover_Sheet__c}' == 'true' && ('{!currentBNFRecord.Cover_Sheet_Company__c}' == '' || '{!currentBNFRecord.Cover_Sheet_Contact__c}' == '' || '{!currentBNFRecord.Cover_Sheet_Address__c}' == '')) {
+                    isErrorFound = true;
+                    alert("You must enter Cover Sheet Information (Company, Contact, and Address)");
+                }
+                else {
+                    var sConfirm = window.confirm("Once you submit this record for approval, you might not be able to edit it or to recall it from the approval process depending on your setting. Continue?");
+                    if(sConfirm) {
+                        submitForApproval();
+                    }
+                    else {
+                        window.parent.location.href = '/'+ '{!currentBNFRecord.id}';
+                    }
+                }
+                if(isErrorFound) {
+                    window.parent.location.href = '/'+ '{!currentBNFRecord.id}';
+                }
+            }
+            function navigateToOpp(isError, errMsg){
+                if(isError == true || isError == 'true') {
+                    if(errMsg.includes("NO_APPLICABLE_PROCESS")) {
+                        alert("This Opportunity must be in Stage 7a. Close Won for this BNF to be submitted or you do not permission on this record");
+                        window.parent.location.href = '/'+ '{!currentBNFRecord.Opportunity__c}';
+                    }
+                    else {
+                        alert(errMsg);
+                        window.parent.location.href = '/'+ '{!currentBNFRecord.id}';
+                    }
+                    
+                }
+                else {
+                    window.parent.location.href = '/'+ '{!currentBNFRecord.id}';
+                }
+            }
+        </script>
+        <apex:actionFunction name="submitForApproval" action="{!submitForApproval}" oncomplete="navigateToOpp('{!isError}', '{!errorMessage}')"/>
+        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/> 
+        <center><p>Please wait...Submitting BNF for Approval</p><p><img src="/img/waiting_dots.gif" alt="Please wait..." title="Please wait..." height="20" width="196"/> </p></center>
+    </apex:form>
+</apex:page>

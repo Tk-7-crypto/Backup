@@ -1,0 +1,95 @@
+<aura:component controller="CNT_CSM_CSMNews" implements="flexipage:availableForAllPageTypes" access="global">
+	<aura:attribute name="isLoading" type="boolean" default="false" />
+	<aura:attribute name="isRedirect" type="boolean" default="false" />
+	<aura:attribute name="csmNewsObject" type="Object" />
+	<aura:attribute name="noNews" type="boolean" description="false" />
+	<aura:attribute name="canManaged" type="boolean" default="false" />
+	<aura:attribute name="module" type="String" />
+	<aura:attribute name="type" type="String" />
+	<aura:attribute name="icon" type="String" default="standard:news" />
+	<aura:attribute name="title" type="String" default="News" />
+	<!--	<aura:handler event="force:showToast" action="{! c.handleSaveSuccess}" /> -->
+	<aura:handler event="force:navigateToURL" action="{!c.navigateToHome}" />
+	<aura:handler name="init" value="{!this}" action="{!c.init}" />
+
+	<article class="slds-card">
+		<div class="slds-card__header slds-grid">
+			<header class="slds-media slds-media_center slds-has-flexi-truncate">
+				<aura:if isTrue="{! v.type == 'News'}">
+					<div class="slds-media__figure">
+
+						<span class="slds-icon_container slds-icon-standard-contact" title="{!module + ' News'}">
+							<lightning:icon iconName="{!v.icon}" size="medium" alternativeText="CSM News" />
+						</span>
+					</div>
+				</aura:if>
+				<div class="slds-media__body">
+					<aura:if isTrue="{! v.type == 'News'}">
+						<h2>
+							<a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="News">
+								<span class="slds-text-heading_small">{!v.title}</span>
+
+							</a>
+						</h2>
+					</aura:if>
+					<aura:if isTrue="{!v.csmNewsObject.Mode__c eq 'Published'}">
+						<p>{!v.csmNewsObject.Name}</p>
+						<aura:set attribute="else">
+							<p>there is no news right now</p>
+						</aura:set>
+					</aura:if>
+				</div>
+			</header>
+			<aura:if isTrue="{! v.canManaged}">
+				<div class="slds-no-flex">
+					<aura:if isTrue="{!v.noNews}">
+						<lightning:button label="New" onclick="{!c.newCSMNews }" />
+						<aura:set attribute="else">
+							<lightning:buttonIcon iconName="utility:edit" alternativeText="Edit"
+								onclick="{!c.handleEditCSMNews}" />
+						</aura:set>
+					</aura:if>
+
+				</div>
+			</aura:if>
+		</div>
+		<div class="slds-card__body slds-card__body_inner">
+			<aura:if isTrue="{!v.isLoading}">
+				<div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+					<div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+						<div class="slds-spinner__dot-a"></div>
+						<div class="slds-spinner__dot-b"></div>
+					</div>
+				</div>
+				<aura:set attribute="else">
+					<aura:if isTrue="{!v.csmNewsObject.Mode__c eq 'Published'}">
+						<lightning:formattedRichText value="{!v.csmNewsObject.News__c}"
+							style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" />
+						<aura:if isTrue="{! not(empty(v.csmNewsObject.News__c))}">
+							<a onclick="{!c.openViewModal}">See more !</a>
+						</aura:if>
+					</aura:if>
+				</aura:set>
+			</aura:if>
+		</div>
+	</article>
+
+	<div aura:id="modaldialogCSMNews" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide slds-modal_large">
+		<div class="slds-modal__container" style="margin-top: 6rem; height: 85%;">
+			<div class="slds-modal__header">
+				<button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+					onclick="{!c.closeModal}">
+					<lightning:icon iconName="utility:close" variant="close" />
+				</button>
+				<h2 class="slds-text-heading--medium">{!v.title}</h2>
+			</div>
+			<div class="slds-modal__content slds-p-around--medium slds-is-relative">
+				<lightning:formattedRichText value="{!v.csmNewsObject.News__c}" />
+			</div>
+			<div class="slds-modal__footer">
+				<lightning:button variant="neutral" label="Close" onclick="{!c.closeModal}" />
+			</div>
+		</div>
+	</div>
+	<div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

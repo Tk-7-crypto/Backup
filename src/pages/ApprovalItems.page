@@ -1,0 +1,173 @@
+<apex:page standardController="ProcessInstanceWorkItem" extensions="ApprovalItems" sidebar="{!isShowsidebar}" showHeader="{!isShowHeader}">
+    <c:JQueryBlockUI />
+    <apex:includeScript value="{!URLFOR($Resource.jQuery, 'js/jquery-1.4.4.min.js')}"/>
+
+    <apex:form >
+        <input type="hidden" id="refreshed" value="no"/>
+        <script>
+            var j$ = jQuery.noConflict();
+            var checkallValue;
+            onload=function(){
+                var e=document.getElementById("refreshed");
+                if(e.value=="no")e.value="yes";
+                else{e.value="no";location.reload();}
+            }  
+            function checkAll(cb) {
+                var inputElem = document.getElementsByTagName("input");
+                var isCheckBoxShow=false;
+                for(var i=0; i<inputElem.length; i++) {             
+                    if(inputElem[i].id.indexOf("selectItem")!=-1 && !inputElem[i].disabled)
+                        {          
+                            inputElem[i].checked = cb.checked;
+                            isCheckBoxShow=true;
+                        }      
+                }
+                if(!isCheckBoxShow)
+                {
+                    cb.checked =false; 
+                }
+                return false;
+            }
+            function checkUncheckHeader(cb) {
+                var checkBoxallId;
+                var isCheckboxVisible = false;
+                var inputElem = document.getElementsByTagName("input");
+                var isAllchecked=true;
+                for(var i=0; i<inputElem.length; i++) {             
+                    if(inputElem[i].id.indexOf("selectItem")!=-1)
+                    {
+                        isCheckboxVisible = true;
+                        if(!inputElem[i].checked)
+                        {
+                            isAllchecked=false;
+                        }         
+                    }     
+                }
+                if(!isCheckboxVisible) {
+                    isAllchecked=false;                    
+                }
+                inputElem = document.getElementsByTagName("input");
+                for(var i=0; i<inputElem.length; i++) {
+                    if(inputElem[i].id.indexOf("CheckboxItemToApprove")!=-1)
+                    {
+                        inputElem[i].checked = isAllchecked;                            
+                    }                    
+                }
+                return false;
+            }
+        </script>
+        
+        <div class="bRelatedList" id="PendingProcessWorkitemsList">
+            
+            <div class="listRelatedObject homeBlock">
+                <div class="bPageBlock secondaryPalette">
+                    <div class="pbHeader">
+                        
+                        <table>
+                            
+                            <tr>
+                                <td class="pbTitle">
+                                    <img src="/s.gif" alt="" class="minWidth" title="" width="1" height="1" />
+                                    <img src="/s.gif" alt="" class="relatedListIcon" title="" />
+                                    <h3 id="PendingProcessWorkitemsList_title">Items to Approve</h3>
+                                </td>
+                                <td class="pbButton">
+                                    <apex:outputPanel rendered="{!!isShowsidebar}">
+                                        <input value="Manage All" class="btn" name="manageAll" onclick="top.window.location = '/apex/ApprovalItems?isShowHeader=true&isShowsidebar=true'" title="Manage All" type="button" />
+                                        &nbsp;&nbsp;&nbsp;&nbsp; 
+                                    </apex:outputPanel>
+                                    <apex:commandButton value="Reassign" action="{!ReassignPage}" />&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <apex:commandButton value="Approve / Reject" action="{!ApproveRejectPage}" />
+                                </td>
+                                <td class="pbHelp">
+                                    <span class="help" title="Items to Approve Help (New Window)">
+                                        <a href="javascript:openPopupFocusEscapePounds(%27/help/doc/user_ed.jsp?loc=help&amp;target=approvals_my_pending.htm&amp;section=Dev_Tools%27, %27Help%27, 700, 600, %27width=700,height=600,resizable=yes,toolbar=yes,status=no,scrollbars=yes,menubar=yes,directories=no,location=no,dependant=no%27, false, false);" class="linkCol">
+                                            <span class="linkSpan">Items to Approve Help</span> 
+                                            <img src="/s.gif" alt="Items to Approve Help (New Window)" class="helpIcon" title="Items to Approve Help (New Window)" />
+                                        </a>
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <apex:pageBlock >
+            <br/> <br/>
+            <apex:pageMessages ></apex:pageMessages>
+            <apex:actionStatus id="methodStatus" onstart="YUIShowLoading();" onstop="YUIHideLoading();"></apex:actionStatus>
+            <apex:actionfunction name="showItemFirstPage" action="{!ItemfirstPage}" status="methodStatus" oncomplete="checkUncheckHeader(this);" reRender="paginationItemBlock,itemList"/>
+            <apex:actionfunction name="showItemPreviousPage" action="{!Itemprevious}" status="methodStatus" oncomplete="checkUncheckHeader(this);" reRender="paginationItemBlock,itemList"/>
+            <apex:actionfunction name="showItemNextPage" action="{!Itemnext}" status="methodStatus"  oncomplete="checkUncheckHeader(this);" reRender="paginationItemBlock,itemList"/>
+            <apex:actionfunction name="showItemLastPage" action="{!ItemlastPage}" status="methodStatus" oncomplete="checkUncheckHeader(this);" reRender="paginationItemBlock,itemList"/>
+            
+            <apex:pageMessage summary="Mass Actions are not supported for Quote/Proposal. Please click on related action hyperlink to perform action for the individual record." severity="info" strength="2" rendered="{!displayInfoRelatedToProposal}"/>
+            
+            <apex:pageBlockTable value="{!ItemListOfToShow}" var="pendingItem" id="itemList">
+                <apex:column HeaderValue="Select">
+                    <apex:facet name="header">
+                        <apex:inputCheckbox id="CheckboxItemToApprove" value="{!checkboxAllValue}" rendered="{!isShowsidebar}">
+                            <apex:actionSupport event="onclick" action="{!GetSelected}" onsubmit="checkAll(this);" rerender="itemList">
+                            </apex:actionSupport>
+                        </apex:inputCheckbox> 
+                    </apex:facet>
+                    <apex:inputCheckbox value="{!pendingItem.isSelected}" id="selectItem" disabled="{!(pendingItem.i.ProcessInstance.TargetObject.Type == 'Apttus_Proposal__Proposal__c')}">
+                        <apex:actionSupport event="onclick" onsubmit="checkUncheckHeader(this)" rerender="test" />
+                    </apex:inputCheckbox>
+                </apex:column>
+                <apex:column HeaderValue="Action" width="150">
+                    <apex:outputLink value="/{!pendingItem.i.id}/e?et=REASSIGN" target="_parent" rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type != 'BNF2__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'MIBNF_Component__c')}" >
+                        Reassign | </apex:outputLink>
+                    <apex:outputLink value="/apex/BNF_Reassign?id={!pendingItem.i.ProcessInstance.TargetObjectId}" target="_parent"
+                                     rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type == 'BNF2__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'MIBNF_Component__c' && !approvalItems[pendingItem.i.ProcessInstance.TargetObjectId] )}">
+                        Reassign |</apex:outputLink>
+                    <apex:outputLink value="/apex/MIBNF_Reassign?id={!pendingItem.i.ProcessInstance.TargetObjectId}" target="_parent"
+                                     rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type == 'MIBNF_Component__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'BNF2__c' && !approvalItems[pendingItem.i.ProcessInstance.TargetObjectId])}">
+                        Reassign |</apex:outputLink>
+                    
+                    <apex:outputLink value="/p/process/ProcessInstanceWorkitemWizardStageManager?id={!pendingItem.i.id}" target="_parent"
+                                     rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type != 'BNF2__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'MIBNF_Component__c')}">
+                        Approve/Reject </apex:outputLink>
+                    <apex:outputLink value="/apex/BNF_Approval?id={!pendingItem.i.ProcessInstance.TargetObjectId}" target="_parent"
+                                     rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type == 'BNF2__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'MIBNF_Component__c')}">
+                        Approve/Reject </apex:outputLink>
+                    <apex:outputLink value="/apex/MI_BNF_Approval?id={!pendingItem.i.ProcessInstance.TargetObjectId}" target="_parent"
+                                     rendered="{!(pendingItem.i.ProcessInstance.TargetObject.Type == 'MIBNF_Component__c' && pendingItem.i.ProcessInstance.TargetObject.Type != 'BNF2__c')}">
+                        Approve/Reject </apex:outputLink>
+                </apex:column>
+                
+                <apex:column HeaderValue="RelatedTo">
+                    <apex:outputLink value="/{!pendingItem.i.ProcessInstance.TargetObjectId}" target="_parent"> {!pendingItem.i.ProcessInstance.TargetObject.Name} </apex:outputLink>
+                </apex:column>
+                <apex:column HeaderValue="Type"> {!pendingItem.tName} </apex:column>
+                <apex:column HeaderValue="Opportunity Number"> {!pendingItem.opportunityNumber} </apex:column>
+                <apex:column HeaderValue="Opportunity Name">
+                    <apex:outputLink value="/{!pendingItem.opportunityId}" target="_parent"> {!pendingItem.opportunityName} </apex:outputLink>
+                </apex:column>
+                <apex:column HeaderValue="Most Recent Approver">
+                    <apex:outputLink value="/{!pendingItem.i.CreatedById}" target="_parent"> {!pendingItem.i.CreatedBy.Name} </apex:outputLink>
+                </apex:column>
+                <apex:column HeaderValue="Date Submitted" value="{!pendingItem.i.CreatedDate}" />
+                
+            </apex:pageBlockTable>
+            <apex:outputPanel id="paginationItemBlock" layout="block" style="align:center; height:30px; padding-top:15px; text-align:center;" rendered="{!ItemWrapperList.size!=0 && isShowsidebar}">  
+                        &nbsp;{!IF(itemPageNumber == 1,1,((itemPageNumber -1) * itemPageSize)+1)}&nbsp;-&nbsp;{!IF(itemTotalRecord < itemPageNumber * itemPageSize,itemTotalRecord,itemPageNumber * itemPageSize)}&nbsp; of &nbsp;
+                        <apex:outputText rendered="{!IF(itemTotalRecord==10000,true,false)}">10000 +</apex:outputText><apex:outputText rendered="{!IF(itemTotalRecord < 10000,true,false)}">{!itemTotalRecord}</apex:outputText>  &nbsp;
+                        <apex:image title="First Page" url="{!URLFOR($Resource.PaginationArrow,'/double_back_arrow_disabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!NOT(itemhasPrevious )}" />
+                        <apex:image title="First Page" onclick="showItemFirstPage()" url="{!URLFOR($Resource.PaginationArrow,'/double_back_arrow_enabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!(itemhasPrevious )}"/>
+                        <apex:image title="Previous Page" url="{!URLFOR($Resource.PaginationArrow,'/back_arrow_disabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!NOT(itemhasPrevious )}" />
+                        <apex:image title="Previous Page" onclick="showItemPreviousPage()" url="{!URLFOR($Resource.PaginationArrow,'/back_arrow_enabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!(itemhasPrevious )}"  />
+                        <apex:commandLink style="text-decoration: none" onclick="showItemPreviousPage()"  title="Previous Page" value="Previous" rendered="{!itemhasPrevious}" reRender="itemList,paginationItemBlock" />  
+                        <apex:outputPanel styleClass="pShowLess noLink" style="color:grey" rendered="{!NOT(itemhasPrevious)}">Previous</apex:outputPanel>     &nbsp;       
+                        <apex:outputPanel styleClass="pShowLess noLink" style="color:grey" rendered="{!NOT(itemhasNext)}">Next</apex:outputPanel>           
+                        <apex:commandLink style="text-decoration: none" title="Next Page" value="Next" onclick="showItemNextPage()" rendered="{!itemhasNext}" reRender="itemList,paginationItemBlock" />&nbsp;  
+                        <apex:image title="Next Page" url="{!URLFOR($Resource.PaginationArrow,'/front_arrow_disabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!NOT(itemhasNext)}"/>
+                        <apex:image title="Next Page" onclick="showItemNextPage()" url="{!URLFOR($Resource.PaginationArrow,'/front_arrow_enabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!itemhasNext}"/>
+                        <apex:image title="Last Page" url="{!URLFOR($Resource.PaginationArrow,'/double_front_arrow_disabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!NOT(itemhasNext)}"/>
+                        <apex:image title="Last Page" onclick="showItemLastPage()" url="{!URLFOR($Resource.PaginationArrow,'/double_front_arrow_enabled.png')}" style="vertical-align: middle; padding-bottom: 4px;" width="14" height="14" rendered="{!itemhasNext}"/>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

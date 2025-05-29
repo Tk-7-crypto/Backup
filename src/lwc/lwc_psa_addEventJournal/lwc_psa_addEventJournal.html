@@ -1,0 +1,510 @@
+<template>
+    <div class="c-container" style="background-color:white">
+        <template if:true={lrTypeError}>
+            <div class="slds-box  slds-text-color_error slds-text-align_center slds-m-top_small">
+                <b>{LrErrorString}</b> 
+            <lightning-button variant="brand" label="Back" title="Back" class="slds-m-right_small slds-m-left_xx-large slds-m-left_xx-large"
+                            onclick={Cancel}>
+            </lightning-button>
+            </div>
+            
+         </template>
+         <template if:false={lrTypeError}>
+            <template if:false={isEditable}>
+                <div class="slds-box  slds-text-color_error slds-text-align_center slds-m-top_small">
+                    <b>{label.permissionError}</b>
+                </div>
+            </template>
+            <template if:true={isEditable}>
+                <template if:true={LRProjectOverviewError}>
+                    <div class="slds-box  slds-text-color_error slds-text-align_center slds-m-top_small">
+                        <b>{label.LRProjectOverviewIdError}</b>
+                    </div>
+                </template>
+                <template if:false={LRProjectOverviewError}>
+                    <lightning-card >
+                        <h2 slot="title">
+                            <lightning-icon icon-name="custom:custom27" size="small"></lightning-icon>
+                            &nbsp; 	&nbsp;Journals
+                        </h2>
+                        <div class="slds-border_bottom" ></div>
+                            <lightning-record-view-form
+                                record-id={LR_Project_Overview_ID}
+                                object-api-name="LR_Project_Overview__c"
+                            >
+                            <div class="slds-p-horizontal_x-small slds-p-top_xx-small slds-grid slds-gutters">
+                                <div class="slds-col">
+                                    <span><lightning-output-field field-name="Account__c"> </lightning-output-field></span>
+                                </div>
+                                <div class="slds-col">
+                                    <span><lightning-output-field field-name="Project__c"></lightning-output-field></span>
+                                </div>
+                                <div class="slds-col">
+                                    <span><lightning-output-field field-name="Product__c"></lightning-output-field></span>
+                                </div>
+                                <div class="slds-col">
+                                    <span><lightning-output-field field-name="LR_Type__c"></lightning-output-field></span>
+                                </div>
+                            </div>
+                            
+                            
+                        </lightning-record-view-form>
+                        <lightning-layout>
+                            <lightning-layout-item padding="around-small" class="slds-size_1-of-4">
+                                <c-lwc_multi-select-picklist placeholder="--Select--" show-pills=true
+                                    label="Select Countries" name="options" options={options} onchange={searchEventJournal}>
+                                </c-lwc_multi-select-picklist>
+                            </lightning-layout-item>
+                            <lightning-layout-item padding="around-small" class="slds-m-top_large slds-size_2-of-4"></lightning-layout-item>
+                            <!--layout for Submit Selected Records-->
+                            <lightning-layout-item padding="around-small" class="slds-m-top_large slds-size_1-of-4">
+                                <lightning-button variant="brand" label="Submit to add Journal" title="Submit to add Journal" disabled={disabled}
+                                    onclick={eventJournalToBeCreated}>
+                                </lightning-button>
+                                <lightning-button variant="brand" label="Cancel" title="Cancel" class="slds-m-left_small" onclick={Cancel}>
+                                </lightning-button>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                        <!--Layout to display table content-->
+                        <lightning-layout>
+                            <template if:true={dataToBeDisplayed}>
+                                <template if:true={loaded}>
+                                    <lightning-spinner alternative-text="Loading"></lightning-spinner>
+                                </template>
+                                <div class="slds-size_1-of-1 slds-scrollable_x" > 
+                                    <div class="slds-table_edit_container slds-is-relative c-container" style="padding: 10px;">
+                                        <table aria-multiselectable="true"
+                                            class="slds-table slds-no-cell-focus slds-table_bordered slds-table_col-bordered slds-table_cell-buffer  slds-table_striped slds-table_edit slds-table_resizable-cols" 
+                                            role="grid" aria-label="Example default inline edit table with cell focused">
+                                            <thead class="slds">
+                                                <tr class="slds-line-height_reset slds slds-size_1-of-1" style="height: 4rem;">
+                                                    <th class="" scope="col" style="width:2.5rem">
+                                                        <div class="slds-truncate slds-assistive-text" title="Errors">{error}</div>
+                                                    </th>
+                                                    <th aria-label="Unique Id" aria-sort="none" class="slds-cell-wrap" scope="col"
+                                                        style="width:4rem">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-line-clamp slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" title="Unique Id">Unique
+                                                                    Id</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Country" aria-sort="none" style="width:3.7rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Country">Country</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Journal Name" aria-sort="none" style="width:3.5rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" title="Journal Name">Journal
+                                                                    Name</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="URL" aria-sort="none" style="width:3rem" class="slds-cell-wrap"
+                                                        scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" title="URL">URL</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Periodicity" aria-sort="none" style="width:4.6rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Periodicity">Periodicity</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Regulatory Requirement" aria-sort="none" style="width:5.4rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-line-clamp slds-grid slds-cell-wrap slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Regulatory Requirement">Regulatory
+                                                                    Requirement</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Subscription" aria-sort="none" style="width:5.3rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Subscription">Subscription</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Paper Journal" aria-sort="none" style="width:4rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" title="Paper Journal">Paper
+                                                                    Journal</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Therapeutic Area" aria-sort="none" style="width:5rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Therapeutic Area">Therapeutic Area</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="QPPV/LPS Comments" aria-sort="none" style="width:4.7rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-cell-wrap slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="QPPV/LPS Comments">QPPV/LPS
+                                                                    Comments</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Frequency of Journal" aria-sort="none" style="width:4.5rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-line-clamp slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Frequency of Journal">Frequency of
+                                                                    Journal</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Other Journal Frequency (Specify)" aria-sort="none"
+                                                        style="width:4rem" class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Other Journal Frequency (Specify)">Other
+                                                                    Journal Frequency (Specify)</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Date Initial Search Started" aria-sort="none" style="width:134px"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Date Initial Search Started">Date Initial
+                                                                    Search Started</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Date Last Journal Search was Performed" aria-sort="none"
+                                                        style="width:134px" class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-cell-wrap slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Date Last Journal Search was Performed">Date Last Journal
+                                                                    Search
+                                                                    was Performed</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Date Next Journal Search is Due" aria-sort="none" style="width:134px"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Date Next Journal Search is Due">Date
+                                                                    Next Journal Search is Due</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Active?" aria-sort="none" style="width:3.4rem"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp"
+                                                                    title="Active?">Active?</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                    <th aria-label="Inactive since?" aria-sort="none" style="width:134px"
+                                                        class="slds-cell-wrap" scope="col">
+                                                        <a class="slds-th__action slds-text-link_reset" href="#" role="button"
+                                                            tabindex="-1">
+                                                            <div
+                                                                class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                <span class="slds-truncate slds-line-clamp" style="width:134px"
+                                                                    title="Inactive since?">Inactive since?</span>
+                                                            </div>
+                                                        </a>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                               <template for:each={dataToBeDisplayed} for:item="item" key={item.Id} for:index="index">
+                                                    <tr key={item.Id} aria-selected="false" class="slds-hint-parent rows">
+                                                        <td class="slds-cell-edit" role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <div class="slds-checkbox">
+                                                                <lightning-input type="checkbox" data-index={index} value={item.id} checked={item.isSelected}
+                                                                    onchange={changeSelectedStatus}></lightning-input>
+                                                            </div>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate"
+                                                                    title={item.Name}>{item.Name}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate"
+                                                                    title={item.Country__c}>{item.Country__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate" style="width: 100px;"
+                                                                    title={item.Journal_Name__c}>{item.Journal_Name__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate" style="width: 150px;" title={item.URL__c}>{item.URL__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate" style="width: 150px;"
+                                                                    title={item.Periodicity__c}>{item.Periodicity__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate"
+                                                                    title={item.Regulatory_requirement__c}>{item.Regulatory_requirement__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate"
+                                                                    title={item.Subscription__c}>{item.Subscription__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate"
+                                                                    title={item.Paper_Journal__c}>{item.Paper_Journal__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: #fafaf3fd;">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate" style="width: 150px;"
+                                                                    title={item.Therapeutic_Area__c}>{item.Therapeutic_Area__c}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: white;">
+                                                            <template if:true={item.commentLengthError}>
+                                                                <p class="slds-text-color_error">Charactor length should be under 255 <br/> on QPPV LPS Comments</p>
+                                                            </template>
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <template if:false={item.editQVVPComment}>
+                                                                    <span class="slds-truncate"
+                                                                        title={item.QPPV_LPS_Comments__c}>{item.QPPV_LPS_Comments__c}</span>
+                                                                    <template if:true={isEditable}>
+                                                                        <lightning-button-icon class="slds-float_right"
+                                                                            icon-name="utility:edit" title="Update QPPV LPS Comment"
+                                                                            variant="bare" size="medium" data-index={index}
+                                                                            onclick={handleEditQVVPComment}>
+                                                                        </lightning-button-icon>
+                                                                    </template>
+                                                                </template>
+                                                                <template if:true={item.editQVVPComment}>
+                                                                    <div class="slds-align_absolute-center">
+                                                                        <lightning-input name="QVVP LPS Comments" data-index={index}
+                                                                            value={item.QPPV_LPS_Comments__c} label=""
+                                                                            class="edit slds-align_absolute-center"
+                                                                            onfocusout={handleNewQVVPComment}>
+                                                                        </lightning-input>
+                                                                    </div>
+                                                                </template>
+                                                            </span>
+                                                        </td>
+                
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate">
+                                                                    <div class="slds-select_container" >
+                                                                        <select name="Select Frequency of Journal"   class="slds-select" onchange={handleNewFrequencyOfJournal} data-index={index} style="width: auto;">
+                                                                            <option value="">None</option>                
+                                                                            <template for:each={picklistJournalFrequency.data} for:item="selectOptItem">
+                                                                                <option key={selectOptItem.custFldvalue} value={selectOptItem.custFldvalue}>
+                                                                                    {selectOptItem.custFldlabel}
+                                                                                </option>
+                                                                            </template>
+                                                                        </select>
+                                                                    </div>
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <template if:true={item.OtherJournalError}>
+                                                                <p class="slds-text-color_error">Other Journal Frequency (Specify)' cannot be empty, <br/>as 'Other' has been selected from the <br/>'Frequency of Journal</p>
+                                                            </template>
+                                                            <template if:true={item.otherlengthError}>
+                                                                <p class="slds-text-color_error">Charactor length should be under 255 <br/> on Other Journal Frequency Specify</p>
+                                                            </template>
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                
+                                                                <template if:false={item.editOtherJournalFrequencySpecify}>
+                                                                    <span class="slds-truncate"
+                                                                        title={item.Other_Journal_Frequency_Specify__c}>{item.Other_Journal_Frequency_Specify__c}</span>
+                                                                    <template if:true={isEditable}>
+                                                                        <lightning-button-icon class="slds-float_right"
+                                                                            icon-name="utility:edit" title="Other Journal Frequency Specify"
+                                                                            variant="bare" size="medium" data-index={index}
+                                                                            onclick={handleEditOtherJournalFrequencySpecify}>
+                                                                        </lightning-button-icon>
+                                                                    </template>
+                                                                </template>
+                                                                <template if:true={item.editOtherJournalFrequencySpecify}>
+                                                                    <div class="slds-align_absolute-center">
+                                                                        <lightning-input name="Other Journal Frequency Specify" data-index={index}
+                                                                            value={item.Other_Journal_Frequency_Specify__c} label=""
+                                                                            class="edit slds-align_absolute-center"
+                                                                            onfocusout={handleNewOtherJournalFrequencySpecify}>
+                                                                        </lightning-input>
+                                                                    </div>
+                                                                </template>
+                                                                
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate">
+                                                                    <lightning-input type="date" value={item.Date_Initial_Search_Started__c} onchange={handleNewDateInitialSearchStarted} label="" variant="label-hidden" data-index={index}></lightning-input>
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate">
+                                                                    <template if:true={item.DateLastJournalSearchwasPerformedError}>
+                                                                        <p class="slds-text-color_error">Date Last Journal Search was Performed- <br/>cannot be in the future</p>
+                                                                    </template>
+                                                                    <lightning-input type="date" value ={item.Date_Last_Journal_Search_was_Performed__c} onchange={handleNewDateLastJournalSearchwasPerformed} label="" variant="label-hidden" data-index={index}></lightning-input>
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate">
+                                                                    <template if:true={item.DueDateError}>
+                                                                        <p class="slds-text-color_error">'Date Next Journal Search is Due' <br/>cannot be in the past</p>
+                                                                    </template>
+                                                                    <lightning-input type="date" value={item.Date_Next_Journal_Search_is_Due__c} onchange={handleNewDateNextJournalSearchIsDue} label="" variant="label-hidden" data-index={index}></lightning-input>
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        
+                                                        
+                                                        
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <span class="slds-truncate">
+                                                                    <div class="slds-select_container" >
+                                                                        <select name="Is Active"  class="slds-select" onchange={handleIsActive} style="width: auto;" data-index={index}>
+                                                                            <option value="">None</option>                
+                                                                            <template for:each={picklistActive.data} for:item="selectOptItem">
+                                                                            <option key={selectOptItem.custFldvalue} value={selectOptItem.custFldvalue}>
+                                                                                {selectOptItem.custFldlabel}
+                                                                            </option>
+                                                                        </template>
+                                                                        </select>
+                                                                    </div>
+                                                                </span>
+                                                            </span>
+                                                        </td>
+                                                        <td role="gridcell" style="background-color: white">
+                                                            <span class="slds-grid slds-grid_align-spread">
+                                                                <template if:true={item.isInactive}>
+                                                                    <span class="slds-truncate">
+                                                                        <lightning-input type="date"  onchange={handleNewInactivesince} label="" variant="label-hidden" data-index={index} disabled="true"></lightning-input>
+                                                                    </span>
+                                                                </template>
+                                                                <template if:false={item.isInactive}>
+                                                                    <span class="slds-truncate">
+                                                                        <template if:true={item.isInactiveError}>
+                                                                            <p class="slds-text-color_error">Inactive since? cannot be in the future</p>
+                                                                        </template>
+                                                                            <lightning-input type="date"  value={item.Inactive_since__c}  onchange={handleNewInactivesince} label="" variant="label-hidden" data-index={index} ></lightning-input>
+                                                                    </span>
+                                                                </template>
+                                                            </span>
+                                                        </td>
+                                                    
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                        <template if:true={noCountryError}>
+                                            <div class="slds-box  slds-text-color_error slds-text-align_center slds-m-top_small">
+                                                <b>Please select another Country,There are no Journals Main Catalogues related to this Country.</b> 
+                                            </div>
+                                        </template>
+                                        <template if:true={isMore}>
+                                            <div class="slds-align_absolute-center slds-m-top_small">
+                                                <lightning-button variant="Base" label="Load More..." title="Back" class="slds-m-right_small slds-m-left_xx-large slds-m-left_xx-large"
+                                                                onclick={nextLoad}>
+                                                </lightning-button>
+                                            </div>
+                                            
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </lightning-layout>
+                    </lightning-card>
+                </template>
+        </template>
+    </template>
+    </div>
+
+</template>

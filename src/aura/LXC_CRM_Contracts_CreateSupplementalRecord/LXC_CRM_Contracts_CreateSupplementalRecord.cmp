@@ -1,0 +1,33 @@
+<aura:component controller="CNT_CRM_Contract_CreateSupplemental" implements="force:hasRecordId,force:lightningQuickAction" access="global" >
+    <aura:attribute name="ContractRecord" type="Contract" />
+    <aura:attribute name="RecordTypeSelected" type="String" />
+    <aura:attribute name="RecordTypeList" type="List" />
+    <aura:attribute name="FieldSet" type="List" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:if isTrue="{!v.ContractRecord != null}">
+        <aura:if isTrue="{! v.ContractRecord.Status != 'Activated' }">
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                <span class="slds-assistive-text">error</span>
+                <h2>Contract Status must be 'Contract Executed - Locked' in order to create supplemental records. 
+                </h2>
+            </div><br/><br/>
+        </aura:if>
+    </aura:if>
+    <div class="slds-grid slds-gutters">
+        <div class="slds-col slds-size_2-of-3">
+            <lightning:select value="{!v.RecordTypeSelected}"> 
+                <option value="">Amendment</option>
+                <aura:iteration items="{!v.RecordTypeList}" var="item">
+                    <option value="{!item.recordTypeId}">
+                        {!item.recordTypeName}
+                    </option>
+                </aura:iteration>
+            </lightning:select>
+        </div>
+        <div class="slds-col slds-size_1-of-3">
+            <aura:if isTrue="{!v.ContractRecord != null}">
+                <lightning:button variant="brand" label="Submit" title="Submit" onclick="{! c.openCreateRecordForm}" disabled="{! v.ContractRecord.Status != 'Activated' }"/>
+            </aura:if>
+        </div>
+    </div>
+</aura:component>

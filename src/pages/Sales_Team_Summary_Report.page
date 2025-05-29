@@ -1,0 +1,62 @@
+<apex:page standardController="Sales_Revenue__c" extensions="SalesTeam_DashboardController" 
+ contenttype="application/vnd.ms-excel#Sales_Team_Report.xls"
+    cache="true" name="SalesTeamXlsExportReport" showHeader="false"
+    sidebar="false" standardStylesheets="false"  readOnly="true" lightningStylesheets="true"> 
+    <head> 
+    <style type="text/css"> 
+    @page { /* Landscape orientation */  
+    size: landscape;
+    margin: 0.1cm 0.3cm 0.1cm 0.3cm; 
+    }
+
+    </style>
+    </head> 
+     <apex:form > 
+   
+    <apex:pageBlock > 
+        <table>
+            <tr>
+                <td>
+              <apex:outputPanel > <h2>{!If(filterOptions.HierarchyLevel == 'Sales Team', 'Account Executive', filterOptions.HierarchyLevel )} Summary Report for {!viewLevelName}<apex:outputText value=" " /></h2> </apex:outputPanel>
+               </td>
+            </tr>
+        </table>
+       
+       <!-- Filters passed as attributes -->
+      <c:DashboardDisplay FilterData="{!filterOptions}" >  </c:DashboardDisplay> 
+      
+      <!--  Update by: Sneha Date: 08 Dec, 2011 - Target Section added -->
+      <apex:outputPanel id="IdTargetOp" >
+        <apex:pageBlock id="IdTargetpb" rendered="{!And(haveSalesData, targetDataExists)}">
+        
+        <apex:OutputLabel > <b>Local Targets</b> </apex:OutputLabel>
+                    <apex:pageBlockTable id="TableTarget" value="{!targetData}"
+                        var="targt">
+                        <apex:column ><apex:outputText value="{!targt.colNm}"/></apex:column>
+                        <apex:column headerValue="Q1"><apex:outputField value="{!targt.quarterData.Gross_Q1_Value__c}"/></apex:column>
+                        <apex:column headerValue="Q2"><apex:outputField value="{!targt.quarterData.Gross_Q2_Value__c}"/></apex:column>
+                        <apex:column headerValue="Q3"><apex:outputField value="{!targt.quarterData.Gross_Q3_Value__c}"/></apex:column>
+                        <apex:column headerValue="Q4"><apex:outputField value="{!targt.quarterData.Gross_Q4_Value__c}"/></apex:column>
+                        <apex:column headerValue="FY"><apex:outputField value="{!targt.FYData.Gross_Q1_Value__c}"/></apex:column>
+                    </apex:pageBlockTable>
+                
+        </apex:pageBlock>  
+        </apex:outputPanel>  
+      
+    <!--   <c:SalesTeam_DashboardDisclaimer />  -->
+      
+    
+      
+    </apex:pageBlock> 
+    
+  <!--   <apex:pageBlock>
+    <table>
+            <tr>
+                <td>
+              <apex:outputPanel >  <h2>Search Result is too large to display. Please refine your search criteria and try again!!<apex:outputText value=" " /></h2> </apex:outputPanel>
+               </td>
+            </tr>
+        </table>
+    </apex:pageBlock>  -->
+</apex:form>
+</apex:page>

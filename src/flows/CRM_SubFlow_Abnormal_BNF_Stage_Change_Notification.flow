@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Notify IF BNF Integration status changes abnormally</description>
+        <name>Email_Alert</name>
+        <label>Email Alert</label>
+        <locationX>50</locationX>
+        <locationY>242</locationY>
+        <actionName>BNF2__c.Notify_IF_BNF_Integration_status_changes_abnormally</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>New_BNF_Status.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>BNF2__c.Notify_IF_BNF_Integration_status_changes_abnormally</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>57.0</apiVersion>
+    <decisions>
+        <name>Decision_1</name>
+        <label>Decision 1</label>
+        <locationX>182</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Abnormal_BNF_Stage_Condition</name>
+            <conditionLogic>(1 AND 2) AND 3</conditionLogic>
+            <conditions>
+                <leftValueReference>Old_BNF_Status.BNF_Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>RA Accepted</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>Old_BNF_Status.BNF_Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Accepted</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>New_BNF_Status.BNF_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>SAP Pending</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Email_Alert</targetReference>
+            </connector>
+            <label>Abnormal BNF Stage Condition</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>CRM SubFlow : {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM SubFlow : Abnormal BNF Stage Change Notification</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Decision_1</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>New_BNF_Status</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>BNF2__c</objectType>
+    </variables>
+    <variables>
+        <name>Old_BNF_Status</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>BNF2__c</objectType>
+    </variables>
+</Flow>

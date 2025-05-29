@@ -1,0 +1,68 @@
+<aura:component controller="CNT_CSM_CommunityArticleDetail">
+    <aura:attribute name="articleId" type="String" />
+    <aura:attribute name="article" type="Object" />
+    <aura:attribute name="articleObj" type="Object" />
+    <aura:attribute name="category" type="String" />
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="allowed" type="boolean" default="true" />
+    <aura:attribute name="partnerURL" type="boolean" access="global" default="false" />
+    <aura:attribute name="itemType" type="String" />
+    <aura:attribute name="userId" type="String" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <div class="card mb-4">
+        <div class="card-body">
+            <aura:if isTrue="{!v.isLoading}">
+                <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <aura:if isTrue="{! not(empty(v.category)) }">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{! $Site.siteUrlPrefix }">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{! $Site.siteUrlPrefix +'/doc?name='+ v.category}">{! v.category }</a></li>
+                    </ol>
+                </nav>
+            </aura:if>
+            <aura:if isTrue="{! not(empty(v.article)) }">
+                <aura:if isTrue="{! not(empty(v.userId))}">
+                    <c:lwc_csm_view_stat recordId="{!v.articleId}" objectApiName="Knowledge__kav" source="CSH"/>
+                </aura:if>
+                <div class="text-right">
+                    <span class="badge badge-pill badge-primary">{! v.article.Device__c}</span>
+                    <aura:if isTrue="{! not(empty(v.userId))}">
+                        <c:LXC_CSM_AddOrRemoveFavoriteRecord record="{! v.articleObj }" />
+                    </aura:if>
+                </div>
+                <h3 class="card-title h3"><lightning:formattedRichText value="{!v.article.Title}"/></h3>
+                <aura:if isTrue="{! v.article.RecordTypeId eq '0126A000000hC38QAE'}">
+                    <p class="mb-4 article_content">
+                        <lightning:formattedRichText value="{! v.article.Content__c}" />
+                    </p>
+                </aura:if>
+                <aura:if isTrue="{! v.article.RecordTypeId eq '0126A000000hC39QAE'}">
+                    <p class="mb-2"><strong><lightning:formattedRichText value="{! v.article.Question__c}"/></strong></p>
+                    <p class="mb-4 article_content">
+                        <lightning:formattedRichText value="{! v.article.Answer__c}" />
+                    </p>
+                </aura:if>
+                <p class="text-right">Last Published Date:
+                    <lightning:formattedDateTime value="{! v.article.LastPublishedDate }" />
+                </p>
+            </aura:if>
+            <aura:if isTrue="{!v.partnerURL}">
+                <c:LXC_PEP_SendFeedback articleName="{! v.article.Title}" kbArticleId="{!v.article.KnowledgeArticleId}" itemType="{!v.itemType}" isPRMSalesArticle="{!v.article.PRM_Sales_Collateral__c}" recordId="{!v.articleId}" />
+                <aura:set attribute="else">
+                    <aura:if isTrue="{! not(empty(v.userId))}">
+                        <hr />
+                        <c:lwc_csm_view_stat recordId="{!v.articleId}" objectApiName="Knowledge__kav" source="PRM"/>
+                        <c:LXC_CSM_SendFeedback recordId="{!v.articleId}" />
+                    </aura:if>
+                </aura:set>
+            </aura:if>
+        </div>
+    </div>
+</aura:component>

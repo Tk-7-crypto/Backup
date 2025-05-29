@@ -1,0 +1,107 @@
+<apex:page controller="MI_BNF_WizardEx" tabstyle="MIBNF2__c" title="Multi Invoice Wizard" id="page">
+    <script type="text/javascript">
+    function getRemoteRAJS() {
+        
+        var mibnfrvanalyst1 = document.getElementById('page:form:pb2:pbSection1:mibnfrvanalyst').value;
+        var selectedSalesOrg = document.getElementById('page:form:pb2:pbSection1:pbSectionItem:mibnfIMSSalesOrg').value;
+        
+        if(!mibnfrvanalyst1 && (selectedSalesOrg == '[DE50] IQVIA Commercial GmbH & Co. OHG' || selectedSalesOrg == '[DE82] Kairos GmbH')){
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.MI_BNF_WizardEx.updateRevenueAnalyst}', selectedSalesOrg, 
+                function(result, event){
+                    if (event.status && result != null) {
+                        document.getElementById('page:form:pb2:pbSection1:mibnfrvanalyst').value = result.Name;
+                        document.getElementById('page:form:pb2:pbSection1:mibnfrvanalyst_lkid').value = result.Id;
+                    }else if (event.type === 'exception') {
+                        let errorMsg = event.message + "<br/>\n<pre>" + event.where + "</pre>";
+                    } else {
+                        let errorMsg2 = event.message;
+                    }
+                }, 
+                {escape: true}
+            )
+        }
+    }
+    </script>
+    <c:JQueryBlockUI />
+    <apex:sectionHeader title="New Multi Invoice BNF" subtitle="Step 1 of 2" rendered="{!NOT(ErrorFlag)}" id="sectionHeader1"/>
+    <apex:sectionHeader title="Multi Invoice BNF" subtitle="Error" rendered="{!ErrorFlag}" id="sectionHeader2"/>
+    <apex:form id="form">
+          <apex:pageBlock title="Multi Invoice BNF Creation Error" rendered="{!ErrorFlag}" id="pb1">
+           <apex:pageMessages id="errorMessages" escape="false"/> 
+             <apex:pageBlockButtons >
+                <apex:commandButton action="{!cancel}" value="OK" immediate="true" />
+            </apex:pageBlockButtons>
+          </apex:pageBlock>
+          <apex:pageBlock title="Multi Invoice Header Information" mode="edit" rendered="{!NOT(ErrorFlag)}" id="pb2">
+          
+            <!-- The pageBlockButtons tag defines the buttons that appear at the top
+and bottom of the pageBlock. Like a facet, it can appear anywhere in
+a pageBlock, but always defines the button areas.-->
+            <!-- The Next button contained in this pageBlockButtons area
+calls the step2 controller method, which returns a pageReference to
+the next step of the wizard. -->
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!step2}" value="Next"/>
+                <apex:commandButton action="{!cancel}" value="Cancel"
+                    immediate="true" />
+            </apex:pageBlockButtons>
+           
+
+            <apex:pageBlockSection title="Multi Invoice Information" id="pbSection1">
+                <!-- Within a pageBlockSection, inputFields always display with their
+corresponding output label. -->
+                 <apex:outputField id="mibnfopportunity" value="{!MIBNF.Opportunity__c}" /> 
+                 <apex:inputField id="mibnfrvanalyst" value="{!MIBNF.Revenue_Analyst__c}" required="true" />
+                 <apex:outputField id="mibnfoppnumber" value="{!opp.Opportunity_Number__c}" />
+                 <apex:outputField id="mibnfSAPpccode" value="{!MIBNF.SAP_PC_Code__c}" />
+                 <apex:outputField id="mibnfclient" value="{!MIBNF.Client__c}"/>
+                 <apex:outputField id="mibnfopopp" value="{!opp.Parent_Opportunity__c}" />
+                 <apex:inputField id="mibnftherapyarea" value="{!MIBNF.Therapy_Area__c}" required="true"/>   
+                 <apex:outputfield id="mibnfopoppid" value="{!MIBNF.Original_Prior_Opportunity_Id__c}" />
+                 <apex:pageBlockSectionItem id="pbSectionItem">
+                    <apex:outputLabel value="IMS Sales/Billing Org "/>
+                    <apex:actionRegion >
+                        <apex:inputField id="mibnfIMSSalesOrg" value="{!MIBNF.IMS_Sales_Org__c}" required="true"  onchange="getRemoteRAJS()">
+                        </apex:inputField>
+                    </apex:actionRegion>
+                </apex:pageBlockSectionItem>
+                  <apex:inputField id="mibnfFairvaluetype" value="{!MIBNF.Fair_Value_Type__c}" required="true" />
+                   <apex:inputField id="mibnfSalesOrgCode" value="{!MIBNF.Sales_Org_Code__c}"  required="true"/>
+                     <apex:outputtext >&nbsp;</apex:outputtext>
+                  <apex:inputField value="{!MIBNF.Billing_Currency__c}"/>
+                  <apex:inputField value="{!MIBNF.SAP_Master_Contract__c}" />
+                  <apex:pageBlockSectionItem >
+                          <apex:outputLabel value="Opportunity Currency"></apex:outputLabel>
+                          <apex:outputText value="{!MIBNF.CurrencyIsoCode}"></apex:outputText>
+                  </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                  <apex:inputField value="{!MIBNF.Renewal__c}"/>
+                  <apex:outputField value="{!MIBNF.Has_Pricing_Configuration__c}"></apex:outputField>
+                 
+           
+           
+               <apex:outputtext >&nbsp;</apex:outputtext>
+            </apex:pageBlockSection>
+             
+           <!-- Invoice Billing Information -->
+           <apex:pageBlockSection title="Invoice/Billing Information" id="pbSection2">
+                <!-- Within a pageBlockSection, inputFields always display with their
+                    corresponding output label. -->
+                    <apex:outputField value="{!MIBNF.Opportunity__c}" /> 
+                    <apex:inputField id="mibnfstartdate" value="{!MIBNF.Contract_Start_Date__c}"  required="true"/> 
+                    <apex:inputField id="mibnfcomments" value="{!MIBNF.Comments__c}" />
+                    <apex:inputField id="mibnfenddate" value="{!MIBNF.Contract_End_Date__c}"  required="true"/>
+                    <apex:inputField id="mibnfaddbilling" value="{!MIBNF.Additional_Billing_Date_Information__c}" />
+                    <apex:inputField id="mibnfcontracttype" value="{!MIBNF.Contract_Type__c}"  required="true" />
+                    <apex:inputField id="mibnfinvoicedefaultday" value="{!MIBNF.Invoice_Default_Day__c}" required="true" />
+                    <apex:inputField id="mibnfcontractterm" value="{!MIBNF.Contract_Term__c}" required="true" />
+                    <apex:outputtext >&nbsp;</apex:outputtext>
+                    <apex:inputField id="mibnfpaymentterm" value="{!MIBNF.Payment_Terms__c}" />
+                
+            </apex:pageBlockSection>
+             
+        </apex:pageBlock>
+   
+    </apex:form>
+</apex:page>

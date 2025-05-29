@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Set_Email_Recipient_Ids</name>
+        <label>Set Email Recipient Ids</label>
+        <locationX>512</locationX>
+        <locationY>671</locationY>
+        <assignmentItems>
+            <assignToReference>varR_emailRecipients</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record.Owner:User.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varR_emailRecipients</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record.Account__r.Owner.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varR_emailRecipients</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Setup.CLM_Configuration__c.Contract_US_Email_Address__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_Log_Email</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Email_Recipients_and_expiration_days_0</name>
+        <label>Set Email Recipients and expiration days</label>
+        <locationX>50</locationX>
+        <locationY>384</locationY>
+        <assignmentItems>
+            <assignToReference>varT_expirationDaysRemaining</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>forT_Expiration_Notice_Days</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Set_Email_Recipient_Ids</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Email_Recipients_and_expiration_days_1</name>
+        <label>Set Email Recipients and expiration days</label>
+        <locationX>578</locationX>
+        <locationY>384</locationY>
+        <assignmentItems>
+            <assignToReference>varT_expirationDaysRemaining</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>60 Days</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Set_Email_Recipient_Ids</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Email_Recipients_and_expiration_days_2</name>
+        <label>Set Email Recipients and expiration days</label>
+        <locationX>1106</locationX>
+        <locationY>384</locationY>
+        <assignmentItems>
+            <assignToReference>varT_expirationDaysRemaining</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>30 Days</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Set_Email_Recipient_Ids</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_Scheduled_Date_0</name>
+        <label>Check Scheduled Date</label>
+        <locationX>182</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>Date in past</defaultConnectorLabel>
+        <rules>
+            <name>Date_in_future_0</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Flow.CurrentDate</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue>
+                    <elementReference>$Record.Expiration_Notice_Date__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Email_Recipients_and_expiration_days_0</targetReference>
+            </connector>
+            <label>Date in future</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Scheduled_Date_1</name>
+        <label>Check Scheduled Date</label>
+        <locationX>710</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>Date in past</defaultConnectorLabel>
+        <rules>
+            <name>Date_in_future_1</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Flow.CurrentDate</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue>
+                    <elementReference>forD_expirationNotice60DaysBefore</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Email_Recipients_and_expiration_days_1</targetReference>
+            </connector>
+            <label>Date in future</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Scheduled_Date_2</name>
+        <label>Check Scheduled Date</label>
+        <locationX>1238</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>Date in past</defaultConnectorLabel>
+        <rules>
+            <name>Date_in_future_2</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Flow.CurrentDate</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue>
+                    <elementReference>forD_expirationNotice30DaysBefore</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Email_Recipients_and_expiration_days_2</targetReference>
+            </connector>
+            <label>Date in future</label>
+        </rules>
+    </decisions>
+    <description>CLM-MC-CLMCMA-20290 - This flow is used to send expiration email to IQVIA agreement owner.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>forD_expirationNotice30DaysBefore</name>
+        <dataType>Date</dataType>
+        <expression>{!$Record.Contract_End_Date__c} - 30</expression>
+    </formulas>
+    <formulas>
+        <name>forD_expirationNotice60DaysBefore</name>
+        <dataType>Date</dataType>
+        <expression>{!$Record.Contract_End_Date__c} - 60</expression>
+    </formulas>
+    <formulas>
+        <name>forT_Expiration_Notice_Days</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE(TEXT({!$Record.Expiration_Notice__c}), &apos; Before&apos;, &apos;&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RecordLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) + {!$Record.Id}</expression>
+    </formulas>
+    <formulas>
+        <description>If Original Agreement is populated then Original Agreement&apos;s Requested Agreement Type is saved else Agreement&apos;s Requested Agreement Type</description>
+        <name>forT_requestedAgreementType</name>
+        <dataType>String</dataType>
+        <expression>IF({!$Record.Original_Agreement__r.Id} != null, TEXT({!$Record.Original_Agreement__r.Subtype__c}), TEXT({!$Record.Subtype__c}))</expression>
+    </formulas>
+    <interviewLabel>CLM IQVIA Agreement Expiration Notification Scheduled Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM IQVIA Agreement Expiration Notification Scheduled Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>386</locationX>
+        <locationY>0</locationY>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterFormula>AND(NOT({!$Setup.Trigger_Control_For_Migration__c.Disable_IQVIA_Agreement_Trigger__c}), {!$Record.RecordType.DeveloperName} == &apos;MSA&apos;, 
+AND(NOT(ISBLANK({!$Record.Contract_End_Date__c})), NOT(ISBLANK(TEXT({!$Record.Expiration_Notice__c})))))</filterFormula>
+        <object>IQVIA_Agreement__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Scheduled_Expiry_Date</name>
+            <connector>
+                <targetReference>Check_Scheduled_Date_0</targetReference>
+            </connector>
+            <label>Scheduled Expiry Date</label>
+            <offsetNumber>0</offsetNumber>
+            <offsetUnit>Days</offsetUnit>
+            <recordField>Expiration_Notice_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <scheduledPaths>
+            <name>Scheduled_Expiry_Before_60_Days</name>
+            <connector>
+                <targetReference>Check_Scheduled_Date_1</targetReference>
+            </connector>
+            <label>Scheduled Expiry Before 60 Days</label>
+            <offsetNumber>-60</offsetNumber>
+            <offsetUnit>Days</offsetUnit>
+            <recordField>Contract_End_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <scheduledPaths>
+            <name>Scheduled_Expiry_Before_30_Days</name>
+            <connector>
+                <targetReference>Check_Scheduled_Date_2</targetReference>
+            </connector>
+            <label>Scheduled Expiry Before 30 Days</label>
+            <offsetNumber>-30</offsetNumber>
+            <offsetUnit>Days</offsetUnit>
+            <recordField>Contract_End_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Send_Log_Email</name>
+        <label>Send &amp; Log Email</label>
+        <locationX>512</locationX>
+        <locationY>779</locationY>
+        <flowName>CLM_Subflow_Send_Notfication</flowName>
+        <inputAssignments>
+            <name>varC_EmailRecipients</name>
+            <value>
+                <elementReference>varR_emailRecipients</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailBody</name>
+            <value>
+                <elementReference>textT_ExpirationNoticeEmail</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailSubject</name>
+            <value>
+                <stringValue>IQVIA Contract Expiration Early Notice {!$Record.FF_Agreement_Number__c}</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_FromAddress</name>
+            <value>
+                <stringValue>clmintegration@iqvia.com</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_SenderType</name>
+            <value>
+                <stringValue>OrgWideEmailAddress</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <textTemplates>
+        <name>textT_ExpirationNoticeEmail</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>&lt;img src = &quot;https://iqvia.lightning.force.com/file-asset-public/Logo11?oid=00D6A000001Vlzd&quot; height=&quot;100px&quot; width=&quot;150px&quot;&gt;
+&lt;p&gt;Dear {!$Record.Owner:User.FirstName} {!$Record.Owner:User.LastName} / {!$Record.Account__r.Owner.FirstName} {!$Record.Account__r.Owner.LastName},&lt;br&gt;
+The following IQVIA Agreement ({!forT_requestedAgreementType}) is going to expire in {!varT_expirationDaysRemaining}&lt;br&gt;&lt;br&gt;
+Name: &lt;a href={!forT_RecordLink}&gt;{!$Record.Agreement_Number__c} / {!$Record.Name}&lt;/a&gt;&lt;br/&gt;
+Start Date: {!$Record.Contract_Start_Date__c}&lt;br/&gt;
+End Date: {!$Record.Contract_End_Date__c}&lt;br/&gt;&lt;br/&gt;
+Thank You,&lt;br/&gt;
+IQVIA&lt;/p&gt;</text>
+    </textTemplates>
+    <variables>
+        <name>varR_emailRecipients</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_expirationDaysRemaining</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

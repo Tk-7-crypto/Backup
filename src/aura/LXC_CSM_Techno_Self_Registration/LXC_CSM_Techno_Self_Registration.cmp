@@ -1,0 +1,89 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes" access="global" controller="CNT_CSM_Site_User_Creation">
+    <aura:attribute name="contactRecord" type="object" />
+    <aura:attribute name="contactId" type="String" />
+    <aura:attribute name="caseRecordType" type="String" />
+    <aura:attribute name="caseId" type="String" />
+    <aura:attribute name="cancelAll" type="Boolean" />
+    <aura:attribute name="editContactInfo" type="Boolean" />
+    <aura:attribute name="UserCreated" type="Boolean" />
+    <aura:attribute name="showErrors" type="Boolean" />
+    <aura:attribute name="errorMessage" type="String" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}" />
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}" />
+    <aura:attribute name="Spinner" type="boolean" default="false" />
+    <aura:if isTrue="{!v.Spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+
+    <div style="margin-top: 75px;">
+        <article class="slds-card">
+            <aura:if isTrue="{!and(!v.UserCreated, and(!v.contactRecord.UserAlreadyExist, and (!v.cancelAll, !v.editContactInfo)))}">
+
+                <c:LXC_CSM_Techno_Self_Registration_User contactRecord="{!v.contactRecord}" cancelAll="{!v.cancelAll}" editContactInfo="{!v.editContactInfo}" UserCreated="{!v.UserCreated}" caseId="{!v.caseId}">
+                </c:LXC_CSM_Techno_Self_Registration_User>
+            </aura:if>
+            <aura:if isTrue="{!and (!v.cancelAll, v.editContactInfo)}">
+
+                <c:LXC_CSM_Techno_Self_Registration_Info contactRecord="{!v.contactRecord}" cancelAll="{!v.cancelAll}" editContactInfo="{!v.editContactInfo}">
+                </c:LXC_CSM_Techno_Self_Registration_Info>
+            </aura:if>
+            <lightning:layout horizontalAlign="Center">
+                <lightning:layoutItem size="6">
+                    <aura:if isTrue="{!v.showErrors}">
+                        <!-- Show the message to ui -->
+                        <ui:message title="Error" severity="error" closable="true">
+                            {!v.errorMessage}
+                        </ui:message>
+                    </aura:if>
+                </lightning:layoutItem>
+            </lightning:layout>
+            <div class="slds-size_12-of-12">
+                <div class="slds-page-header" style="Background:white; ">
+                    <aura:if isTrue="{!v.cancelAll}">
+                        <div style="font-size: 1.75rem; font-weight: 500; line-height: 1.2;">
+                            {!$Label.c.Welcome_to_the_CSH_Self_registration_process}
+                        </div>
+                        <div>
+                            {!$Label.c.Thank_You_for_connecting_with_us}
+                        </div>
+                    </aura:if>
+                    <aura:if isTrue="{!v.UserCreated}">
+                        <div style="font-size: 1.75rem; font-weight: 500; line-height: 1.2;">
+                            {!$Label.c.Welcome_to_the_CSH_Self_registration_process}
+                        </div>
+                        <div>
+                            {!$Label.c.User_is_successfully_created} <br />
+                            {!$Label.c.You_have_been_successfully_registered_to_the_Customer_Service_Hub}<br />
+                            {!$Label.c.You_should_receive_shortly_a_welcome_email_including_login_details}<br />
+                            {!$Label.c.Please_check_you_spam_folder_in_case_you_did_not_receive_it_in_your_mailbox}<br />
+                            {!$Label.c.We_thank_you_for_your_time_spend_to_register_yourself_and_hope_you_will_enjoy_th}<br /><br />
+                            {!$Label.c.You_can_now_close_this_website}<br />
+                        </div>
+                    </aura:if>
+                    <aura:if isTrue="{!v.contactRecord.UserAlreadyExist}">
+                        <div style="font-size: 1.75rem; font-weight: 500; line-height: 1.2;">
+                            {!$Label.c.Welcome_to_the_CSH_Self_registration_process}
+                        </div>
+                        <div>
+                            {!$Label.c.User_with_your_email_Id_already_exist}<br />
+                            {!$Label.c.Please_login_to_portal}
+                            <div style="width: 100%; text-align: center; margin-top:1rem;">
+                                <lightning:button label="Click Here" onclick="{!c.goToExternalSite}"></lightning:button>
+                            </div>
+                        </div>
+                    </aura:if>
+                </div>
+            </div>
+        </article>
+        <div style="text-align: center!important; width:100%; margin-top: 75px;padding-bottom: 1rem!important;padding-top: 1rem!important; ">© {!v.copyright_date} Copyright:&nbsp;{!$Label.c.Learn_More_About}
+            <a href="https://www.iqvia.com"> IQVIA™</a>
+        </div>
+    </div>
+</aura:component>

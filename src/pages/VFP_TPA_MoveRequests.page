@@ -1,0 +1,104 @@
+<apex:page sidebar="false" showHeader="false" lightningStylesheets="true" standardStylesheets="false">
+    <apex:slds />
+    
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" type="text/css" />
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript" />
+    <div class="slds-scope">
+        <apex:pageblock >
+            <div class="message" role="alert" ng-show="!isRequestPresent">
+                <span class="slds-p-around_x-small">{{tpaRequestNotFoundMsg}}</span>
+            </div>
+            <div class="message" role="alert" ng-show="!isUserPresent">
+                <span class="slds-p-around_x-small">{{userNotFoundMsg}}</span>
+            </div>
+            <apex:outputPanel styleClass="blue" layout="block">
+                <div>
+                    <fieldset class="detailList slds-box" id="section2" collapsible="false">
+                        <legend><b>Moving TPA Requests from One Address/Contact to Another Address/Contact</b></legend>
+                        <div style="float:left; width:50%;margin-right:1%;border-right:solid 1px #ccc;padding-right:1vw;">
+                            <fieldset class="slds-box">
+                                <legend><b>From</b></legend>
+                                <label class="lbl">Source Address:</label>
+                                <select class="slds-size_1-of-2" ng-model="sourceAccountId" ng-options="clientAccount.Contact.Account.Id as clientAccount.Contact.Account.Name for clientAccount in lstClientAccounts" ng-change="accountChanged('Source')">
+                                   </select>
+                                   <br />
+                                   <br />
+                                   <label class="lbl">Source Contact:</label>
+                                   <select class="slds-size_1-of-2" ng-disabled="sourceAccountId == '0'" ng-model="sourceContactId" ng-options="sourceContact.Id as sourceContact.Name for sourceContact in lstSourceClientContact" ng-change="contactChanged('Source')">
+                                   </select>
+                            </fieldset>
+                        </div>
+                        <fieldset style="width:49%;" class="slds-box">
+                            <legend><b>To</b></legend>
+                            <label class="lbl">Destination Address:</label>
+                            <select class="slds-size_1-of-2" ng-disabled="sourceContactId == '0' || lstSourceClientContact.length == 0" ng-model="destinationAccountId" ng-options="clientAccount.Contact.Account.Id as clientAccount.Contact.Account.Name for clientAccount in lstDestinationAccounts" ng-change="accountChanged('Destination')">
+                               </select>
+                            <br />
+                               <br />
+                               <label class="lbl">Destination Contact:</label>
+                               <select class="slds-size_1-of-2" ng-disabled="destinationAccountId == '0' || sourceContactId == '0'" ng-model="destinationContactId" ng-options="destinationContact.Id as destinationContact.Name for destinationContact in lstDestinationClientContact" ng-change="contactChanged('Destination')">
+                               </select>
+                        </fieldset>
+                        <br />
+                        <br />
+                        <fieldset ng-hide="sourceTPAList.length == 0">
+                            <div>List Of TPA Requests To Be Moved From Selected Contact<h4 style="padding-left:10px;float:right;">Total Requests: {{sourceTPAList.length}}</h4></div><!-- Updated by Babita under Issue-07836 -->
+                            <div class="tableWrapper">
+                                    <table class="slds-m-bottom_x-small slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right">
+                                        <thead class="slds-theme_shade">
+                                            <tr class="headerRow">
+                                                 <!-- added by supriya johari under ER-3420 starts -->
+                                                <th class="slds-cell-wrap">
+                                                    <div class="slds-checkbox slds-float_left">
+                                                        <input id="Select Requests" type="checkbox" ng-click="selectAll($event)" ng-checked="isSelectedAll()"/>
+                                                        <label class="slds-checkbox__label" for="Select Requests">
+                                                            <span class="slds-checkbox_faux"></span>
+                                                            <span class="slds-form-element__label">Select Requests</span>
+                                                        </label>
+                                                    </div>
+                                                </th>
+                                                <!-- added by supriya johari under ER-3420 ends -->       
+                                                <th class="slds-cell-wrap">
+                                                    Client Request Number
+                                                </th>
+                                                <th class="slds-cell-wrap">
+                                                    Status
+                                                </th>
+                                                <th class="slds-cell-wrap">
+                                                    Data Access End Date
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr repeat-Done="repeat-Done" repeat-Done-Data="sourceTPARequets" class="dataRow slds-cell-wrap" ng-repeat="sourceTPA in sourceTPAList" ng-class="getSelectedClass(sourceTPA)"> <!-- modified by supriya Johari under ER-3420 -->
+                                            <td class="slds-cell-wrap" scope="row">
+                                                <input type="checkbox" class="slds-m-left_medium" name="selected" ng-checked="isSelected(sourceTPA)" ng-click="updateSelection($event, sourceTPA)"/>
+                                            </td>
+                                            <td class="slds-cell-wrap" scope="row">{{sourceTPA.Name}}</td>
+                                            <td class="slds-cell-wrap" scope="row">{{sourceTPA.Request_Status__c}}</td>
+                                            <td class="slds-cell-wrap" scope="row">{{sourceTPA.Data_Access_End_Date__c | date:'MM-dd-yyyy'}}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                            </div>
+                        </fieldset>
+                    </fieldset>
+                </div>
+            </apex:outputPanel>
+            <apex:pageBlockButtons location="bottom">
+                 <div class="slds-align_absolute-center">
+                     <button class="slds-button slds-button_success slds-m-right_xx-small" 
+                             ng-click="showPopup()"
+                             ng-disabled="(sourceTPAList.length == 0 
+                                        || sourceAccountId == '0' 
+                                        || destinationAccountId == '0' 
+                                        || sourceContactId == '0' 
+                                        || destinationContactId == '0' 
+                                        || !isUserPresent)" 
+                             onclick="return false;">Move</button>
+                     <button class="btn btn-default" onclick="return false;" ng-click="loadDefault()">Cancel</button>
+                 </div>
+            </apex:pageBlockButtons>
+        </apex:pageblock>
+    </div>
+</apex:page>

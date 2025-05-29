@@ -1,0 +1,1002 @@
+<aura:component controller="CNT_PSA_Topics_Of_Interest" implements="lightning:isUrlAddressable,force:lightningQuickActionWithoutHeader,force:hasRecordId,flexipage:availableForAllPageTypes,force:appHostable,lightning:actionOverride" access="global">
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="RecId" type="String"/>
+    <aura:attribute name="recordToBeCloned" type="boolean" default ="false"/>
+    <aura:attribute name="account" type="String"/>
+    <aura:attribute name="projectCode" type="String"/>
+    <aura:attribute name="datePublishedOnWebsite" type="Date"/>
+    <aura:attribute name="dueDate" type="Date"/>
+    <aura:attribute name="productId" type="String"/>
+    <aura:attribute name="countries" type="String"/>
+    <aura:attribute name="sdrunid" type="String"/>    
+    <aura:attribute name="toiStatus" type="String"/> 
+    <aura:attribute name="dateStarted" type="Date"/> 
+    <aura:attribute name="dateStopped" type="Date"/> 
+    <aura:attribute name="pageReference" type="Object"/>
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.handlePageChange}" />
+    <aura:attribute name="editedProduct" type="String"/>    
+    <aura:attribute name="toiObject" type="Object" /> 
+    
+    <aura:attribute name="modalWindow" type="boolean" default ="true"/>
+    <aura:attribute name="hasPermission" type="boolean" default ="true"/>
+    <aura:attribute name="hasEditPermission" type="boolean" default ="true"/>
+    <aura:attribute name="hasDeletePermission" type="boolean" default="true"/>
+    <aura:attribute name="isCloneRecord" type="boolean" default="false"/>
+    <aura:attribute name="isCloneRecordButtonClicked" type="boolean" default="false"/>
+    <aura:attribute name="Spinner" type="boolean" default="true"/>
+    <aura:attribute name="clonedProjectIDVal" type="String"/>
+    
+    <aura:attribute name="targetList" type="Target__c[]" />
+    <aura:attribute name="targetIdList" type="String[]" />
+    <aura:attribute name="tgtIdNameMap" type="Map" />
+    <aura:attribute name="targetNameLst" type="String" />
+    
+    <lightning:navigation aura:id="navService"/>
+    <aura:handler event="aura:locationChange" action="{!c.update}"/>
+    
+    <aura:if isTrue="{!v.hasPermission}">
+        <aura:if isTrue="{! (v.recordId == null ? true : false)}">
+            <aura:html tag="style">.toastMessage.forceActionsText{white-space : pre-line !important;}</aura:html>
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large " role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <lightning:card>
+                
+                <lightning:recordEditForm objectApiName="Topics_of_Interest__c"
+                                          aura:id="sdForm"
+                                          onsubmit="{!c.handleOnSubmit}"
+                                          onload="{!c.handleOnLoad}"
+                                          onsuccess="{!c.handleOnSuccess}"
+                                          density="Compact">
+                    
+                    <lightning:messages aura:id="createNotifMsg"/>
+                    <div class="slds-media__body leftmargin rightmargin">
+                        <lightning:messages />
+                        <lightning:layout multipleRows="true" class="slds-grid_vertical-align-center">
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                        <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <abbr title="required" class="slds-required">*</abbr>
+                                <lightning:button variant="neutral" label="Product" title="Product" onclick="{!c.openProductModel}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            
+                            <lightning:layoutItem size="5">
+                                <lightning:layoutItem size="4">
+                                    <label class="slds-form-element__label">Selected Products:  </label>
+                                </lightning:layoutItem>
+                                <span> {!v.targetNameLst}</span>
+                            </lightning:layoutItem>
+                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Topic_ID__c" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Status__c" value="{!v.toiStatus}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Topic_Term__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Topic_Category__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                           
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_Topic_Category__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Search_Variable_in_Data_Source__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_Search_Variable_in_Data_Source__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Type_of_MedDRA_Query__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="MedDRA_Search_Specifications__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Started__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Rationale_Started__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Part_of_Commitment_to_HA__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Reminder_Calendar__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Part_of_Additional_RMM__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="In_RMP__c" required="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Stopped__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Rationale_Stopped__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Internal_Comments__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Legacy_ID__c" disabled="true"/>
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex">Created By</p>
+                                 <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <p class="slds-form-element__label slds-no-flex">Last Modified By</p>
+                                <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex">Owner</p>
+                                 <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <!--<lightning:layoutItem size="5">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>   -->
+                            
+                            <lightning:layoutItem size="5" class="section">
+                                Topic of Interest Documentation
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Document_Name_1__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Document_Link_1__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </div>
+                    
+                    <lightning:layout horizontalAlign="center" class="slds-m-top_large marginbottom">
+                        <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleOnCancel}"/>
+                        <lightning:button variant="brand" label="Save" title="Save" type="submit"/>
+                    </lightning:layout>
+                    
+                </lightning:recordEditForm>
+            </lightning:card>
+            <aura:set attribute="else">                
+                <force:recordData aura:id="recordHandler"
+                    recordId="{!v.recordId}"
+                    fields="Id,Project__c"
+                    targetFields="{!v.toiObject}"              
+                    targetError="{!v.recordError}"
+                    recordUpdated="{!c.handleRecordUpdated}" />
+                
+                <lightning:recordViewForm aura:id="viewForm" 
+                                          recordId="{!v.recordId}"
+                                          objectApiName="Topics_Of_Interest__c"
+                                          >
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <aura:if isTrue="{!v.hasEditPermission}">
+                                <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                    <lightning:button  variant="neutral" class="slds-col_bump-left" label="Edit" title="Edit Record" onclick="{!c.editRecord}"/>
+                                    <lightning:button  variant="neutral" class="slds-col_bump-left" label="Clone" title="Clone Record" onclick="{!c.cloneRecord}"/>
+                                    <aura:if isTrue="{!v.hasDeletePermission}">
+                                    	<lightning:button label="Delete" variant="neutral" onclick="{!c.confirmDeletion}"/>
+                                    </aura:if>
+                                    <lightning:button  variant="neutral" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                    <lightning:button  variant="neutral" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                </lightning:layout>
+                                <aura:set attribute="else">
+                                    <lightning:layout class="slds-hint-parent">
+                                        <lightning:button  class="slds-col_bump-left" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                        <lightning:button  class="" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                    </lightning:layout>
+                                </aura:set>
+                            </aura:if>                            
+                            <lightning:layout multipleRows="true" >                              
+                                
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                        <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Product__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Topic_ID__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Status__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Topic_Term__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Topic_Category__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                           
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Other_Topic_Category__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Search_Variable_in_Data_Source__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Other_Search_Variable_in_Data_Source__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Type_of_MedDRA_Query__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="MedDRA_Search_Specifications__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Started__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Rationale_Started__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Part_of_Commitment_to_HA__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Reminder_Calendar__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Part_of_Additional_RMM__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="In_RMP__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Date_Stopped__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Rationale_Stopped__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Internal_Comments__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Legacy_ID__c" disabled="true"/>
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex">Created By</p>
+                                 <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex">Last Modified By</p>
+                                 <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                 <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                                 <p class="slds-form-element__label slds-no-flex">Owner</p>
+                                 <lightning:outputField fieldName="OwnerId" variant="label-hidden"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem> 
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>   
+                            <lightning:layoutItem size="5" class="section">
+                                Topic of Interest Documentation
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Document_Name_1__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputfield fieldName="Document_Link_1__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordViewForm>
+                <lightning:recordEditForm aura:id="editForm" recordId="{!v.recordId}" objectApiName="Topics_of_Interest__c" class="slds-hide" onsubmit="{!c.handleEditSubmit}" onsuccess="{!c.handleSuccess}">        
+                    
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <lightning:messages />
+                            <lightning:layout multipleRows="true" >
+                                <lightning:layoutItem class="display-none">
+                                    <lightning:inputField aura:id="editProjId" fieldName="Project__c"/>
+                                    <lightning:inputfield aura:id="editProdId" fieldName="Product__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                	<abbr title="required" class="slds-required">*</abbr>
+                                    <lightning:button variant="neutral" label="Product" title="Product" onclick="{!c.openEditProductModel}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputfield fieldName="Topic_ID__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <label>Product Name</label>
+                                    <lightning:outputField variant="label-hidden" fieldName="Product__c"/>
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layoutItem size="4">
+                                    <label class="slds-form-element__label">Selected Products:  </label>
+                                    </lightning:layoutItem>
+                                    <span> {!v.targetNameLst}</span>
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Status__c"  disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Topic_Term__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Topic_Category__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                           
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Other_Topic_Category__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Search_Variable_in_Data_Source__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Other_Search_Variable_in_Data_Source__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Type_of_MedDRA_Query__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="MedDRA_Search_Specifications__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Started__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Rationale_Started__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Part_of_Commitment_to_HA__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Reminder_Calendar__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Part_of_Additional_RMM__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="In_RMP__c" required="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Stopped__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Rationale_Stopped__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Internal_Comments__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Legacy_ID__c" disabled="true"/>
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Created By</p>
+                                    <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Last Modified By</p>
+                                    <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Owner</p>
+                                    <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>  
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                    Topic of Interest Documentation
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Document_Name_1__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Document_Link_1__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                            <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleCancel}" />
+                                <lightning:button variant="brand" label="Save" title="Save" type="submit" />
+                            </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordEditForm>
+            </aura:set>
+        </aura:if>
+        <aura:set attribute="else">
+            <lightning:card>
+                <p style="color:red;padding-left: 25%;font-weight: bold;">
+                    This is a Signal Management object and you do not have permissions or you are not on SM project to create the record.
+                </p>
+            </lightning:card>
+        </aura:set>
+    </aura:if>
+    
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+        <aura:attribute name="isEditProduct" type="boolean" default="false"/>
+    <aura:if isTrue="{!v.isEditProduct}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container modalwidth">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeEditProductModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Product</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <table class="slds-table slds-table--bordered slds-table--cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title--caps">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Select Product">Select</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Target Name">Target Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug">Drug</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug Trade Name">Drug Trade Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Formulation">Formulation</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Country">Country</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.targetList}" var="ct">
+                                <tr>
+                                    <td data-label="CheckBox">
+                                        <div  title="{!ct.ct.Id}" data-target-id="{! ct.Id }"> 
+											<!--<lightning:input type="checkbox" aura:id="{!ct.Id}" value="{!ct.Id}" onchange="{!c.editCheckboxSelect}"/>-->
+                                            <ui:inputCheckbox aura:id="rowSelectionCheckboxId" value="false" text="{!ct.Id}" change="{!c.editCheckboxSelect}"/>                                        </div>
+                                    </td>
+                                    <td data-label="Name">
+                                        {! ct.Name }
+                                    </td>
+                                    <td data-label="Drug Name">
+                                        {! ct.Drug__r.Name }
+                                    </td>
+                                    <td data-label="Drug Trade Name">
+                                        {! ct.Drug_Trade_Name__r.Name }
+                                    </td>
+                                    <td data-label="Formulation">
+                                        {! ct.Formulation__r.Name }
+                                    </td>
+                                    <td data-label="Country">
+                                        {! ct.Single_Country__c }
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+                <!--###### MODAL BOX FOOTER Part Start ######-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" 
+                                      label="Submit"
+                                      title="Submit"
+                                      onclick="{! c.addEditProduct }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+    </aura:if>
+     <!-- Dialog box to confirm deletion of TOI-->
+    <aura:attribute name="isDeletionConfirmationOpen" type="boolean" default="false"/>
+    <aura:if isTrue="{!v.isDeletionConfirmationOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2>Delete Topic of Interest</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    Are you sure you want to delete this Topic of Interest?
+                </div>
+                <!--###### MODAL BOX FOOTER Part Start ######-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" 
+                                      label="Delete"
+                                      title="Delete"
+                                      onclick="{! c.handleDeleteRecord }"/>
+                    <lightning:button variant="neutral" 
+                                      label="Cancel"
+                                      title="Cancel"
+                                      onclick="{! c.closeModel }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+        
+    </aura:if>
+    
+    <aura:if isTrue="{!v.isCloneRecord}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container modalwidth clone-modal-class">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeClone }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Clone Topic of Interest</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <div > 
+                        <lightning:recordEditForm aura:id="cloneeditForm" recordId="{!v.recordId}" objectApiName="Topics_of_Interest__c" onsubmit="{!c.handleEditSubmit}" onsuccess="{!c.handleSuccess}" onerror="{!c.handleOnErrorEdit}">        
+                            
+                            <lightning:card>
+                                <div class="slds-media__body leftmargin rightmargin">
+                                    <lightning:messages aura:id="clonedMsg"/>
+                                    <lightning:layout multipleRows="true" >
+                                        <lightning:layoutItem class="display-none">
+                                            <lightning:inputField aura:id="cloneeditProjId" fieldName="Project__c"/>
+                                            <lightning:inputfield aura:id="cloneeditProdId" fieldName="Product__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <!--<lightning:layoutItem size="5">
+                                            <abbr title="required" class="slds-required">*</abbr>
+                                            <lightning:button variant="neutral" label="Product" title="Product" onclick="{!c.openEditProductModel}"/>
+                                        </lightning:layoutItem>-->
+                                        <lightning:layoutItem size="5">
+                                            <abbr title="required" class="slds-required">*</abbr>
+                                            <lightning:button variant="neutral" label="Product" title="Product" onclick="{!c.openProductModel}"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:layoutItem size="4">
+                                    		<label class="slds-form-element__label">Selected Products:  </label>
+                                            </lightning:layoutItem>
+                                    		<span> {!v.targetNameLst}</span>
+                                		</lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:outputfield fieldName="Topic_ID__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <!--<lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <label>Product Name</label>
+                                            <lightning:outputField variant="label-hidden" fieldName="Product__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>-->
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Status__c"  disabled="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                            
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Topic_Term__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                            
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Topic_Category__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                           
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Other_Topic_Category__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                          
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Search_Variable_in_Data_Source__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Other_Search_Variable_in_Data_Source__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Type_of_MedDRA_Query__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="MedDRA_Search_Specifications__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Date_Started__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Rationale_Started__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                            
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Part_of_Commitment_to_HA__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                            
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Date_Reminder_Calendar__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Part_of_Additional_RMM__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="In_RMP__c" required="true"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Date_Stopped__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Rationale_Stopped__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Internal_Comments__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Legacy_ID__c" disabled="true"/>
+                                        </lightning:layoutItem> 
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>                          
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        
+                                        <lightning:layoutItem size="5" class="sectionclone">
+                                            Topic of Interest Documentation
+                                        </lightning:layoutItem>
+                                        
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Document_Name_1__c"/>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="1">
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem size="5">
+                                            <lightning:inputField fieldName="Document_Link_1__c"/>
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+                                    <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                        <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleCancel}" />
+                                        <lightning:button variant="brand" label="Save" title="Save" type="submit" />
+                                    </lightning:layout>
+                                </div>
+                            </lightning:card>
+                        </lightning:recordEditForm>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </aura:if>
+    <aura:if isTrue="{!v.isOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container modalwidth product-modal-class">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeProductModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Products</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <table class="slds-table slds-table--bordered slds-table--cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title--caps">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Select Product">Select</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Target Name">Target Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug">Drug</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug Trade Name">Drug Trade Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Formulation">Formulation</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Country">Country</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.targetList}" var="ct">
+                                <tr>
+                                    <td data-label="CheckBox">
+                                        <div  title="{!ct.ct.Id}" data-target-id="{! ct.Id }"> 
+                                            <lightning:input type="checkbox" aura:id="{!ct.Id}" value="{!ct.Id}" onchange="{!c.checkboxSelect}"/>
+                                        </div>
+                                    </td>
+                                    <td data-label="Name">
+                                        {! ct.Name }
+                                    </td>
+                                    <td data-label="Drug Name">
+                                        {! ct.Drug__r.Name }
+                                    </td>
+                                    <td data-label="Drug Trade Name">
+                                        {! ct.Drug_Trade_Name__r.Name }
+                                    </td>
+                                    <td data-label="Formulation">
+                                        {! ct.Formulation__r.Name }
+                                    </td>
+                                    <td data-label="Country">
+                                        {! ct.Single_Country__c }
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+                <!--###### MODAL BOX FOOTER Part Start ######-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" 
+                                      label="Submit"
+                                      title="Submit"
+                                      onclick="{! c.addProduct }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+    </aura:if>
+    
+
+</aura:component>

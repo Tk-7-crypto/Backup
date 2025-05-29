@@ -1,0 +1,250 @@
+<aura:component controller="CNT_CSM_CAPACloseAction" description="LXC_CSM_CAPACloseAction" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="cssStyle" type="String"/>
+    <aura:attribute name="caseWrapper" type="Object" />
+    <aura:attribute name="picklistWrapper" type="Object" />
+    <aura:attribute name="caseId" type="String"/>
+    <aura:attribute name="subStatus" type="String"/>
+    <aura:attribute name="allFieldsRequired" type="boolean" default="false" />
+    <aura:attribute name="checkUserPermission" type="boolean" default="false" />
+    <aura:attribute name="isQueryTypeDisable" type="boolean" default="true" />
+    <aura:attribute name="isResolutionCodeDisable" type="boolean" default="true" />
+    <aura:attribute name="isCorrectiveActionDisable" type="boolean" default="true" />
+    <aura:attribute name="isRootCauseDisable" type="boolean" default="true" />
+    <aura:attribute name="isSubType3Found" type="boolean"  />
+    <aura:attribute name="isLoadedFirstTime" type="boolean" default="true" />
+    <aura:attribute name="dependentSubstatusValues" type="Map" />
+    <aura:attribute name="dependentRootCauseValues" type="Map" />
+    <aura:attribute name="showMessage" type="boolean" default="false" />
+    <aura:attribute name="pageMessage" type="String" />
+    <aura:unescapedHtml value="{!v.cssStyle}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:dependency resource="markup://force:editRecord" type="EVENT" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+    
+    <aura:if isTrue="{!v.Spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    <aura:if isTrue="{!v.showMessage}">
+        <aura:if isTrue="{!!v.checkUserPermission}">
+            <div aura:id="pageMessage" class="slds-m-top_medium slds-text-heading_small slds-text-color_destructive">{!v.pageMessage}</div>
+        </aura:if>
+    </aura:if>
+    <aura:if isTrue="{!v.caseWrapper.isSubType3Exist}">
+        <form style="background-color: white;" class = "cuf-scroller-outside" >
+            <div class="slds-grid slds-wrap slds-grid--pull-padded" style="background-color: white;" >   
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="status" label="Status"
+                                              value="{!v.caseWrapper.caseRecord.Status}"
+                                              onchange="{!c.onStatusChange}"
+                                              >
+                                <option value="Please Specify" text="Please Specify"></option>
+                                <aura:iteration items="{!v.picklistWrapper.statusValues}" var="status">
+                                    <option value="{!status.value}" text="{!status.label}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="country" label="Country or Agency" 
+                                              value="{!v.caseWrapper.caseRecord.Country_of_the_requester2__c}">   
+                                <option value="Please Specify" text="Please Specify"></option>                                
+                                <aura:iteration items="{!v.picklistWrapper.countries}" var="country">
+                                    <option value="{!country.value}" text="{!country.label}" selected= "{!country.value==v.caseWrapper.caseRecord.Country_of_the_requester2__c}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="subStatus" label="SubStatus"
+                                              value="{!v.subStatus}"
+                                              disabled="{!v.picklistWrapper.subStatusValues.length == 0}">
+                                <option value="Please Specify" text="Please Specify"></option>
+                                <aura:iteration items="{!v.picklistWrapper.subStatusValues}" var="subStatus" >
+                                    <option value="{!subStatus.value}" text="{!subStatus.label}" selected= "{!subStatus.label==v.caseWrapper.caseRecord.SubStatus__c}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </div>
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="queryTypeArea" label="Query Type Area" 
+                                              onchange="{!c.onQueryTypeChange}" 
+                                              value="{!v.caseWrapper.queryTypeArea}"
+                                              disabled="{!v.picklistWrapper.queryTypeAreas.length == 0}">
+                                <aura:iteration items="{!v.picklistWrapper.queryTypeAreas}" var="queryTypeArea">
+                                    <option value="{!queryTypeArea}" text="{!queryTypeArea}" selected= "{!queryTypeArea==v.caseWrapper.caseRecord.Query_Type_Area__c}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                            <aura:if isTrue="{!!v.isSubType3Found}">
+                                <aura:if isTrue="{!!v.checkUserPermission}">
+                                <div class="slds-form-element__help slds-text-color_destructive" role="alert">No matching Sub-Type3 value found.</div>
+                            </aura:if>
+                             </aura:if>   
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:textarea label="Resolution" 
+                                                name="resolution"
+                                                value="{!v.caseWrapper.caseRecord.Resolution__c}"
+                                                aura:id="inputCmp"
+                                                />
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <aura:if isTrue="{!v.caseWrapper.queryTypeArea == 'Other'}">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:input type="text" label="Query Type Area Free Text"
+                                                 aura:id="inputCmp"
+                                                 required="{!v.caseWrapper.queryTypeArea == 'Other'}"
+                                                 value="{!v.caseWrapper.caseRecord.Query_Type_Area_Free_Text__c}" />
+                            </div>
+                        </div>
+                    </aura:if>
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="resolutionCode" label="Resolution Code"
+                                              onchange="{!c.onResolutionCodeChange}" disabled="{!v.isResolutionCodeDisable}"
+                                              value="{!v.caseWrapper.resolutionCode}">
+                                <aura:iteration items="{!v.picklistWrapper.resolutionCodes}" var="resolutionCode">
+                                    <option value="{!resolutionCode.resolutionCodes}" text="{!resolutionCode}" selected= "{!resolutionCode==v.caseWrapper.resolutionCode}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </div>
+                    <aura:if isTrue="{!v.caseWrapper.queryTypeArea != 'Other'}">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:select aura:id="selectCmp" name="correctiveAction" label="Corrective Action"
+                                                  disabled="{!v.isCorrectiveActionDisable}"
+                                                  value="{!v.caseWrapper.correctiveAction}">
+                                    <aura:iteration items="{!v.picklistWrapper.correctiveActions}" var="correctiveAction">
+                                        <option value="{!correctiveAction}" text="{!correctiveAction}" selected= "{!correctiveAction==v.caseWrapper.correctiveAction}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </div>
+                        </div>
+                    </aura:if>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:textarea label="Response to Client" 
+                                                aura:id="inputCmp"
+                                                name="responseToClient"
+                                                value="{!v.caseWrapper.caseRecord.Response_to_Client__c}"/>
+                        </div>
+                    </div>
+                </div>
+                <aura:if isTrue="{!v.caseWrapper.queryTypeArea == 'Other'}">
+                    <div class="slds-col--padded slds-size--1-of-2">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:select aura:id="selectCmp" name="correctiveAction" label="Corrective Action"
+                                                  disabled="{!v.isCorrectiveActionDisable}"
+                                                  value="{!v.caseWrapper.correctiveAction}">
+                                    <aura:iteration items="{!v.picklistWrapper.correctiveActions}" var="correctiveAction">
+                                        <option value="{!correctiveAction}" text="{!correctiveAction}" selected= "{!correctiveAction==v.caseWrapper.correctiveAction}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{!and(v.caseWrapper.correctiveAction == 'Other', v.caseWrapper.queryTypeArea == 'Other')}">
+                    <div class="slds-col--padded slds-size--1-of-2"></div>
+                </aura:if>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <aura:if isTrue="{!v.caseWrapper.correctiveAction == 'Other'}">
+                        <aura:if isTrue="{!v.caseWrapper.queryTypeArea != 'Other'}">
+                            <div class="slds-col--padded slds-size--1-of-2"></div>
+                        </aura:if>
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:input name="correctiveActionFreeText" 
+                                                 label="Corrective Action Free Text" 
+                                                 aura:id="inputCmp"
+                                                 required="{!v.caseWrapper.correctiveAction == 'Other'}"
+                                                 value="{!v.caseWrapper.caseRecord.Corrective_Action_Free_Text__c}"/>
+                            </div>
+                        </div>
+                    </aura:if>
+                </div>
+                <aura:if isTrue="{!or(v.caseWrapper.queryTypeArea == 'Other', !v.caseWrapper.isSubType3Matching)}">
+                    <div class="slds-col--padded slds-size--1-of-2"></div>
+                </aura:if>
+                <aura:if isTrue="{!!and(v.caseWrapper.correctiveAction == 'Other', v.caseWrapper.queryTypeArea == 'Other')}">
+                    <div class="slds-col--padded slds-size--1-of-2"></div>
+                </aura:if>
+                <div class="slds-col--padded slds-size--1-of-2">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <lightning:select aura:id="selectCmp" name="rootCause" label="Root Cause" 
+                                              disabled="{!v.isRootCauseDisable}"
+                                              value="{!v.caseWrapper.rootCause}">
+                                <aura:iteration items="{!v.picklistWrapper.rootCauses}" var="rootCause">
+                                    <option value="{!rootCause.value}" text="{!rootCause.label}" selected= "{!rootCause.value==v.caseWrapper.rootCause}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </div>
+                </div>
+                <aura:if isTrue="{!v.caseWrapper.rootCause == 'Other'}">
+                    <div class="slds-col--padded slds-size--1-of-2"></div>
+                    <div class="slds-col--padded slds-size--1-of-2">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:input type="text" label="Root Cause Free Text"
+                                                 aura:id="inputCmp"
+                                                 required="{!v.caseWrapper.rootCause == 'Other'}"
+                                                 value="{!v.caseWrapper.caseRecord.Root_Cause_Free_Text__c}"
+                                                 />
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+                <div class="slds-col--padded slds-size--1-of-2">
+                     <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="forceCSAT">Force CSAT Email Survey</label>
+                        <div class="slds-form-element__control">
+                            <lightning:input type="checkbox" id="forceCSAT"
+                                             aura:id="forceCSATCheckbox"
+                                             value="{!v.caseWrapper.caseRecord.Force_CSAT_Email_Survey__c}"
+                                             checked="{!v.caseWrapper.caseRecord.Force_CSAT_Email_Survey__c}"
+                                             onchange="{!c.onCheckboxChange}"
+                                             />
+                            <span class="slds-checkbox_faux"></span>
+                         </div>
+                    </div>
+                </div>
+				
+                <div class="slds-align_absolute-center slds-p-top_small">
+                    <lightning:button variant="brand" label="Save" title="Save" onclick="{!c.saveCaseData}"/>
+                </div>
+				
+            </div>
+        </form>
+    </aura:if>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

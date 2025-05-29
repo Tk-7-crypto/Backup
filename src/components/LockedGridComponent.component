@@ -1,0 +1,400 @@
+<apex:component controller="LockedGridCompController" id="comp">
+  
+  <link rel="stylesheet" type="text/css" href="/EXT/ext-3.3.3/resources/css/ext-all.css"/>
+  <apex:includeScript value="/EXT/ext-3.3.3/ext.js"/>
+  <c:ExtJs3LockingGridStyle /> 
+  <style>
+  .mycolheight { height : 71px; }
+  * select {font-size : 90%;}
+  #tr.mycolheight:hover {
+  #  background-color: #E3F3FF;
+  #}
+  .ext-webkit .x-grid-panel .x-panel-bwrap{
+  	-webkit-user-select:text !important;
+  }
+   .x-grid3-locked, .x-grid3-unlocked {
+        overflow: hidden;
+        display: inline-block  !important;
+        position: unset !important;
+	}  
+  </style>
+  <script>function setFocusOnLoad() {}</script>
+  <script>
+      function synchScrollers12(obj){
+          //var lockedElem = document.getElementById('pg:frm:pb:cm:comp:grdscrl');          
+          var lockedElem = document.getElementById('{!idHierarchy}:comp:grdscrl');
+          //var unlikdElem = document.getElementById('pg:frm:pb:cm:comp:nlkdhdrofst');
+          var unlikdElem = document.getElementById('{!idHierarchy}:comp:nlkdhdrofst');
+          //lockedElem.style.overflow = 'scroll';
+          lockedElem.scrollTop = obj.scrollTop;
+          unlikdElem.style.marginLeft = ((-1)* obj.scrollLeft) + "px";
+      }
+      
+      //isLkd == 1 --> Locked section 0 --> unLocked section
+      function synchHighlight12(obj, isLkd){
+          //background-color: #E3F3FF;
+          //.style.backgroundColor='Blue';
+          var tblId = obj.parentElement.id;
+          if(isLkd == 1) {
+              var nlkdTblId = tblId.replace('rptblk', 'nlkdrptblk').replace('datatbl','nlkddatatbl');
+              var nlkdTblElem = document.getElementById(nlkdTblId);
+              nlkdTblElem.firstElementChild.onmouseover();
+          }
+          
+      }
+  </script>
+  <!-- BEGIN - Copy of existing script -->
+  <script type="text/javascript">
+    function replicateCheck(textId, checkId)
+    {
+        //textId = inputField Id
+        //checkId = checkbox Id for particular column
+        try{
+            var numberOfRows = {!objItemList1.size};          
+            //var firstId = "pg:frm:pb:nlkdrptblk:0:nlkddatatbl:0:" + textId;
+            // Commented by Dheeraj Issue-11149 -- 18 Aug 2017
+            /*var firstId = "{!idHierarchy}:comp:nlkdrptblk:0:nlkddatatbl:0:" + textId;
+            var x = document.getElementById(firstId);*/
+            
+            var fullCheckId = checkId;
+            var y = document.getElementById(fullCheckId);
+            if(y.checked) {
+                // Added by Dheeraj Issue-11149 -- 18 Aug 2017 start
+                var buildId, element;
+                var firstIndex = -1;
+                var x = null;
+                for(var i = 0; i < numberOfRows; i++) {
+                    buildId = "{!idHierarchy}:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:" + textId;
+                    element = document.getElementById(buildId);
+                    if(element != null && !element.disabled) {
+                    	if(element.value === "") {
+                    		break;
+                    	}
+                        x = element;
+                        firstIndex = i;
+                        console.log('firstIndex ' + firstIndex);
+                        break;
+                    }
+                }
+                // Added by Dheeraj Issue-11149 -- 18 Aug 2017 end
+                // Updated -- Issue-11149 -- 10 August 2017
+                //if(x != null && x.value != "") {
+                  if(firstIndex != -1 && firstIndex < numberOfRows - 1) {
+                    for(var i = firstIndex + 1; i < numberOfRows; i++) {
+                        //var buildId = "pg:frm:pb:nlkdrptblk:" + i + ":nlkddatatbl:0:" + textId;
+                        var buildId = "{!idHierarchy}:comp:nlkdrptblk:" + i + ":nlkddatatbl:0:" + textId;
+                        
+                        // Update By Himanshu : 11 June 2013 : Issue-02096
+                        var selecteditem =document.getElementById(buildId);
+                        var exists = false;
+                        if (document.getElementById(buildId) != null)
+                        {
+                            if(selecteditem.options!=null)
+                            {
+                                for (indexitem = 0 ; indexitem  <= selecteditem .options.length - 1 ; indexitem ++ )
+                                {
+                                        if (selecteditem.options[indexitem ].value == x.value)
+                                        {
+                                            exists = true;
+                                            break;
+                                        }
+                                }
+                                
+                                 if(exists) {
+                                    if (!document.getElementById(buildId).disabled)
+                                        document.getElementById(buildId).value = x.value;
+                                }
+                            }
+                            else
+                            {
+                                 if (!document.getElementById(buildId).disabled)
+                                     document.getElementById(buildId).value = x.value;
+                            }
+                        }                         
+                       
+                    }
+                }
+             }
+        } catch (err) {
+            alert (err);
+        } 
+        }
+        // added by dheeraj kumar
+        <!-- Added by Dheeraj Kumar Issue-10686 - Add help text for profit centre 06 April 2017 -->
+        function loadHelpText(element, colApiName) {
+        
+        var wholeid = element.parentElement.id;
+        var actualid = wholeid.replace('-_help','');
+        if(colApiName == 'Audit_Subscription_Status__c') {
+            sfdcPage.setHelp(actualid, '{!$ObjectType.OpportunityLineItem.fields.Audit_Subscription_Status__c.inlineHelpText}');
+        } else if(colApiName == 'ProfitCenter__c') {
+            sfdcPage.setHelp(actualid, '{!$ObjectType.OpportunityLineItem.fields.ProfitCenter__c.inlineHelpText}');
+        }
+       }
+    
+    // For Discount/Surcharge Reason
+    function replicatefun(textId, checkId){
+        if(textId=='col10' && checkId == 'hdr10'){
+            replicateCheck(textId,checkId); 
+            replicateCheck('surchargetext',checkId);
+        }
+        else{
+            replicateCheck(textId,checkId);
+        }
+    }
+			
+       // added by dheeraj kumar
+       function changePosition() {
+       
+       var ele = document.getElementsByClassName("helpButtonOn");
+       console.log(ele);
+       }
+        
+        //YLi  BNF requirement #36 calculate discount amount
+
+        function DiscountCheck(textId){
+         try{
+           /**
+                if(textId!="") {
+                    for(var i=1; i<(numberOfRows-1); i++) {
+                        //alert(numberOfRows);
+                        var buildId = "thePage:theForm:theBlock:theSection:theTable:" + i + ":" + textId;
+                        document.getElementById(buildId).value = x.value;
+                    }
+                }
+             */   
+            // }
+            // alert(textId);
+             //alert(document.getElementById("thePage:j_id2:j_id3:theTable:0:theTextInput").value);
+        } catch (err) {
+            alert (err);
+        } 
+    // end of YLi - BNF requirement #36 calculate discount amount
+        }
+        
+//Added By Himanshu : Calculate Surchage text.
+        function calculateDiscount(salesprice,thisid,colid,RevisedPriceUpdate)
+        {
+            var salespricestr;
+            // if revised bnf then use revised sales price
+            if(document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'col19')!=null && document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'col19').value!='')
+               salesprice=document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'col19').value; 
+          
+            
+            salespricestr=salesprice.toString();
+            salespricestr=salespricestr.replace(",","");
+            salespricestr=salespricestr.replace("'","");
+            salespricestr=salespricestr.replace(" ","");
+           
+
+            //List Price
+            var listpricestr;
+            listpricestr=document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'col7').value;
+         
+            listpricestr=listpricestr.replace(",","");
+            listpricestr=listpricestr.replace("'","");
+            listpricestr=listpricestr.replace(" ","");
+             
+            discountpercentage= document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'col8');
+
+            var calculatedpercentage= new Number(parseFloat(((parseFloat(listpricestr)-parseFloat(salespricestr))/parseFloat(listpricestr))*100));
+            console.log('*******Discount Cal*component***********'+ listpricestr + '******'+ salespricestr + '******'+calculatedpercentage);
+            if(calculatedpercentage>0)
+                discountpercentage.innerHTML=calculatedpercentage.toPrecision(4) + '%';
+            else
+                discountpercentage.innerHTML='';
+            
+              if((parseFloat(listpricestr)-parseFloat(salespricestr))==0)
+            {
+                
+                document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid).selectedIndex = 0; 
+               document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid).disabled=true;   
+            }
+            else
+            {
+              //Remove surcharge text from Discount reason picklist
+            
+              if(document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden')!=null && document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden')!='')
+              {
+                  var selecteditem =document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid)
+                  var exists = false;
+                  var itemindex = 0;
+                  
+                  if(selecteditem.options!=null)
+                  {
+                        for (indexitem = 1 ; indexitem  <= selecteditem .options.length - 1 ; indexitem ++ )
+                        {
+                                if (selecteditem.options[indexitem ].value ==document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + 'surchargehidden').value)
+                                {
+                                    exists = true;
+                                    itemindex=indexitem;
+                                    break;
+                                }
+                        }
+                                
+                         if(exists) {
+                            document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid).remove(itemindex);
+                        }
+                  }
+              }
+              
+              document.getElementById(thisid.substring(0,thisid.lastIndexOf(":")+1) + colid).disabled=false; 
+                
+            }
+            
+           
+           
+            
+            return false;
+        }
+    </script>
+  <!-- END - Copy of existing script -->
+  
+  <!-- component attributes - start -->
+  <apex:attribute name="lokcedColList1" type="LockedGridColDetail[]" assignTo="{!lokcedColList}" description="Details of the column to be displayed in locked section."/>
+  <apex:attribute name="unLockedColList1" type="LockedGridColDetail[]" assignTo="{!unLockedColList}" description="Details of the column to be displayed in UNLocked section."/>
+  <apex:attribute name="objItemList1" type="sobject[]" assignTo="{!objItemList}" description="List of sobjects to be displayed"/>
+  <apex:attribute name="idHierarchy" type="String" description="Hierarchy of this component on the calling page."/>
+  <apex:attribute name="addendum1" type="Boolean" assignTo="{!addendum}" description="Addendum of BNF"/>
+  <!-- To be passed back to calling page start -->
+  <apex:attribute name="var" type="String" description="The variable to represent a single object in the iteration. To be passed to calling page."/>
+  <apex:attribute name="totalUnLockedWidthtopass" type="String" description="The variable to represent width of unlocked section. To be passed to calling page."/>
+  <!-- To be passed back to calling page end -->
+  <!-- component attributes - end -->
+  
+ 
+      
+      <apex:outputPanel layout="block" styleclass=" x-panel x-grid-panel"  id="pgrid">
+          <apex:outputPanel layout="block" styleclass="x-panel-bwrap" id="pbwrap">
+              <apex:outputPanel layout="block" styleclass="x-panel-body" style="min-height:168px;max-height: 351px;" id="pbody">
+                  <apex:outputPanel layout="block" styleclass="x-grid3" id="xgrd3">
+                      <!-- BEGIN - Locked section -->
+                      <apex:outputPanel layout="block" styleclass="x-grid3-locked" style="width:43%;height:100%;" id="grdlkd">
+                          <!-- BEGIN - Locked header -->
+                          <apex:outputPanel layout="block" styleclass="x-grid3-header">
+                              <apex:outputPanel layout="block" styleclass="x-grid3-header-inner" >
+                                  <apex:outputPanel layout="block" styleclass="x-grid3-header-offset"  >
+                                  <table cellspacing="0" cellpadding="0" border="0"   class="list">
+                                     <thead class="rich-table-thead">
+                                         <tr class="headerRow ;" style="height: 37px;">     
+                                             <th class="headerRow ;" style="width: 15%;white-space:normal;">
+                                                 Product Code<br/> 
+                                             </th> 
+                                             <th class="headerRow ;" style="width: 20%;white-space:normal;">
+                                                 Sales Price<br/> 
+                                             </th> 
+                                             <th class="headerRow ;" style="width: 24%;white-space:normal;">
+                                                 Name<br/> 
+                                             </th> 
+                                             <th class="headerRow ;" style="width: 19%;white-space:normal;">
+                                                 Delivery Country<br/> 
+                                             </th> 
+                                             <th class="headerRow ;" style="width: 22%;white-space:normal;">
+                                                 WBS codes<br/> 
+                                             </th> 
+                                           <!--<apex:repeat var="lkdHdr" value="{!lokcedColList}">
+                                               <apex:outputPanel rendered="{!IF(lkdHdr.colName == 'WBS codes', true, false)}">
+                                                   <th class="headerRow ;">
+                                                   {!lkdHdr.colName}<br/> 
+                                                   </th> 
+                                               </apex:outputPanel>
+                                               <apex:outputPanel rendered="{!IF(lkdHdr.colName != 'WBS codes', true, false)}">
+                                                   <th style="width: {!lkdHdr.colWidth }px;" class="headerRow ;">
+                                                       {!lkdHdr.colName}<br/> 
+                                                   </th>
+                                               </apex:outputPanel>
+                                               
+                                          </apex:repeat>
+											-->
+                                         </tr> 
+                                     </thead>
+                                     </table>
+                                  </apex:outputPanel>
+                              </apex:outputPanel>
+                              <apex:outputPanel layout="block" styleclass="x-clear">
+                              </apex:outputPanel>
+                          </apex:outputPanel>
+                          <!-- END - Locked header -->
+                          <apex:outputPanel layout="block" styleclass="x-grid3-scroller" style="min-height:110px;max-height:300px" id="grdscrl">
+                              <apex:outputPanel layout="block" styleclass="x-grid3-body" style="" id="grd3bd"> 
+                                  <!-- BEGIN - Locked col data --> 
+                                  <apex:repeat var="act" value="{!objItemList1}" id="rptblk">
+                                       <apex:outputPanel layout="block" id="rptblk">
+                                           <apex:dataTable var="ac" value="{!act}" 
+                                                           cellspacing="0" cellpadding="0" border="0" id="datatbl"  rowClasses="mycolheight" styleClass="list">                                               
+                                                <apex:column value="{!ac[lokcedColList1[0].colApiName]}" width="15%" title="{!ac[lokcedColList1[0].colApiName]}" style="word-wrap: break-word;"/>
+                                               <!-- <apex:column value="{!ac[lokcedColList[1].colApiName]}" width="{!lokcedColList[1].colWidth}" title="{!ac[lokcedColList[1].colApiName]}" style="word-wrap: break-word;"/>-->
+                                               <apex:column id="salesprice" value="{!ac[lokcedColList1[1].colApiName]}" width="20%" title="{!ROUND(ac[lokcedColList1[1].colApiName],2)}" style="word-wrap: break-word;"/>
+                                                <apex:column value="{!ac[lokcedColList1[2].colApiName]}" width="24%" title="{!ac[lokcedColList1[2].colApiName]}" style="word-wrap: break-word;"/>
+                                               <!-- -->
+                                               <apex:column value="{!ac[lokcedColList1[3].colApiName]}" width="19%" title="{!ac[lokcedColList1[3].colApiName]}" style="word-wrap: break-word;"/>
+                                               <apex:column value="{!ac[lokcedColList1[4].colApiName]}" width="22%" title="{!ac[lokcedColList1[4].colApiName]}" style="word-wrap: break-word;"/>
+                                               <!-- -->
+                                           </apex:dataTable>
+                                       </apex:outputPanel>
+                                   </apex:repeat>
+                                   <!-- END - Locked col data -->
+                              </apex:outputPanel>
+                              <apex:outputPanel layout="block" styleclass="x-grid3-scroll-spacer"/>
+                          </apex:outputPanel>
+                      </apex:outputPanel>
+                      <!-- END - Locked section -->
+                      
+                      <!-- BEGING - UnLocked section -->
+                      <apex:outputPanel layout="block" id="grdnlkd" styleclass="x-grid3-viewport x-grid3-unlocked" style="width: 56%;">
+                          <!-- BEGIN - uNLocked header -->
+                              <apex:outputPanel layout="block" styleclass="x-grid3-header" id="nlkdhdr">
+                                  <apex:outputPanel layout="block" styleclass="x-grid3-header-inner" style=" background-color: #E3F3FF;" id="nlkdhdrinner">
+                                      <apex:outputPanel layout="block"  styleclass="x-grid3-header-offset" style="" id="nlkdhdrofst" > 
+                                          <table cellspacing="0" cellpadding="0" border="0" style=""  class="list" id="hdrtbl">
+                                              <thead class="rich-table-thead" id="hdrtblhead">
+                                                 <tr class="headerRow ;" style="height: 37px;" id="hdrrow">                                                                  
+                                                   <apex:repeat var="unLkdHdr" value="{!unLockedColList1}" id="hdrrowrpt">
+                                                       <th style="width: {!unLkdHdr.colWidth }px;" class="headerRow ;" id="hdrrowdt">
+                                                       <span style="display:{!IF(!unLkdHdr.showhelpText, 'inline-block', 'none' )};" >{!unLkdHdr.colName}</span>
+                                                       <span class="helpButton" style="padding-top: 3px;display:{!IF(unLkdHdr.showhelpText, 'inline-block', 'none' )};" id="{!unLkdHdr.colHdrId +'-_help'}"  >
+                                                           <span style="vertical-align: super;">{!unLkdHdr.colName}</span>
+                                                           <!-- Added by Dheeraj Kumar Issue-10686 - Add help text for profit centre 06 April 2017 -->
+                                                           <img id="helpImg1" onmouseover="changePosition(this)" style="position: absolute" onload="if({!unLkdHdr.showhelpText})loadHelpText(this, '{!unLkdHdr.colApiName}')" class="helpOrb" title="" alt="" src="/s.gif" /> 
+                                                       </span>
+                                                       <br/> <input type="checkbox" id="{!unLkdHdr.colHdrId}" style="display:{!IF(unLkdHdr.showChkBx, 'block', 'none' )}" onClick="replicatefun('{!unLkdHdr.colId}','{!unLkdHdr.colHdrId}')"/>
+                                                          
+                                                       </th>
+                                                   </apex:repeat>
+                                                  
+                                                 </tr> 
+                                             </thead>
+                                          </table>
+                                      </apex:outputPanel>
+                                  </apex:outputPanel>
+                                  <apex:outputPanel layout="block" styleclass="x-clear"/>
+                              </apex:outputPanel>
+                              <!-- END - UnLocked header -->
+                          <div class="x-grid3-scroller" style="min-height:110px;max-height:300px"  onscroll="javascript:synchScrollers12(this);" >
+                              
+                              <apex:outputPanel layout="block" styleclass="x-grid3-body" style="" id="nlkdgrd3bd"> 
+                                  <!-- BEGIN - Unlocked col data begin -->
+                                  <apex:repeat var="act" value="{!objItemList1}" id="nlkdrptblk">
+                                       <apex:outputPanel layout="block" id="unlkddtblk" >
+                                           <!-- component body start -->
+                                               <apex:componentBody >
+                                                   <apex:variable var="{!var}" value="{!act}"/>
+                                                   <apex:variable var="{!totalUnLockedWidthtopass}" value="{!totalUnLockedWidth}"/>   
+                                               </apex:componentBody>
+                                               <!-- component body end --> 
+                                                  
+                                       </apex:outputPanel>
+                                   </apex:repeat>
+                                   <!-- END - Unlocked col data end -->
+                              </apex:outputPanel>
+                              <apex:outputPanel layout="block" styleclass=""/>
+                          </div>
+                      </apex:outputPanel>
+                      <!-- END - UnLocked section -->
+                      <apex:outputPanel layout="block" styleclass="x-grid3-resize-marker">&nbsp;</apex:outputPanel>
+                      <apex:outputPanel layout="block" styleclass="x-grid3-resize-proxy">&nbsp;</apex:outputPanel>
+                  </apex:outputPanel>
+              </apex:outputPanel>
+          </apex:outputPanel>
+      </apex:outputPanel>
+</apex:component>

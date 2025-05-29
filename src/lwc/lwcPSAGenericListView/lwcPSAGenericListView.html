@@ -1,0 +1,61 @@
+<template>
+    <lightning-card>
+        <h3 slot="title">
+            <lightning-icon icon-name={componentIcon} size="small"></lightning-icon>
+            &nbsp; &nbsp;{headingName}
+        </h3>
+        <lightning-button label="Back" slot="actions" onclick={backToLR} variant="brand"></lightning-button>
+        <template if:true={isDelete}>
+            <lightning-button label="Delete" slot="actions" onclick={handleDelete} variant="brand" class="slds-m-left_x-small"></lightning-button>
+        </template>
+        <template if:true={isEdit}>
+            <lightning-button label="Refresh" slot="actions" onclick={refresh} variant="brand" class="slds-m-left_small"></lightning-button>
+        </template>
+        
+        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+            <template if:true={loaded}>
+                <lightning-spinner alternative-text="Loading" size="large"></lightning-spinner>
+            </template>
+        <div class="slds-scrollable_y" style="height:fit-content">
+            <div class="dataTable">
+                <template if:true={isDelete}>
+                    <lightning-datatable key-field="Id" data={filteredRecord} columns={columns} 
+                        default-sort-direction={defaultSortDirection} sorted-direction={sortDirection} sorted-by={sortedBy}
+                        onsort={onHandleSort} onrowaction={handleRowActions} onrowselection={getSelectedId}>
+                    </lightning-datatable>
+                </template>
+                <template if:false={isDelete}>
+                    <lightning-datatable key-field="Id" data={filteredRecord} columns={columns}  hide-checkbox-column="true"
+                        default-sort-direction={defaultSortDirection} sorted-direction={sortDirection} sorted-by={sortedBy}
+                        onsort={onHandleSort} onrowaction={handleRowActions} onrowselection={getSelectedId}>
+                    </lightning-datatable>
+                </template>
+                
+            </div>
+        </div>    
+        </div>
+        <div slot="footer">
+            <div class="slds-align_absolute-center"> 
+                <div class="slds-p-right_xx-small">
+                         
+                    <lightning-button label="Prev" 
+                                        disabled={isPrev} onclick={handlePagePrevAction}
+                                        variant="brand"
+                                        icon-name="utility:back"
+                                        name="prev"></lightning-button>  
+                </div>
+                <span class="slds-badge slds-badge_lightest">
+                    {recordStart}-{recordEnd} of {totalRecords} | Page {pageNumber} of {totalPages}
+                </span>
+                <div class="slds-p-left_xx-small">
+                    <lightning-button label="Next" 
+                                        disabled={isNext} onclick={handlePageNextAction}
+                                        variant="brand"
+                                        icon-name="utility:forward"
+                                        icon-position="right"
+                                        name="next"></lightning-button>
+                </div>
+            </div>  
+        </div>
+    </lightning-card>
+</template>

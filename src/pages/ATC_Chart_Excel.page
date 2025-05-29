@@ -1,0 +1,233 @@
+<apex:page id="pg" standardController="ATC__c" extensions="ATC_Chart_Excel" contentType="application/vnd.ms-excel#ATC_Chart_{!TODAY()}.xls" standardStylesheets="false"  readOnly="true">
+
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    </head>
+    <apex:form id="frm">
+        <apex:pageMessages id="roleError" />
+        <apex:pageBlock id="pb" rendered="{!showDataBlock}" >
+             <apex:outputPanel >
+                <!-----------------------------------TABLE OF FILTER CRITERIA INFORMATION---------------------------------------------->
+        <table>   
+            <tr>
+                <td colspan="4">
+                    <h3>{!$Label.Filter_criteria} :</h3> 
+                </td>
+            </tr>
+            <tr><td colspan="4"> </td></tr>
+            <tr>
+                <td>{!$Label.Account}:</td>
+                <td style="text-align:center;">
+                    <apex:OutputText value="{!acc}" rendered="{!If(OR(acc != null ,acc != '' ), true, false)}" />
+                    <apex:OutputText value="{!$Label.Not_Applied}" rendered="{!If(OR(acc  != null ,acc  != '' ), false,true )}" />
+                </td>
+                
+            </tr>            
+            <tr>
+                <td>{!$Label.ATC_Code}</td>
+                <td style="text-align:center;"><apex:OutputText value="{!atcCodeForPage}" rendered="{!If(OR(aTCodeCriteria != null ,aTCodeCriteria != '' ), true, false)}" />
+                    <apex:OutputText value="Not Applied"    rendered="{!If(OR(aTCodeCriteria != null ,aTCodeCriteria != ''), false, true)}" />
+                </td>                
+            </tr>
+            <tr>
+                <td>{!$Label.Data_Period_Start}:</td>
+                <td style="text-align:center;"><apex:OutputText value="{!dataPerStart}"  />
+                 </td>    
+                
+
+             </tr>
+             <tr>
+                <td>{!$Label.Data_Period_End}:</td>
+                <td style="text-align:center;"><apex:OutputText value="{!dataPerEnd}"  />
+                </td> 
+             </tr>
+             <tr>
+                <td >{!$Label.product}:</td>
+                <td style="text-align:center;">
+                    <apex:repeat value="{!productListToShowOnPage}" var="prod" > 
+                        <apex:OutputText value="{!prod.Name}"/><br/>
+                    </apex:repeat>
+                    <apex:OutputText value="ALL" rendered="{!If(productListToShowOnPage.size != 0, false,true )}" />
+                </td>                    
+             </tr>
+             <tr>
+                <td>{!$Label.NonChargeDeliver_ATC}:</td>
+                <td style="text-align:center;">
+                <apex:OutputText value="FALSE" rendered="{!!Non_Chargedeliverof_ATC}" />
+                <apex:OutputText value="TRUE" rendered="{!Non_Chargedeliverof_ATC}" />
+                </td> 
+             </tr>
+        </table>
+        <br/>
+        <br/>
+        </apex:outputPanel>
+            <apex:outputPanel id="lgn" rendered="{!hasProductData}">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <b>{!$Label.Legends}</b>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#999999">&nbsp;&nbsp;&nbsp;
+                        </td>
+                        <td>
+                            {!$Label.Non_Charge_Delivery_of_ATC_Code}
+                        </td>
+                    </tr>
+                    <tr>   
+                        <td style="background-color:#33BB55">&nbsp;&nbsp;&nbsp;
+                        </td>
+                        <td>
+                            {!$Label.Period_of_Delivery_ATC_Code}
+                        </td>
+                    </tr>
+                </table>
+            </apex:outputPanel><br/>
+            <apex:outputlabel rendered="{!AND(hasProductData,OR(viewMode=='ProductSumm',viewMode=='ATCSumm'))}"> <b> {!$Label.Note_ATCChart}</b> </apex:outputlabel><br/>
+            <apex:outputlabel rendered="{!hasProductData}" style="vertical-align:text-top;font-style:italic;">[Showing data within date range from :({!Month(minStartDateWithActualData)},{!Year(minStartDateWithActualData)}) to  ({!Month(maxEndDateWithActualData)} ,{!Year(maxEndDateWithActualData)})]</apex:outputlabel>
+            <apex:outputPanel id="opData" rendered="{!AND(IF( OR(ViewMode=='Product',ViewMode=='ProductSumm'),true,false),hasProductData)}">
+                <table border="1" cellspacing="0" cellpadding="0" >
+                    <tr>
+                        <!--<td colspan="4">{!$Label.Account_View}</td>-->
+                        <!-- updated By :ranu, Detail : ER-0283,to show header condtionally -->
+                        <td colspan="4">
+                        <apex:outputPanel rendered="{!ViewMode=='Product'}">
+                          {!$Label.Account_View}  
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!ViewMode=='ProductSumm'}">
+                          {!$Label.AccountSumm_View}
+                        </apex:outputPanel>
+
+                        </td>
+
+                        <td colspan="{!dataPeriodLength}" bgcolor="#A1D7EE" align="center"><b>{!$Label.Data_Period}</b></td>
+                    </tr>
+                    <tr >
+                        <!-- commneted By :Ranu,Deatil : Issue_0418 -->
+                        <!-- <td width="180px" nowrap="nowrap" bgcolor="#A1D7EE"><b>{!$Label.Agreement_Name}</b></td> -->
+                        <!-- Updated By-Ekta Sharma ,Date:-21st,March 2013,Detail:-ER-343-->
+                        <td width="180px" nowrap="nowrap" bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.Agreement_Number}</b></td>
+                        <td width="200px" nowrap="nowrap"  bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.Product_Name}</b></td>
+                        <td width="80px" nowrap="nowrap"  bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.ATC_Code}</b></td>
+                        <td Width="80px" nowrap="nowrap" bgcolor="#A1D7EE" Style="text-align:center;"><b> {!$Label.Market_Def_Type}</b></td>
+                        <td style="border-left-width: 1pt;" colspan="{!dataPeriodLength}"  rowspan="{!itemCount}">
+                            <apex:outputPanel layout="block"  >
+                                <table border="1" cellspacing="0" cellpadding="0" >
+                                    <tr>
+                                        <apex:repeat value="{!lstDates}" var="objDate">
+                                            <td nowrap="nowrap"  bgcolor="#A1D7EE" >
+                                                <b>
+                                                <apex:outputText value="{0,date,MMM yyyy}">
+                                                    <apex:param value="{!objDate}" />
+                                                </apex:outputText>
+                                                </b>
+                                            </td>
+                                        </apex:repeat>
+                                    </tr>                                    
+                                    <apex:repeat value="{!lstDataWrapper}" var="objATCData">
+                                         <tr >                                   
+                                             <apex:repeat value="{!objATCData.divList}" var="ATCData">
+                                                 <td width="64px" style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;{!IF(ATCData = 0,'background-color:nocolor',IF(ATCData = 2,'background-color:#999999','background-color:#33BB55'))};"><div style="width:100%;height:19px;">&nbsp;</div></td>                                                                          
+                                             </apex:repeat>                                     
+                                         </tr>
+                                     </apex:repeat>
+                                    <tr style="display:{!IF(hasProductData,'none','block-line')}">
+                                        <td style="background-color:#FFCECE" colspan="{!dataPeriodLength}"><apex:outputlabel rendered="{!!hasProductData}">{!$Label.No_search_results}</apex:outputlabel></td>
+                                    </tr>
+                                </table>
+                            </apex:outputpanel>
+                        </td> 
+                    </tr>
+    
+                    <apex:repeat value="{!lstDataWrapper}" var="objATCData">
+                    <tr rendered="{!IF(hasProductData, true,false)}">
+                        <!-- Updated By-Ekta Sharma ,Date:-21st,March 2013,Detail:-ER-343-->
+                        <td nowrap="nowrap" Style="text-align:center;">
+                            <apex:outputLink >
+                                <!-- <a href="/{!objATCData.AgreementId }" target="_blank">{!objATCData.AgreementName}</a> -->
+                                    <a href="/{!objATCData.AgreementId }" target="_blank">{!objATCData.AgreementNumber}</a> 
+                            </apex:outputLink>
+                        </td>
+                         <!-- Updated By-Ekta Sharma ,Date:-21st,March 2013,Detail:-ER-343-->
+                        <td nowrap="nowrap" Style="text-align:center;">{!objATCData.ProductName}</td>
+                        <td nowrap="nowrap" Style="text-align:center;">{!objATCData.ATCCode}</td>
+                        <td nowrap="nowrap" Style="text-align:center;">{!objATCData.Brand}</td>
+                    </tr>
+                    </apex:repeat>
+                    <tr>
+                        <td colspan="4"></td>
+                    </tr>  
+                </table>
+            </apex:outputPanel>
+
+            <apex:outputPanel layout="block" id="opDataATC" rendered="{!AND(IF( OR(viewMode=='ATC',viewMode=='ATCSumm'),true,false),hasProductData)}" >
+                <table border="1" cellspacing="0" cellpadding="0" width="100%">
+                    <tr>
+                        <!--<td colspan="4">{!$Label.ATC_Code_View}</td>-->
+                        <!-- updated By :ranu, Detail : ER-0283,to show header condtionally -->
+                        <td colspan="4">
+                        <apex:outputPanel rendered="{!ViewMode=='ATC'}">
+                          {!$Label.ATC_Code_View} 
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!ViewMode=='ATCSumm'}">
+                          {!$Label.ATC_CodeSumm_View}
+                        </apex:outputPanel>
+                         </td>
+
+                        <td colspan="{!dataPeriodLength}" bgcolor="#A1D7EE" align="center"><b>{!$Label.Data_Period}</b></td>
+                    </tr>
+                    <tr >
+                         <!-- Updated By-Ekta Sharma ,Date:-21st,March 2013,Detail:-ER-343-->
+                        <td width="30px" nowrap="nowrap" bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.ATC_Code}</b></td>
+                        <td width="150px" nowrap="nowrap"  bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.Account_Name}</b></td>
+                        <td width="180px" nowrap="nowrap"  bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.Product_Name}</b></td>
+                        <!-- <td Width="130px"  nowrap="nowrap" bgcolor="#A1D7EE"><b>{!$Label.Agreement_Name}</b></td> -->
+                        <td Width="130px"  nowrap="nowrap" bgcolor="#A1D7EE" Style="text-align:center;"><b>{!$Label.Agreement_Number}</b></td>
+                        <td style="padding:0em;" colspan="{!dataPeriodLength}" rowspan="{!itemCount}">
+                            <apex:outputPanel style="width:700px;overflow:auto;overflow-x:scroll" layout="block"  >
+                                <table border="1" cellspacing="0" cellpadding="0"  width="100%">
+                                    <tr>
+                                        <apex:repeat value="{!lstDates}" var="objDate">
+                                            <td nowrap="nowrap"  bgcolor="#A1D7EE" >
+                                                <b>
+                                                <apex:outputText value="{0,date,MMM yyyy}" >
+                                                    <apex:param value="{!objDate}" />
+                                                </apex:outputText>
+                                                </b>
+                                            </td>
+                                        </apex:repeat>
+                                    </tr>                                   
+                                    <apex:repeat value="{!lstATCViewWrapper}" var="objATCViewData">
+                                        <tr>                                       
+                                            <apex:repeat value="{!objATCViewData.divList}" var="ATCData">
+                                                <td style="border-bottom-width:1px; border-bottom-style:inset ; border-bottom-color:black ;border-left-width:1px; border-left-style:inset ; border-left-color:black ;{!IF(ATCData = 0,'background-color:nocolor',IF(ATCData = 2,'background-color:#999999','background-color:#33BB55'))};"><div style="height:20px">&nbsp;</div></td>
+                                            </apex:repeat>                                          
+                                        </tr>
+                                    </apex:repeat>
+                                    <tr style="display:{!IF(hasProductData,'none','block-line')}">
+                                        <td style="background-color:#FFCECE" colspan="{!dataPeriodLength}"><apex:outputlabel rendered="{!!hasProductData}">{!$Label.No_search_results}</apex:outputlabel></td>
+                                    </tr>
+                                </table>
+                            </apex:outputpanel>
+                        </td> 
+                    </tr>
+    
+                    <apex:repeat value="{!lstATCViewWrapper}" var="objATCViewData">
+                    <tr rendered="{!IF(hasProductData, true,false)}">
+                        <!-- Updated By-Ekta Sharma ,Date:-21st,March 2013,Detail:-ER-343-->
+                        <td nowrap="nowrap" width="30px" Style="text-align:center;">{!objATCViewData.ATCCode}</td>
+                        <td nowrap="nowrap" width="550px" Style="text-align:center;">{!objATCViewData.AccountName}</td>
+                        <td nowrap="nowrap" width="580px" Style="text-align:center;">{!objATCViewData.ProductName}</td>
+                        <!-- <td nowrap="nowrap">{!objATCViewData.AgreementName}</td> -->
+                        <td nowrap="nowrap" Width="130px" Style="text-align:center;">{!objATCViewData.AgreementNumber}</td>
+                    </tr>
+                    </apex:repeat>
+                    <tr>
+                        <td colspan="4"></td>
+                    </tr>  
+                </table>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,176 @@
+<apex:page controller="CNT_TPA_OfferingsDetails">
+    <head>
+        <apex:includeScript value="{!$Resource.AngularJS}"/>    
+    </head> 
+    <style>
+        .pbSubheader{
+        width: 100%;    
+        text-align: center;
+        }
+        .hideGlobalHeader{
+            display: none !important;
+        }
+    </style>
+    <apex:slds />
+    <!-- Added for site to community logic submission start -->
+    <script type="text/javascript">
+    if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+            var globalBar = document.getElementsByClassName("globalHeaderBar");
+            if(globalBar != null  && globalBar.length > 0) {
+                globalBar[0].classList.add("hideGlobalHeader");
+            }
+            var searchBar = document.getElementsByClassName("zen-navViaSearch");
+            if(searchBar != null  && searchBar.length > 0) {
+                searchBar[0].classList.add("hideGlobalHeader");
+            }
+            var navigationMenu = document.getElementsByClassName("zen-hasMessages");
+            if(navigationMenu != null && navigationMenu.length > 0) {
+                navigationMenu[0].classList.add("hideGlobalHeader");
+            }
+        }
+    function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+    console.log('till here');
+    if('{!currentUserProfileName}' == 'tpa Profile') {
+        console.log('till here1');
+        var qryString = '';
+        var urlParams = getUrlVars();
+        for(var key in urlParams) {
+            if(urlParams.hasOwnProperty(key)) {
+                var val = urlParams[key];
+                qryString += key + '=' + val + '&';
+            }
+        }
+        qryString = qryString.slice(0, -1);
+        window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_OfferingsDetails&' + qryString;
+    }
+    </script>
+    <script type="text/javascript">
+    function getParameterByName(name) 
+    {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+        var results = regex.exec(location.search);
+        return results == null ? "" : results[1].replace(/\+/g, " ");
+    }
+    function escapeConversion(str){
+        var html = str.replace(/&[a][m][p];/gi, '&');   
+        var tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        html = tmp.textContent || tmp.innerText || "";
+        var txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value; 
+    }
+    var offeringsDetailsApp = angular.module('offeringsDetailsApp',[]);
+    var reqId = getParameterByName('reqId');
+    var contrl = offeringsDetailsApp.controller('controllerPage',['$scope','$log',function($scope,$log){
+        $scope.tpaRequest = [];
+        $scope.excludedUsesInRenewal = '';
+        $scope.listOfUses = '';
+        $scope.categoryOfOfferings = '';
+        $scope.isRenewedRequest = false;
+        
+        angular.element(document).ready(function () {
+            $scope.tpaRecord = {};
+            $scope.fetchTPARecords(reqId);
+        });
+        
+        $scope.fetchTPARecords = function(reqId){
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.CNT_TPA_OfferingsDetails.fetchTPARecords}',reqId,
+                function(result,event){
+                    if(event.type == 'exception'){
+                        console.error('Data Fetch Error');
+                        return false;                                    
+                    }
+                    if(result != null ){
+                        console.log(result);
+                        $scope.tpaRecord = result; 
+                    }
+                    if($scope.tpaRecord !== null){
+                        
+                        $scope.countriesOfOffering = $scope.tpaRecord.Countries_of_offerings__c !== undefined ? escapeConversion($scope.tpaRecord.Countries_of_offerings__c) : 'None';
+                        $scope.categoryOfOfferings = $scope.tpaRecord.Category_of_Offerings__c !== undefined ? escapeConversion($scope.tpaRecord.Category_of_Offerings__c) : 'None'
+                        
+                        let useSet = new Set($scope.tpaRecord.List_Of_Uses__c.split(','));
+                        let setString = '';
+                        for(let use of useSet){
+                            setString += use + ', '
+                        }
+                        $scope.listOfUses = escapeConversion(setString.substring(0, setString.length - 2));
+                        
+                        $scope.isRenewedRequest = $scope.tpaRecord.Parent_Request__c !== undefined && $scope.tpaRecord.Parent_Request__r.Is_Renewed__c !== false && $scope.tpaRecord.Parent_Request__r.Renewed_As__c !== undefined;
+                        
+                        if( $scope.isRenewedRequest){
+                            
+                            $scope.additionalOfferingsInRenewal = '';
+                            $scope.excludedOfferingsInRenewal = '';
+                            $scope.additionalCategoryInRenewal = '';
+                            $scope.excludedCategoriesInRenewal = '';
+                            $scope.additionalUsesInRenewal = '';
+                            
+                            let agreementField = ''; // temporary strings for verification of string & to reduce character usage
+                            let agreementAdditionalfield = $scope.tpaRecord['TPA_Agreement_Additional_Fields__r'][0];
+                            
+                            agreementField = agreementAdditionalfield.Additional_Offerings_in_Renewal__c;
+                            $scope.additionalOfferingsInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None';
+                            
+                            agreementField = agreementAdditionalfield.Excluded_Offerings_In_Renewal__c;
+                            $scope.excludedOfferingsInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None';
+                            
+                            agreementField =  agreementAdditionalfield.Excluded_Category_s_In_Renewal__c;
+                            $scope.excludedCategoriesInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None';
+                            
+                            agreementField =  agreementAdditionalfield.Included_Category_s_In_Renewal__c;
+                            $scope.additionalCategoryInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None';
+                            
+                            agreementField = agreementAdditionalfield.Excluded_Uses_In_Renewal__c;
+                            $scope.excludedUsesInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None'; 
+                            
+                            agreementField = agreementAdditionalfield.Included_Uses_In_Renewal__c;
+                            $scope.additionalUsesInRenewal = agreementField !== undefined ? escapeConversion(agreementField) : 'None';
+                        }
+                        
+                        $scope.$apply();
+                    }
+                }
+            );
+        }
+    }]);
+    </script>
+    <body >
+        <div ng-app="offeringsDetailsApp">
+            <div id="controllerPage" ng-controller="controllerPage">
+                <apex:pageBlock >
+                    <apex:pageBlockSection title="Offerings Details" columns="1" collapsible="false" html-style="background-color:white;font-size:medium">
+                        <br/><br/><b>Country(s) of Offerings:</b> {{countriesOfOffering}}
+                        <p ng-if = 'isRenewedRequest'>
+                            <br/><br/><b>Modified Renewal Offering changes</b>
+                            <br/><b>Modified Renewal Offerings Added:</b> {{additionalOfferingsInRenewal}}
+                            <br/><b>Modified Renewal Offerings Excluded:</b> {{excludedOfferingsInRenewal}}
+                        </p>
+                        <br/><br/><b>Category(s) of Offerings:</b> {{categoryOfOfferings}}
+                        <p ng-if = 'isRenewedRequest'>
+                            <br/><b>Modified Renewal Category of Offerings Added: </b> {{additionalCategoryInRenewal}}
+                            <br/><b>Modified Renewal Category of Offerings Excluded:</b> {{excludedCategoriesInRenewal}}
+                        </p>
+                        
+                        <br/><br/><b>Requested Uses:</b> {{listOfUses}}
+                        <p ng-if = 'isRenewedRequest'>
+                            <br/><b>Modified Renewal Uses Added:</b> {{additionalUsesInRenewal}}
+                            <br/><b>Modified Renewal Uses Excluded:</b> {{excludedUsesInRenewal}}
+                        </p>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </div>
+        </div>
+    </body>
+</apex:page>

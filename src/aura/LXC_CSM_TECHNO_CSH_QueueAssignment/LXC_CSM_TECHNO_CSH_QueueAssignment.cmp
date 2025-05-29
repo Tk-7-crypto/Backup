@@ -1,0 +1,179 @@
+<aura:component controller="CNT_CSM_TECHNO_CSH_QUEUE_ASSIGN" implements="force:appHostable,flexipage:availableForAllPageTypes" access="global" >
+    <aura:attribute name="accCountryList" type="Object[]" />
+    <aura:attribute name="sltCountry" type="String" />
+    <aura:attribute name="conUserTypeList" type="Object[]" />
+    <aura:attribute name="sltUserType" type="String" />
+    <aura:attribute name="accNameList" type="Object[]" />
+    <aura:attribute name="sltAccount" type="String" />
+    <aura:attribute name="accProductList" type="Object[]" />
+    <aura:attribute name="sltProduct" type="String" />
+    <aura:attribute name="cshSubtypeList" type="Object[]" />
+    <aura:attribute name="sltSubtype" type="String" />
+    <aura:attribute name="queueNameList" type="Object[]" />
+    <aura:attribute name="sltQueue" type="String" />
+    <aura:attribute name="message" type="String" />
+    <aura:attribute name="spinner" type="boolean" default="false" description="It is used to store spinner value.if the value is true spinner will show and false spinner will hide"/>
+    <aura:attribute name="data" type="Object"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="enableInfiniteLoading" type="Boolean" default="false"/>
+    <aura:attribute name="currentCount" type="Integer" default="10"/>
+    <aura:attribute name="initialRows" type="Integer" default="10"/>
+    <aura:attribute name="rowsToLoad" type="Integer" default="10"/>
+    <aura:attribute name="totalNumberOfRows" type="Integer" default="300"/>
+    <aura:attribute name="loadMoreStatus" type="String" default=""/>
+    <aura:attribute name="filter" type="String" />
+    <aura:attribute name="filteredData" type="List" />
+    <aura:attribute name="searchList" type="Object[]" />
+    <aura:attribute name="sltField" type="String" default="PleaseSpecify"/>
+    <aura:attribute name="sortedBy" type="String" default="AccountName__c"/>
+    <aura:attribute name="sortedDirection" type="String" default="asc"/>
+    <aura:attribute name="isSearch" type="Boolean" default="false"/>
+    
+    <aura:attribute name="pageSize" type="Integer" default="15" />
+    <aura:attribute name="pageSizeOptions" type="Integer[]" default="10,15,20,25,50,100" />
+    <aura:attribute name="currentPageNumber" type="Integer" default="1" />
+    <aura:attribute name="totalPages" type="Integer" default="1" />
+    <aura:attribute name="tableData" type="List"/>
+    <aura:attribute name="searchPhrase" type="String" />
+    <aura:attribute name="isDefaultAcc" type="Boolean" default="false"/>
+    
+    <aura:attribute name="checkDefaultQueue" type="String" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <lightning:workspaceAPI aura:id="workspace" />
+        <lightning:card variant="narrow">
+            <aura:set attribute="title">
+                <lightning:icon iconName="utility:settings" variant="warning"/> CSH Techno Queue Assignment
+            </aura:set>
+            <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectCountry" name="selectCountry" label="Country" 
+                                      required="true" value="{!v.sltCountry}" onchange="{!c.selectAccounts}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.accCountryList}" var="accCountry">
+                            <option value="{!accCountry.value}" text="{!accCountry.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectAccount" name="selectAccount" label="Account" 
+                                      required="true" value="{!v.sltAccount}" onchange="{!c.selectProducts}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.accNameList}" var="accName">
+                            <option value="{!accName.value}" text="{!accName.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectUserType" name="selectUserType" label="Contact User Type" value="{!v.sltUserType}" disabled="{!v.isDefaultAcc}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.conUserTypeList}" var="conUser">
+                            <option value="{!conUser.value}" text="{!conUser.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectProduct" name="selectProduct" label="Product" disabled="{!v.isDefaultAcc}"
+                                      required="false" value="{!v.sltProduct}" onchange="{!c.selectCSHSubtypes}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.accProductList}" var="product" indexVar="index">
+                            <option value="{!product.value}" text="{!product.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectSubtype" name="selectSubtype" label="Sub type" 
+                                      required="false" value="{!v.sltSubtype}" disabled="{!v.isDefaultAcc}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.cshSubtypeList}" var="Subtype">
+                            <option value="{!Subtype.value}" text="{!Subtype.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                    <lightning:select aura:id="selectQueue" name="selectQueue" label="Queue" 
+                                      required="true" value="{!v.sltQueue}">
+                        <option value="">Please Specify</option>
+                        <aura:iteration items="{!v.queueNameList}" var="queueName">
+                            <option value="{!queueName.value}" text="{!queueName.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+            </lightning:layout>
+            <aura:set attribute="actions">
+                <lightning:buttonGroup >
+                    <!-- <lightning:button label="Search" iconName="utility:search" iconPosition="left" aura:id="btnsearch" onclick="{!c.enableSearch}"/>-->
+                    <lightning:button label="Add" iconName="utility:save" iconPosition="left" aura:id="btnsaveForm" onclick="{!c.addRecords}"/>
+                </lightning:buttonGroup>
+            </aura:set>
+            <aura:set attribute="footer">
+                <aura:if isTrue="{!v.isSearch}">
+                    <lightning:layout aura:id="" verticalAlign="space"  multipleRows="true">
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                            <lightning:select aura:id="searchField" name="searchField" label="Select Field" value="{!v.sltField}" >
+                                <option value="PleaseSpecify">Please Specify</option>
+                                <aura:iteration items="{!v.searchList}" var="seh">
+                                    <option value="{!seh.fieldName}" text="{!seh.label}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="4" smallDeviceSize="6"> 
+                            <lightning:input type="text" onchange="{!c.filter}" value="{!v.filter}" label="" placeholder="Search here..."/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </aura:if>
+            </aura:set>
+            {!v.message}
+        </lightning:card>
+        <div class="slds-scrollable__y" style="height: 60%">
+                    <lightning:datatable columns="{! v.columns }" data="{! v.tableData }" keyField="Id" onrowaction="{! c.handleRowAction }" maxRowSelection="1"
+                                         onsort="{!c.updateColumnSorting}" sortedBy="{!v.sortedBy}" sortedDirection="{!v.sortedDirection}"/>
+        </div>
+        <div class="slds-card">
+                <div class="slds-p-around_small slds-grid slds-grid_align-spread slds-grid_vertical-align-start">
+                    <div>
+                    <lightning:select label="No of records on page:" value="{! v.pageSize }" onchange="{! c.onPageSizeChange }">
+                        <aura:iteration items="{! v.pageSizeOptions }" var="opt">
+                            <option text="{! opt }"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                    </div>
+                    <div>
+                    <lightning:button label="First" iconName="utility:left" iconPosition="left" onclick="{! c.onFirst }" disabled="{! v.currentPageNumber == 1 }" />
+                    <lightning:button label="Previous" iconName="utility:chevronleft" iconPosition="left" onclick="{! c.onPrev }" disabled="{! v.currentPageNumber == 1 }" />
+                    <span class="slds-var-p-horizontal_x-small">
+                        Page {! (v.currentPageNumber) } of {! (v.totalPages) }
+                    </span>
+                    <span class="slds-var-p-horizontal_x-small">
+                        Number of records: {! (v.filteredData.length) }
+                    </span>
+                    <lightning:button label="Next" iconName="utility:chevronright" iconPosition="right" onclick="{! c.onNext }" disabled="{! v.currentPageNumber == v.totalPages }" />
+                    <lightning:button label="Last" iconName="utility:right" iconPosition="right" onclick="{! c.onLast }" disabled="{! v.currentPageNumber == v.totalPages }" />
+                    </div>
+                    <div class="inline-container">
+                        <span class="padding-right">
+                            <lightning:select aura:id="searchField" name="searchField" label="Select Field" value="{!v.sltField}" >
+                                <option value="PleaseSpecify">Please Specify</option>
+                                <aura:iteration items="{!v.searchList}" var="seh">
+                                    <option value="{!seh.fieldName}" text="{!seh.label}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </span>
+                        <span>
+                            <lightning:input type="text" onchange="{!c.filter}" value="{!v.filter}" label="" placeholder="Search here..."/>
+                        </span>
+                    </div>
+                </div>
+                    </div>  
+            
+    <aura:if isTrue="{!v.spinner}">
+        <lightning:spinner variant="brand" aura:id="loadingSpinner" />
+    </aura:if>
+</aura:component>

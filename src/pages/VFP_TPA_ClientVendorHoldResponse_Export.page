@@ -1,0 +1,196 @@
+<apex:page controller="CNT_TPA_ClientVendorHoldResponse" renderAs="pdf" title="Renewal Notification" cache="false"  standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false" sidebar="false" showHeader="false" >
+    <html >
+        <head>
+            <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+            <style>
+                *{
+                margin: 0;
+                padding: 0;
+                }
+                
+                div.header
+                {
+                padding: 10px;
+                position: running(header);
+                }
+                
+                div.footer
+                {
+                padding: 0px;
+                display:block;
+                position: running(footer);
+                }
+                
+                .pagenumber:before {
+                content: counter(page);
+                }
+                
+                .pagecount:before {
+                content: counter(pages);
+                }
+                
+                .page-break
+                {
+                display:block;
+                page-break-after:always;
+                }
+                
+                body
+                {
+                font-family: Arial Unicode MS;font-size:80%; 
+                }
+                
+                .headings
+                {
+                font-weight:bolder;
+                font-size:13px;
+                }
+                
+                .content
+                {
+                font-size:11px;
+                }
+                .pbSubheader
+                {
+                padding:10px;
+                background-color: rgb(249, 249, 250);
+                font-size: 1rem !important;
+                margin-top: 10px;
+                }
+                
+                body .bPageBlock .pbBody .blueHeader{
+                padding:5px;
+                }
+                
+                .contentStyle .labelCol{ 
+                font-size: 14px !important;
+                color: #4a4a56 !important;
+                padding: 12px;
+                }
+                
+                .labelCol{ 
+                font-size: 12px !important;
+                padding: 12px  !important;
+                }
+                
+                .dataCol
+                {
+                font-size: 12px !important;
+                color: #4a4a56 !important;
+                }
+                
+                .list {
+                width:300px;border: 1px solid #e0e3e5;
+                margin-top: 10px!important ;
+                border-spacing: 0px;!important}
+                
+                td.bcollapse, th.bcollapse{
+                padding-left:10px;
+                padding-top:10px;
+                padding-bottom:10px;
+                border-left: 1px solid rgb(217, 219, 221);
+                border-right: 1px solid rgb(217, 219, 221);
+                border-bottom: 1px solid rgb(217, 219, 221);
+                }
+                
+                tr.headerRow th{background: none repeat scroll 0 0 #f2f3f3;color:#333;}
+                tr.dataRow td:hover{background-color:#e3f3ff;}
+                tr.dataRow td a{color:#333; border-top: 1px solid rgb(217, 219, 221);}
+                
+                table td { word-wrap:break-word}
+                
+                .dataCell {
+                border-top: 1px solid rgb(217, 219, 221);
+                padding: .5rem;
+                }
+            </style>
+        </head>
+        
+        <body>
+            <div id="header" style="text-align: right;">
+                <apex:image width="" style="width: 172px;height:49px;" value="{!$Resource.IMS_Logo}" alt="{!$Label.TPA_IQVIA_Keyword} logo"/>
+            </div>
+            <apex:pageBlock >
+                <apex:pageBlockSection columns="1" title="TPA Details:" collapsible="false" >  
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_IQVIA_Request_Number}" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="Client Company Name" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Client_Address__r.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="Status:" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Request_Status__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="Third Party Company:" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Service_Provider_Address__r.Name}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="Client Project Name" />    
+                        <apex:outputPanel >
+                            <span>{!tpaRequestToEdit.Client_Project_Name__c}</span>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyle="width:25%" labelStyle="width:25%">
+                        <apex:outputLabel value="{!$Label.TPA_Data_Access_Start_Date}" />    
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!tpaRequestToEdit.Data_Access_Start_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.TPA_Data_Access_End_Date}" /> 
+                        <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                            <apex:param value="{!tpaRequestToEdit.Data_Access_End_Date__c }" />
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+                <div >
+                    <p style="margin-top: 2%;margin-bottom: 2%;margin-left:10px; padding: inherit;font-size:.8125rem;">
+                        <apex:outputText escape="false" value="Please advise which of the following actions should be followed:">
+                        </apex:outputText>
+                    </p>
+                </div>
+                
+                <div style = "font-size:.8125rem;margin-top:10px;margin-left:10px;">
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c == 'TPA can be released'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!$Label.TPA_can_be_released_please_move_forward_with_commercial_reviews_and_process}</p>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c != 'TPA can be released'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;{!$Label.TPA_can_be_released_please_move_forward_with_commercial_reviews_and_process}</p>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c == 'Company is out of compliance'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!note2}</p>
+                        <p style="font-size:.8125rem;margin-left:30px;">
+                            {!additionalAgrField.TPA_Compliance_Response_to_Hold__c}
+                        </p>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c != 'Company is out of compliance'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;{!note2}</p>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c == 'TPA must be denied'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!note3}</p>
+                        <p style="font-size:.8125rem;margin-left:30px;">
+                            {!additionalAgrField.TPA_Compliance_Response_to_Hold__c}
+                        </p>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{! additionalAgrField.TPA_Compliance_Hold_Action_Taken__c != 'TPA must be denied'}">
+                        <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;{!note3}</p>
+                    </apex:outputPanel>
+                </div>
+                
+            </apex:pageBlock>
+       </body>
+    </html>
+</apex:page>

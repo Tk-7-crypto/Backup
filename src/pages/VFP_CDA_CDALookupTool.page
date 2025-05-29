@@ -1,0 +1,261 @@
+<apex:page controller="CNT_CDA_CDALookupTool" lightningStylesheets="true" standardStylesheets="false" docType="html-5.0"> 
+    <apex:slds />
+    <apex:includeLightning />
+    <head>
+        <!-- *** Jquery library reference *** -->
+        <script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>
+        <!-- *** Jquery library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Library reference *** -->
+                <script src="{!URLFOR($Resource.CDACustomPopup, 'popup.js')}" type="text/javascript"></script>
+        <!-- *** JQuery Custom Popup Library reference *** -->
+        
+        <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+        <link href="{!URLFOR($Resource.CDACustomPopup, 'popup.css')}" rel="stylesheet"/>
+        <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+        
+        <c:VFC_CDA_LoadingImage />
+        
+        <script>
+        $(document).ready(function () {
+            
+            popupAlert = function (msg, truePart) {
+                popup(msg, {
+                    'animate': true
+                }, function (r) {
+                    if (r && truePart != null)
+                        truePart();
+                }
+                     );
+            }
+            
+            popupAlert('This tool provides basic insights into whether a CDA exists for a specific recipient. If a CDA does exist, it is your responsibility to ensure the CDA covers the business area and targeted discussion topic.   If a CDA is designated as “Project Specific” it was put in place for a specific project and in most cases will not cover any additional discussion areas.   Where a CDA is indicated as NOT Project-Specific, please note that it can be used to cover all future discussion with IQVIA. Finally, if your recipient is an individual, due to privacy requirements, no CDAs with a recipient that has been identified as a unique individual will be displayed in this tool. Please contact the CDA Negotiator team to confirm if a CDA is in place with a unique individual.');
+            hideLoading();
+        });
+        
+        function enableSearchBtn(){
+            if($('#idRecipientLegalEntityName')[0].value.trim().length < 3){
+                popupAlert('Enter at least 3 characters to search');
+            }else{
+                searchRequest($('#idRecipientLegalEntityName')[0].value.trim());
+            }
+        }
+        
+        </script>
+    </head>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+        <apex:form id="lookupForm">
+            <div class="slds-grid slds-grid_vertical slds-p-around_x-small">
+                <div class="slds-col slds-p-bottom_x-small">
+                    <div class="slds-page-header" role="banner" style="margin-bottom: .5em; border-radius: 4px;">
+                        <div class="slds-grid">
+                            <div class="slds-col slds-has-flexi-truncate">
+                                <div class="slds-media slds-no-space slds-grow">
+                                    <div class="slds-media__body">
+                                        <h1 class="slds-page-header__title slds-truncate slds-align-middle slds-p-around_x-small" title="CDA Lookup Tool">CDA Lookup Tool</h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-m-top_x-small">
+                    <div class="slds-card">
+                        <div class="slds-card__header slds-grid slds-p-bottom_small">
+                            <header class="slds-media slds-media_center slds-has-flexi-truncate slds-grid slds-p-top_small">
+                                <div class="slds-col slds-size_2-of-4">
+                                    <div class="slds-form-element slds-form-element_horizontal">
+                                        <label class="slds-form-element__label" for="idRecipientLegalEntityName">Recipient Legal Entity Name</label>
+                                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_right">
+                                            <svg class="slds-icon slds-input__icon slds-input__icon_right slds-icon-text-default" aria-hidden="true">
+                                                <!--<use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#search"></use>-->
+                                            </svg>
+                                            <input type="text" id="idRecipientLegalEntityName" placeholder="Enter at least 3 characters..." class="slds-input" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-m-bottom_x-small slds-p-left_large">
+                                    <button id="searchBtn" class="slds-button slds-button_brand" onclick="enableSearchBtn();return false;">Search</button>
+                                </div>
+                                <div class="slds-col"></div>
+                            </header>
+                        </div>
+                        <div class="slds-card__body slds-p-bottom_small">
+                            <div class="tableWrapper">
+                                <div class="slds-table_edit_container slds-is-relative">
+                                    <apex:outputPanel id="tabletorefresh">
+                                        <table id="datatable" class="slds-table slds-table_bordered slds-table_col-bordered slds-table_fixed-layout slds-table_resizable-cols slds-no-cell-focus slds-table_edit">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Name', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="CDA Request #">
+                                                            CDA Request #&nbsp;&nbsp;
+                                                            {!If(sortBy == 'Name', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Vendor Name">
+                                                            Recipient Name
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                        <div class="slds-cell-wrap  slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Country">
+                                                            Country
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('QuintilesIMS_Business__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap  slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="CDA Area of IQVIA">
+                                                            CDA Area of IQVIA&nbsp;&nbsp;
+                                                            {!If(sortBy == 'QuintilesIMS_Business__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CDA_Type__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="CDA Type">
+                                                            CDA Type&nbsp;&nbsp;
+                                                            {!If(sortBy == 'CDA_Type__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('Project_Specific_Indicator__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Project Specific Indicator">
+                                                            Project Specific Indicator&nbsp;&nbsp;
+                                                            {!If(sortBy == 'Project_Specific_Indicator__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CDA_Source__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="CDA Source">
+                                                            CDA Source&nbsp;&nbsp;
+                                                            {!If(sortBy == 'CDA_Source__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('CDA_Effective_Date__c', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="CDA Effective Date">
+                                                            CDA Effective Date&nbsp;&nbsp;
+                                                            {!If(sortBy == 'CDA_Effective_Date__c', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Project Description">
+                                                            Disclosure Period
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Project Description">
+                                                            Project Description
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('QI_Legal_Entity_Name__r.Name', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="IQVIA Legal Entity">
+                                                            IQVIA Legal Entity&nbsp;&nbsp;
+                                                            {!If(sortBy == 'QI_Legal_Entity_Name__r.Name', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                    <th class="slds-text-title_caps slds-cell-edit" scope="col" onclick="sorttable('QI_Legal_Entity_Name__r.Location_of_Governing_Law__r.Name', '{!If(sortOrder == 'ASC', 'DESC', 'ASC')}');">
+                                                        <div class="slds-cell-wrap slds-p-top_xx-small slds-p-bottom_xx-small slds-p-left_x-small" title="Governing Law">
+                                                            Governing Law&nbsp;&nbsp;
+                                                            {!If(sortBy == 'QI_Legal_Entity_Name__r.Location_of_Governing_Law__r.Name', If(sortOrder == 'ASC', '▼', '▲'), '')}
+                                                        </div>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <apex:repeat value="{!cdaRequests}" var="cdaRequest">
+                                                    <tr class="slds-hint-parent">
+                                                        <td class="slds-cell-edit" scope="row">
+                                                            <apex:outputLabel styleclass="slds-cell-wrap" title="{!cdaRequest.Name}" value="{!cdaRequest.Name}"/>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!If(cdaRequest.Recipient_Account__r.CDA_Account_Name__c != '' && cdaRequest.Recipient_Account__r.CDA_Account_Name__c != null, cdaRequest.Recipient_Account__r.CDA_Account_Name__c, cdaRequest.Recipient_Account_Name_Other__c)}">{!If(cdaRequest.Recipient_Account__r.CDA_Account_Name__c != '' && cdaRequest.Recipient_Account__r.CDA_Account_Name__c != null, cdaRequest.Recipient_Account__r.CDA_Account_Name__c, cdaRequest.Recipient_Account_Name_Other__c)}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <apex:outputLabel styleclass="slds-cell-wrap" title="{!If(cdaRequest.Recipient_Account__r.Country__c != '' && cdaRequest.Recipient_Account__r.Country__c != null, cdaRequest.Recipient_Account__r.Country__c, cdaRequest.Recipient_Account_Country_Other_PL__c)}" value="{!If(cdaRequest.Recipient_Account__r.Country__c != '' && cdaRequest.Recipient_Account__r.Country__c != null, cdaRequest.Recipient_Account__r.Country__c, cdaRequest.Recipient_Account_Country_Other_PL__c)}"/>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.QuintilesIMS_Business__c}">{!cdaRequest.QuintilesIMS_Business__c}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.CDA_Type__c}">{!cdaRequest.CDA_Type__c}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.Project_Specific_Indicator__c}" >{!cdaRequest.Project_Specific_Indicator__c}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.CDA_Source__c}" >{!cdaRequest.CDA_Source__c}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <apex:outputField styleclass="slds-cell-wrap" title="{!cdaRequest.CDA_Effective_Date__c}" value="{!cdaRequest.CDA_Effective_Date__c}"/>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <apex:outputField styleclass="slds-cell-wrap" title="{!cdaRequest.Disclosure_Period__c}" value="{!cdaRequest.Disclosure_Period__c}"/>
+                                                        </td>                                                        
+                                                        <td class="slds-cell-edit slds-size_2-of-11  slds-cell-wrap">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.Project_Description_Long_Textarea__c}">{!cdaRequest.Project_Description_Long_Textarea__c}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.QI_Legal_Entity_Name__r.Name}">{!cdaRequest.QI_Legal_Entity_Name__r.Name}</div>
+                                                        </td>
+                                                        <td class="slds-cell-edit">
+                                                            <div class="slds-cell-wrap" title="{!cdaRequest.QI_Legal_Entity_Name__r.Location_of_Governing_Law__r.Name}">{!cdaRequest.QI_Legal_Entity_Name__r.Location_of_Governing_Law__r.Name}</div>
+                                                        </td>
+                                                    </tr>
+                                                </apex:repeat>
+                                            </tbody>
+                                        </table>
+                                        <apex:outputPanel rendered="{!cdaRequests.size == 0 && searchString != null}">
+                                            <div class="slds-m-top_medium slds-text-heading_medium slds-text-color_destructive slds-text-align_center">--! No CDA Request to show !--</div>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-card__footer slds-p-top_medium">
+                            <div class="slds-grid">
+                                <div class="slds-col slds-size_1-of-4">
+                                    <div class="slds-form-element slds-size_1-of-3">
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-select_container">
+                                                <select class="slds-select" id="pageSize" onchange="changepageSize($('#pageSize').val())">
+                                                    <option>15</option>
+                                                    <option>25</option>
+                                                    <option>50</option>
+                                                    <option>100</option>
+                                                    <option>200</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <apex:outputPanel id="refreshData" styleclass="slds-col slds-size_3-of-4">
+                                    <div class="slds-grid">
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <div class="slds-button-group slds-align_absolute-center" role="group">
+                                                <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="◄" action="{!setCDARequest.first}" disabled="{!!setCDARequest.hasPrevious}" title="First" rerender="tabletorefresh,refreshData"/>
+                                                <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="Prev" action="{!setCDARequest.previous}" disabled="{!!setCDARequest.hasPrevious}" title="Previous" rerender="tabletorefresh,refreshData"/>
+                                                <apex:commandButton styleclass="slds-button slds-button_neutral slds-m-right_xx-small" value="Next" action="{!setCDARequest.next}" disabled="{!!setCDARequest.hasNext}" title="Next" rerender="tabletorefresh,refreshData"/>
+                                                <apex:commandButton styleclass="slds-button slds-button_neutral" value="►" action="{!setCDARequest.last}" disabled="{!!setCDARequest.hasNext}" title="Last" rerender="tabletorefresh,refreshData"/>
+                                            </div>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <div class="slds-m-top_xx-small">
+                                                <span class="slds-badge slds-float_right">Page {!currentPageNo} of {!If(CEILING(totalNoOfRec / pageSize) == 0, 1, CEILING(totalNoOfRec / pageSize))}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <apex:actionFunction name="changepageSize" action="{!settableSize}" rerender="tabletorefresh,refreshData">
+                <apex:param name="pSize" assignTo="{!pageSize}" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="sorttable" action="{!sortData}" rerender="tabletorefresh,refreshData">
+                <apex:param name="sortby" assignTo="{!sortBy}" value="" />
+                <apex:param name="sortorder" assignTo="{!sortOrder}" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="searchRequest" action="{!searchCDARequests}" rerender="tabletorefresh,refreshData">
+                <apex:param name="searchString" assignTo="{!searchString}" value="" />
+            </apex:actionFunction>
+        </apex:form>
+    </body>
+</apex:page>

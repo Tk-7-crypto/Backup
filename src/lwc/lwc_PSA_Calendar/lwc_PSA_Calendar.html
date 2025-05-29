@@ -1,0 +1,130 @@
+<template>
+    <div class="c-container" style="background-color:#d4cece">
+        <lightning-card  variant="Narrow"  title="My Personal Calendar" icon-name="standard:service_appointment">
+            <template if:true={showButton}>
+                <lightning-button  slot="actions" icon-name="utility:refresh" class="slds-m-left_x-small" onclick={refresh}></lightning-button>
+            </template>
+            <lightning-button label="Previous Month" slot="actions" icon-name="utility:jump_to_left" class="slds-m-left_x-small" onclick={previous}></lightning-button>
+            <lightning-button label="Next Month" slot="actions" icon-name="utility:breadcrumbs" class="slds-m-left_x-small" onclick={next}></lightning-button>
+            <lightning-button label="Current Month" slot="actions" class="slds-m-left_x-small" onclick={current}></lightning-button>
+        </lightning-card>
+    </div> 
+    <div class="c-container slds-box " style="background-color:White">
+        <template if:true={loaded}>
+            <div class="exampleHolder">
+                <lightning-spinner alternative-text="Loading" size="large"></lightning-spinner>
+            </div>
+        </template>
+        
+        <div class="slds-grid">
+            <div class="slds-p-left_small slds-p-top_xx-small slds-text-heading_small slds-col"><b>Calendar Event Legend</b></div>
+            <div class="slds-grid slds-wrap slds-p-top_xx-small slds-col slds-m-left_x-small">
+                <div class="slds-box slds-box_small slds-col slds-size_2-of-12" style="background-color:grey;width: 10px;"></div>
+                <div class="slds-col slds-size_10-of-12 slds-p-left_xxx-small">LR LBI Period Stop Date</div>
+            </div>
+            <div class="slds-grid slds-wrap slds-p-top_xx-small slds-col">
+                <div class="slds-box slds-box_small slds-col slds-size_2-of-12 " style="background-color:red;width: 10px;"></div>
+                <div class="slds-col slds-size_10-of-12 slds-p-left_xxx-small">DLP (Enter only for Aggregate Reports)</div>
+            </div>
+            <div class="slds-col slds-size_5-of-12 "></div>
+        </div>
+        <div class="slds-box slds-theme_shade slds-theme_alert-texture slds-align_absolute-center slds-m-top_x-small"><B>{currentMonthInWords}&nbsp;{currentYear}</B></div>
+        <div class="slds-table_edit_container slds-is-relative c-container slds-scrollable_x">
+            <table class="slds-table  slds-no-row-hover slds-table_bordered slds-table_col-bordered " >
+                    <thead>
+                    <tr class="slds-line-height_reset">
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Sun">Sunday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Mon">Monday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Tue">Tuesday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Wed">Wednesday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Thu">Thursday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Fri">Friday</div>
+                        </th>
+                        <th class="" scope="col">
+                            <div class="slds-truncate" title="Sat">Saturday</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={weaklyData} for:item="mapKey" for:index="keyIndex">
+                        <tr key={mapKey.key} class="calendar">
+                            <template for:each={mapKey.value} for:item="dataItem" for:index="index">
+                                <template if:true={dataItem.isToday}>
+                                    <th class="bg-info" scope="col" key={dataItem} >
+                                        <div style="text-align: right;top:0%"><b>{dataItem.daysNumber}</b></div>
+                                        <template if:true={dataItem.lriStop}>
+                                            <div>
+                                                <div class="slds-m-top_xx-small button1" data-id={dataItem.daysNumber} onclick={onLRIStop}>{lriStop} : <b class="showNumner">{dataItem.repeatLBI}</b></div>
+                                            </div>
+                                        </template>
+                                        <template if:true={dataItem.lrStop}>
+                                            <div>
+                                                <div class="slds-m-top_xx-small button2" data-id={dataItem.daysNumber} onclick={onDLPStop}>{dlpStop} : <b class="showNumner">{dataItem.repeatDLP}</b></div>
+                                            </div>
+                                        </template>
+                                    </th>
+                                </template>
+                                <template if:false={dataItem.isToday}>
+                                    <th class="bg-info1" scope="col" key={dataItem}>
+                                        <div style="text-align: right;"><b>{dataItem.daysNumber}</b></div>
+                                        <template if:true={dataItem.lriStop}>
+                                            <div>
+                                                <div class="slds-m-top_xx-small button1" data-id={dataItem.daysNumber} onclick={onLRIStop}>{lriStop} : <b class="showNumner">{dataItem.repeatLBI}</b></div>
+                                            </div>
+                                        </template>
+                                        <template if:true={dataItem.lrStop}>
+                                            <div>
+                                                <div class="slds-m-top_xx-small button2" data-id={dataItem.daysNumber} onclick={onDLPStop}>{dlpStop} : <b class="showNumner">{dataItem.repeatDLP}</b></div>
+                                            </div>
+                                        </template>
+                                    </th>
+                                </template>
+                            </template>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <template if:true={isShow}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={Cancel}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-03" class="slds-text-heading_medium slds-hyphenate">{HeadingName}</h2>
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                <div>
+                    <lightning-datatable key-field="id" hide-checkbox-column default-sort-direction={defaultSortDirection}
+                        sorted-direction={sortDirection} sorted-by={sortedBy} onsort={onHandleSort} data={filteredRecord}
+                        columns={columns} onrowaction={handleRowActions}>
+                    </lightning-datatable>
+                </div>
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_brand" onclick={Cancel} title="Cancel">Cancel</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

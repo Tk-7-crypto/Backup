@@ -1,0 +1,135 @@
+<apex:page controller="SCM_EditAll_ALI_ATCs" lightningStylesheets="true" sidebar="false" showHeader="false">
+    <c:JQueryBlockUI />
+    <apex:slds />
+    <apex:includeScript value="{!URLFOR($Resource.jQuery, 'js/jquery-1.4.4.min.js')}"/>
+    <apex:outputPanel id="scriptPanel">
+    <script type="text/javascript">
+         var j$ = jQuery.noConflict();        
+             j$(function() 
+                { 
+                    j$(".stylcls").click(function() 
+                    {  
+                        var checked_status = this.checked; 
+                        j$(".inputcheckBox").each(function() 
+                        { 
+                            this.checked = checked_status; 
+                        }); 
+                    }); 
+                }); 
+                
+                 j$(function() 
+                { 
+                    j$(".inputcheckBox").click(function() 
+                    {   var flag = 0;
+                        var checked_status = this.checked; 
+                        j$(".inputcheckBox").each(function()
+                        {
+                         if(this.checked == false)
+                            flag++;
+                        });
+                        j$(".stylcls").each(function() 
+                        {   
+                            if(flag != 0 )
+                             
+                            this.checked = false;
+                            else 
+                               this.checked =true;
+                                                      
+                                                      
+                        }); 
+                        
+                       
+                    }); 
+                });     
+                j$(function() 
+                    { 
+                       j$(".saveButton").click(function() 
+                        {   
+                            var flag = 0;
+                            var checked_status = this.checked; 
+                            
+                            j$(".inputcheckBox").each(function()
+                            {
+                             if(this.checked == true)
+                                flag++;
+                                
+                            });  
+                            if(flag == 0)  {                                                   
+                                alert('Please select at least one ATC to update ');   
+                                                                                       
+                             }
+                            else   
+                                save();
+                        }); 
+                    }); 
+   function closewindow()
+     {
+       parent.window.close();
+       //window.close();
+       
+     }  
+     function save()
+     {  
+        callSave();
+        
+     }
+   </script>  
+        <style>
+        	.colStyle div {
+            	white-space : normal;
+            	width : 68%;
+            }
+        </style>
+   </apex:outputPanel>
+    <apex:form id="theForm" >    
+    <apex:pagemessages />
+        <apex:actionFunction name="callSave" action="{!save}" />
+        <apex:pageBlock >    
+            <apex:pageBlockTable value="{!wrapList}" var="item" width="100%" styleClass="slds-table_col-bordered slds-table_bordered">
+                <apex:column > 
+                    <apex:facet name="header">
+                    <apex:outputPanel >
+                    <apex:outputText >{!$Label.Modify}</apex:outputText><br/>
+                    <apex:inputCheckbox styleClass="stylcls"/>                                     
+                    </apex:outputPanel>
+                    </apex:facet>
+                    <apex:inputCheckbox value="{!item.isSelected}" styleClass="inputcheckBox"  />
+                </apex:column>
+                <apex:column headerValue="{!$Label.ATC_Code_for_Edit_All_ATC}">
+                    <apex:outputLink value="/{!item.aLI_ATC.id}" target="_blank">{!item.aLI_ATC.ATC_Code__c}
+                    </apex:outputLink>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Data_Period_Start_for_EditAll_ATC}">
+                    <apex:inputField value="{!item.aLI_ATC.Data_Period_Start__c }"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Data_Period_End_for_EditAll_ATC}">
+                    <apex:inputField value="{!item.aLI_ATC.Data_Period_End__c}"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Termination_Date}" headerClass="colStyle">
+                    <apex:inputField value="{!item.aLI_ATC.Termination_Date__c}"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Delivery_Frequency}" headerClass="colStyle">
+                    <apex:inputField value="{!item.aLI_ATC.Delivery_Frequency__c}"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Non_Charge_deliver_of_ATC}" headerClass="colStyle">
+                    <apex:inputField value="{!item.aLI_ATC.Non_Charge_deliver_of_ATC__c}"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Period_of_Non_Charge_Deliver_Start}" headerClass="colStyle">
+                    <apex:inputField value="{!item.aLI_ATC.Period_of_Non_Charge_Deliver_Start__c}"/>
+                </apex:column>
+                <apex:column headerValue="{!$Label.Period_of_Non_Charge_Deliver_End}" headerClass="colStyle">
+                    <apex:inputField value="{!item.aLI_ATC.Period_of_Non_Charge_Deliver_End__c}"/>
+                </apex:column>
+            </apex:pageBlockTable>    
+                  
+        </apex:pageBlock>        
+    </apex:form>
+    <apex:form id="form2" >
+    <apex:pageBlock >    
+    <apex:pageBlockButtons location="top">                
+                <apex:commandButton value="Save" id="saveButton" styleClass="saveButton" reRender="scriptPanel,form2"/>
+                <apex:commandButton value="cancel" id="cancelButton" styleClass="cancelButton" action="{!cancel}" />                
+     </apex:pageBlockButtons>
+    </apex:pageBlock>    
+   </apex:form>
+</apex:page>

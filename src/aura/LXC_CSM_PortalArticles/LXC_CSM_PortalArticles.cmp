@@ -1,0 +1,63 @@
+<aura:component controller="CNT_CSM_PortalArticles" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+	<aura:attribute name="articleObj" type="Object[]" />
+	<aura:attribute name="isLoading" type="boolean" />
+	<aura:attribute name="topicId" type="String" />
+	<aura:attribute name="maxShow" type="Integer" />
+	<aura:attribute name="numChapter" type="Integer" default="-1" />
+
+	<aura:attribute name="partnerURL" type="boolean" access="global" default="false" />
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+	<div id="CSM_PortalArticle">
+		<aura:if isTrue="{!v.isLoading}">
+			<div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+				<div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+					<div class="slds-spinner__dot-a"></div>
+					<div class="slds-spinner__dot-b"></div>
+				</div>
+			</div>
+		</aura:if>
+		<aura:if isTrue="{! and(v.articleObj.length > 0,v.articleObj[0].categorization ne 'Other')  }">
+			<aura:if isTrue="{! v.numChapter > -1}">
+				<button class="slds-button" onclick="{! c.back}">{!$Label.c.Back_to_chapters}
+				</button>
+			</aura:if>
+			<div class="slds-grid  slds-wrap">
+				<aura:iteration items="{!v.articleObj}" var="obj" indexVar="chapter">
+					<aura:if isTrue="{! or( chapter eq v.numChapter, v.numChapter eq -1)}">
+						<div class="{!v.numChapter == -1 ? 'slds-size_1-of-1 slds-medium-size_1-of-2' : 'slds-size_1-of-1 slds-medium-size_1-of-1 slds-grid  slds-wrap slds-m-top_large'}">
+							<div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-1">
+								<div class="slds-text-title_caps">
+									<b>{!obj.categorization}</b>
+								</div>
+							</div>
+							<aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+								<aura:if isTrue="{! or( v.numChapter gt -1, countArticle lt v.maxShow )}">
+									<div class="{! and(v.numChapter == -1,v.filteredArticleObj[0].categorization ne 'Other') ? 'slds-size_1-of-1 slds-medium-size_1-of-1 slds-col' : 'slds-col slds-size_1-of-1 slds-medium-size_1-of-2'}">
+										<aura:if isTrue="{!v.partnerURL}">
+											<div class="slds-truncate">
+												<a class="item-title-link" href="{!'/partner/s/article/'+ article.UrlName}">{!article.Title}</a>
+											</div>
+											<aura:set attribute="else">
+												<div class="slds-truncate">
+													<a class="item-title-link" href="{!'/support/s/article/'+ article.UrlName}">{!article.Title}</a>
+												</div>
+											</aura:set>
+										</aura:if>
+									</div>
+									<aura:set attribute="else">
+										<aura:if isTrue="{! countArticle eq v.maxShow }">
+											<div class="slds-truncate">
+												<button class="slds-button" data-chapter_num="{!chapter}" onclick="{! c.showMore}">{!$Label.c.Show_all} {! obj.articles.length} {!$Label.c.articles} </button>
+											</div>
+										</aura:if>
+									</aura:set>
+								</aura:if>
+							</aura:iteration>
+						</div>
+					</aura:if>
+				</aura:iteration>
+			</div>
+		</aura:if>
+	</div>
+</aura:component>

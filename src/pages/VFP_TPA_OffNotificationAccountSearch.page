@@ -1,0 +1,175 @@
+<apex:page controller="CNT_TPA_OfferingNotificationMapping" showHeader="false" sidebar="false" cache="false" id="Page" docType="html-5.0">
+    <html>
+        <head>
+            
+            <script src="{!$Resource.TPAJquery}" type="text/javascript" /> 
+            <script type="text/javascript">
+                
+                var mapSelectedAccounts = {};
+            var previouslySelectedAccountIdMap = {};
+            var lstSelectAccountId = [];
+            var lstSelectAccountName = [];
+            
+            var winMain1 = window.opener;
+            if (null == winMain1) {
+                winMain1=window.parent.opener;
+            }
+            var elemAccName = winMain1.document.getElementById('Page:myForm:toEdit:EditSection:accountSearchSection:accountSearchBox');
+            var elemaccId = winMain1.document.getElementById('Page:myForm:toEdit:AccountIdMap');
+            var MapOfAccIdWithName = winMain1.document.getElementById('Page:myForm:toEdit:MapOfAccIdWithName').value;
+            mapSelectedAccounts = winMain1.selectedAccountMapOnParent;
+            
+            function launchAccoutSearchWindow(accid, accName)
+            {
+                if(mapSelectedAccounts[accid] != null) {
+                    delete mapSelectedAccounts[accid];
+                }
+                else {
+                    mapSelectedAccounts[accid] = accName;
+                }
+                elemAccName.value = Object.values(mapSelectedAccounts).toString();
+                elemaccId.value = Object.keys(mapSelectedAccounts).toString();
+                // alert(elemaccId.value);
+                
+                winMain1.selectedAccountMapOnParent = mapSelectedAccounts;
+            }
+            
+            function doSearch() {
+                onSearch(JSON.stringify(Object.keys(mapSelectedAccounts)));
+            }
+            function saveAccMapping() {
+                window.top.close();
+            }
+            function resetAccMapping() {
+                winMain1.selectedAccountMapOnParent = {};
+                elemAccName.value = '';
+                MapOfAccIdWithName.value = '';
+                elemaccId.value = '';
+                window.top.close();
+            }
+            
+            $(document).ready(function() {
+                $('[id$=ajaxLoadingStatusStart]').css("display", "none");
+                $('[id$=ajaxLoadingStatusStop]').css("display", "");
+                
+                // For Old IE browsers
+                    Object.keys = function(obj) {
+                        var keys = [];                        
+                        for (var i in obj) {
+                            if (obj.hasOwnProperty(i)) {
+                                keys.push(i);
+                            }
+                        }
+                        return keys;
+                    };
+                
+                    Object.values = function(obj) {
+                        var values = [];                        
+                        for (var i in obj) {
+                            if (obj.hasOwnProperty(i)) {
+                                values.push(obj[i]);
+                            }
+                        }                        
+                        return values;
+                    };
+            });
+            </script>
+            <style> 
+                .requiredLoaderBG{
+                background-color: rgb(71,71,71);
+                opacity:0.7;
+                filter:alpha(opacity=70);
+                background-image:url('{!$Resource.ajaxLoadGif}');
+                background-position: center center;
+                background-repeat: no-repeat;
+                height: 100%;
+                left: 0;
+                position: fixed;
+                text-align: center;
+                top: 0;
+                width: 100%;
+                z-index: 1;
+                }
+            </style>
+        </head>
+        
+        <apex:form >
+            <span id="ajaxLoadingStatus">
+                <span id="ajaxLoadingStatusStart" class="requiredLoaderBG"></span>
+                <span id="ajaxLoadingStatusStop" style="display: none"></span>
+            </span>
+            <apex:actionFunction name="onSearch" action="{!onSearch}" rerender="counter" status="ajaxStatus">
+                <apex:param name="selectedVendorAccountIDs" value="" />
+            </apex:actionFunction>
+            <apex:pageBlock >
+                
+                <div class="pbBody" style="{!(IF(OfferingNotificationObjIdToViewAccount == null, 'display:block', 'display:none'))}">                   
+                    <table class="list" border="0" id="tblData" cellspacing="0" cellpadding="0" style="border: #DDD 1px solid;width:100%;" >
+                        <tr class="headerRow" >
+                            <th>
+                                &nbsp;
+                            </th>
+                            <th>
+                                <b>Name</b>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <b>Search:</b>
+                            </td>
+                            <td>
+                                <apex:inputText value="{!searchByName}"  />   
+                                <apex:commandButton value="Search" onclick="doSearch();return false;" rendered="{!(IF(OfferingNotificationObjIdToViewAccount == null,true,false))}"  />                     
+                            </td> 
+                        </tr>
+                    </table>
+                    
+                </div>
+                <div align ="Center">
+                    <apex:commandButton value="Save" onclick="saveAccMapping();return false;" id="feg" />
+                    <apex:commandButton value="Cancel" onclick="resetAccMapping();return false;"  id="drgsr"/>
+                </div>
+            </apex:pageBlock>
+            
+            <apex:pageBlock id="counter">
+                <apex:actionFunction status="ajaxStatus" name="showSelectedAccounts" action="{!showSelectedAccounts}" rerender=""  >
+                    <apex:param name="selectedVendorAccountID" value="" /> 
+                </apex:actionFunction>
+                <table class="list" style="border-collapse: collapse;">
+                    <colgroup span="4"></colgroup>
+                    <tr class="headerRow">
+                        <th class="headerRow"> </th>
+                        <th class="headerRow">Account Id</th>
+                        <th class="headerRow">Account Name</th>
+                        <th class="headerRow">Account Billing Address</th>
+                    </tr>
+                    <apex:repeat value="{!lstAccountWrapper}" var="accts">
+                        <apex:repeat value="{!accts}" var="accObj">
+                            <tr class="dataRow" onmouseover="if (window.hiOn){hiOn(this);} " onmouseout="if (window.hiOff){hiOff(this);} " onblur="if (window.hiOff){hiOff(this);}" onfocus="if (window.hiOn){hiOn(this);}">
+                                <td class="dataCell" colspan="1">
+                                    <apex:inputCheckbox disabled="{!(IF(OfferingNotificationObjIdToViewAccount == null,false,true))}" value="{!accObj.check}" onclick="launchAccoutSearchWindow('{!accObj.accId}','{!accObj.acc.Name}' )" >
+                                    </apex:inputCheckbox>
+                                </td>
+                                <td class="dataCell" colspan="1">
+                                    <apex:outputLabel value="{!accObj.accId}" />
+                                </td>
+                                <td class="dataCell" colspan="1">
+                                    <apex:outputLabel value="{!accObj.acc.Name}" />
+                                </td>
+                                <td class="dataCell" colspan="1">
+                                    <apex:outputLabel value="{!accObj.billingAddress}" escape="false"></apex:outputLabel>
+                                </td>
+                            </tr>
+                        </apex:repeat>
+                    </apex:repeat>
+                </table>
+            </apex:pageBlock>
+            
+            <apex:inputHidden value="{!lookUp}" id="csvAccountName1"/>
+            <apex:inputHidden value="{!AccountIdPassToHdn}" id="AccountIdPassToHdn"/>
+            
+            <apex:actionstatus startStyleClass="requiredLoaderBG" id="ajaxStatus" />
+            
+        </apex:form>
+    </html>
+</apex:page>

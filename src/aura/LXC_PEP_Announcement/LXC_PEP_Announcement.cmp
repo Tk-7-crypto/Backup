@@ -1,0 +1,69 @@
+<aura:component controller="CNT_PEP_Announcements" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForAllPageTypes,force:lightningQuickActionWithoutHeader,force:appHostable" 
+                access="global">
+    
+    <aura:attribute name="announcementList" type="Announcement__c[]"/>
+    <aura:attribute name="innerScrollOn" type="Boolean" default="false" />
+    <aura:attribute name="homePage" type="Boolean" default="false" />
+    <aura:attribute name="newsLink" type="String" default="/partner/s/alliance-management"/>
+    <aura:attribute name="newsLinkLabel" type="String" default="click here"/>
+    <aura:attribute name="msgNoAnnouncement" type="String" default="No announcement currently available"/>
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    
+    <aura:if isTrue="{!v.homePage}">
+        <aura:if isTrue="{!v.announcementList.length>0}">
+            <div class="slds-align_absolute-center">                              
+                <div class="slds-box slds-box_x-small slds-media custSize" style="">
+                    <div class="slds-media__figure slds-media__figure_fixed-width slds-align_absolute-center slds-m-left_xx-small">
+                    <span class="slds-icon_container">
+                        <img src="{!$Resource.PEP_Landing_actions_images + '/announcement.png'}" height="35" width="35"/>
+                    </span>
+                    </div>
+                    <div class="slds-media__body slds-border_left slds-p-left_small">
+                        <lightning:accordion allowMultipleSectionsOpen="true">
+                            <aura:iteration items="{!v.announcementList}" var="announcement">
+                                <lightning:accordionSection label="{!announcement.Subject__c}">
+                                    <h5 class="slds-truncate slds-text-heading_x_small">
+                                        <ui:outputDate value="{!announcement.Published_date__c}"/>
+                                    </h5>
+                                    <p class="slds-m-top_small"><aura:unescapedHtml value="{!announcement.Description__c}"/></p><br></br>
+                                    
+                                </lightning:accordionSection>
+                            </aura:iteration>
+                        </lightning:accordion>
+                        <h5 class="slds-truncate slds-text-heading_xx_small slds-p-top_small">
+                            For older announcements, <a href="{!v.newsLink}" target="_blank">{!v.newsLinkLabel}</a></h5>
+                    </div>
+                </div>                
+            </div>
+        </aura:if> 
+        <aura:set attribute="else">
+            <h4 style="color: #005587; margin-bottom: 20px; font-size: 1.125rem"> Announcements </h4>
+            <div class="{!v.innerScrollOn ? 'slds-scrollable_y' : ''}" 
+                style="{!v.innerScrollOn ? 'height:calc(100vh - 180px);' : ''}">
+            <aura:iteration items="{!v.announcementList}" var="announcement">
+                <div class="slds-p-bottom_x-large">
+                    <div class="slds-box slds-theme_default">
+                        <div class="slds-media">
+                            <div class="slds-media__body slds-align-middle">
+                                <p style="float: left; text-align:center;">{!announcement.Subject__c}</p>
+                                <p style="float: right;"><ui:outputDate value="{!announcement.Published_date__c}"/></p>
+                            </div>
+                        </div>
+                        <div class="slds-box slds-theme_default">
+                            <div class="slds-media">
+                                <div class="slds-media__body slds-align-middle">
+                                    <aura:unescapedHtml value="{!announcement.Description__c}"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aura:iteration>
+            <aura:if isTrue="{!empty(v.announcementList)}">
+                <h5 class="slds-truncate slds-text-heading_xx_small slds-p-top_small">
+                    {!v.msgNoAnnouncement} </h5>
+            </aura:if>
+            </div>
+        </aura:set>
+    </aura:if>
+</aura:component>

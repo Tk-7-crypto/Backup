@@ -1,0 +1,82 @@
+<template>
+    <template if:true={isLoaded}>
+        <div class="exampleHolder">
+            <lightning-spinner alternative-text="Loading" size="large" style="z-index: 9999;"></lightning-spinner>
+        </div>
+    </template>
+    <div class="c-container" style="background-color:#d4cece">
+        <lightning-card  variant="Narrow"  title={headerName} icon-name="standard:person_language">
+            <template if:true={isSeriveProject}>
+                <lightning-button label="Back" slot="actions" icon-name="utility:back"  onclick={backToProject}></lightning-button>
+            </template>
+            <lightning-button label="XLS Export" slot="actions" icon-name="utility:download" class="slds-m-left_x-small"  onclick={exportTo_XLS}></lightning-button>
+            <lightning-button label="CSV Export" slot="actions" icon-name="utility:download" class="slds-m-left_x-small"  onclick={exportTo_CSV}></lightning-button>
+            <lightning-button label="PDF Export" slot="actions" icon-name="utility:download" class="slds-m-left_x-small"  onclick={exportTo_PDF}></lightning-button>
+            <!-- filter heading -->
+            <template if:false={isSeriveProject}>
+                <div class="slds-p-around_x-small slds-theme_shade cursor-pointer" onclick={toggleFilter}>
+                    <div class="slds-grid">
+                    <div class="slds-size_2-of-3">
+                        <div class="slds-media slds-accordion__summary-heading">
+                        <div class="slds-media__figure">
+                            <!-- icon when not expanded -->
+                            <lightning-icon if:false={viewFilters} icon-name="utility:chevronright" size="x-small">
+                            </lightning-icon>
+                            <!-- icon when is expanded -->
+                            <lightning-icon if:true={viewFilters} icon-name="utility:chevrondown" size="x-small">
+                            </lightning-icon>
+                        </div>
+                        <div class="slds-media__body">
+                            <span>Filter</span>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="slds-size_1-of-3 slds-text-align_right slds-p-right_small">
+                        <lightning-icon icon-name="utility:filterList" size="x-small"></lightning-icon>
+                    </div>
+                    </div>
+                </div>
+                <template if:true={viewFilters}>
+                    <lightning-layout class="slds-box">
+                        <lightning-layout-item padding="around-small" size="4">
+                            <lightning-input name="clientName" label="Client Name" type="text" onchange={handlechange} value={clientName}></lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item padding="around-small" size="4">
+                            <lightning-input name="projectCode" label="Project Code" type="text" onchange={handlechange} value={projectCode}></lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item padding="around-small" size="4">
+                            <lightning-input name="isActive" label="Active" type="checkbox" onchange={handlechange} value={isActive} checked={isActive}></lightning-input>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                </template>
+            </template>
+            <template if:true={hasLoadedData}>
+                <div class="slds-box">
+                    <div class="dataTable slds-table_col-bordered">
+                        <lightning-datatable 
+                            key-field="Id"
+                            data={filteredRecord} 
+                            columns={columns} 
+                            hide-checkbox-column="true">
+                        </lightning-datatable>
+                    </div>
+                </div>
+            </template>
+            <template if:false={hasLoadedData}>
+                <section class="slds-box slds-m-top_small">
+                  <div class="slds-media slds-media_center">
+                    <span class="slds-icon_container slds-icon-action-delete slds-icon_container--circle slds-media__figure">
+                      <lightning-icon if:false={viewFilters} icon-name="utility:warning" size="x-small" variant="inverse">
+                      </lightning-icon>
+                    </span>
+                    <div class="slds-media__body slds-text-title_caps">
+                      <div class="slds-text-heading_small" id="panel-heading-id-3">
+                        No Records Found Use the <a onclick={toggleFilter}>Filter</a> to refine your search
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </template>
+    </lightning-card>
+    </div>
+</template>

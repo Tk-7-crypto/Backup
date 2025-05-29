@@ -1,0 +1,77 @@
+<aura:component implements="flexipage:availableForAllPageTypes"  controller="CNT_CPQ_SendEmailProposal">
+    <aura:attribute name="emailList" type="List"/>
+    <aura:attribute name="CcemailList" type="List"/>
+    <aura:attribute name="BccemailList" type="List"/>
+    <aura:attribute name="showPopUp" type="boolean" default="false"/>
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="AttachmentNames" type="String[]"/>
+    <aura:attribute name="showFiles" type="boolean" default="false"/>
+    <aura:attribute name="attachmentList" type="List"/>
+    <aura:attribute name="showSpinner" type="boolean" default="false"/>
+    <aura:attribute name="header" type="String" default=""/>
+    <aura:attribute name="ccEmails" type="String" default=""/>
+    <aura:attribute name="emailDetailObj" type= "Object" default=""/>
+    <aura:attribute name="parent" type="Aura.Component" required="true"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <aura:if isTrue="{!v.showPopUp}">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+            <aura:if isTrue="{!v.showSpinner}">
+                <lightning:spinner aura:id="mySpinner" />
+            </aura:if>
+            <div class="slds-modal__container">
+                <div class="slds-page-header" role="banner">
+                    <h2 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate slds-text-align_center" title="{!v.header}">
+                        {!v.header}
+                    </h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium">
+                        <c:LXC_CPQ_CustomLookup aura:id="emailAddress" label="To" isRequired="true" helpText="Multiple recipient email addresses must be separated by a comma( , )" objectAPIName="Contact" searchField="Email" isMultiSelect="true" placeHolder="abc@email.com" displayField="Name" subTextField="Email" IconName="standard:contact" selectedRecordList="{!v.emailList}"  preSelectedValues="{!v.emailDetailObj.selectedEmailIds}" preSelectedField="Email" whereClause="{!v.emailDetailObj.whereClause}"/>
+                    	<c:LXC_CPQ_CustomLookup aura:id="ccEmail" label="Cc" helpText="Multiple recipient email addresses must be separated by a comma( , )" objectAPIName="Contact" searchField="Email" isMultiSelect="true" placeHolder="abc@email.com" displayField="Name" subTextField="Email" IconName="standard:contact" selectedRecordList="{!v.CcemailList}" preSelectedValues="{!v.ccEmails}" preSelectedField="Email" whereClause="{!v.emailDetailObj.whereClause}"/>
+                        <c:LXC_CPQ_CustomLookup aura:id="bccEmail" label="Bcc" helpText="Multiple recipient email addresses must be separated by a comma( , )" objectAPIName="Contact" searchField="Email" isMultiSelect="true" placeHolder="abc@email.com" displayField="Name" subTextField="Email" IconName="standard:contact" selectedRecordList="{!v.BccemailList}" whereClause="{!v.emailDetailObj.whereClause}"/>
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="CC">Subject</label>
+                        <div class="slds-form-element__control">
+                            <ui:inputText class="slds-input" aura:id="subject"  value="{!v.emailDetailObj.subject}" placeholder="Subject"/>
+                        </div>
+                    </div>
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="textareaSample2">Mail Body</label>
+                        <div class="slds-form-element__control">
+                            <lightning:inputRichText aura:id="body" value="{!v.emailDetailObj.htmlBody}" />
+                        </div>
+                    </div>
+                    <lightning:fileUpload label="" name="fileUploader" multiple="true" recordId="{!v.recordId}" onuploadfinished="{!c.handleUploadFinished}" />
+                    <aura:if isTrue="{!v.showFiles}">
+                        <div class="slds-form-element">
+                            <aura:iteration items="{!v.attachmentList}" var="file" indexVar="i">
+                                <table class="slds-table slds-table--bordered">
+                                    <tr class="fixwidth">
+                                        <td >{!file.label}</td>
+                                        <td class="slds-text-align_right">
+                                            <aura:if isTrue="{!file.isUPT}">
+                                                <button class="slds-button slds-button_neutral" id="{!file.value}" 
+                                                        data-index="{!i}" onclick="{!c.removeFile}">Delete</button>
+                                                <aura:set attribute="else">
+                                                    <button class="slds-button slds-button_neutral" id="{!file.value}" 
+                                                            data-index="{!i}" onclick="{!c.deleteFile}">Delete</button>
+                                                </aura:set>
+                                            </aura:if>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </aura:iteration>
+                        </div>
+                    </aura:if>
+                </div>
+                <footer class="slds-modal__footer">
+                    <div class="slds-text-align_center">
+                        <button class="slds-button slds-button--brand" onclick="{!c.sendMail}">Send</button>
+                        <button class="slds-button slds-button--neutral" onclick="{!c.ClosePopUp}">Cancel</button>
+                    </div>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

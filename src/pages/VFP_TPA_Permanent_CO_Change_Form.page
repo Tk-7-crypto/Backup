@@ -1,0 +1,656 @@
+<apex:page lightningStylesheets="true" sidebar="false" controller="CNT_TPA_Permanent_CO_Change_Form">
+    <apex:slds />    
+    <html ng-app="myApp">
+        <head>
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+           
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+                
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}" />
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+
+            <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.jqGrid.min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/grid.locale-en.js')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/jquery-ui.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/ui.jqgrid.css')}" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <title>Request to Update Commercial Ownership</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }
+
+                .actionLabel{
+                    padding-bottom: 2px;
+                    padding-left: 4px;
+                }
+
+                /*
+                .buttons{
+                    color: white;
+                    background-color: #1b96ff;
+                    border-color: white;
+                    padding: 4px 8px;
+                }
+
+                
+                input[type="text"],
+                input[type="date"] {
+                    width: 100%;
+                    padding: 2px;
+                    margin-bottom: 10px;
+                    margin-right: 10px;
+                }
+                */
+                .filterInputHeading{
+                    color: #1b96ff;
+                    margin-bottom: 1%;
+                }
+                
+                
+                .filterSubmit{
+
+                    clear: both;
+                    text-align: center;
+                }
+                
+                .error-message {
+                    color: red;
+                    font-weight: bold;
+                }
+                
+                #offeringDetailTable td {
+                	white-space: normal !important;
+    				display: table-cell !important;
+                	vertical-align: top;
+                }
+                
+                #offeringDetailTable li {
+                	margin-top: 1%;
+    				margin-bottom: 1%;
+                }
+                
+                .radioButton {
+                	margin: 0px !important;
+    				vertical-align: middle !important;
+                }
+                .ui-datepicker-trigger { position: relative; top: -2px; }
+               
+                .ui-datepicker-month {
+                    min-width: 78px !important;
+                    height: 20px !important;
+                    color:black!important;
+                }
+                .ui-datepicker-year {
+                    min-width: 82px !important;
+                    height: 20px !important;
+                    color:black!important;
+                }
+                
+            </style>
+            <script type="text/javascript">
+                $(document).ready(function(){
+                    $(".datepicker").datepicker({dateFormat: 'mm/dd/yy',buttonText: "{!$Label.TPA_click_here_to_open_calendar}",changeMonth: true, changeYear: true, showOn: "button", buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAALdQTFRFMzMyAAAAMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMy////j2KaIAAAADt0Uk5TAAAEgzuRhtCH6aaF09KLFnt66xoGAwLsBw8Mfnj3GDiBNGyCNW19d/YOHw118hlDmj8UAfAuEBuv9eqZZ685AAAAAWJLR0Q8p2phzwAAAAlwSFlzAAAASAAAAEgARslrPgAAALxJREFUGNM9jIcOgkAQBUcseLZDVzwrKtgL9nr//18qqC+ZvGSy+8Ahm+WHA7l8wXWLxZRCPocqlSvVWq36oVIuKZTGq0P9g4dWNISm33J832n5TaSB0bQ7bbrdpLTBCD3bZzCgb3vIWwQMR2PCkPFoSJCKaMJ0yiRKhTCzcxYL5naWvGiWqzUirFfL76hnN2y3bKyXXMTs9geiiMN+R2xQR06Zb04cFefLNb4FWkQHt/h6OXN/PM0/z8f9BT8gFJGascv+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE0LTA4LTA1VDA1OjMwOjQ2LTA0OjAwb0yWxAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNC0wOC0wNVQwNTozMDo0Ni0wNDowMB4RLngAAAAASUVORK5CYII=", buttonImageOnly: true});
+                    var dateObject = new Date();
+                    var minDate = new Date(dateObject);
+                    $(".datepicker").datepicker("option","minDate", minDate); 
+                    var parentPageUrl = document.referrer;
+                    
+                    if(parentPageUrl.indexOf('.lightning.force.com') > 0){
+                        document.getElementById("radioButton").setAttribute("style", "margin-left: 8px;margin-bottom: 6px;"); 
+                    }                 
+                });
+                angular.module('myApp', [])
+                .controller('myController', function($scope) {
+                    $scope.showOfferingTable = false;
+                    $scope.selectedAction = '';
+                    $scope.currentCommercialOwnerEmail = '';
+                    $scope.additionalOwners = [{
+                        owner: '',
+                        email: '',
+                    }];
+                    $scope.minDate = new Date();
+                    $scope.offeringsList = {!jsonOfferingList};
+                    $scope.offeringListForCurrentComOwner = [];
+                    //$scope.effectiveDate = '';
+                    $(".datepicker").datepicker("setDate", null);
+                    $scope.errorMessage = '';
+
+                    $scope.tpProcessEmail = '{!tpProcessorEmail}';
+                    $scope.currentLoginUserName = '{!currentLoginUserName}';
+                    
+                    $scope.addOwner = function() {
+                        let addNewRow = true;
+                        angular.forEach($scope.additionalOwners,function(v,k){
+                            if(v.email == null || v.name == null || v.email == '' || v.name == ''){
+                                //showpopup
+                                $scope.popupAlert('Please fill up the current row to proceed.',function(){});
+                            
+                                addNewRow = false;
+                                return false;
+                            }
+                        });
+                        if(addNewRow)
+                            $scope.additionalOwners.push({ name: '', email: '' });
+                    };
+                    
+                    $scope.cancelForm = function() {
+                        window.location.reload();
+                    }
+                    $scope.submitForm = function() {
+                        if(!validateForm()){
+                            $scope.popupAlert('Please Select atleast one row to Submit.',function(){});
+                            return;
+                        }
+                        $scope.permanentCOChangesDetail = {};
+                        $scope.permanentCOChangesDetail.permanentOwnerEmail = $scope.currentCommercialOwnerEmail;
+                        $scope.permanentCOChangesDetail.actionSelected = $scope.selectedAction;
+                        $scope.permanentCOChangesDetail.tpProcessorName = $scope.currentLoginUserName;
+                        $scope.permanentCOChangesDetail.tpProcessorEmail = $scope.tpProcessEmail;
+                        let newNames='',newEmails='';
+                        angular.forEach($scope.additionalOwners, function(value, key) {
+                            newNames += value.name+';';
+                            newEmails += value.email+';';
+                        });
+                        $scope.permanentCOChangesDetail.newPermanentOwnerName = newNames != null ? newNames.substring(0,newNames.length - 1) : '';
+                        $scope.permanentCOChangesDetail.newPermanentOwnerEmail = newEmails != null ? newEmails.substring(0,newEmails.length - 1) : '';
+                        //$scope.permanentCOChangesDetail.effectiveDate = $scope.effectiveDate;
+                        //$scope.permanentCOChangesDetail.effectiveDate = $('.datepicker').datepicker('getDate');
+
+                        var tempDate = $('.datepicker').datepicker('getDate');
+                        var finalDate = new Date();
+                        finalDate.setDate(tempDate.getDate());
+
+                        $scope.permanentCOChangesDetail.effectiveDate = finalDate;
+                        
+                        let offeringDetailWrapperList = [];
+                        
+                        angular.forEach($scope.offeringListForCurrentComOwner,function(value,key){
+                            let offDetail = {};
+                            offDetail.country = value.country;
+                            offDetail.offCat = value.category;
+                            offDetail.primOffName = value.primaryOffering;
+                            offDetail.secOffName = value.secondaryOffering;
+                            offDetail.oldValues = value.currentOwners;
+                            offDetail.newValues = value.updatedOwners;
+                            offDetail.selected = value.selected;
+                            offeringDetailWrapperList.push(offDetail);
+                        });
+                        $scope.permanentCOChangesDetail.uniqueOfferingCombinations = offeringDetailWrapperList;
+
+                        console.log(JSON.stringify($scope.permanentCOChangesDetail));
+                        showLoading();
+                        CNT_TPA_Permanent_CO_Change_Form.saveRequest(JSON.stringify($scope.permanentCOChangesDetail).replace(/null/i, "\"\""), function(result, event)
+                            {
+                                if(event.type == 'exception')
+                                {   
+                                    hideLoading();
+                                    return false;                                    
+                                }
+                                else
+                                {
+                                    hideLoading();
+                                    $scope.popupAlert('Your request to permanently update the Commercial Owner has been received. A confirmation email will be sent to you and other related parties shortly.',function(){
+                                        window.location.reload();
+                                    });
+                                }
+                            },{escape: false});
+                    }
+                        
+
+                    $scope.getMap = function(ownersEmail,ownersName){
+                        if(ownersEmail == '' || ownersEmail == null || ownersName == null){
+                            return;
+                        }
+                        let ownersNamesList = ownersName.split(';');
+                        let idx = 0,currentMap = {};
+
+                        angular.forEach(ownersEmail.split(';'),function(value,key){
+                            if(value != null && value != undefined && ownersNamesList[idx] != null && ownersNamesList[idx] != undefined){
+                                currentMap[ownersNamesList[idx]] = value;
+                            }
+                            idx++;
+                        });
+                        return currentMap;
+                    }
+
+            $scope.combsToMakeBold = {};
+            $scope.getNewOwnersList = function(currentOwners,currentOwnersMap){
+                let newOwners = '';
+                angular.forEach($scope.additionalOwners, function(value, key) {
+                    newOwners += value.name.toLowerCase() + ' <'+value.email.toLowerCase()+'> ,';
+                    $scope.combsToMakeBold[value.name.toLowerCase() + ' <'+value.email.toLowerCase()+'> '] = value.name.toLowerCase() + ' <'+value.email.toLowerCase()+'> ';
+                });  
+                if($scope.selectedAction == 'addOwner'){
+                    newOwners += currentOwners;
+                }   
+                else if($scope.selectedAction == 'transferOwner'){
+                    angular.forEach(currentOwnersMap, function(value, key) {
+                        if(key != $scope.currentCommercialOwnerEmail.toLowerCase())
+                            newOwners += value.toLowerCase() + ' <'+key.toLowerCase()+'> ,';
+                    });
+                }
+                else if($scope.selectedAction == 'removeOwner'){
+                    //console.log('size'+currentOwnersMap.length);
+                        
+                    newOwners = '';
+                    angular.forEach(currentOwnersMap, function(value, key) {
+                        if(key != $scope.currentCommercialOwnerEmail.toLowerCase())
+                            newOwners += value.toLowerCase() + ' <'+key.toLowerCase()+'> ,';
+                    }); 
+                    if(newOwners == ''){
+                        newOwners = '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]';
+                    }
+                }
+                return newOwners;
+            }
+
+                    $scope.submitFilter = function(){
+                        let errors = validateFilters();
+                        $scope.combsToMakeBold = {};
+                        if(errors != 'No Errors'){
+                            $scope.errorMessage = errors;
+                            return false;
+                        }
+                        $scope.errorMessage = '';
+                        //get offerings
+                        $scope.offeringListForCurrentComOwner = [];
+                        angular.forEach($scope.offeringsList, function(v,k){
+                            
+                            // offDetail.selected = true;
+                            if(v.IMS_Secondary_Data_Assets__r != null && v.IMS_Secondary_Data_Assets__r.totalSize > 0){
+                                angular.forEach(v.IMS_Secondary_Data_Assets__r.records, function(secDA, key) {
+                                    if(secDA.Commercial_Manager_Email__c != null && secDA.Commercial_Manager_Name__c != null && secDA.Commercial_Manager_Email__c.toLowerCase().indexOf($scope.currentCommercialOwnerEmail.toLowerCase()) > -1){
+                                        let offDetail = {};
+                                        offDetail.primaryOffering = v.Asset_Name__c;
+                                        offDetail.country = v.BU__c;
+                                        offDetail.category = v.Geo_Level__c;
+                                        offDetail.secondaryOffering = secDA.Secondary_Asset_Name__c;
+                                        let currentOwnersMap = $scope.getMap(secDA.Commercial_Manager_Name__c.toLowerCase(),secDA.Commercial_Manager_Email__c.toLowerCase());
+                                        let currentOwners = '';
+                                        angular.forEach(currentOwnersMap, function(value, key) {
+                                            currentOwners += value + ' <'+key+'> ,';
+                                        });
+                                        offDetail.currentOwners = currentOwners.toLowerCase();
+                                        offDetail.updatedOwners = $scope.getNewOwnersList(currentOwners,currentOwnersMap);
+                                        offDetail.currentOwners = offDetail.currentOwners != null ? offDetail.currentOwners.substring(0,offDetail.currentOwners.length - 1) : '';
+                                        if(offDetail.updatedOwners != '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]' ){
+                                            offDetail.updatedOwners = offDetail.updatedOwners != null ? offDetail.updatedOwners.substring(0,offDetail.updatedOwners.length - 1) : '';
+                                        }
+                                        
+                                        offDetail.selected = (offDetail.updatedOwners == '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]') ? false : true;
+                                        
+                                        $scope.offeringListForCurrentComOwner.push(offDetail); 
+                                    }
+                                });
+                            }
+                            else if(v.Commercial_Owner_Email__c != null && v.Commercial_Manager_Name__c != null && v.Commercial_Owner_Email__c.toLowerCase().indexOf($scope.currentCommercialOwnerEmail.toLowerCase()) > -1){
+                                let offDetail = {};
+                                offDetail.primaryOffering = v.Asset_Name__c;
+                                offDetail.country = v.BU__c;
+                                offDetail.category = v.Geo_Level__c;
+                                let currentOwnersMap = $scope.getMap(v.Commercial_Manager_Name__c.toLowerCase(),v.Commercial_Owner_Email__c.toLowerCase());
+                                let currentOwners = '';
+                                angular.forEach(currentOwnersMap, function(value, key) {
+                                    currentOwners += value + ' <'+key+'> ,';
+                                });
+                                offDetail.currentOwners = currentOwners.toLowerCase();
+                                offDetail.updatedOwners = $scope.getNewOwnersList(currentOwners,currentOwnersMap);
+                                
+                                offDetail.currentOwners = offDetail.currentOwners != null ? offDetail.currentOwners.substring(0,offDetail.currentOwners.length - 1) : '';
+                                if(offDetail.updatedOwners != '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]' ){
+                                    offDetail.updatedOwners = offDetail.updatedOwners != null ? offDetail.updatedOwners.substring(0,offDetail.updatedOwners.length - 1) : '';
+                                }
+                                console.log('offDetail.currentOwners'+offDetail.currentOwners+'offDetail.updatedOwners'+offDetail.updatedOwners);
+                                offDetail.selected = (offDetail.updatedOwners == '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]') ? false : true;
+                                console.log(JSON.stringify($scope.combsToMakeBold));
+                                $scope.offeringListForCurrentComOwner.push(offDetail);
+                            }                             
+                        });
+
+                        if($scope.offeringListForCurrentComOwner == null || $scope.offeringListForCurrentComOwner.length == 0){
+                            $scope.popupAlert('No Offerings to display , please update filters accordingly!',function(){});
+                            return;
+                        }
+                        $scope.showOfferingTable = true;
+                    }
+                    
+                
+            
+
+                    $scope.actionChange = function(){
+                        $scope.currentCommercialOwnerEmail = '';
+                        $scope.additionalOwners = [{
+                            name: '',
+                            email: '',
+                        }];
+                        //$scope.effectiveDate = '';
+                        $(".datepicker").datepicker("setDate", null);
+                        $scope.errorMessage = '';
+                        $scope.showOfferingTable = false;
+                        $scope.acknowledge1 = false;
+                        $scope.acknowledge2 = false;
+                        $scope.acknowledge3 = false;
+                        $scope.offeringListForCurrentComOwner = [];
+                        if($scope.selectedAction == 'addOwner'){
+                            $scope.filterSectionHeading2 = 'You wish to ADD Another Commercial Owner to an Offering Review.  Please provide the below details…';
+                            $scope.tableNote = 'If adding multiple new owners, all names listed above will be collectively added to the related offering reviews.';
+                            $scope.tableEmailHeading = 'Additional Commercial Owner Email';
+                            $scope.tableNameHeading = 'Additional Commercial Owner Full Name';
+                            $scope.currentEmailHeading = 'WHO IS THE CURRENT COMMERCIAL OWNER?';
+                            $scope.currentEmailLabel = 'Current Commercial Owner Email Address:';
+                        }
+                        else if($scope.selectedAction == 'transferOwner'){
+                            $scope.filterSectionHeading2 = 'You wish to TRANSFER Commercial Ownership of an Offering to a New Commercial Owner. Please provide the below details…';
+                            $scope.tableNote = 'If transfering to multiple new owners, all names listed above will be collectively added to the related offering reviews.';
+                            $scope.tableEmailHeading = 'New Commercial Owner Email';
+                            $scope.tableNameHeading = 'New Commercial Owner Full Name';
+                            $scope.currentEmailHeading = 'WHO IS THE CURRENT COMMERCIAL OWNER?';
+                            $scope.currentEmailLabel = 'Current Commercial Owner Email Address:';
+                        }
+                        else if($scope.selectedAction == 'removeOwner'){
+                            $scope.filterSectionHeading2 = 'You Wish to Remove the existing Commercial Owner from Offering review that has more than one Commercial Owner, please provide the below details…';
+                            $scope.currentEmailHeading = 'WHO WOULD YOU LIKE TO REMOVE FROM AN OFFERING REVIEW?';
+                            $scope.currentEmailLabel = 'Provide the Current Commercial Owner Email Address for the related offerings:';
+                        }
+                    }
+
+                    $scope.isValidEmail = function(sEmail)
+                    {
+                        var filter = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //Added by Babita Dadarwal under Issue-08272
+                        var diacriticscharacterfilter = /([\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+/g;
+                        
+                        if (filter.test(sEmail) && !diacriticscharacterfilter.test(sEmail)) { 
+                            return true;
+                        }
+                        else
+                            return false;
+                    }
+                
+                    
+                    function validateFilters() {
+                        // ... (validation logic) ...
+                        if($scope.currentCommercialOwnerEmail == null || $scope.currentCommercialOwnerEmail == ''){
+                            return 'All required fields need to be completed before you can review the results.';
+                        }
+                        // if($scope.effectiveDate == null || $scope.effectiveDate == ''){
+                        //     return 'All required fields need to be completed before you can review the results.';
+                        // }
+                        if($('.datepicker').datepicker('getDate') == null || $('.datepicker').datepicker('getDate') == '') {
+                            return 'All required fields need to be completed before you can review the results.';
+                        }
+
+                        let newOwnersValidated = true;
+                        let newOwnersEmailValidation = true;
+                        let newOwnersSame = true;
+                        angular.forEach($scope.additionalOwners,function(v,k){
+                            if(v.email == null || v.name == null || v.email == '' || v.name == ''){
+                                newOwnersValidated = false;
+                                return;
+                            }
+                            if(v.email != null && !$scope.isValidEmail(v.email)){
+                                newOwnersEmailValidation = false;
+                                return;
+                            }
+                            if(v.email != null && $scope.isValidEmail(v.email) && v.email.toLowerCase() == $scope.currentCommercialOwnerEmail.toLowerCase()){
+                                newOwnersSame = false;
+                            }
+                        });
+                        if($scope.selectedAction == 'addOwner' && !newOwnersSame){
+                            $scope.showOfferingTable = false;
+                            return 'Current and new commercial owners email addresses are same, please provide a different email address for the new owner.';
+                        }
+                        if($scope.selectedAction == 'transferOwner' && !newOwnersSame){
+                            $scope.showOfferingTable = false;
+                            return 'Current and new commercial owners email addresses are same, please provide a different email address for the new owner.';
+                        }
+                        if($scope.selectedAction != 'removeOwner' && !newOwnersValidated){
+                            return 'All required fields need to be completed before you can review the results.';
+                        }
+                        if($scope.selectedAction != 'removeOwner' && !newOwnersEmailValidation){
+                            return 'Please add valid additional commercial owner email address.';
+                        }
+
+                        if($scope.currentCommercialOwnerEmail != null && !$scope.isValidEmail($scope.currentCommercialOwnerEmail)){
+                            return 'Please add valid commercial owner email address.';
+                        }
+
+                        return 'No Errors';
+                    }
+
+                    function validateForm() {
+                        // ... (validation logic) ...
+                        let anyOneRowSelected = false;
+                        angular.forEach($scope.offeringListForCurrentComOwner,function(value,key){
+                            if(value.selected){
+                                anyOneRowSelected = true;
+                            }
+                        });
+                        if(!anyOneRowSelected){
+                            //showPopup
+                            return false;
+                            //return 'Please select atleast one row for submission .';
+                        }
+
+                        return true;
+                    }
+
+                    
+                    $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true}, 
+                              function(r)
+                              {
+                                  if(r && truePart != null)
+                                      truePart();
+                              });
+                    }
+
+                    $scope.deleteNewRow = function(idx){
+                        if($scope.additionalOwners != undefined && $scope.additionalOwners.length > 1){
+                            $scope.additionalOwners.splice(idx,1);
+                        }
+                    }
+                });
+                
+                
+            </script>
+        </head>
+    
+        
+        <body ng-controller="myController">
+            <c:VFC_TPA_LoadingImage />
+            <div style="text-align: center;margin: 20px 0px;">
+                <h1 class="slds-text-heading_medium"><b>Request to Update Commercial Ownership</b></h1>
+            </div>
+            
+            <div style="margin-left:4%;margin-bottom:1%;">
+                <p><b>TP Country Email Address:</b> {{tpProcessEmail}}</p>
+                <p><b>TP Processor First and Last Name:</b> {{currentLoginUserName}}</p>
+            </div>
+
+            <div style="margin-left:4%;">
+                
+                <h2><b>Tell Us What You'd Like To Do, Select the Action You Require:</b></h2><br/>
+                <input class="radioButton" type="radio" ng-model="selectedAction" value="transferOwner" ng-change="actionChange()"/><label ng-click="selectedAction='transferOwner';actionChange();" class="actionLabel">Transfer Current Commercial Owner Offering(s) Review to Another</label><br/>
+                <input class="radioButton" type="radio" ng-model="selectedAction" value="addOwner" ng-change="actionChange()"/><label ng-click="selectedAction='addOwner';actionChange();" class="actionLabel">Add an Additional Commercial Owner to an Existing Offering(s) Review</label><br/>
+                <input class="radioButton" type="radio" ng-model="selectedAction" value="removeOwner" ng-change="actionChange()"/><label ng-click="selectedAction='removeOwner';actionChange();" class="actionLabel">Remove Existing Commercial Owner from Offering(s) Review that has more than one Commercial Owner</label><br/>
+                
+            </div>
+            <div style="text-align: right;margin: 20px 0px;margin-right:4%;">
+                <p style="color: #1b96ff;"><b>If you have any questions or issues, please contact us at IQVIAThirdPartyAccessProgram@iqvia.com with the details.</b></p>
+            </div>
+
+            <div style="margin-top:3%;margin-bottom:3%;">
+                <hr style=" border-color: rgb(27 162 255);margin-bottom: 0rem !important; margin-top: 6px;"></hr>
+                <hr style=" border-color: rgb(27 162 255);margin-bottom: 10px !important; margin-top: 6px;"></hr>
+            </div>
+            
+            <div style="margin:0% 2%;margin-bottom:3%;margin-top: 4%;" class="slds-size--1-of-1" ng-show="selectedAction != null && selectedAction != ''">
+                <p><b><span style="color: #1b96ff;">OKAY…</span><br/>{{filterSectionHeading2}}</b></p>
+            </div>
+
+            <div style="margin:0% 2%;" id="filterSection" class="slds-grid" ng-show="selectedAction != null && selectedAction != ''">
+                <div class="slds-col slds-size--1-of-2">
+                    <div>
+                        <div>
+                            <p class="filterInputHeading"><b>{{currentEmailHeading}}</b></p>
+                            <br/>
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label">
+                                    <abbr class="slds-required" title="required">* </abbr><b>{{currentEmailLabel}}</b>
+                                </label>
+                                <div id="opPanel" class="slds-form-element__control">
+                                    <div>
+                                        <input type="text" class="slds-input" ng-model="currentCommercialOwnerEmail" placeholder="" style="width: 70% !important;"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element__control" style="display: inline-block;">
+                                
+                            </div>
+                        </div>
+                        <div style="margin-top:4%;">
+                            <p class="filterInputHeading"><b>WHAT DATE WOULD YOU LIKE THIS TO GO INTO EFFECT?</b></p>
+                            <br/>
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label">
+                                    <abbr class="slds-required" title="required">* </abbr><b>Effective Date:</b>
+                                </label>
+                                <div id="opPanel" class="slds-form-element__control">
+                                    <div>
+                                        <input type="text" maxlength="255" style="width: 70% !important;" ng-click="popupAlert('{!$Label.TPA_Click_on_the_calendar_icon_next_to_the_text_box_and_select_the_Date}');" placeholder="Select From Date" readonly="readonly" class="datepicker" id="fromDate" />
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size--1-of-2" ng-show="selectedAction == 'addOwner' || selectedAction == 'transferOwner'">
+                    <p class="filterInputHeading"><b>WHO WOULD YOU LIKE TO <span ng-show="selectedAction == 'addOwner'"> ADD TO </span><span ng-show="selectedAction == 'transferOwner'"> TRANSFER </span> THE RELATED OFFERING REVIEWS?</b></p>
+                    <br/>
+                    <p ng-show="selectedAction == 'addOwner'" class="slds-form-element__label"><b>Provide the Additional Commercial Owner's Full Name and Email You Would like to <span ng-show="selectedAction == 'addOwner'"> add to </span><span ng-show="selectedAction == 'transferOwner'"> transfer </span> the related Offering Reviews:</b></p>
+                    
+                    <br/>
+                    <table class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" >
+                        <thead>
+                            <tr>
+                                <th scope="col"> {{tableNameHeading}} </th>
+                                <th scope="col"> {{tableEmailHeading}} </th>
+                                <th scope="col">  </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="owner in additionalOwners track by $index">
+                                <td>
+                                    <input style="width:100%;" class="slds-input slds-form-element__control" type="text" ng-model="owner.name" placeholder="{{tableNameHeading}}"/>
+                                </td>
+                                <td>
+                                    <input style="width:100%;" class="slds-input slds-form-element__control" type="text" ng-model="owner.email" placeholder="{{tableEmailHeading}}"/>
+                                </td>
+                                <td>
+                                    <input class="slds-button slds-button_destructive" ng-disabled="additionalOwners == null || additionalOwners.length == 1" type="button" ng-click="deleteNewRow($index)" value="Delete"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="float:right;margin-top:15px;">
+                        <input type="button" class="slds-button slds-button_outline-brand" style="background-color:#1b96ff;color:white;" ng-click="addOwner()" value="Click To Add Another"></input>
+                    </div>
+
+                    <p style="clear:right;margin-top:10px;">
+                        <b><span style="color:#1b96ff;">Note:</span> {{tableNote}}</b>
+                    </p>
+                    
+                </div>
+            </div>
+            <br/>
+            <br/>
+            <div style="text-align:center;color:red;margin:0% 2%;">
+                <p ng-show="errorMessage">{{ errorMessage }}</p>
+            </div>
+            
+            <div style="margin:0% 2%;" class="filterSubmit" ng-show="selectedAction != null && selectedAction != ''">
+                <input type="button"  class="slds-button slds-button_outline-brand" style="background-color:#1b96ff;color:white;" ng-click="submitFilter()" value="Click to Review Results Found"></input>
+            </div>
+
+            <div style="margin-top:3%;margin-bottom:3%;" ng-show="showOfferingTable == true">
+                <hr style=" border-color: rgb(27 162 255);margin-bottom: 0rem !important; margin-top: 6px;"></hr>
+                <hr style=" border-color: rgb(27 162 255);margin-bottom: 10px !important; margin-top: 6px;"></hr>
+            </div>
+            <div style="margin:0% 2%;width:95%;" ng-show="showOfferingTable == true">
+                <div style="margin:3% 0%;">
+                    <p><b>Review: Keep All or De-Select to Remove Before Confirming Change of Ownership</b></p>
+                    <p style="color:#1b96ff"><b>The Below Shows the Offerings Owned by the Current Commercial Owner and Proposed Change</b></p>
+                </div>
+                <table id="offeringDetailTable" class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right">
+                    <thead class="slds-theme_shade">
+                        <tr class="slds-text-heading slds-line-height_reset ">
+                            <th class="headerRow slds-cell-wrap">Select</th>
+                            <th class="headerRow slds-cell-wrap">Country</th>
+                            <th class="headerRow slds-cell-wrap">Category</th>
+                            <th class="headerRow slds-cell-wrap">Primary Offering</th>
+                            <th class="headerRow slds-cell-wrap">Secondary Offering</th>
+                            <th class="headerRow slds-cell-wrap">Current Commercial Owners</th>
+                            <th class="headerRow slds-cell-wrap">Commercial Owners Updated Based on Requested Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="dataRow slds-line-height_reset" ng-repeat="row in offeringListForCurrentComOwner track by $index">
+                            <td class="dataCell slds-cell-wrap"><input type="checkbox" ng-model="row.selected" ng-disabled=" row.updatedOwners == '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]'"/></td>
+                            <td class="dataCell slds-cell-wrap">{{ row.country }}</td>
+                            <td class="dataCell slds-cell-wrap">{{ row.category }}</td>
+                            <td class="dataCell slds-cell-wrap">{{ row.primaryOffering }}</td>
+                            <td class="dataCell slds-cell-wrap">{{ row.secondaryOffering }}</td>
+                            <td class="dataCell slds-cell-wrap">
+                                <ul>
+                                    <li ng-repeat="ownerEmail in row.currentOwners.split(',') track by $index">
+                                        <span ng-show="ownerEmail != null && selectedAction != 'addOwner' && ownerEmail.indexOf(currentCommercialOwnerEmail) != -1"><b>{{ownerEmail}}</b></span>
+                                        <span ng-hide="ownerEmail == null || (selectedAction != 'addOwner' && ownerEmail.indexOf(currentCommercialOwnerEmail) != -1 )">{{ownerEmail}}</span>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td class="dataCell slds-cell-wrap">
+                                <ul ng-show="row.selected == true">
+                                    <li ng-repeat="ownerEmail in row.updatedOwners.split(',') track by $index">
+                                        <span ng-show="ownerEmail != null && (combsToMakeBold != null && combsToMakeBold[ownerEmail] != null)"><b>{{ownerEmail}}</b></span>
+                                        <span ng-show="ownerEmail != null && (combsToMakeBold == null || combsToMakeBold[ownerEmail] == null)">{{ownerEmail}}</span>
+                                    </li>
+                                </ul>
+                                <span ng-show="row.selected == false">
+                                    <b ng-show="row.updatedOwners == '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]'">[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]</b>
+                                    <b ng-show="row.updatedOwners != '[The Commercial Owner is currently the only owner. To change this, submit a separate ‘transfer’ request.]'">[No Changes Requested]</b>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            
+                <div style="margin:2% 0%;">
+                    <p><b>Note:</b></p>
+                    <p><label class="slds-checkbox__label"><input type="checkbox" style="margin-right: 5px;" ng-model="acknowledge1"/ >Submitting this form will update the selected Offering(s) assignment.</label></p>
+                    <p><label class="slds-checkbox__label"><input type="checkbox" style="margin-right: 5px;" ng-model="acknowledge2"/ >Upon clicking 'Submit', the requested update will be activated based on the date you have provided above and any pending reviews by the original Commercial Owner will be retriggered based on the updated Commercial Ownership review.</label></p>
+                    <p><label class="slds-checkbox__label"><input type="checkbox" style="margin-right: 5px;" ng-model="acknowledge3"/ >Confirmation emails will be sent to you for your records and to inform the related Commercial Owners.</label></p>
+                    <br/>
+                    <p>For any questions on how to use this request form, please reach out directly to IQVIAThirdPartyAccessProgram@iqvia.com to advise.</p>
+                </div>
+                <div ng-show="acknowledge1 && acknowledge2 && acknowledge3" style="text-align:center;width:100%;">
+                    <button class="slds-button slds-button_outline-brand" style="color:red;" ng-click="cancelForm()">Cancel</button>
+                    <button class="slds-button slds-button_outline-brand" style="background-color:#1b96ff;color:white;" ng-click="submitForm()">Submit</button>
+                </div>
+            
+
+            </div>
+
+             
+        </body>
+    </html> 
+</apex:page>

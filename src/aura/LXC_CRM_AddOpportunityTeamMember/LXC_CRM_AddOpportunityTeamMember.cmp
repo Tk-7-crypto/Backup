@@ -1,0 +1,164 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes,force:lightningQuickActionWithoutHeader" access="global" controller="CNT_CRM_AddOpportunityTeamMember" >
+    <aura:attribute name="Spinner" type="Boolean" default="false"/>
+    <aura:attribute name="isCommercialUser" type="Boolean" default="false"/>
+    <aura:attribute name="fieldsToShow" type="String" default="TeamMemberRole,UserId,OpportunityAccessLevel"/>
+    <aura:attribute name="OpportunityTeamMemberList" type="OpportunityTeamMember[]"/>
+    <aura:attribute name="OpportunityTeamMemberListToDelete" type="OpportunityTeamMember[]"/>
+    <aura:attribute name="fieldsToShowWrapper" type="Object[]" />
+    <aura:handler name="init" value="{!this}" action="{!c.showModel}"/>
+    <aura:attribute name="errors" type="List" />
+    <aura:attribute name="oldAccountId" type="Id"/>
+    <aura:attribute name="opportunityRecord" type="Opportunity"/>
+    <force:recordData recordId="{!v.recordId}" targetFields="{!v.opportunityRecord}" fields="Id,AccountId,Account.Name" mode="EDIT" recordUpdated="{!c.recordUpdated}"/>
+    <aura:if isTrue="{!v.Spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    <div id="maincontainer" style="height:60vh;">
+        <aura:if isTrue="{!v.errors.length > 0}">
+            <button class="slds-button errorClose" title="Close">
+                <span class="slds-assistive-text">Close</span>
+            </button>
+            <div class="slds-box slds-theme_error">
+                <ul>
+                    <aura:iteration items="{!v.errors}" var="error">
+                        <li>{!error}</li>
+                    </aura:iteration>
+                </ul>
+            </div>
+        </aura:if>
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Edit Account</h2>
+        </header>
+        <div class="slds-grid slds-wrap">
+            <div class="slds-col slds-size_3-of-12">
+            </div>
+            <div class="slds-col slds-size_3-of-12">
+                <div class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                    <div class="slds-th__action slds-th__action_form">
+                        <span class="slds-required requiredHeader">*</span>
+                        Account
+                    </div>
+                </div>
+            </div>
+            <div class="slds-col slds-size_4-of-12">
+                <c:LXC_CRM_lookup label="Account" object="Account" searchField="Name" placeholder="Select an account" iconName="standard:account" subtitleField="Name" order="Name" limit="5" loadingMessage="Loading..." errorMessage="Invalid input" required="true"  aura:id="accountlookup" value="{!v.opportunityRecord.AccountId}" disabled="{!v.isCommercialUser}"/>
+            </div>
+            
+        </div>
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Edit Opportunity Team</h2>
+        </header>
+        <div class="slds-modal__content slds-modal_large slds-scrollable_y" id="modal-content-id-1">
+            <div class="listViewContent slds-table--header-fixed_container slds-scrollable_y" style="padding-top: 0px;padding-bottom: 75px;">
+                
+                <table class="slds-table slds-table_bordered slds-table_resizable-cols" role="grid" >
+                        <thead class="slds-table--header-fixed">
+                            <tr class="">
+                                <th scope="col" class="slds-text-align_left" style="width: 3.25rem;">
+                                    <div class="slds-th__action slds-th__action_form">
+                                    </div>
+                                </th>
+                                <th scope="col" class="slds-text-align_left" style="width: 3.25rem;">
+                                    <div class="slds-th__action slds-th__action_form">
+                                    </div>
+                                </th>
+                                <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                    <div class="slds-th__action slds-th__action_form">
+                                        <span class="slds-required requiredHeader" data-aura-rendered-by="107:3909;a">*</span>
+                                        TEAM ROLE
+                                    </div>
+                                </th>
+                                <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                    <div class="slds-th__action slds-th__action_form">
+                                        <span class="slds-required requiredHeader" data-aura-rendered-by="107:3909;a">*</span>
+                                        USER
+                                    </div>
+                                </th>
+                                <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                    <div class="slds-th__action slds-th__action_form">
+                                        <span class="slds-required requiredHeader" data-aura-rendered-by="107:3909;a">*</span>
+                                        OPPORTUNITY ACCESS
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.OpportunityTeamMemberList}" var="oppTeamMember" indexVar="i">
+                                <tr class="slds-hint-parent" >  
+                                    <td role="gridcell" class="slds-text-align_right" style="width: 3.25rem;">
+                                       <lightning:buttonIcon iconName="utility:dash" name="{!i}" alternativeText="Remove" onclick="{!c.removeRecord}" /> 
+                                    </td>
+                                    <td>
+                                        {!i+1}
+                                    </td>
+                                    <aura:iteration indexVar="i" items="{!v.fieldsToShowWrapper}" var="objectWrapper">
+                                        <td style="min-width: 165px;">
+                                            <aura:if isTrue="{!and(objectWrapper.fieldDataType == 'PICKLIST',objectWrapper.fieldApiName == 'opportunityaccesslevel')}">
+                                                <lightning:select name="Select" aura:id="picklist" label="{!objectWrapper.fieldApiName}" variant="label-hidden" value="{!oppTeamMember.OpportunityAccessLevel}">
+                                                    <aura:iteration items="{!objectWrapper.fieldValues}" var="options">
+                                                        <aura:if isTrue="{! and(options != 'None', options != '--None--')}">
+                                                            <aura:if isTrue="{! options == 'Read'}">
+                                                                <option text="Read Only" value="{!options}" />
+                                                            </aura:if>
+                                                            <aura:if isTrue="{! options == 'Edit'}">
+                                                                <option text="Read/Write" value="{!options}" />
+                                                            </aura:if>
+                                                        </aura:if>
+                                                        <aura:if isTrue="{! options == '--None--'}">
+                                                            <option text="--None--" value=""/>
+                                                        </aura:if>
+                                                    </aura:iteration>
+                                                </lightning:select>
+                                            </aura:if>                                     
+                                            <aura:if isTrue="{!and(objectWrapper.fieldDataType == 'PICKLIST',objectWrapper.fieldApiName != 'opportunityaccesslevel')}">
+                                                <lightning:select name="Select" aura:id="picklist" label="{!objectWrapper.fieldApiName}" variant="label-hidden" value="{!oppTeamMember.TeamMemberRole}">
+                                                    <aura:iteration items="{!objectWrapper.fieldValues}" var="options">
+                                                        <aura:if isTrue="{! and(options != 'None', options != '--None--')}">
+                                                            <option text="{!options}" value="{!options}"/>
+                                                        </aura:if>
+                                                        <aura:if isTrue="{! options == '--None--'}">
+                                                            <option text="--None--" value=""/>
+                                                        </aura:if>
+                                                    </aura:iteration>
+                                                </lightning:select>
+                                            </aura:if>
+                                            <aura:if isTrue="{!objectWrapper.fieldDataType == 'REFERENCE'}">
+                                                <div style="opacity: 100%;">
+                                                    <c:LXC_CRM_lookup label="{!objectWrapper.fieldApiName}" object="User" searchField="Name" placeholder="Select an user" iconName="standard:user" subtitleField="Name" order="Name" limit="5" loadingMessage="Loading..." errorMessage="Invalid input" aura:id="lookup" required="true" filter="Profile.UserLicense.LicenseDefinitionKey = 'SFDC'" value="{!oppTeamMember.UserId}" />
+                                                </div>
+                                            </aura:if>
+                                        </td>
+                                    </aura:iteration>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+            </div>
+            <div class="multiEditFooterContainer slds-grid slds-grid--align-start slds-p-horizontal--x-large slds-modal__footer forceMultiEdit"  data-aura-class="forceMultiEdit">
+                <div class="addNewRows">
+                    <button class="slds-button slds-button--neutral not-selected slds-not-selected addNewRowsButton uiButton" aria-live="assertive" type="button" data-aura-class="uiButton" onclick="{!c.addTeamMemberRow}" disabled="{!v.isCommercialUser}"> 
+                        <span class=" label bBody truncate" dir="ltr" >+ Add 1 more row</span>
+                    </button>
+                </div>
+            </div>
+            <footer class="slds-modal__footer slds-align_absolute-center ">
+                <button class="slds-button slds-button--neutral uiButton forceActionButton" aria-live="off" type="button" title="Cancel" data-aura-class="uiButton forceActionButton" onclick="{!c.onCancel}" disabled="{!v.isCommercialUser}">
+                    <span class=" label bBody truncate" dir="ltr" >
+                        Cancel
+                    </span>
+                </button>
+                <button class="slds-button slds-button--neutral uiButton--default uiButton--brand uiButton forceActionButton" onclick="{!c.onSave}" aria-live="off" type="button" title="Save" data-aura-class="uiButton--default uiButton--brand uiButton forceActionButton" disabled="{!v.isCommercialUser}">
+                    <span class=" label bBody truncate" dir="ltr">
+                        Save
+                    </span>
+                </button>
+            </footer>
+        </div>
+    </div>
+</aura:component>

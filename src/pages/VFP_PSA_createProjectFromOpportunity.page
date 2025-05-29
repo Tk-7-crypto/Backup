@@ -1,0 +1,223 @@
+<apex:page StandardController="Opportunity" extensions="EXT_PSA_OpportunityProjectCreation" applyHtmlTag="true" applyBodyTag="false" docType="html-5.0" tabStyle="Opportunity" lightningStyleSheets="true">
+  <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:v-on="http://fake.org/von" xmlns:v-bind="http://fake.org/vbind" lang="en"> 
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+        <title>Create Project From Opportunity</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <apex:slds />
+      <apex:stylesheet value="{!URLFOR($Resource.PSA_createProjectFromOpportunity, 'app/PSA_createProjectFromOpportunity.css')}" />
+    </head>
+    <body class="slds-scope">
+      <div class="vue-app slds-brand-band slds-brand-band_cover slds-brand-band_medium slds-template_bottom-magnet brand-band_magnetic forceBrandBand">
+        <apex:outputPanel rendered="{!!validStage}">
+          <article class="slds-card slds-p-around_small">
+            <div class="page-message-area" ><apex:pagemessages id="pageMessagesInvalidStage"/></div>
+            <button class="slds-button slds-button_neutral" onclick="window.history.back();">Go Back</button>    
+          </article>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!validStage}">
+        
+        
+        <div  class="slds-grid">
+
+          <div class="slds-col slds-size_1-of-2 slds-p-right_small">
+            <article class="slds-card">
+              <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                  <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-custom-custom44" title="project">
+                      <svg class="slds-icon slds-icon_small" aria-hidden="true">
+                        <use xlink:href="/apexpages/slds/latest/assets/icons/custom-sprite/svg/symbols.svg#custom44"></use>
+                      </svg>
+                      <span class="slds-assistive-text">project</span>
+                    </span>
+                  </div>
+                  <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                      <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Create Project From Opportunity">
+                        <span>Create Project From Opportunity</span>
+                      </a>
+                    </h2>
+                  </div>
+                  <div class="slds-no-flex">
+                    <button v-on:click="createProject" class="slds-button slds-button_brand">Create Project</button>
+                    <button v-on:click="cancel" class="slds-button slds-button_neutral">Cancel</button>
+                  </div>
+                </header>
+              </div>        
+
+              <div class="slds-card__body slds-card__body_inner">
+                <div class="slds-grid">
+                  <div class="slds-col slds-size_1-of-2">
+                    <div v-on:drop="dropFile" v-on:dragover="dragOverFile" class="drop-zone">
+                      <div class="dropped-file-name">{{ droppedFileName }}</div>
+                      <div class="file-zone">
+                        <button v-on:click="clickToBrowse" class="slds-button slds-button_brand">Choose File</button>
+                        <input v-on:change="browseFile" type="file" id="xlfile" name="xlfile" class="xlf" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+                        <input type="hidden" name="opportunityId" value="{!opportunityId}" class="opportunity-id" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="slds-col slds-size_1-of-2">
+
+                    <div class="slds-form-element">
+                      <label class="slds-form-element__label" for="program">Use Existing Program</label>
+                      <div class="slds-form-element__control">
+                        <div class="slds-combobox_container">
+                          <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                              <input
+                                class="slds-input slds-combobox__input" 
+                                id="program" 
+                                v-model="program" 
+                                v-on:focus="clickProgramListing"
+                                v-on:blur="leaveProgramListing"
+                                v-on:keyup="keyboardProgramListing"
+                                v-on:change="changeProgramListing"
+                                aria-autocomplete="list" 
+                                aria-controls="program-listbox" 
+                                autocomplete="off" 
+                                role="textbox" 
+                                type="text" 
+                                placeholder="Search..."/>
+                              <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+                                <svg class="slds-icon slds-icon slds-icon_x-small slds-icon-text-default" aria-hidden="true">
+                                  <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/apexpages/slds/latest/assets/icons/utility-sprite/svg/symbols.svg#search" />
+                                </svg>
+                              </span>
+                            </div>
+                            <div id="program-listbox" class="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid" role="listbox">
+                              <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                <li 
+                                  v-for="prog in filteredProgramList" 
+                                  v-on:mousedown="clickProgram(prog)"
+                                  role="presentation" class="slds-listbox__item">
+                                  <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                    <span class="slds-media__figure slds-listbox__option-icon">
+                                      <span class="slds-icon_container slds-icon-custom-custom68">
+                                        <svg class="slds-icon slds-icon_small" aria-hidden="true">
+                                          <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/apexpages/slds/latest/assets/icons/custom-sprite/svg/symbols.svg#custom68" />
+                                        </svg>
+                                      </span>
+                                    </span>
+                                    <span class="slds-media__body">
+                                      <span class="slds-listbox__option-text slds-listbox__option-text_entity">{{ prog.Name }}</span>
+                                      <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">Program • {{ prog.Account__r.Name }}</span>
+                                    </span>
+                                  </div>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="slds-form-element">
+                      <div class="slds-form-element__control">
+                          <div class="slds-checkbox">
+                          <input type="checkbox" name="CREATE_RESOURCE_REQUESTS" id="CREATE_RESOURCE_REQUESTS" v-model="createResourceRequests"/>
+                          <label class="slds-checkbox__label" for="CREATE_RESOURCE_REQUESTS">
+                            <span class="slds-checkbox_faux"></span>
+                            <span class="slds-form-element__label">Create resource requests</span>
+                          </label>
+                          <div v-if="isChangeOrder && createResourceRequests" class="change-order-note"><strong>Note:</strong> For change orders, resource requests on existing services will <em>not</em> be updated. Any new services in the change order <em>will</em> have resource requests created if they are specified in the PSA QIP.</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-if="preview" class="slds-m-top_small">
+                      <h3 v-if="preview.truncated.length" class="slds-text-heading_medium">The following names will be truncated:</h3>
+                      <ul class="slds-list_dotted">
+                        <li v-for="truncation in preview.truncated">{{ truncation }}</li>
+                      </ul>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="showPageSpinner" class="slds-spinner_container">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                  <span class="slds-assistive-text">Loading</span>
+                  <div class="slds-spinner__dot-a"></div>
+                  <div class="slds-spinner__dot-b"></div>
+                </div>
+              </div>
+
+            </article>
+          </div>
+
+          <div class="slds-col">
+            <article class="slds-card preview">
+              <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                  <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                      <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Preivew">
+                        <span>Preview</span>
+                      </a>
+                    </h2>
+                  </div>
+                  <div class="slds-no-flex">
+                    <button v-on:click="toggleLegend" v-bind:class="[legendButtonClass, {'slds-is-pressed': legend}]" aria-live="assertive">
+                        <span class="slds-text-not-pressed">
+                          <svg class="slds-button__icon slds-button__icon_small slds-button__icon_left" aria-hidden="true">
+                            <use xlink:href="/apexpages/slds/latest/assets/icons/utility-sprite/svg/symbols.svg#list"></use>
+                          </svg>Legend</span>
+                        <span class="slds-text-pressed">
+                          <svg class="slds-button__icon slds-button__icon_small slds-button__icon_left" aria-hidden="true">
+                            <use xlink:href="/apexpages/slds/latest/assets/icons/utility-sprite/svg/symbols.svg#list"></use>
+                          </svg>Legend
+                        </span>
+                    </button>
+                  </div>
+                </header>
+              </div>
+              <div class="slds-card__body slds-card__body_inner">
+                <div class="preview-area">
+                  <div v-if="legend" class="info-key">
+                    <div><span class="swatch swatch-existing"></span><span>Existing Record</span></div>
+                    <div><span class="swatch swatch-modified"></span><span>Modified Record</span></div>
+                    <div><span class="swatch swatch-new"></span><span>New Record</span></div>
+                    <div><span class="swatch swatch-deleted"></span><span>Deleted Record</span></div>
+                  </div>
+                  <preview-item v-if="preview" v-bind:item="preview" v-bind:key="preview.id">
+                  </preview-item>
+
+                  <div v-if="showPreviewSpinner" class="slds-spinner_container">
+                    <div role="status" class="slds-spinner slds-spinner_medium">
+                      <span class="slds-assistive-text">Loading</span>
+                      <div class="slds-spinner__dot-a"></div>
+                      <div class="slds-spinner__dot-b"></div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </article>
+          </div>
+
+        </div>
+
+          <div class="page-message-area" >
+            <toast
+              v-for="message in messages"
+              v-bind:message="message.message"
+              v-bind:details="message.details"
+              v-bind:status="message.status"
+              v-bind:onclose="message.onclose">
+            </toast>
+            <apex:pagemessages id="pageMessages"/>
+          </div>
+        </apex:outputPanel>
+      </div>
+      <!-- Spreadsheets are processed with help of SheetJS - https://github.com/sheetjs/js-xlsx -->
+      <apex:includeScript value="{!URLFOR($Resource.JSXLSX0_14_1, 'js-xlsx/xlsx.full.min.js')}" />
+      <apex:includeScript value="{!URLFOR($Resource.PSA_createProjectFromOpportunity, 'app/vue.js')}" />
+      <apex:includeScript value="{!URLFOR($Resource.PSA_createProjectFromOpportunity, 'app/PSA_createProjectFromOpportunity.js')}" />
+    </body>
+  </html>
+</apex:page>

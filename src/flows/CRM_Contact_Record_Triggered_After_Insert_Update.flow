@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <description>This record triggered flow will run on contact on after insert and update event</description>
+    <environments>Default</environments>
+    <formulas>
+        <description>Returns true if inactive reason is changed</description>
+        <name>IsChangedInactiveReason</name>
+        <dataType>Boolean</dataType>
+        <expression>ISCHANGED({!$Record.Inactive_Reason__c})</expression>
+    </formulas>
+    <formulas>
+        <name>IsNew</name>
+        <dataType>Boolean</dataType>
+        <expression>ISNEW()</expression>
+    </formulas>
+    <interviewLabel>CRM {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM_Contact_Record_Triggered_After_Insert_Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Inactive_Contact_Invalid_Email_Alert</targetReference>
+        </connector>
+        <object>Contact</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <description>Subflow to send email alert to contact owner if contact is inactive due to invalid email address</description>
+        <name>Inactive_Contact_Invalid_Email_Alert</name>
+        <label>Inactive Contact Invalid Email Alert</label>
+        <locationX>176</locationX>
+        <locationY>323</locationY>
+        <flowName>CRM_Subflow_Inactive_Contact_Invalid_Email_Alert</flowName>
+        <inputAssignments>
+            <name>ContactRecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>IsChangedInactiveReason</name>
+            <value>
+                <elementReference>IsChangedInactiveReason</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>IsNew</name>
+            <value>
+                <elementReference>IsNew</elementReference>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+</Flow>

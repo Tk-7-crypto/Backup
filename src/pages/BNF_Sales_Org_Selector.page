@@ -1,0 +1,43 @@
+<apex:page standardController="BNF2__c" extensions="BNF_MDM_Extension" >
+    <apex:outputPanel id="redirect">
+        <script>
+        function redirectToBNF() {
+            var fullURLString = '{!fullURLString}';
+            var IsError = '{!IsError}';
+            var ErrorMsg = '{!errorMsgLabel}';
+            var url;
+            var vOpptyId = '{!OppId}';
+            if(IsError == 'false'){
+                fullURLString = fullURLString.replace(/%2F/gi, "/");
+                if('{!$User.UITheme}'== 'Theme4t' && (sforce != undefined && sforce != null && sforce.one != undefined)){
+                    sforce.one.navigateToURL('{!orgDomainURL}' + fullURLString);
+                }else{
+                    window.parent.location.href = '{!orgDomainURL}' + fullURLString;
+                }
+            }else{
+                alert(ErrorMsg);
+                url = "/" + vOpptyId; 
+                if('{!$User.UITheme}'== 'Theme4t' && (sforce != undefined && sforce != null && sforce.one != undefined)){
+                    sforce.one.navigateToURL(url);
+                }else{
+                    window.parent.location.href = url;
+                }
+            }
+        }
+        </script>
+    </apex:outputPanel>
+<apex:form id="SalesOrgSelectorForm">
+<apex:sectionHeader title="Select IMS Sales/Billing Org"/>
+<apex:pageBlock title="Please select IMS Sales/Billing Org to process this BNF">
+<apex:selectList size="1" value="{!SalesOrg}"><apex:selectOptions value="{!SalesOrgs}"></apex:selectOptions></apex:selectList>
+<apex:outputText value="  "></apex:outputText>
+<apex:commandButton value="Next" action="{!CreateNewBnf}"  oncomplete="redirectToBNF();" reRender="redirect" />
+</apex:pageBlock>
+<apex:outputPanel id="Debug" rendered="{!CONTAINS($Profile.Name,'Administrator') && false}">
+<apex:pageBlock title="Debug">
+Debug: {!Debug}<br/>
+</apex:pageBlock>
+
+</apex:outputPanel>
+</apex:form>
+</apex:page>

@@ -1,0 +1,100 @@
+<apex:page controller="MI_BNF_Comp_Extension" showheader="false"
+    sidebar="false">
+<script>
+function DeleteConfirm(oliid,HiddenVariableId)
+{
+    var isConfirm = confirm("Click OK to drop the product from this Invoice or click Cancel to go back");
+    if (isConfirm)
+    {
+       document.getElementById(HiddenVariableId).value =oliid;
+       deleteData();
+       return true;
+    }
+    return false;
+    
+}
+
+
+</script>
+
+<apex:outputpanel rendered="{!(oliList.size==0)}">
+<p>No Product available for this Invoice. Please Add product from "Available Products" List</p>
+</apex:outputpanel>
+
+
+
+
+    <apex:form id="frmPrd" rendered="{!(oliList.size>0)}">
+        <apex:actionFunction status="MyStatus" action="{!deleteproduct}" name="deleteData" rerender="optPnl" >
+                </apex:actionFunction>                          
+                                 
+    <apex:actionStatus startText="Removing Product Please wait..." id="MyStatus" startStyle="color:red;font-weight:bold"></apex:actionStatus>
+     <apex:pageMessages id="errorMessages" escape="false" /> 
+        <apex:inputHidden value="{!selectedInvoice}" id="ChkValue" />
+     
+        
+        <apex:dataTable style="width:100%;" border="0" value="{!oliList}"
+            var="oli" id="theTable" cellspacing="3" cellpadding="6"
+            bgcolor="#DCDCDC">
+             
+            <apex:column width="100px" headerValue="">
+            
+                <apex:commandLink rerender="optPnl"  value="Drop" id="btnCBNF" title="Drop Product from this Invoice" onclick="return DeleteConfirm('{!oli.id}','{!$Component.frmPrd.ChkValue}')" />
+            
+            </apex:column>
+            <apex:column width="220px" headerValue="Name">
+                <apex:outputfield value="{!oli.PricebookEntry.Name}" />
+
+            </apex:column>
+            <apex:column headerValue="Product Code">
+                <apex:outputText value="{!oli.PricebookEntry.ProductCode}" />
+
+            </apex:column>
+            <apex:column headerValue="Sales Price(USD) ">{!oli.TotalPrice}                                                           
+                                    </apex:column>
+            <apex:column headerValue="Data Period Start">
+
+                <apex:outputfield value="{!oli.Product_Start_Date__c}" />
+
+            </apex:column>
+            <apex:column headerValue="Data Period End">
+                <apex:outputfield value="{!oli.Product_End_Date__c}" />
+
+            </apex:column>
+            <apex:column headerValue="Quantity">{!oli.Quantity}
+            </apex:column>
+            <apex:column headerValue="Sale Type">
+                                        {!oli.Sale_Type__c}
+            </apex:column>
+            <apex:column headerValue="Material Type">
+                          {!oli.PricebookEntry.Product2.Material_Type__c}
+            </apex:column>
+            <apex:column headerValue="Delivery Media">
+                                       {!oli.Delivery_Media__c}
+                            
+                                    </apex:column>
+            <apex:column headerValue="Billing Frequency">
+                                      {!oli.Billing_Frequency__c}
+                                    </apex:column>
+
+            <apex:column headerValue="Delivery/Rpt Frequency">
+                                      {!oli.Proj_Rpt_Frequency__c}
+                            
+                                    </apex:column>
+            <apex:column headerValue="Discount Reason">
+                                        {!oli.Discount_Reason__c}
+                            
+                                    </apex:column>
+        </apex:dataTable>
+    
+        <apex:outputPanel id="optPnl">
+        <script>
+          if('{!isDeleted}' == 'true'){
+            window.parent.location.href = window.parent.location.href;
+        }
+        
+        </script>
+        </apex:outputPanel>
+  
+    </apex:form>
+</apex:page>

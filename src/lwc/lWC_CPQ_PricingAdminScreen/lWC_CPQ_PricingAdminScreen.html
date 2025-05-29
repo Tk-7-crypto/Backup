@@ -1,0 +1,121 @@
+<template>
+    <article class="slds-card">
+        <div class="slds-card__header slds-grid slds-page-header">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-custom-custom18" title="PricingAdminScreen">
+                        <lightning-icon icon-name="standard:pricing_workspace" alternative-text="Pricing Workspace" title="Pricing Workspace" size="large"></lightning-icon>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <div class="slds-card__header-link slds-truncate">
+                            <div class="heading">Pricing Admin Setup</div>
+                            <span style="color: #396547; font-weight: 600;" class="slds-text-body--small">IQVIA PRICE MATRIX<span if:true={showIqviaPriceMatrices} class="slds-text-heading--label-normal slds-text-color--inverse-weak"> • Total Records • {totalIqviaPriceMatrices}</span><span if:false={showIqviaPriceMatrices}></span></span>
+                        </div>
+                    </h2>
+                </div>
+                <div class="slds-float_right button-container">
+                    <button style="width: 230px;" class="slds-button slds-button_outline-brand custom-button" onclick={handleReconfigure} disabled={disableReConfigure}>Re-Configure</button>
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-is-relative">
+            <lightning-spinner if:true={isLoading} variant="Brand" alternative-text="Loading"></lightning-spinner>
+            <div if:true={viewConfiguration} class="slds-m-bottom--medium">
+                <lightning-radio-group
+                    class="cutom-box box-shadow slds-m-bottom_medium slds-m-around_medium slds-m-left_small slds-m-bottom_medium slds-box"
+                    name="Rounding"
+                    label="Select Rounding Option"
+                    options={roundingOptions}
+                    value={roundingValue}
+                    onchange={handleRoundingChange}
+                    message-when-value-missing="Please select a rounding option to continue"
+                    type="radio">
+                </lightning-radio-group>
+                <lightning-radio-group if:true={enableAccountSection}
+                    class="cutom-box box-shadow slds-m-bottom_medium slds-m-around_medium slds-m-left_small slds-m-bottom_medium slds-box"
+                    name="Accounts"
+                    label="Select Account"
+                    options={accounts}
+                    value={account}
+                    onchange={handleAccountChange}
+                    message-when-value-missing="Please select an Account to continue"
+                    type="radio"
+                    disabled={disableAccountSelection}>
+                </lightning-radio-group>
+                <template if:true={availableSections} for:each={availableSections} for:item="section">
+                    <div key={section.key} if:true={section.options.length}>
+                        <lightning-radio-group
+                            class="cutom-box box-shadow slds-m-bottom_medium slds-m-around_medium slds-m-left_small slds-m-bottom_medium slds-box"
+                            label={section.label}
+                            options={section.options}
+                            value={section.selectedValue} 
+                            onchange={handleSectionChange}
+                            data-key={section.key}
+                            message-when-value-missing="Please select an option to continue"
+                            type="radio"
+                            disabled={disableSectionOptions}>
+                        </lightning-radio-group>
+                    </div>
+                </template>
+                <div class="button-container">
+                    <button style="width: 230px;" class="slds-button slds-button_outline-brand custom-button" onclick={handleContinue} disabled={disableContinue}>Continue To Pricing</button>
+                </div>
+            </div>
+            <div if:false={viewConfiguration} class="slds-m-around--medium">
+                <lightning-combobox if:true={enableServiceLine}
+                    class="slds-m-bottom--medium cutom-box"
+                    name="Service Lines"
+                    label={bundleProductSectionLabel}
+                    value={serviceLine}
+                    placeholder={bundleProductSectionLabel}
+                    options={serviceLines}
+                    onchange={handleServiceLineChange}>
+                </lightning-combobox>
+                <div if:true={showIqviaPriceMatrices} class="slds-m-bottom--small slds-box box-shadow" style="display: flex; flex-direction: column; height: 470px;">
+                    <lightning-input class="custom-input" value={currentSearchKey} label="Search Pricing" type="search" placeholder="Enter Product Name" onchange={handleSearch} disabled={disableSearch}></lightning-input>
+                    <div class="slds-text-align--right slds-text-heading--label-normal slds-text-color--inverse-weak slds-m-bottom--xxx-small">Displaying: ({recordStart} - {recordEnd})</div>
+                        <div style=" flex:1; display: flex; flex-direction: column; overflow: hidden; position: relative">
+                            <div if:true={isDataLoading} class="spinner-overlay">
+                                <lightning-spinner size="small" variant="Brand" alternative-text="Loading"></lightning-spinner>
+                            </div>
+                            <lightning-datatable
+                                class="custom-datatable"
+                                style="flex-grow: 1; overflow-y: auto; min-height: 0;"
+                                key-field="Id"
+                                columns={columns}
+                                data={paginatedData}
+                                draft-values={draftValues}
+                                oncellchange={handleCellChange}
+                                onrowaction={handleRowAction}
+                                suppress-bottom-bar
+                                hide-checkbox-column
+                                enable-infinite-loading
+                                editable>
+                            </lightning-datatable>
+                            <div class="custom-bottom-bar" if:true={enableBottomBar}>
+                                <lightning-button label="Cancel" onclick={handleCancel} variant="neutral"></lightning-button>
+                                <lightning-button label="Save" onclick={handleSave} variant="brand"></lightning-button>
+                            </div>
+                            <div if:true={enablePagination}>
+                                <div style="background: rgb(243, 243, 243);height:50px;margin-top:5px;">
+                                    <div class="slds-grid slds-align_absolute-center" style="height:4em;">
+                                        <lightning-button-icon class="slds-m-around--x-small custom-button" icon-name="utility:chevronleft" alternative-text="First" title="First" variant="border" onclick={handleFirstPage} disabled={isFirstDisabled}></lightning-button-icon>
+                                        <lightning-button-icon class="slds-m-around--x-small custom-button" icon-name="utility:left" alternative-text="Previous" title="Previous" variant="border" onclick={handlePreviousPage} disabled={isPreviousDisabled}></lightning-button-icon>
+                                        <span class="vcenter currentpage">{currentPage}</span>
+                                        <span class="vcenter" style="font-weight: 500;">&nbsp;/&nbsp;{totalPages}</span>
+                                        <lightning-button-icon class="slds-m-around--x-small custom-button" icon-name="utility:right" alternative-text="Next" title="Next" variant="border" onclick={handleNextPage} disabled={isNextDisabled}></lightning-button-icon>
+                                        <lightning-button-icon class="slds-m-around--x-small custom-button" icon-name="utility:chevronright" alternative-text="Last" title="Last" variant="border" onclick={handleLastPage} disabled={isLastDisabled}></lightning-button-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+                <div class="button-container">
+                    <button style="width: 230px;" class="slds-button slds-button_outline-brand custom-button" onclick={handlePrevious} disabled={disablePrevious}>&laquo; Previous</button>
+                </div>
+            </div>
+        </div>
+    </article>
+</template>

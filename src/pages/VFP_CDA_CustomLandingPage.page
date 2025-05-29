@@ -1,0 +1,224 @@
+<!--
+Author        : Vikram Singh Fartyal
+Description   : This is the landing page for CDA application.(created under ER-3556 on 28/03/2017)
+-->
+<apex:page id="pgCustomLanding" controller="CNT_CDA_CustomLandingPage" showHeader="true" sidebar="false" cache="false" standardStylesheets="false">
+    <head>
+        <!-- *** Jquery library reference *** -->
+        <script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>
+        <!-- *** Jquery library reference *** -->
+        <script>
+            $(document).ready(function () {
+                $("[id$='negotiatorAssignedList']").val('--None--');
+            });
+
+            function clearValue() {
+                $("[id$='cdaId']").val('');
+                $("[id$='qiBusiness']").val('--None--');    // Added by Vikram Singh under CR-11188
+                $("[id$='cdaType']").val('--None--');
+                $("[id$='status']").val('--None--');
+                $("[id$='recipientLegalEntityName']").val('');
+                $("[id$='negotiatorAssignedList']").val('--None--');
+                $("[id$='recipientPointOfContactName']").val('');
+            }
+        </script>
+        <c:VFC_CDA_LoadingImage />
+        <c:VFC_CDA_SystemDownAnnouncement />   <!-- Added by Vikram Singh under CR-11526 -->
+
+    </head>
+    <apex:form id="frmCustomLanding">
+        <apex:pageBlock id="pbCustomLanding">
+            <apex:pageMessages id="errMsg"/>
+            <apex:actionFunction action="{!refreshPageSize}" name="perPageRecord" reRender="pbsRequests"/>
+
+            <br />
+            <apex:commandLink value="New CDA Request" action="{!goToNewRequest}" styleClass="btn" style="padding: 5px; text-decoration: none; font-size: 12px !important;" />
+            <apex:commandLink value="Refresh" action="{!runSearch}" onclick="showLoading();clearValue();" oncomplete="hideLoading();" rerender="errMsg, pbsRequests" styleClass="btn" style="padding: 5px; text-decoration: none; font-size: 12px !important;" />
+            <br /><br />
+            <apex:pageBlockSection id="pbsSearch" html-style="background-color:white;" columns="2" title="Search CDA Requests">
+                <apex:inputText id="cdaId" value="{!searchRequest.CDA_Id__c}" label="CDA Id #"/>
+                <apex:inputField id="qiBusiness" value="{!searchRequest.QuintilesIMS_Business__c}"/>   <!-- Added by Vikram Singh under CR-11188 (Dependency) -->
+                <apex:inputField id="cdaType" value="{!searchRequest.CDA_Type__c}"/>
+                <apex:inputField id="status" value="{!searchRequest.Status__c}"/>
+                <!-- <apex:inputText id="qiLegalEntityName" value="{!qiLegalEntityName}" label="QI Legal Entity Name"/> -->
+                <apex:inputText id="recipientLegalEntityName" value="{!recipientLegalEntityName}" label="Recipient Legal Entity Name"/>
+                <!-- <apex:inputField id="competitorContractingCapacity" value="{!searchRequest.Competitor_Contracting_Capacity__c}" />
+                <apex:inputField id="studySponsorSituation" value="{!searchRequest.What_is_the_Study_Sponsor_situation__c}" label="Study Sponsor Situation"/> -->
+                <apex:inputText id="recipientPointOfContactName" value="{!searchRequest.Recipient_Point_of_Contact_Name__c}" label="Recipient Point of Contact Name"/>
+                <apex:inputField id="negotiatorAssignedList" required="false" value="{!searchRequest.Negotiator_Assigned_List__c}" label="CDA Negotiator"/>
+                <apex:inputText id="requestorName" value="{!cdaRequestorName}" label="Requestor Name"/>
+                <br/>
+                <apex:outputPanel ><!-- Updated by Vikram Singh under Issue-11681 -->
+                    <apex:commandButton value="Search" action="{!runSearch}" onclick="showLoading();" oncomplete="hideLoading();" rerender="errMsg, pbsRequests"/>
+                    <apex:commandButton value="Clear" action="{!runSearch}" onclick="showLoading();clearValue();" oncomplete="hideLoading();" rerender="errMsg, pbsRequests"/>
+                </apex:outputPanel>
+            </apex:pageBlockSection>
+            <script> twistSection(document.getElementById('{!$Component.frmCustomLanding.pbCustomLanding.pbsSearch}').getElementsByTagName('img')[0]) </script>
+
+            <apex:pageBlockSection id="pbsRequests" columns="1" title="CDA Requests" collapsible="false">
+                <apex:pageBlockTable id="pbtCR" value="{!requestList}" var="req"><apex:column headerValue="Action" width="60px;">
+                        <apex:commandLink value="View" action="{!goToViewRequest}">
+                            <apex:param name="idToView" value="{!req.id}" assignTo="{!idToView}"/>
+                        </apex:commandLink>&nbsp;&nbsp;
+
+                        <apex:commandLink value="Edit" action="{!goToEditRequest}" rendered="{! req.Status__c != 'Contract Executed' && req.Status__c != 'Cancelled' && req.Status__c != 'Disclosure Period Ended' && req.Status__c != 'Submitted for Processing'}">    <!-- Updated by Vikram Singh under CR-11525 -->
+                            <apex:param name="idToUpdate" value="{!req.id}" assignTo="{!idToUpdate}"/>
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column width="100px;">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="CDA Id #">
+                                <apex:param name="sortField" value="CDA_Id__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.CDA_Id__c}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="CDA Type">
+                                <apex:param name="sortField" value="CDA_Type__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.CDA_Type__c}
+                    </apex:column>
+                    <apex:column width="100px;">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Status">
+                                <apex:param name="sortField" value="Status__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Status__c}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="CDA Effective Date {!dateFormatString}">
+                                <apex:param name="sortField" value="CDA_Effective_Date__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        <apex:outputText value="{0,date,MM/dd/yy}">
+                            <apex:param value="{!req.CDA_Effective_Date__c}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Recipient Legal Entity Name">
+                                <apex:param name="sortField" value="Recipient_Account_Name_Formula__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Recipient_Account_Name_Formula__c}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Competitor Indicator">
+                                <apex:param name="sortField" value="Competitor_Flag__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Competitor_Flag__c}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Recipient Point of contact Name">
+                                <apex:param name="sortField" value="Recipient_Point_of_Contact_Name__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Recipient_Point_of_Contact_Name__c}
+                    </apex:column>
+                    <apex:column width="" rendered="{! !isNegotiator}">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Recipient Address">
+                                <apex:param name="sortField" value="Recipient_Account_Address__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Recipient_Account_Address__c}
+                    </apex:column>
+                    <!--<apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="QI Legal Entity">
+                                <apex:param name="sortField" value="QI_Legal_Entity_Name__r.Name" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.QI_Legal_Entity_Name__r.Name}
+                    </apex:column>-->
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="CDA Negotiator Assigned">
+                                <apex:param name="sortField" value="Negotiator_Assigned_List__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Negotiator_Assigned_List__c}
+                    </apex:column>
+                    <apex:column width="" rendered="{! isNegotiator}">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Requestor Name">
+                                <apex:param name="sortField" value="CreatedBy.Name" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.CreatedBy.Name}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Last Modified Date">
+                                <apex:param name="sortField" value="LastModifiedDate" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        <apex:outputText value="{0,date,MM/dd/yy}">
+                            <apex:param value="{!req.LastModifiedDate}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <!-- <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Study Sponsor Situation">
+                                <apex:param name="sortField" value="What_is_the_Study_Sponsor_situation__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.What_is_the_Study_Sponsor_situation__c}
+                    </apex:column>
+                    <apex:column width="">
+                        <apex:facet name="header">
+                            <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbsRequests, errMsg" value="Recipient Point-of-contact Telephone">
+                                <apex:param name="sortField" value="Recipient_Point_of_Contact_Telephone_Num__c" assignTo="{!sortField}"/>
+                            </apex:commandLink>
+                        </apex:facet>
+                        {!req.Recipient_Point_of_Contact_Telephone_Num__c}
+                    </apex:column> -->
+                </apex:pageBlockTable>
+
+                <apex:outputPanel layout="block" style="width: 98%; display: inline-flex;">
+                    <div align="left" style="float:left;width:19%;">
+                        <apex:selectList value="{!size}" multiselect="false" size="1" onchange="perPageRecord();">
+                            <apex:selectOptions value="{!recordsPerPage}"/>
+                        </apex:selectList>
+                        <apex:outputLabel value=" Records per page" rendered="{!requestList.size > 0}"/>
+                    </div>
+                    <div align="center" style="width:60%;">
+                        <apex:outputLabel value="Page# {!setCon.pageNumber} "/>
+                        <apex:commandButton status="fetchStatus" reRender="pbsRequests" value="First" action="{!setCon.first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>
+                        <apex:commandButton status="fetchStatus" reRender="pbsRequests" value="Previous" action="{!setCon.previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+                        <apex:commandButton status="fetchStatus" reRender="pbsRequests" value="Next" action="{!setCon.next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+                        <apex:commandButton status="fetchStatus" reRender="pbsRequests" value="Last" action="{!setCon.last}" disabled="{!!setCon.hasNext}" title="Last Page"/>
+                    </div>
+                    <div align="right" style="width:19%;">
+                        <apex:outputLabel >
+                            showing {!(setCon.pageNumber * size) + 1 - size} - {!IF((setCon.pageNumber * size) > noOfRecords, noOfRecords, (setCon.pageNumber * size))} of {!noOfRecords} total records
+                        </apex:outputLabel>
+                    </div>
+                    <apex:outputPanel >
+                        <apex:actionStatus id="fetchStatus">
+                            <apex:facet name="start">
+                                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.25; z-index: 1000; background-color: black;">
+                                    &nbsp;
+                                </div>
+                                <div style="position: fixed; left: 0; top: 0; bottom: 0; right: 0; z-index: 1001; margin: 15% 50%">
+                                    <div style="display: inline-block; padding: 2px; background-color: #fff; width: 125px;">
+                                        <img src="/img/loading.gif" style="float: left; margin: 8px;"/>
+                                        <span style="display: inline-block; padding: 10px 0px;">Please Wait...</span>
+                                    </div>
+                                </div>
+                            </apex:facet>
+                        </apex:actionStatus>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

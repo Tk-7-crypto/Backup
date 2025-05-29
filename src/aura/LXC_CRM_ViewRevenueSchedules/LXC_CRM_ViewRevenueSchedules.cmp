@@ -1,0 +1,72 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:hasRecordId" controller="CNT_CRM_OpportunityProductSearch">
+    <aura:attribute name="oliWrapper" type="OpportunityLineItemWrapper[]" />
+    <aura:attribute name="olisWrapper" type="OpportunityLineItemScheduleWrapper[]" />
+    <aura:attribute name="schFieldList" type="List" default="Id,OpportunityLineItemId,Type,Revenue,Quantity,Description,ScheduleDate,CurrencyIsoCode"/>
+    <aura:attribute name="oliFieldList" type="List" default="Id,TotalPrice,Product2.Name,Opportunity.Name,Product2.CanUseRevenueSchedule,CurrencyIsoCode"/>
+    <aura:attribute name="establishButton" type="string" default="Establish"/>
+    <aura:attribute name="canUseRevenueSchedule" type="Boolean" default="false"/>
+    <aura:attribute name="fieldsToShowLabel" type="List" default="Revenue,ScheduleDate,Description"/>
+    <aura:attribute name="decimalPlace" type="Decimal"/>
+    <aura:attribute name="decimalPlaceStep" type="Decimal"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+    <aura:if isTrue="{!v.recordId != null}">
+        <c:LXC_CRM_Spinner />
+        <article class="slds-card slds-card_boundary forceRelatedListCardDesktop" aria-describedby="header"  data-aura-class="forceRelatedListCardDesktop">
+            <div class="slds-card__header slds-grid slds-clearfix">
+                <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                    <div class="slds-media__figure">
+                        <span class="slds-icon_container slds-icon-standard-opportunity" title="OpportunityLineItemSchedule">
+                            <lightning:icon iconName="custom:custom19" variant="error" alternativeText="OpportunityLineItemSchedule Icon"/>
+                        </span>
+                    </div>
+                    <div class="slds-media__body">
+                        <h2 id="header">
+                            <div class="slds-grid">
+                                <div class="slds-text-heading_medium">
+                                    <span class="slds-text-heading--small slds-truncate slds-m-right--xx-small" title="Revenue / Delivery Schedule" >Revenue / Delivery Schedule</span>
+                                </div>                            
+                            </div>
+                        </h2>
+                    </div>
+                    <lightning:button class="slds-button slds-button_brand slds-align_absolute-center" onclick="{!c.establish}" disabled="{!v.canUseRevenueSchedule}">{!v.establishButton}</lightning:button>
+                </header>
+            </div>
+            <aura:if isTrue="{!v.olisWrapper.length > 0}">
+                <table class="slds-table slds-table--bordered slds-table--striped slds-table--cell-buffer slds-table--fixed-layout">
+                    <thead>
+                        <tr class="slds-text-heading--label slds-text-title_caps">
+                            <aura:iteration items="{!v.fieldsToShowLabel}" var="headerLabel">
+                                <th scope="col">
+                                    <aura:if isTrue="{!headerLabel =='Amount'}">
+                                        <div class="slds-truncate" title="{!headerLabel + '(' + v.revenueScheduleRecords[0].CurrencyIsoCode + ')'}">{!headerLabel + '(' + v.revenueScheduleRecords[0].CurrencyIsoCode + ')'}</div>
+                                        <aura:set attribute="else">
+                                            <div class="slds-truncate" title="{!headerLabel}">{!headerLabel}</div>  
+                                        </aura:set>
+                                    </aura:if>
+                                </th>
+                            </aura:iteration>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.olisWrapper}" var="revSch">
+                            <tr class="slds-hint-parent">
+                                <td>
+                                    <lightning:formattedNumber value="{!revSch.schRecord.Revenue}" style="currency" currencyCode="{!revSch.schRecord.CurrencyIsoCode}" />
+                                </td>
+                                <td>
+                                    <!--<ui:outputDate value="{!revSch.schRecord.ScheduleDate}" format="dd/MM/yyyy"/>-->
+                                    <lightning:formattedDateTime value="{!revSch.schRecord.ScheduleDate}" year="numeric" month="numeric" day="numeric"  timeZone="UTC"/>
+                                </td>
+                                <td>
+                                    <div class="slds-truncate" title="{!revSch.schRecord.Description}">{!revSch.schRecord.Description}</div>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+            </aura:if>
+        </article>
+    </aura:if>
+    <c:LXC_CRM_EstablishRevenueSchedule decimalPlace="{!v.decimalPlace}" decimalPlaceStep="{!v.decimalPlaceStep}"/>
+</aura:component>

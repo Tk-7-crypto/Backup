@@ -1,0 +1,83 @@
+<template>
+    <article class="slds-card" >
+        <div class="slds-align_absolute-center">   
+            <template if:true={showSpinner}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <div class="slds-card__header slds-grid slds-m-bottom_none">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="standard:case_milestone" size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body" style="max-width:90%">
+                        <h2>
+                            <div if:true={reqComment}>
+                                <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" style="white-space:normal;" title="Escalation Review">
+                                    <span class="slds-text-heading_small">Escalation Review</span>
+                                </a>
+                            </div>
+                            <div if:false={reqComment}>
+                                <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" style="white-space:normal;" title="SLA Review">
+                                    <span class="slds-text-heading_small">SLA Review</span>
+                                </a>
+                            </div>
+                        </h2>
+                    </div>
+                </div>
+            </header>
+            <div if:true={showEditButtonForProfile}>
+            <div if:true={showEditButton} class="slds-no-flex" >
+                <lightning-button label="Edit" icon-position="left" onclick={editReviewer}></lightning-button>
+            </div>
+        </div>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div if:true={caseRecord} class="sld-grid slds-wrap slds-grid--pull-padded slds-p-left_medium">
+                <div class="slds-col--padded slds-size--1-of-1">
+                    <div class="slds-text-title_bold">Case's FCR Review</div>
+                    <div class="slds-grid slds-m-top_none">
+                        <lightning-button-group>
+                            <template for:each={fcrReviewEscalationPicklist} for:item="escalationType" for:index="index">
+                                <lightning-button class={elementStyleClass.fcrEscalationClass} key={escalationType.key} 
+                                data-index={index} label={escalationType.label} data-value={escalationType.value} 
+                                name={escalationType.label} onclick={setEscaltionType} variant={escalationType.variant}></lightning-button>
+                            </template>
+                        </lightning-button-group>
+                    </div>
+                    <div if:true={showFcrReviewedBy} >
+                        {caseRecord.SLA_FCR_Reviewed_By__c}
+                    </div>
+                </div>
+                <div if:true={reqComment}>
+                    <div class="slds-col--padded slds-size--1-of-1 slds-m-top_small">
+                        <div class="slds-text-title_bold">FCR Escalation Comment</div>
+                        <div class="slds-grid slds-m-top_none">
+                            <lightning-textarea name="commentSLA" disabled={disComment} class="slds-textarea" variant="label-hidden" value={caseRecord.FCR_Escalation_Comment__c} onchange={setInputValues} ></lightning-textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col--padded slds-size--1-of-1 slds-m-top_small">
+                    <div class="slds-text-title_bold">Case's IRT Review</div>
+                    <div class="slds-grid slds-m-top_none">
+                            <lightning-input type="toggle" name="caseIRTReviewed" message-toggle-active="" message-toggle-inactive=""
+                                checked={caseRecord.SLA_IRT_Reviewed__c} onchange={onCheckboxChange}
+                                variant="label-hidden" class={elementStyleClass.irtReviewClass}>
+                            </lightning-input>
+                        <div if:true={caseRecord.SLA_IRT_Reviewed__c} class="reviewer_padding">
+                            {caseRecord.SLA_IRT_Reviewed_By__c}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer if:true={isEdit} class="slds-card__footer slds-grid slds-grid_vertical-align-center" >
+            <div style="margin-left:auto; margin-right:0;">
+                <lightning-button variant="neutral" label="Cancel" onclick={cancelEdit} class="slds-m-right_medium"></lightning-button>
+                <lightning-button label="Save" onclick={saveReviewer} variant="brand"></lightning-button>
+            </div>
+        </footer>
+    </article>
+</template>

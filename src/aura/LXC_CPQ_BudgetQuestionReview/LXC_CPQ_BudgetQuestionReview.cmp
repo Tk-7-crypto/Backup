@@ -1,0 +1,199 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="CNT_CPQ_BudgetQuestionReview">
+
+    <aura:attribute name="proposalObj" type="Object"/>
+    <aura:attribute name="filterTypes" type="List" />
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+    <aura:attribute name="isErrorMessage" type="boolean" default="false" />
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="parent" type="Aura.Component" required="true"/>
+
+    <aura:method name="loadGuidelines" action="{!c.loadGuidelines}" />
+
+    <aura:html tag="style"> 
+        .modal__content {
+            overflow-x: auto;
+        }
+        .slds-modal__container{
+            width: 100% !important;
+            max-width: 75rem !important;
+        }
+    </aura:html>
+
+    <aura:if isTrue="{!v.Spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+
+    <aura:if isTrue="{!v.isOpen}">
+    <div class="slds-modal__content slds-p-around_large slds-scrollable" id="modal-content-id-1">
+        Box Path : 
+        <a href="{!v.proposalObj.boxPath}" target="_blank">{!v.proposalObj.boxPath}</a>
+        {!v.proposalObj.boxMessage}
+        <div class="slds-align_absolute-center" dir="rtl">
+            <lightning:checkboxGroup name="Checkbox Group"
+                options="{!v.filterTypes}"
+                value="{!v.proposalObj.selectedFilterTypes}"
+                onchange="{!c.filterQuestions}"/>
+        </div>
+        <table class="slds-table slds-table_cell-buffer slds-table_bordered qc_check_table">
+            <thead>
+                <tr class="slds-line-height_reset">
+                    <th class="" scope="col">
+                        Question
+                    </th>
+                    <th class="" scope="col">
+                        <div style="width:350px !important;">Guidelines</div>
+                    </th>
+                    <th class="" scope="col">
+                        <div style="width:70px !important;">Owner Response</div>
+                    </th>
+                    <th class="" scope="col">
+                        <div style="width:150px !important">Owner Comment</div>
+                    </th>
+                    <aura:if isTrue="{! equals(v.proposalObj.isQCReviewerView, true) || equals(v.proposalObj.isQCDoneBefore, true)}">
+                        <th class=""><div style="width:70px !important;">Reviewer Response</div></th>
+                        <th class=""><div style="width:150px !important">Reviewer Comment</div></th>
+                        <aura:if isTrue="{! equals(v.proposalObj.isMajorFindingView, true)}">
+                            <th class=""><div style="width:70px !important;">Major Finding Completed?</div></th>
+                        </aura:if>
+                    </aura:if>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.proposalObj.questionList}" var="record" indexVar="i">
+                    <aura:if isTrue="{!record.isSatisfyFilter}">
+                        <tr class="slds-hint-parent">
+                            <td>
+                                <aura:if isTrue="{!record.isNew}">
+                                    <lightning:textarea required="true" aura:id="question" value="{!record.question.Question__c}"/>
+                                    <aura:set attribute="else">
+                                        {!record.question.Question__c}
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td>
+                                <aura:if isTrue="{!record.isNew}">
+                                    <lightning:textarea required="true" aura:id="guidelines" value="{!record.question.Guidelines__c}"/>
+                                    <aura:set attribute="else">
+                                        <div style="width:350px !important;overflow-x:auto !important">
+                                            {!record.question.Guidelines__c}
+                                        </div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td>
+                                <aura:if isTrue="{!equals(v.proposalObj.isQCReviewerView, true)}">
+                                    <ui:outputText value="{!record.question.Owner_s_Response__c}"/>
+                                    <aura:set attribute="else">
+                                        <div style="height:65px !important;">
+                                            <lightning:select value="{!record.question.Owner_s_Response__c}">
+                                                <aura:iteration items="{!record.ownersResponseValues}" var="pickListValue">
+                                                    <option selected="{!record.question.Owner_s_Response__c == pickListValue}" value="{!pickListValue}">
+                                                        {!pickListValue}
+                                                    </option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td>
+                                <aura:if isTrue="{!equals(v.proposalObj.isQCReviewerView, true)}">
+                                    <div style="width:150px !important;overflow-x:auto !important;">
+                                        <ui:outputText value="{!record.question.Owner_s_Comment__c}"/>
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <lightning:textarea value="{!record.question.Owner_s_Comment__c}"/>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            
+                            <aura:if isTrue="{! equals(v.proposalObj.isQCReviewerView, true) || equals(v.proposalObj.isQCDoneBefore, true)}">
+                                <td>
+                                    <aura:if isTrue="{!equals(v.proposalObj.isQCReviewerView, false)}">
+                                        <ui:outputText value="{!record.question.Reviewer_s_Response__c}"/>
+                                        <aura:set attribute="else">
+                                            <div style="height:65px !important;">
+                                                <lightning:select value="{!record.question.Reviewer_s_Response__c}">
+                                                    <aura:iteration items="{!record.reviewersResponseValues}" var="pickListValue">
+                                                        <option selected="{!record.question.Reviewer_s_Response__c == pickListValue}" value="{!pickListValue}">
+                                                            {!pickListValue}
+                                                        </option>
+                                                    </aura:iteration>
+                                                </lightning:select>
+                                            </div>
+                                        </aura:set>
+                                    </aura:if>
+                                </td>
+                                <td>
+                                    <aura:if isTrue="{!equals(v.proposalObj.isQCReviewerView, false)}">
+                                        <div style="width:150px !important;overflow-x:auto !important;">
+                                            <ui:outputText value="{!record.question.Reviewer_s_Comment__c}"/>
+                                        </div>
+                                        <aura:set attribute="else">
+                                            <lightning:textarea value="{!record.question.Reviewer_s_Comment__c}"/>
+                                        </aura:set>
+                                    </aura:if>
+                                </td>
+                                 <aura:if isTrue="{! equals(v.proposalObj.isMajorFindingView, true)}">
+                                    <td>
+                                        <aura:if isTrue="{!equals(v.proposalObj.isQCReviewerView, false)}">
+                                            <ui:outputText value="{!record.question.Reviewer_s_Major_Findings__c}"/>
+                                            <aura:set attribute="else">
+                                                <div style="height:65px !important;">
+                                                    <lightning:select value="{!record.question.Reviewer_s_Major_Findings__c}">
+                                                        <aura:iteration items="{!record.majorFindingCompletedValues}" var="pickListValue">
+                                                            <option selected="{!record.question.Reviewer_s_Major_Findings__c == pickListValue}" value="{!pickListValue}">
+                                                                {!pickListValue}
+                                                            </option>
+                                                        </aura:iteration>
+                                                    </lightning:select>
+                                                </div>
+                                            </aura:set>
+                                        </aura:if>
+                                    </td>
+                                </aura:if>
+                            </aura:if>
+                            <td>
+                                <aura:if isTrue="{!record.isNew}">
+                                    <lightning:buttonIcon class="delete_Button" iconName="utility:delete" name="{!i}" variant="bare" onclick="{!c.deleteItem}"  />
+                                </aura:if>
+                            </td>
+                        </tr>
+                    </aura:if>
+                </aura:iteration>
+                
+                <aura:if isTrue="{!v.isErrorMessage}">
+                    <tr>
+                        <td colspan="8" class="errorMessage">Please fill all guidelines and questions</td>
+                    </tr>
+                </aura:if>
+            </tbody>
+        </table>
+        <div class="slds-text-align_right slds-p-top_x-small">
+            <lightning:button variant="neutral" 
+                label="+ Add More"
+                title="Add More"
+                onclick="{! c.addMoreItem }"/>
+        </div>
+    </div>
+    <footer class="slds-modal__footer">
+        <aura:if isTrue="{! equals(v.proposalObj.isQCReviewerView, true)}">
+            <lightning:button variant="neutral" label="Reject" title="Reject" name="Rejected" onclick="{!c.saveData}"/>
+            <lightning:button variant="neutral" label="Save" title="Save" name="Save" onclick="{!c.saveData}"/>
+            <lightning:button variant="brand" label="Approve" title="Approve" name="Approved" onclick="{!c.saveData}"/>
+            <aura:set attribute="else">
+                <lightning:button variant="neutral" label="Save" title="Save" name="Save" onclick="{!c.saveData}"/>
+                <lightning:button variant="brand" label="Save &amp; Complete" title="Save &amp; Complete" name="SaveComplete" onclick="{!c.saveData}"/>
+                <lightning:button variant="neutral" label="Cancel" title="Cancel" name="Cancel" onclick="{!c.cancelAction}"/>
+            </aura:set>
+        </aura:if>
+    </footer>
+    </aura:if>
+</aura:component>

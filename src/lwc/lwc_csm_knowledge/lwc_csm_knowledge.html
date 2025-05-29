@@ -1,0 +1,83 @@
+<template>
+    <div style="overflow:hidden;display:flex;margin-top: -12px;">
+        <template if:true={selectedArticle}>
+            <div class="slds-panel slds-size_medium slds-panel_docked slds-panel_docked-left slds-panel_drawer slds-is-open"
+                aria-hidden="false" id="example-unique-id-8">
+                <div class="slds-panel__header">
+                    <h2 class="slds-panel__header-title slds-text-heading_small slds-truncate" title={labels.Knowlegde}>
+                        {labels.Knowlegde}
+                    </h2>
+                    <div class="slds-panel__header-actions">
+                        <lightning-button-icon icon-name="utility:close" class="slds-panel__close" variant="bare"
+                            alternative-text="Close" title="Close" onclick={closePanel}></lightning-button-icon>
+                    </div>
+                </div>
+                <div class="slds-panel__body slds-scrollable_y">
+                    <c-lwc_csm_knowledge_browser selected-product={selectedArticle.topic}
+                        onarticleselected={handleArticleSelect}
+                        onproductselected={handleProductSelect}></c-lwc_csm_knowledge_browser>
+                </div>
+            </div>
+        </template>
+
+        <div class="slds-col slds-p-around_medium"
+            style="background-color: white; height: calc(100vh - 50px); overflow-y: auto;">
+            <template if:false={panelOpen}>
+                <button
+                    class="slds-button slds-button_icon slds-is-selected slds-button_icon-border-filled slds-button_icon-border"
+                    title="Toggle panel" aria-expanded="true" aria-controls="example-unique-id-8" aria-pressed="true">
+                    <lightning-button-icon-stateful icon-name="utility:toggle_panel_left" selected="false"
+                        onclick={handleOpenClosePanel}
+                        alternative-text="Toggle Panel Left"></lightning-button-icon-stateful>
+                </button>
+            </template>
+            <div class="article-content">
+                <template if:true={selectedArticle}>
+                    <lightning-breadcrumbs class="slds-m-top_large">
+                        <lightning-breadcrumb label={labels.Home} data-to='Home' onclick={navigateTo}>
+                        </lightning-breadcrumb>
+                        <lightning-breadcrumb label={labels.All_Products} data-to='Products' onclick={navigateTo}>
+                        </lightning-breadcrumb>
+                        <lightning-breadcrumb label={selectedArticle.topic} data-to='SelectedProduct'
+                            onclick={navigateTo}>
+                        </lightning-breadcrumb>
+                        <lightning-breadcrumb label={selectedArticle.chapter}>
+                        </lightning-breadcrumb>
+                    </lightning-breadcrumbs>
+                </template>
+                <template if:true={selectedArticle}>
+                    <c-lwc_csm_knowledge_article article-id={selectedArticle.id}></c-lwc_csm_knowledge_article>
+                    <template if:false={isGuest}>
+                        <div class="slds-border_top slds-m-top_medium">
+                            <c-lwc_csm_send_feedback record-id={selectedArticle.id}></c-lwc_csm_send_feedback>
+                        </div>
+                    </template>
+                </template>
+                <template if:false={selectedArticle}>
+                    <template if:true={currentProduct}>
+                        <h1 class="header-text">{labels.Documentation} {labels.For} {currentProduct}
+                        </h1>
+                    </template>
+                    <template if:false={currentProduct}>
+                        <template if:false={articleAllowed}>
+                            <div class="slds-scoped-notification slds-media slds-media_center slds-theme_warning slds-m-top_medium"
+                                role="status">
+                                <div class="slds-media__figure">
+                                    <lightning-icon icon-name="utility:warning"></lightning-icon>
+                                </div>
+                                <div class="slds-media__body">
+                                    <p>You can't view this article! It may have been deleted or you don't have
+                                        permission to view it.</p>
+                                </div>
+                            </div>
+                        </template>
+                        <c-lwc_csm_product_topics></c-lwc_csm_product_topics>
+                    </template>
+                    <c-lwc_csm_knowledge_browser selected-product={currentProduct}
+                        onarticleselected={handleArticleSelect}
+                        onproductselected={handleProductSelect}></c-lwc_csm_knowledge_browser>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,458 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="global" controller="CNT_CPQ_ApprovalMatrixCustomScreen">
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="ApprovalMatrixWithKeyWrapper" type="Object" />
+    <aura:attribute name="customerName" type="String" />
+    <aura:attribute name="customerEmail" type="String" />
+    <aura:attribute name="approverGroupName" type="String" />  
+    <aura:attribute name="ApproverGroupId" type ="String" />
+    <aura:attribute name = "openPopupForApprovalMatrix" type = "boolean" default = "false"/>
+    <aura:attribute name = "isDeleteButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name = "isSaveButtonDisable" type = "boolean" default = "true"/>
+    <aura:attribute name = "isCountrySales" type = "boolean" default = "true"/>
+    <aura:attribute name = "showAccountCountrySales" type = "boolean" default = "false"/>
+    <aura:attribute name = "objInfo" type = "Approval_Matrix__c" default = "{sobjectType : 'Approval_Matrix__c','Approver_Group__c': '',
+        'Global_Project_Unit__c': '',MD__c :'','Opportunity_Type__c': '','Region__c': '','Role__c': '','Sales__c': '',
+        'Therapy_Area__c': '','Customer__c': '','X0_5M_USD__c': '','X0_5M_USD_Email__c': '','X5_10M_USD__c': '','X5_10M_USD_Email__c': '',
+        'X10_20M_USD__c': '','X10_20M_USD_Email__c': '','X20_50M_USD__c': '','X20_50M_USD_Email__c': '',
+        'X50M_USD__c': '','X50M_USD_Email__c': '','Customer_Country_Sales__c': ''}"/>
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <h3 class="slds-page-header slds-section__title slds-text-title_caps"> {!v.approverGroupName}</h3>
+    <div class="slds-form-element">
+        <label class="slds-form-element__label" for="select-01">Opportunity Type</label>
+        <div class="slds-select_container">
+            <ui:inputSelect  aura:id="myOpportunityType" class="slds-select" />
+        </div>
+    </div>
+    <aura:if isTrue="{!v.approverGroupName == 'tssu'}"> 
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Therapy Area</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="therapyArea" class="slds-select" />
+            </div>
+        </div>
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Region</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="region" class="slds-select" />
+            </div>
+        </div>
+        <lightning:select name="Role" aura:id="myRole" label="Role">
+            <option value="Head">Head</option>
+            <option value="TSL">TSL</option>
+            <option value="TSSU 1">TSSU 1</option>
+            <option value="TSSU 2">TSSU 2</option>
+            <option value="TSSU 3">TSSU 3</option>
+            <option value="TSSU 4">TSSU 4</option>
+            <option value="TSSU 5">TSSU 5</option>
+            <option value="TSSU 6">TSSU 6</option>
+            <option value="TSSU 7">TSSU 7</option>
+            <option value="TSSU 8">TSSU 8</option>
+        </lightning:select>
+    </aura:if>
+    <aura:if isTrue="{!v.approverGroupName == 'pl'}"> 
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Therapy Area</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="therapyArea" class="slds-select" />
+            </div>
+        </div>
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Global Project Unit</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="globalProjectUnit" class="slds-select" />
+            </div>
+        </div>
+        <lightning:select name="Role" aura:id="myRole" label="Role">
+            <option value="Back Up">Back Up</option>
+            <option value="cc">cc</option>
+            <option value="cc 1">cc 1</option>
+            <option value="Primary 1">Primary 1</option>
+            <option value="Primary 2">Primary 2</option>
+        </lightning:select>        
+    </aura:if>
+    <aura:if isTrue="{!v.approverGroupName == 'plCustomer'}"> 
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Therapy Area</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="therapyArea" class="slds-select" />
+            </div>
+        </div>
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Customer</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="customer" class="slds-select" />
+            </div>
+        </div>
+        <lightning:select name="Role" aura:id="myRole" label="Role">
+            <option value="Back Up">Back Up</option>
+            <option value="cc">cc</option>
+            <option value="cc 1">cc 1</option>
+            <option value="Primary 1">Primary 1</option>
+            <option value="Primary 2">Primary 2</option>
+        </lightning:select>        
+    </aura:if>
+    <aura:if isTrue="{!v.approverGroupName == 'sales'}">
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Sales</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="sales" class="slds-select" />
+            </div>
+        </div>
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">MD?</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="md" class="slds-select" />
+            </div>
+        </div>
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="select-01">Region</label>
+            <div class="slds-select_container">
+                <ui:inputSelect  aura:id="region" class="slds-select" />
+            </div>
+        </div>
+        <lightning:select name="Role" aura:id="myRole" label="Role">
+            <option value="BD Line Manager">BD Line Manager</option>
+            <option value="Country Sales head">Country Sales head</option>
+            <option value="Delivery Head">Delivery Head</option>
+            <option value="Demand Head">Demand Head</option>
+            <option value="In Copy 1">In Copy 1</option>
+            <option value="In Copy 2">In Copy 2</option>
+            <option value="Managing Director">Managing Director</option>
+            <option value="R&amp;DS 1">R&amp;DS 1</option>
+            <option value="R&amp;DS 2">R&amp;DS 2</option>
+            <option value="R&amp;DS 3">R&amp;DS 3</option>
+            <option value="R&amp;DS 4">R&amp;DS 4</option>
+            <option value="R&amp;DS 5">R&amp;DS 5</option>
+            <option value="R&amp;DS 6">R&amp;DS 6</option>
+            <option value="R&amp;DS 7">R&amp;DS 7</option>
+        </lightning:select>
+    </aura:if>
+    <lightning:select name="CustomerType" aura:id="myCustomerType" label="CDS Fee Value">
+        <option value="X0_5M_USD__c">0-5M USD</option>
+        <option value="X5_10M_USD__c">5-10M USD</option>
+        <option value="X10_20M_USD__c">10-20M USD</option>
+        <option value="X20_50M_USD__c">20-50M USD</option>
+        <option value="X50M_USD__c">>50M USD</option>
+    </lightning:select>
+    <br/>
+    <lightning:button variant="brand" class="slds-m-right_medium" label="Submit" onclick="{!c.handleClick}"/>
+    <lightning:button variant="brand" label="Cancel" onclick="{!c.handleCancelClick}"/>
+    <br/>   
+    <aura:iteration items="{!v.ApprovalMatrixWithKeyWrapper}" var="item" >
+        <div class="slds-align_absolute-center" >
+            <aura:if isTrue="{!not(empty(item.approvalMatrixWrapperObj))}">
+                <lightning:button variant="success" class="slds-m-right_medium" label="Save" title="Save" onclick="{!c.saveMap}"
+                    disabled="{!v.isSaveButtonDisable}" aura:id="saveButtonId" />
+                <lightning:button variant="destructive" class="slds-m-right_medium" label="Delete" title="Delete" onclick="{!c.deleteMap}"
+                    disabled="{!v.isDeleteButtonDisable}" aura:id="deleteButtonId"/>
+            </aura:if>
+            <lightning:button class="slds-p-left_large" variant="brand" label="Add New" onclick="{!c.addAprovalMatrix}"
+                name="{!item.key.Id}"/>
+        </div>
+        <br/>
+            <table class="Table_Layout slds-table slds-table--bordered slds-table--striped">
+                <thead>
+                    <tr>
+                        <th scope="col"><span class="slds-truncate">Opportunity Type</span></th>
+                        <aura:if isTrue="{!v.approverGroupName == 'sales'|| v.approverGroupName == 'tssu'}">
+                            <th scope="col" class="Word_Width"><span class="slds-truncate">Region</span></th>
+                        </aura:if>                            
+                        <aura:if isTrue="{!v.approverGroupName == 'tssu'|| v.approverGroupName == 'pl'|| v.approverGroupName == 'plCustomer'}">
+                            <th scope="col"><span class="slds-truncate">Therapy Area</span></th>
+                        </aura:if>
+                        <aura:if isTrue="{!v.approverGroupName == 'pl'}">
+                            <th scope="col"><span class="slds-truncate">Global Project Unit</span></th>
+                        </aura:if>
+                        <aura:if isTrue="{!v.approverGroupName == 'plCustomer'}">
+                            <th scope="col"><span class="slds-truncate">Customer</span></th>
+                        </aura:if>
+                        <aura:if isTrue="{!v.approverGroupName == 'sales'}">
+                            <th scope="col"><span class="slds-truncate">Sales</span></th>
+                        </aura:if>
+                        <aura:if isTrue="{!v.approverGroupName == 'sales'}">
+                            <th scope="col"><span class="slds-truncate">MD?</span></th>
+                        </aura:if>
+                        <th scope="col"><span class="slds-truncate">Role</span></th>
+                        <th scope="col"><span class="slds-truncate">Name</span></th>
+                        <th scope="col"><span class="slds-truncate">Email</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <aura:iteration items="{!item.approvalMatrixWrapperObj}" var="mapValue" indexVar="index">                            
+                        <tr>
+                            <td>{!mapValue.approvalMatrix.Opportunity_Type__c}</td>
+                            <aura:if isTrue="{!v.approverGroupName == 'sales'|| v.approverGroupName == 'tssu'}">
+                                <td>{!mapValue.approvalMatrix.Region__c}</td>
+                            </aura:if>
+                            <aura:if isTrue="{!v.approverGroupName == 'tssu'|| v.approverGroupName == 'pl'|| v.approverGroupName ==
+                                'plCustomer'}">
+                                <td>{!mapValue.approvalMatrix.Therapy_Area__c}</td>
+                            </aura:if>
+                            <aura:if isTrue="{!v.approverGroupName == 'pl'}">
+                                <td>{!mapValue.approvalMatrix.Global_Project_Unit__c}</td>
+                            </aura:if>
+                            <aura:if isTrue="{!v.approverGroupName == 'plCustomer'}">
+                                <td>{!mapValue.approvalMatrix.Customer__c}</td>
+                            </aura:if>
+                            <aura:if isTrue="{!v.approverGroupName == 'sales'}">
+                                <td>{!mapValue.approvalMatrix.Sales__c}</td>
+                            </aura:if>
+                            <aura:if isTrue="{!v.approverGroupName == 'sales'}">
+                                <td>{!mapValue.approvalMatrix.MD__c}</td>
+                            </aura:if>
+                            <td>{!mapValue.approvalMatrix.Role__c}</td>
+                            <aura:if isTrue="{!mapValue.isEdit}"> 
+                                <aura:if isTrue="{!v.customerName == 'X0_5M_USD__c'}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input1"
+                                        value="{!mapValue.approvalMatrix.X0_5M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Email}" aura:id="inputEmail1"
+                                        value="{!mapValue.approvalMatrix.X0_5M_USD_Email__c}"/></td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X5_10M_USD__c'}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input2"
+                                        value="{!mapValue.approvalMatrix.X5_10M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Email}" aura:id="inputEmail2"
+                                        value="{!mapValue.approvalMatrix.X5_10M_USD_Email__c}"/></td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X10_20M_USD__c'}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input3"
+                                        value="{!mapValue.approvalMatrix.X10_20M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Email}" aura:id="inputEmail3"
+                                        value="{!mapValue.approvalMatrix.X10_20M_USD_Email__c}"/></td>
+                                </aura:if> 
+                                <aura:if isTrue="{!v.customerName == 'X20_50M_USD__c'}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input4"
+                                        value="{!mapValue.approvalMatrix.X20_50M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Email}" aura:id="inputEmail4"
+                                        value="{!mapValue.approvalMatrix.X20_50M_USD_Email__c}"/></td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X50M_USD__c'}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input5"
+                                        value="{!mapValue.approvalMatrix.X50M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Email}" aura:id="inputEmail5"
+                                        value="{!mapValue.approvalMatrix.X50M_USD_Email__c}"/></td>
+                                </aura:if>
+                            <aura:set attribute="else">
+                                <aura:if isTrue="{!v.customerName == 'X0_5M_USD__c'}">
+                                    <td>{!mapValue.approvalMatrix.X0_5M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X0_5M_USD_Email__c}</td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X5_10M_USD__c'}">
+                                    <td>{!mapValue.approvalMatrix.X5_10M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X5_10M_USD_Email__c}</td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X10_20M_USD__c'}">
+                                    <td>{!mapValue.approvalMatrix.X10_20M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X10_20M_USD_Email__c}</td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X20_50M_USD__c'}">
+                                    <td>{!mapValue.approvalMatrix.X20_50M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X20_50M_USD_Email__c}</td>
+                                </aura:if>
+                                <aura:if isTrue="{!v.customerName == 'X50M_USD__c'}">
+                                    <td>{!mapValue.approvalMatrix.X50M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X50M_USD_Email__c}</td>
+                                </aura:if>
+                                </aura:set>
+                            </aura:if>
+                            <td><lightning:input class="{!mapValue.approvalMatrix.Name + ' '}" type="checkbox" label="Edit"
+                                name="input1" checked="{!mapValue.isEdit}" onchange="{!c.isEditable}" aura:id="editCheckbox"/></td>
+                            <td><lightning:input class="{!mapValue.approvalMatrix.Name + ' '}" type="checkbox" label="Delete"
+                                name="input2" checked="{!mapValue.isDelete}" onchange="{!c.isDeleteable}" aura:id="deleteCheckbox" /></td>
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+        <br/>  
+    </aura:iteration>
+    <aura:if isTrue = "{!v.openPopupForApprovalMatrix}">
+        <section role = "dialog" tabindex = "-1" aria-labelledby = "modal-heading-01" aria-modal = "true" aria-describedby =
+            "modal-content-id-1" class = "slds-modal slds-fade-in-open">
+            <div class = "slds-modal__container" >
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class = "slds-modal__header" >
+                    <h2 id = "modal-heading-01" class = "slds-text-heading_medium slds-hyphenate">Create New Approval Matrix</h2>
+                </header>
+                <div class = "slds-modal__content slds-p-around_medium" id = "modal-content-id-1">
+                    <form class = "slds-form--stacked">
+                        <div class = "slds-form-element slds-is-required">
+                            <label class = "slds-form-element__label" for = "select-01">Opportunity Type</label>
+                            <div class = "slds-select_container">
+                                <ui:inputSelect  aura:id = "myOpportunityType2" class = "slds-select" value = 
+                                    "{!v.objInfo.Opportunity_Type__c}" required = "true"/>
+                            </div>
+                        </div>
+                        <aura:if isTrue = "{!v.approverGroupName == 'tssu' || v.approverGroupName == 'sales'}">
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01" >Region</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect  aura:id = "region2" class = "slds-select" value = "{!v.objInfo.Region__c}"
+                                        required = "true"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'tssu' || v.approverGroupName == 'plCustomer' || v.approverGroupName ==
+                            'pl'}">
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01">Therapy Area</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect  aura:id = "therapyArea2" class = "slds-select" value = "{!v.objInfo.Therapy_Area__c}"
+                                        required = "true"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'pl'}"> 
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01">Global Project Unit</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect aura:id = "globalProjectUnit2" class = "slds-select"
+                                        value = "{!v.objInfo.Global_Project_Unit__c}" required = "true"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'plCustomer'}"> 
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01">Customer</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect  aura:id = "customer2" class = "slds-select" value = "{!v.objInfo.Customer__c}"
+                                        required = "true"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'sales'}">
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01">MD</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect  aura:id = "md2" class = "slds-select" value = "{!v.objInfo.MD__c}" required = "true"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'sales'}">
+                            <div class = "slds-form-element slds-is-required">
+                                <label class = "slds-form-element__label" for = "select-01">Sales</label>
+                                <div class = "slds-select_container">
+                                    <ui:inputSelect  aura:id = "sales2" class = "slds-select" value = "{!v.objInfo.Sales__c}" required =
+                                        "true" change="{!c.onSaleOrRoleChange}"/>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'pl'}">
+                            <lightning:select name = "Role" aura:id = "myRole2" label = "Role" value = "{!v.objInfo.Role__c}" required =
+                                "true">
+                                <option value = "Back Up">Back Up</option>
+                                <option value = "cc">cc</option>
+                                <option value = "cc 1">cc 1</option>
+                                <option value = "Primary 1">Primary 1</option>
+                                <option value = "Primary 2">Primary 2</option>
+                            </lightning:select>        
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'tssu'}">
+                            <lightning:select name = "Role" aura:id = "myRole2" label = "Role" value = "{!v.objInfo.Role__c}" required =
+                                "true">
+                                <option value = "Head">Head</option>
+                                <option value = "TSL">TSL</option>
+                                <option value = "TSSU 1">TSSU 1</option>
+                                <option value = "TSSU 2">TSSU 2</option>
+                                <option value = "TSSU 3">TSSU 3</option>
+                                <option value = "TSSU 4">TSSU 4</option>
+                                <option value = "TSSU 5">TSSU 5</option>
+                                <option value = "TSSU 6">TSSU 6</option>
+                                <option value = "TSSU 7">TSSU 7</option>
+                                <option value = "TSSU 8">TSSU 8</option>
+                            </lightning:select>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'plCustomer'}">
+                            <lightning:select name = "Role" aura:id = "myRole2" label = "Role" value = "{!v.objInfo.Role__c}"  required =
+                                "true">
+                                <option value = "Back Up">Back Up</option>
+                                <option value = "cc">cc</option>
+                                <option value = "cc 1">cc 1</option>
+                                <option value = "Primary 1">Primary 1</option>
+                                <option value = "Primary 2">Primary 2</option>
+                            </lightning:select>        
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'sales'}">
+                            <lightning:select name = "Role" aura:id = "myRole2" label = "Role" value = "{!v.objInfo.Role__c}" required =
+                                "true" onchange="{!c.onSaleOrRoleChange}">
+                                <option value = "BD Line Manager">BD Line Manager</option>
+                                <option value = "Country Sales head">Country Sales head</option>
+                                <option value = "Delivery Head">Delivery Head</option>
+                                <option value = "Demand Head">Demand Head</option>
+                                <option value = "In Copy 1">In Copy 1</option>
+                                <option value = "In Copy 2">In Copy 2</option>
+                                <option value = "Managing Director">Managing Director</option>
+                                <option value = "R&amp;DS 1">R&amp;DS 1</option>
+                                <option value = "R&amp;DS 2">R&amp;DS 2</option>
+                                <option value = "R&amp;DS 3">R&amp;DS 3</option>
+                                <option value = "R&amp;DS 4">R&amp;DS 4</option>
+                                <option value = "R&amp;DS 5">R&amp;DS 5</option>
+                                <option value = "R&amp;DS 6">R&amp;DS 6</option>
+                                <option value = "R&amp;DS 7">R&amp;DS 7</option>
+                            </lightning:select>
+                        </aura:if>
+                        <aura:if isTrue = "{!v.approverGroupName == 'sales'}">
+                            <aura:if isTrue = "{!v.showAccountCountrySales}">
+                                <div class = "slds-form-element slds-is-required">
+                                    <label class = "slds-form-element__label" for = "select-01">Customer/Country Sales</label>
+                                    <div class = "slds-select_container">
+                                        <ui:inputSelect  aura:id = "accountCountrySales" class = "slds-select" value = "{!v.objInfo.Customer_Country_Sales__c}" change="{!c.onAccountOrCountrySalesChanges}"/>
+                                    </div>
+                                </div>
+                            </aura:if>
+                        </aura:if>
+                        <div class = "slds-form-element__control">
+                            <ui:inputText aura:id = "0-5Name" label = "0-5M USD Name" class = "slds-input" labelClass =
+                                "slds-form-element__label" value="{!v.objInfo.X0_5M_USD__c}"/>                                
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <lightning:input type = "email" name = "0-5M USD Email" label = "0-5M USD Email" aura:id = "0-5Mail"
+                                value = "{!v.objInfo.X0_5M_USD_Email__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <ui:inputText aura:id = "5-10Name" label = "5-10M USD Name" class = "slds-input" labelClass =
+                                "slds-form-element__label" value = "{!v.objInfo.X5_10M_USD__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <lightning:input type = "email" name = "5-10M USD Email" label = "5-10M USD Email" aura:id = "5-10Mail"
+                                value = "{!v.objInfo.X5_10M_USD_Email__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <ui:inputText aura:id = "10-20Name" label = "10-20M USD Name" class = "slds-input"
+                                labelClass = "slds-form-element__label" value = "{!v.objInfo.X10_20M_USD__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <lightning:input type = "email" name = "10-20M USD Email" label = "10-20M USD Email" aura:id = "10-20Mail"
+                                value = "{!v.objInfo.X10_20M_USD_Email__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <ui:inputText aura:id = "20-50Name" label = "20-50M USD Name" class = "slds-input"
+                                labelClass = "slds-form-element__label" value = "{!v.objInfo.X20_50M_USD__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <lightning:input type = "email" name = "20-50M USD Email" label = "20-50M USD Email" aura:id = "20-50Mail"
+                                value = "{!v.objInfo.X20_50M_USD_Email__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <ui:inputText aura:id = "50+Name" label = "50+M USD Name" class = "slds-input" labelClass = 
+                                "slds-form-element__label" value = "{!v.objInfo.X50M_USD__c}"/>
+                        </div>
+                        <div class = "slds-form-element__control">
+                            <lightning:input type = "email" name = "50+M USD Email" label = "50+M USD Email" aura:id = "50+Mail"
+                                value = "{!v.objInfo.X50M_USD_Email__c}"/>
+                        </div>
+                        <br/>
+                        <div class = "slds-form-element">
+                            <ui:button label = "submit" class = "slds-button slds-button_brand slds-m-right_medium"
+                                press = "{!c.createRecord}"/>
+                            <ui:button label = "cancel" class = "slds-button slds-button_brand" press = "{!c.closeModel}"/>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </aura:if>
+    <br/><br/><br/>
+</aura:component>

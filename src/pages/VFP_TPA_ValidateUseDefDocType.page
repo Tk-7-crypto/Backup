@@ -1,0 +1,406 @@
+<apex:page tabStyle="TPA_Request__c" title="Wait" controller="CNT_TPA_ValidateUseDefDocType" lightningStylesheets="true" showHeader="false">
+    <apex:slds />
+    <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+
+    <body>
+        <c:VFC_TPA_LoadingImage />
+            <div id="content" style="height:60%;width:100%;margin-top:25px !important;">
+                <apex:form style="width:100%">
+                <apex:actionFunction name="generateAddendumDocfunc" action="{!generateAddendumDoc}" reRender="" />
+                <center>
+                    <h1 id="msg" style="font-size:18px;color: #1797c0;"/> 
+                </center>
+            </apex:form>
+        </div>
+        <div id="footer">
+            <div class="copyright_wrapper">
+                <div class="copyright">
+                    &nbsp;
+                </div>
+            </div>
+            <div class="bottom-bg"></div>
+        </div>
+    </body>
+    <script type="text/javascript">
+        sforce.connection.sessionId = '{!$Api.Session_ID}';
+        var isError = false;
+        var errorText = '';
+        var envelopeVoidedAlready = {!isEnvelopeVoidedAlready};
+        var isEnvelopestatusCompleted = {!isEnvelopestatusCompleted};
+        var voidReasonForInvalidEnvelope = '{!voidReasonForInvalidEnvelope}';
+        var docusignStatusId = '{!docusignStatusId}';
+        var OtherUseSelected = {!isOtherUseSelected};
+        var AddendumAttachmentRequiredAndNotAttached = {!isAddendumAttachmentRequiredAndNotAttached};
+        var isAddendumRequired = {!isAddendumRequired};
+
+        function showPopAndGenerateTPSA() {
+              
+                  var agrId = getParameterByName('id').trim();
+                popupConfirm( 'TLLA & Software Agreement must be generated on the same day so that the effective agreement dates will be same on both the contracts',function() {
+                    window.location.href = 'apex/VFP_TPA_SelectTemplate?id='+agrId+'&templateType=TPA_Request__c&templateKeyword=TPSA';
+                    },
+                    function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},false);
+                
+        }
+        function verifyUseDefinitionDocType() {
+            try {
+                var showPopUp = getParameterByName('isPopUp').trim();
+                if(showPopUp != null && showPopUp == 'show')
+                    return showPopAndGenerateTPSA();
+                var agrId = getParameterByName('id').trim();
+                var useDefDocCheck = getParameterByName('CUDDType').trim();
+                var agrIdforAddendumGeneration = getParameterByName('agrIdforAddendumGeneration').trim();
+                if(agrIdforAddendumGeneration != null && agrIdforAddendumGeneration != '') {
+                    ConfirmIfAddendumNeedtoAttach(agrIdforAddendumGeneration);
+                      return true;
+                }
+
+
+                var sendManualDRN = decodeURIComponent(getParameterByName('manualDRN').trim());
+                var drnSentAlready = {!isDRNSentAlready};
+                var copyofSignedSentAlready = {!isCopyofSignedSentAlready};
+                if(agrId != null && sendManualDRN != null && sendManualDRN.toLowerCase() == 'y') {
+                    var drnAlertMsg = drnSentAlready ? 'The DRN was sent already, do you want to send it again.' : 'Click on &#39;Yes&#39; to trigger DRN mail to the Client and &#39;No&#39; to exit.';
+                    popupConfirm(drnAlertMsg,
+                    function() {
+                        showLoading();
+                        CNT_TPA_ValidateUseDefDocType.sendDRNManually(agrId, function(result, event) {
+                            hideLoading();
+                            if(event.type == 'exception') {
+                                return false;                                    
+                            }
+                            else {
+                                window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+                            }
+                        });
+                    }, 
+                    function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;}, true);
+                    return true;
+                }
+                var manualCopyofSigned = decodeURIComponent(getParameterByName('manualCopyofSigned').trim());
+                if(agrId != null && manualCopyofSigned != null && manualCopyofSigned.toLowerCase() == 'y') {
+                    var copyofSignedAlertMsg = copyofSignedSentAlready ? 'The Copy of Executed Email was sent already, do you want to send it again.' : 'Click on &#39;Ok&#39; to trigger Copy of Executed mail to the Vendor and &#39;Cancel&#39; to exit.';
+                    popupConfirm(copyofSignedAlertMsg,
+                    function() {
+                        showLoading();
+                        CNT_TPA_ValidateUseDefDocType.sendCopyofSignedManually(agrId, function(result, event) {
+                            hideLoading();
+                            if(event.type == 'exception') {
+                                return false;                                    
+                            }
+                            else {
+                                window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+                            }
+                        });
+                    }, 
+                    function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;}, true);
+                    return true;
+                }
+                
+                var voidEnvelopeManually = decodeURIComponent(getParameterByName('voidEnvelope').trim());
+                var voidEnvelopeType = decodeURIComponent(getParameterByName('voidType').trim());
+                var agreementValidationMsg = '{!JSENCODE(agreementValidationMsg)}';
+
+                if(agrId != null && voidEnvelopeManually != null && voidEnvelopeManually.toLowerCase() == 'y') {
+                    var voidAlertMsg = '';
+                    if(isEnvelopestatusCompleted) {
+                        voidAlertMsg = isEnvelopestatusCompleted ? 'The Envelope status is completed. You can not void it.' : 'Click on &#39;Yes&#39; to void Docusign envelope or &#39;No&#39; to exit.';                        
+                    }
+                    else if(envelopeVoidedAlready) {
+                        voidAlertMsg = envelopeVoidedAlready ? 'The Envelope is voided already.' : 'Click on &#39;Yes&#39; to void Docusign envelope or &#39;No&#39; to exit.';
+                    }
+                    else if (voidEnvelopeType == 'ineffect' && agreementValidationMsg.length > 0) {
+                        voidAlertMsg = 'You cannot void it and change request status to In-Effect becasue '+agreementValidationMsg;
+                        popupAlert(voidAlertMsg, function() {
+                            window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+                        });
+                        return false;
+                    }
+                    else if(voidEnvelopeType == 'voidenvelope' && (voidReasonForInvalidEnvelope == null || voidReasonForInvalidEnvelope == '')) {
+                        console.log('voidEnvelopeType: ' + voidEnvelopeType);
+                        console.log('voidReasonForInvalidEnvelope: ' + voidReasonForInvalidEnvelope);
+                        
+                        voidAlertMsg = 'Please proide a void reason first.';
+                        popupAlert(voidAlertMsg, function() {
+                            window.location.href = location.protocol + '//' + location.hostname + '/' + docusignStatusId;
+                        });
+                        return false;
+                    }
+                    else {
+                        voidAlertMsg = 'Click on &#39;Yes&#39; to void Docusign envelope or &#39;No&#39; to exit.';
+                    }
+
+                    popupConfirm(voidAlertMsg,
+                    function(){
+                        showLoading();
+                        if( isEnvelopestatusCompleted || envelopeVoidedAlready || (voidEnvelopeType == 'ineffect' && agreementValidationMsg.length > 0)) {
+                            window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+                        }
+                        else {
+                            var voidReason = '';
+                            if(voidEnvelopeType == 'voidenvelope' && (voidReasonForInvalidEnvelope != null && voidReasonForInvalidEnvelope != '')) {
+                                voidReason = voidReasonForInvalidEnvelope;
+                            }
+                            CNT_TPA_ValidateUseDefDocType.voidEnvelopeNManually(agrId, voidEnvelopeType, voidReason, function(result, event) {
+                                hideLoading();
+                                if(event.type == 'exception') {
+                                    return false;                                    
+                                }
+                                else {
+                                    window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+                                }
+                            });
+                         }
+                    }, 
+                    function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;}, true);
+                    return true;
+                }
+                
+                if(agrId == null || useDefDocCheck == null) {
+                    popupAlert('Invalid Page Request.');
+                    isError = true;
+                    errorText = 'Invalid Page Request.';
+                    return false;
+                }
+                var qr = sforce.connection.query("SELECT id, name, lastmodifieddate, lastmodifiedby.name FROM Attachment WHERE ParentId = '" + agrId + "' ORDER BY lastmodifieddate desc");
+                var records = qr.getArray("records");
+                qr = sforce.connection.query("SELECT Id, Name, Is_AMA_License_Required__c, Is_Foreign_License_Required__c, AMA_Foreign_Storage_Contract_Type__c, Contract_Type__c, TPA_Request__r.Name, TPA_Request__r.Vendor_App_Sent__c, Ex_Contract_Type__c,TPA_Request__r.In_Effect_Date__c  FROM AMA_Agreement_Detail__c WHERE TPA_Request__r.Id = '" + agrId + "'");
+                var amaRecords = qr.getArray("records");
+                qr = sforce.connection.query("SELECT Id, Request_Status__c, In_Effect_Date__c, After_in_Effect_Changes__c FROM TPA_Request__c  WHERE Id = '" + agrId + "'");
+                var tpaRecords = qr.getArray("records");
+                console.log(JSON.stringify(records));
+                var processedRecords = [];
+                var checkUseDefDocType = false;
+                var isUseDefDocPdfExisted = false;
+                var lastDocumentType = '';
+                var isAmaDocRequired = false;
+                var isAmaDocExistedInPdf = false;
+                var isTPATechExistedInPdf = false;
+                var isTechAmendment = false;
+                var isAmaForigenDocRequired = false;
+                var isAmaForigenDocExistedInPdf = false;
+                var isAddendumExisted = false;
+                var mandatoryDocsId = '';
+                var helpfulHintDocExisted = false;
+                var isAMAExContractBlank = false;
+                var afterInEffectChanges = false
+                console.log('mandatoryDocsId: '+ mandatoryDocsId);
+                if(records != null && records.length > 0) {
+                    if(tpaRecords != null && tpaRecords.length > 0 && tpaRecords[0].Request_Status__c == 'In Effect' && tpaRecords[0].After_in_Effect_Changes__c != 'false') {                        
+                        console.log(JSON.stringify(tpaRecords));
+                        afterInEffectChanges = true;
+                    }
+                   
+                }
+                if(records != null && records.length > 0) {
+                    if(!afterInEffectChanges){
+                    if(amaRecords != null && amaRecords.length > 0 && amaRecords[0].Is_AMA_License_Required__c != 'false' && (amaRecords[0].Is_AMA_License_Required__c || amaRecords[0].Is_AMA_License_Required__c == 'true')) {                        
+                        console.log(JSON.stringify(amaRecords));
+                        isAmaDocRequired = true;
+                    }
+                    if(amaRecords != null && amaRecords.length > 0 && amaRecords[0].Is_Foreign_License_Required__c != 'false' && (amaRecords[0].Is_Foreign_License_Required__c || amaRecords[0].Is_Foreign_License_Required__c == 'true')) {                        
+                        console.log(JSON.stringify(amaRecords));
+                        isAmaForigenDocRequired = true;
+                    }
+                    if(amaRecords != null && amaRecords.length > 0 && amaRecords[0].Contract_Type__c == 'Existing Agreement' && (amaRecords[0].Is_AMA_License_Required__c == null || amaRecords[0].Is_AMA_License_Required__c == 'false') && (amaRecords[0].Ex_Contract_Type__c == null || amaRecords[0].Ex_Contract_Type__c == '') ) {                        
+                        console.log('Existing Agreement is Found Blank');
+                        isAMAExContractBlank = true;
+                    }
+                    processedRecords = [];
+                    var agrHasTLLA = false;
+                    $.each(records, function(k, v) {
+                        if(v.Name.indexOf('_TLLA_') != -1 && v.Name.indexOf('IQVIA Third Party Tech') == -1 && (v.Name.split('.').pop().toLowerCase() == 'doc' || v.Name.split('.').pop().toLowerCase() == 'docx' || v.Name.split('.').pop().toLowerCase() == 'rtf')) {
+                            checkUseDefDocType = true;
+                            agrHasTLLA = true;
+                            return false;
+                        }
+                        else
+                            processedRecords.push(v);
+                        if(v.Name.indexOf('_TLLA_') != -1 && v.Name.indexOf('IQVIA Third Party Tech') == -1)
+                            agrHasTLLA = true;
+                    });
+                    var agrHasTllaInPdf = false;
+                    var OtherUseandIntegrationUser = false;
+                    $.each(records, function(k, v) {
+                        if(v.Name.indexOf('_TLLA_') != -1 && v.Name.indexOf('IQVIA Third Party Tech') == -1 && v.Name.split('.').pop().toLowerCase() == 'pdf' && !agrHasTllaInPdf) {
+                            agrHasTllaInPdf = true; 
+                            mandatoryDocsId += 'TLLA-' + v.Id + ':';
+                            console.log(v.Name);
+                            console.log(v.LastModifiedBy.Name);
+                            console.log(v.LastModifiedDate);
+                            if(v.LastModifiedBy.Name == '{!$Label.TPA_API_Integration_User}') {
+                            	OtherUseandIntegrationUser = true;
+                            }
+                            else {
+                                OtherUseandIntegrationUser = false;
+                            }
+                        }
+                        if(isAmaDocRequired && !isAmaDocExistedInPdf && v.Name.indexOf(amaRecords[0].Contract_Type__c) != -1 && v.Name.indexOf(amaRecords[0].AMA_Foreign_Storage_Contract_Type__c) == -1 && v.Name.split('.').pop().toLowerCase() == 'pdf' && v.LastModifiedDate > amaRecords[0].TPA_Request__r.Vendor_App_Sent__c) {
+                            isAmaDocExistedInPdf = true;
+                            mandatoryDocsId += 'AMA-' + v.Id + ':';
+                        }
+                        if(isAmaForigenDocRequired && !isAmaForigenDocExistedInPdf && v.Name.indexOf(amaRecords[0].AMA_Foreign_Storage_Contract_Type__c) != -1 && v.Name.split('.').pop().toLowerCase() == 'pdf' && v.LastModifiedDate > amaRecords[0].TPA_Request__r.Vendor_App_Sent__c) {
+                            isAmaForigenDocExistedInPdf = true;
+                            mandatoryDocsId += 'AMAFL-' + v.Id + ':';
+                        }
+                        if(!isAddendumExisted && isAddendumRequired && v.Name.indexOf('Addendum Notification') != -1 && v.Name.split('.').pop().toLowerCase() == 'pdf') {
+                            isAddendumExisted = true;
+                            mandatoryDocsId += 'Addendum-' + v.Id + ':';
+                        }
+                        if(v.Name.indexOf('Helpful') != -1 && !helpfulHintDocExisted){
+                        	helpfulHintDocExisted = true;
+                            mandatoryDocsId += 'Helpful-' + v.Id + ':';
+                        }
+                    });
+                    if(!agrHasTLLA) {
+                        popupAlert('Agreement does not have any TLLA.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    else if(!agrHasTllaInPdf) {
+                        popupAlert('Agreement does not have TLLA in PDF format.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    else if(!helpfulHintDocExisted) {
+                        popupAlert('Agreement does not have Vendor Helpful Hints addendum, please regenerate the TLLA for generating the Vendor Helpful Hints addendum.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    else if(isAmaDocRequired && !isAmaDocExistedInPdf) {
+                        popupAlert('Agreement does not have ' + amaRecords[0].Contract_Type__c + ' document in PDF format.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    else if(isAmaForigenDocRequired && !isAmaForigenDocExistedInPdf) {
+                        popupAlert('Agreement does not have ' + amaRecords[0].AMA_Foreign_Storage_Contract_Type__c + ' document in PDF format.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    else if(isAMAExContractBlank){
+                        popupAlert('AMA Existing Contract Type Found cannot be blank', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }
+                    /*else if(checkUseDefDocType && useDefDocCheck) {
+                        $.each(processedRecords, function(k, v) {
+                            if(v.Name.indexOf('Use Definition') != -1 && v.Name.split('.').pop().toLowerCase() == 'pdf') {
+                                isUseDefDocPdfExisted = true;
+                                return false;
+                            }
+                        });
+                        if(isUseDefDocPdfExisted) {
+                            if(OtherUseSelected) {
+                                verifyIfOtherUseSelected(agrId, mandatoryDocsId);
+                            }
+                            else if(AddendumAttachmentRequiredAndNotAttached) {  
+                                verifyIfAddendumAttachmentRequired(agrId, mandatoryDocsId);  
+                            }
+                            else
+                                window.location.href = "VFP_TPA_AgrmntSendForSignature?id=" + agrId + '&mandatoryDocsId=' + mandatoryDocsId;
+                        }
+                        else
+                            popupAlert('To Continue please Generate or Attach Use Definition in PDF version after generating TLLA.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    }*/
+                    else if(OtherUseSelected) {
+                        if(OtherUseandIntegrationUser) {
+                            popupAlert('<b><font color="Red" size="3">ERROR:</font> The Use(s) selected was OTHER, the TLLA you are trying to send has not been updated with an IQVIA Legal approved Use Definition. The TLLA cannot be sent until the approved Use Definition associated with the Use of Other has been attached to the TLLA. Should you need guidance on how to do this / what to do, please reach out to the <a href ="mailto:TP-US@IQVIA.com">TP-US@IQVIA.com</a> team for assistance.</b>', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                        }
+                        else {
+                            verifyIfOtherUseSelected(agrId, mandatoryDocsId);
+                        }
+                    }
+                    else if(AddendumAttachmentRequiredAndNotAttached) {  
+                        verifyIfAddendumAttachmentRequired(agrId, mandatoryDocsId);  
+                    }
+                    else {
+                        window.location.href = "VFP_TPA_AgrmntSendForSignature?id=" + agrId + '&mandatoryDocsId=' + mandatoryDocsId;
+                    }
+                }
+                else{
+                    $.each(records, function(k, v) {
+                    if(afterInEffectChanges && v.Name.indexOf('AMA_') != -1 && v.LastModifiedDate > tpaRecords[0].In_Effect_Date__c  && !isAmaDocExistedInPdf && v.Name.split('.').pop().toLowerCase() == 'pdf') {
+                            isAmaDocExistedInPdf = true;
+                            mandatoryDocsId += 'AMA-' + v.Id + ':';
+                    }
+                    if(afterInEffectChanges && v.Name.indexOf('Tech License Agreement') != -1 && v.LastModifiedDate > tpaRecords[0].In_Effect_Date__c  && !isTPATechExistedInPdf && v.Name.split('.').pop().toLowerCase() == 'pdf') {
+                            isTPATechExistedInPdf = true;
+                            mandatoryDocsId += 'TechLi-' + v.Id + ':';
+                    }
+                    if(afterInEffectChanges && v.Name.indexOf('Third Party Tech Amendment') != -1 && v.LastModifiedDate > tpaRecords[0].In_Effect_Date__c  && !isTechAmendment && v.Name.split('.').pop().toLowerCase() == 'pdf') {
+                            isTechAmendment = true;
+                            mandatoryDocsId += 'TechAm-' + v.Id + ':';
+                    }
+                        window.location.href = "VFP_TPA_AgrmntSendForSignature?id=" + agrId + '&mandatoryDocsId=' + mandatoryDocsId;
+                 
+                });
+                }
+                }
+                else {
+                    popupAlert('Agreement does not have any TLLA.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                }
+            }    
+            catch (error) {    
+                console.log(error);
+                popupAlert('Invalid Page Request.');
+                isError = true;
+                errorText = 'Invalid Page Request.';
+            }
+        }
+        verifyUseDefinitionDocType();
+    
+        function verifyIfOtherUseSelected(agrId, mandatoryDocsId) {
+            popupConfirm( '<b><font color="Red" size="3">STOP:</font>  The Use selected was OTHER, please ensure that a valid USE Name and Definition were defined as part of this request and included in the TLLA before sending for signature.   Also ensure that the stand alone use definition on the agreement record also contains valid Use Definition.  Please refer to the Third Party Program Manual Review Guide in SharePoint: <a href = "https://quintiles.sharepoint.com/sites/ogchub/operations/Tools%20Tech%20%20Programs/Forms/AllItems.aspx?id=/sites/ogchub/operations/Tools%20Tech%20%20Programs/TPA%20Program" target="_blank" onclick="var w=window.open(this.href,this.target,"width=500,height=600"); return w?false:true">https://quintiles.sharepoint.com/sites/ogchub/operations/Tools%20Tech%20%20Programs/Forms/AllItems.aspx?id=/sites/ogchub/operations/Tools%20Tech%20%20Programs/TPA%20Program</a></b>',function(){
+                                    window.location.href = "VFP_TPA_AgrmntSendForSignature?id=" + agrId + '&mandatoryDocsId=' + mandatoryDocsId; },
+                                             function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},false);
+        }
+        function verifyIfAddendumAttachmentRequired(agrId, mandatoryDocsId) {
+            popupConfirm( 'If Addendum is missing from the attachments in the envelope, please click "Cancel" to attach the addendum on the AR or click OK and Send for Signature with TLLA and Addendum as attachments',function(){
+                                    window.location.href = "VFP_TPA_AgrmntSendForSignature?id=" + agrId + '&mandatoryDocsId=' + mandatoryDocsId; },
+                                             function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},false);
+        }
+        function ConfirmIfAddendumNeedtoAttach(agrId) {
+            popupConfirm( 'The Addendum was already generated by the system, do you want to generate again?',function() {
+                                    generateAddendumDocfunc(); },
+                                             function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;},false);
+        }
+
+        function popupAlert(msg, truePart) {
+            popup(msg, {'animate':true}, 
+            function(r) {
+                if(r && truePart != null)
+                    truePart();
+            });
+        }
+        
+        function popupConfirm(msg, truePart, falsePart, isYesNo) {
+            if(isYesNo)
+                popup(msg, {'verify':true, 'animate':true}, function(r) {
+                    if(r)
+                        truePart();
+                    else
+                        falsePart();
+                    haltScreen = false;
+                });                        
+            else
+                popup(msg, {'confirm':true, 'animate':true}, function(r) {
+                    if(r)
+                        truePart();
+                    else
+                        falsePart();
+                    haltScreen = false;
+                });  
+            if(envelopeVoidedAlready || isEnvelopestatusCompleted) 
+                $('.aButtons button').each(function() {
+                    if($(this).attr('value') == 'cancel')
+                        $(this).html('Cancel');
+                    if($(this).attr('value') == 'ok')
+                        $(this).html('Ok');
+                });  
+        }
+        
+        $(document).ready(function() {
+            if(isError)
+                $('#msg').text(errorText);
+        });
+        
+        //*** function to read Query strings Start ***//
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+        //*** function to read Query strings End ***//
+    </script>
+</apex:page>

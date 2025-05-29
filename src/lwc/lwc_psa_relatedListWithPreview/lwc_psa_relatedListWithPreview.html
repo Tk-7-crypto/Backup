@@ -1,0 +1,200 @@
+<template>
+  <c-lwc_helper></c-lwc_helper>
+  <div class="slds-grid">
+    <div class="slds-col slds-size_2-of-3">
+      <div class="slds-grid slds-page-header forceRelatedListCardHeader">
+        <header class="slds-media slds-media--center slds-has-flexi-truncate">
+          <div class="slds-media__figure stencil slds-avatar slds-avatar_small">
+            <div class="extraSmall forceEntityIcon" style="background-color: #38c393">
+              <span class="uiImage">
+                <img src="/img/icon/t4v35/custom/custom32_120.png" class="icon" alt="Project Tasks (Child Task)" title="Project Tasks (Child Task)">
+              </span>
+            </div>
+          </div>
+
+          <div class="slds-media__body">
+            <h2>
+              <a class="slds-card__header-link baseCard__header-title-container" href={subtaskLink}>
+                <span class="slds-card__header-title slds-truncate slds-m-right_xx-small" title="Project Tasks (Child Task)">Project Tasks (Child Task)</span>
+                <span class="slds-card__header-title slds-shrink-none slds-m-right_xx-small" title={subtaskRecordCount}>{subtaskRecordCount}</span>
+              </a>
+            </h2>
+          </div>
+        </header>
+        <div class="slds-no-flex">
+          <div class="actionsContainer">
+            <ul class="branding-actions slds-button-group slds-m-left_xx-small small oneActionsRibbon forceActionsContainer">
+              <li class="">
+                <button class="slds-button slds-button_icon slds-button_icon-border-filled" onclick={refreshTableData}>
+                  <lightning-icon class="refreshIcon" size="xx-small" icon-name="utility:refresh"></lightning-icon>
+                </button>
+              </li>
+              <li class="slds-button slds-button--neutral slds-truncate">
+                <a onclick={handleAddNewRecord} title="New" class="forceActionLink" role="button">
+                  <div class="slds-truncate" title="New">New</div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-card slds-is-relative">
+        <lightning-spinner size="medium" if:true={showRefreshSpinner}></lightning-spinner>
+        <div class="lightning-datatable-container">
+          <lightning-datatable
+              hide-checkbox-column
+              key-field={tableKeyField}
+              columns={tableColumns}
+              class={tableClass}
+              data={tableRowData}
+              default-sort-direction="asc"
+              draft-values={tableDraftValues}
+              enable-infinite-loading="false"
+              errors={tableErrors}
+              sorted-by={tableSortedBy}
+              sorted-direction={tableSortedDirection}
+              onsort={tableOnSort}
+              onrowaction={tableOnRowAction}
+              selected-rows={tableSelectedRows}
+              >
+          </lightning-datatable>
+        </div>
+      </div>
+    </div>
+    <div class="slds-col slds-size_1-of-3 slds-p-left_small">
+      <div class="slds-card slds-is-relative slds-box" style="height:100%">
+        <div class="preview-spinner-container">
+          <lightning-spinner size="medium" if:true={showPreviewSpinner}></lightning-spinner>
+        </div>
+        <!--
+          rendered when no rows selected for preview!
+        -->
+        <div if:false={hasSelectedRow} class="slds-align_absolute-center select-row-to-preview">
+          <div class="slds-text-align_center slds-p-around_medium">
+            <span class="slds-text-heading_small">
+              <!-- Select the child task row to preview -->
+              Select a child task to preview
+            </span>
+          </div>
+        </div>
+
+        <!--
+          Render preview of the selected row
+        -->
+        <div if:true={hasSelectedRow}>
+          <div class="slds-grid slds-text-body_small slds-p-around_xx-small slds-border_bottom slds-border_top slds-m-bottom_x-small">
+            <div class="slds-col slds-size_1-of-2 slds-text-align_left">
+              <a class="slds-p-left_small" onclick={previewLast}>&#8592; Previous</a>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+              <a class="slds-p-right_small" onclick={previewNext}>Next &#8594;</a>
+            </div>
+          </div>
+
+          <lightning-record-form
+            class="preview-form"
+            object-api-name={objectApiName}
+            record-id={previewSelectedRecordId}
+            record-type-id={newRecordTypeId}
+            fields={previewFields}
+            columns={previewNumberOfFormColumns}
+            mode={previewMode}
+            oncancel={previewFormCancel}
+            onsuccess={previewFormSuccess}
+            onload={previewFormLoad}
+            >
+          </lightning-record-form>
+
+          <div if:true={isPreviewModeView} class="slds-p-around_medium slds-text-align_center">
+            <!-- <span class="slds-m-around_xx-small lightning-record-form-cancel">
+              <button class="slds-button slds-button_neutral" onclick={cancelPreview}>Cancel</button>
+            </span> -->
+            <span class="slds-m-around_xx-small lightning-record-form-submit">
+              <button class="slds-button slds-button_brand" onclick={editPreview}>Edit</button>
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    New record moddal sections!
+  -->
+  <c-lwc_modal show-modal={showNewRecordWindow} onclose={closeNewRecordWindow} size="small">
+    <div slot="modal-heading">
+      { newRecordModalHeading }
+    </div>
+    <div slot="modal-content" class="slds-p-around_medium slds-is-relative">
+
+      <lightning-spinner size="medium" if:true={showModalSpinner}></lightning-spinner>
+
+      <lightning-record-edit-form class="add-related-items"
+        object-api-name={newRecord.objectApiName}
+        record-type-id={newRecord.recordTypeId}
+        density={newRecord.density}
+        onsuccess={handleNewRecordSucccesForm}
+        onerror={handleNewRecordErrorForm}
+        onload={handleNewRecordLoadedForm}
+        onsubmit={handleNewRecordSubmit}
+        >
+
+        <lightning-messages></lightning-messages>
+
+        <!--
+          Render new record sections
+        -->
+        <div class="slds-section slds-is-open"
+          for:each={newRecordSections} for:item="section" key={section.key}>
+          <h3 class="slds-section__title slds-theme--shade">
+            <span class="test-id__section-header-title section-header-title slds-p-horizontal--small slds-truncate">
+              {section.title}
+            </span>
+          </h3>
+          <div class="slds-section__content">
+            <div class="slds-grid slds-wrap">
+              <!-- render the section fields -->
+              <div for:each={section.fields} for:item="mfield" key={mfield.fieldName}
+                class={mfield.inputFieldColumnClass}
+                style="position:relative">
+
+                <div class="slds-p-right_medium slds-p-left_medium">
+                    <template if:true={mfield.isNameField}>
+                    <lightning-input-field
+                      field-name={mfield.fieldName}
+                      class={mfield.classNames}
+                      disabled={mfield.fieldDisabled}
+                      value={mfield.fieldValue}
+                      required>
+                    </lightning-input-field>
+                    </template>
+                    <template if:false={mfield.isBlankAndNotNameField}>
+                    <lightning-input-field
+                      field-name={mfield.fieldName}
+                      class={mfield.classNames}
+                      disabled={mfield.fieldDisabled}
+                      value={mfield.fieldValue}>
+                     </lightning-input-field>
+                    </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- hidden form submission button to trigger onsubmit action-->
+        <div class="slds-hide">
+          <button class="hidden-submit-button slds-hide" type="submit"></button>
+        </div>
+      </lightning-record-edit-form>
+
+    </div>
+    <div slot="modal-footer">
+      <button disabled={disabledCancelModalButtons} class="slds-button slds-button_neutral" onclick={closeNewRecordWindow}>Cancel</button>
+      <button disabled={disabledSaveModalButtons} class="slds-button slds-button_neutral" onclick={handleSaveAndNewRecordWindow}>Save & New</button>
+      <button disabled={disabledSaveModalButtons} class="slds-button slds-button_brand" onclick={handleSaveNewRecordWindow}>Save</button>
+    </div>
+  </c-lwc_modal>
+</template>

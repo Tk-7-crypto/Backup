@@ -1,0 +1,248 @@
+<apex:page standardController="Opportunity" extensions="BNFProductController" tabStyle="BNF2__c" id="thePage" standardStylesheets="true">
+<apex:sectionHeader title="BNF {!bnf.Name} Opportunity Product">
+<head>
+<script>function setFocusOnLoad() {}</script>
+<script type="text/javascript">
+    function replicateCheck(textId, checkId)
+    {
+        //textId = inputField Id
+        //checkId = checkbox Id for particular column
+        try{
+            var numberOfRows = document.getElementById("thePage:theForm:theBlock:theSection:theTable").rows.length;
+                        
+            var firstId = "thePage:theForm:theBlock:theSection:theTable:0:" + textId;
+            var x = document.getElementById(firstId);
+            
+            //var fullCheckId = "thePage:theForm:theBlock:theSection:theTable:" +(numberOfRows-2) + ":" + checkId;
+            var fullCheckId = "thePage:theForm:theBlock:theSection:theTable:" + checkId;
+            //alert(fullCheckId);
+            var y = document.getElementById(fullCheckId);
+            
+            //alert(numberOfRows);
+            if(y.checked) {
+                if(x.value!="") {
+                    for(var i=1; i<(numberOfRows-1); i++) {
+                        //alert(numberOfRows);
+                        var buildId = "thePage:theForm:theBlock:theSection:theTable:" + i + ":" + textId;
+                        document.getElementById(buildId).value = x.value;
+                    }
+                }
+             }
+             //alert(x.value);
+             //alert(document.getElementById("thePage:j_id2:j_id3:theTable:0:theTextInput").value);
+        } catch (err) {
+            alert (err);
+        } 
+        }
+        //YLi  BNF requirement #36 calculate discount amount
+
+        function DiscountCheck(textId){
+         try{
+           /**
+                if(textId!="") {
+                    for(var i=1; i<(numberOfRows-1); i++) {
+                        //alert(numberOfRows);
+                        var buildId = "thePage:theForm:theBlock:theSection:theTable:" + i + ":" + textId;
+                        document.getElementById(buildId).value = x.value;
+                    }
+                }
+             */   
+            // }
+            // alert(textId);
+             //alert(document.getElementById("thePage:j_id2:j_id3:theTable:0:theTextInput").value);
+        } catch (err) {
+            alert (err);
+        } 
+// end of YLi - BNF requirement #36 calculate discount amount
+    }
+</script>
+
+</head>
+<apex:form id="theForm">
+<!--a href="javascript:(window.open('/apex/BNFGlossary','width=20','height=500'))">Click Here for the Glossary/a-->
+<a href="/servlet/servlet.FileDownload?file=01570000000SG1A" target="_blank">For further explaination, click here for glossary</a>
+<apex:pageBlock id="theBlock">
+<apex:pageMessages id="Mess"/>
+<apex:pageBlockButtons >
+<apex:commandButton value="Save" action="{!save}" reRender="Mess,BillingDate"></apex:commandButton>
+<apex:commandButton value="Cancel" action="{!cancel}"></apex:commandButton>
+</apex:pageBlockButtons>
+
+<apex:pageBlockSection id="theSection">
+<apex:dataTable value="{!opptyLineItem2}" headerClass="headerRow" var="opptyLineItem" id="theTable" 
+ cellpadding="3" border="0" cellspacing="3" styleClass="list" rowClasses="dataRow" onRowMouseOver="hiOn(this);" onRowMouseOut="hiOff(this);">
+<apex:column >
+<apex:facet name="header">Name<br>&nbsp;</br></apex:facet>
+<apex:outputText value="{!opptyLineItem.PricebookEntry.Name}"/>
+</apex:column>
+<apex:column style="text-align:right" headerClass="CurrencyElement">
+<apex:facet name="header">Sales Price<br>&nbsp;</br></apex:facet>
+<apex:outputField value="{!opptyLineItem.TotalPrice}"/>
+</apex:column>
+<apex:column >
+<apex:facet name="header">Product Code<br>&nbsp;</br></apex:facet>
+<apex:outputText value="{!opptyLineItem.PricebookEntry.ProductCode}"/>
+</apex:column>
+
+<apex:column width="3">
+    <apex:facet name="header">
+        <apex:inputCheckbox id="MonthStartOpt" onclick="replicateCheck('monthStartText','MonthStartOpt')">Data Period Start<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField required="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB'}" onchange="replicateCheck('monthStartText','MonthStartOpt')" value="{!opptyLineItem.Product_Start_Date__c}" id="monthStartText" style="text-align:right"/>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="MonthEndOpt" onclick="replicateCheck('monthEndText','MonthEndOpt')">Data Period End<br></br></apex:inputCheckbox>
+        </apex:facet>
+    <apex:inputField required="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB'}"  onchange="replicateCheck('monthEndText','MonthEndOpt')" value="{!opptyLineItem.Product_End_Date__c}" id="monthEndText" style="text-align:right" />
+</apex:column>
+
+
+<apex:column >
+    <apex:facet name="header">
+
+        <apex:inputCheckbox tabindex="0" id="DeliveryMediaOpt" onclick="replicateCheck('DeliveryMedia','DeliveryMediaOpt')">Delivery Media<br></br></apex:inputCheckbox>
+    </apex:facet>
+    <apex:actionRegion renderRegionOnly="true">
+   <!--  <apex:inputField onchange="replicateCheck('DeliveryMedia','DeliveryMediaOpt')" value="{!opptyLineItem.Delivery_Media__c}" id="DeliveryMedia" required="true" /> -->
+     <div class="requiredInput"><div class="requiredBlock"></div>
+         <apex:selectList id="replicateCheck" value="{!opptyLineItem.Delivery_Media__c}" multiselect="false" size="1" required="true" style="width: 205px;" onchange="replicateCheck('DeliveryMedia','DeliveryMediaOpt')">
+                     <apex:selectOptions value="{!DeliveryMedia_Map[opptyLineItem.id]}"></apex:selectOptions>  
+         </apex:selectList>
+     </div>
+    
+    </apex:actionRegion>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="ProjFreqOpt" onclick="replicateCheck('ProjFreq','ProjFreqOpt')">Delivery/Rpt Frequency<br></br></apex:inputCheckbox>
+    </apex:facet> 
+<!--<apex:inputField onchange="replicateCheck('ProjFreq','ProjFreqOpt')" value="{!opptyLineItem.Proj_Rpt_Frequency__c}" id="ProjFreq" required="true"/> -->
+ <div class="requiredInput"><div class="requiredBlock"></div>
+                                        <apex:selectList id="ProjFreq" value="{!opptyLineItem.Proj_Rpt_Frequency__c}" multiselect="false" size="1" required="true" onchange="replicateCheck('ProjFreq','ProjFreqOpt')">
+                                            <apex:selectOptions value="{!DeliveryFrequency_Map[opptyLineItem.id]}"></apex:selectOptions>  
+                                        </apex:selectList>
+</div>
+
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="BillFreqOpt" onclick="replicateCheck('BillFreq','BillFreqOpt')">Billing Frequency<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField onchange="replicateCheck('BillFreq','BillFreqOpt')" value="{!opptyLineItem.Billing_Frequency__c}" id="BillFreq" required="true" />
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">Product Invoice Text<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.Sales_Text__c}" />
+</apex:column>
+
+
+<apex:column >
+    <apex:facet name="header">{!$ObjectType.OpportunityLineItem.fields.PO_Number__c.label}<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.PO_Number__c}" />
+</apex:column>
+
+
+<!---  YLi add List Price ---->
+<apex:column >
+    <apex:facet name="header">List Price<br>&nbsp;</br></apex:facet> 
+    <apex:inputField onchange="DiscountCheck({!opptyLineItem.List_Price__c})" value="{!opptyLineItem.List_Price__c}" id="ListPrice" required="{!(opptyLineItem.PricebookEntry.Product2.Offering_Type__c !='Management Consulting') 
+                              && (opptyLineItem.PricebookEntry.Product2.Offering_Type__c !=$Label.CES_TOT_Offering_Type) && US_SalesOrg == false}"/>
+</apex:column>
+
+<!---  end of YLi add List Price ---->
+
+<apex:column >
+    <apex:facet name="header">Discount %<br>&nbsp;</br></apex:facet>
+    <apex:outputField value="{!opptyLineItem.Discount_Percentage_Formula__c}" />
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">Discount Amt<br>&nbsp;</br></apex:facet> 
+    <apex:outputField value="{!opptyLineItem.Discount_Amount_Formula__c}" id="DiscountAmount"/>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="DiscReasonOpt" onclick="replicateCheck('DiscReason','DiscReasonOpt')">Discount Reason<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField onchange="replicateCheck('DiscReason','DiscReasonOpt')" value="{!opptyLineItem.Discount_Reason__c}" id="DiscReason"/>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="POlineitemnbrOpt" onclick="replicateCheck('POlineitemnbr','POlineitemnbrOpt')">PO line item number<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField onchange="replicateCheck('POlineitemnbr','POlineitemnbrOpt')" value="{!opptyLineItem.PO_line_item_number__c}" id="POlineitemnbr"/>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">
+        <apex:inputCheckbox id="NbrUserOpt" onclick="replicateCheck('NbrUser','NbrUserOpt')">Number of Users<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField onchange="replicateCheck('NbrUser','NbrUserOpt')" value="{!opptyLineItem.Nbr_of_Users__c}" id="NbrUser"/>
+</apex:column>
+
+<apex:column >
+    <apex:facet name="header">        
+        <apex:inputCheckbox id="OtherShipToOpt" onclick="replicateCheck('OtherShipTo','OtherShipToOpt')">Other Ship To<br></br></apex:inputCheckbox>
+    </apex:facet> 
+    <apex:inputField onchange="replicateCheck('OtherShipTo','OtherShipToOpt')" value="{!opptyLineItem.Other_Ship_To__c}" id="OtherShipTo"/>
+</apex:column>
+<!--Billing Date, Sales Type, Revenue Type, Invoice Lag to Data Period - Robert -->
+<apex:column id="ColumnBilling" >
+<apex:facet name="header">Billing Date<br>&nbsp;</br></apex:facet> 
+<apex:outputPanel id="BillingDate" >
+    
+    <apex:inputField value="{!opptyLineItem.Billing_Date__c}" required="{!opptyLineItem.Revenue_Type__c=='Ad Hoc'}"/>
+</apex:outputPanel>    
+</apex:column>
+<apex:column id="ColumnDeliveryDate">
+<apex:facet name="header">Delivery Date<br>&nbsp;</br></apex:facet> 
+<apex:outputPanel id="DeliveryDate" >    
+    <apex:inputField value="{!opptyLineItem.Delivery_Date__c}" required="{!opptyLineItem.Revenue_Type__c=='Ad Hoc'}" />
+</apex:outputPanel>    
+</apex:column>
+<apex:column >
+    <apex:facet name="header">Sales Type<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.Sale_Type__c}" id="SaleType" required="true"/>
+</apex:column>
+<apex:column >
+ <apex:facet name="header">Revenue Type<br>&nbsp;</br></apex:facet> 
+ <apex:actionRegion >
+   
+
+    <apex:inputField value="{!opptyLineItem.Revenue_Type__c}" id="RevenueType" required="true" >
+    <apex:actionSupport event="onchange" rerender="BillingDate,DeliveryDate" immediate="false"/>
+    </apex:inputField>
+  
+
+</apex:actionRegion>    
+</apex:column>
+<apex:column >
+    <apex:facet name="header">Invoice Lag to Data Period<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.Invoice_Lag_to_Data_Period__c}" id="InvoiceLagToDataPeriod" /> 
+</apex:column>
+<!--end of Billing Date, Sales Type, Revenue Type, Invoice Lag to Data Period - Robert -->
+
+<!---  IBoumaza add Revised Price and Cancel---->
+<apex:column >
+    <apex:facet name="header">Revised Price<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.Revised_Price__c}" id="RevisedPrice"/>
+</apex:column>
+<apex:column >
+    <apex:facet name="header">Cancel<br>&nbsp;</br></apex:facet> 
+    <apex:inputField value="{!opptyLineItem.Cancel__c}" id="Cancel"/>
+</apex:column>
+
+<!---  end of IBoumaza add Revised Price and Cancel---->
+</apex:dataTable>
+</apex:pageBlockSection>
+</apex:pageBlock>
+</apex:form>
+</apex:sectionHeader>
+</apex:page>

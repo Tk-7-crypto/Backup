@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Send Notification when the Agreement Owner is changed</description>
+        <name>Send_AGR_Owner_Update_Notification</name>
+        <label>Send AGR Owner Update Notification</label>
+        <locationX>314</locationX>
+        <locationY>950</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddressesArray</name>
+            <value>
+                <elementReference>varT_Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderType</name>
+            <value>
+                <stringValue>OrgWideEmailAddress</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <elementReference>$Setup.CLM_Configuration__c.GBO_Team_Email_Address__c</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>textT_Subject</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>textT_EmailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <assignments>
+        <name>Set_BAM_And_SCM_Email</name>
+        <label>Set BAM And SCM Email</label>
+        <locationX>314</locationX>
+        <locationY>758</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.IQVIA_Business_Account_Manager__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.IQVIA_Supporting_Contract_Manager__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_AGR_Owner_Update_Notification</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Emails</name>
+        <label>Set Emails</label>
+        <locationX>314</locationX>
+        <locationY>242</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.Owner:User.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.Apttus__Requestor__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_Services</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>varR_NewRecord.Services__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Is_Owner_Manager_exist</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Manager_Email</name>
+        <label>Set Manager Email</label>
+        <locationX>182</locationX>
+        <locationY>458</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.Owner:User.Manager.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Which_RecordType</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Project_Manger_Email</name>
+        <label>Set Project Manger Email</label>
+        <locationX>50</locationX>
+        <locationY>758</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.IQVIA_Project_Manager_Con__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_AGR_Owner_Update_Notification</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Is_Owner_Changed</name>
+        <label>Is Owner Changed ?</label>
+        <locationX>534</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Changed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.OwnerId</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldRecord.OwnerId</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Setup.CLM_Configuration__c.Enable_Post_Award_Workflow__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Emails</targetReference>
+            </connector>
+            <label>Changed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Owner_Manager_exist</name>
+        <label>Is Owner Manager exist ?</label>
+        <locationX>314</locationX>
+        <locationY>350</locationY>
+        <defaultConnector>
+            <targetReference>Which_RecordType</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Exist</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Owner:User.ManagerId</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Manager_Email</targetReference>
+            </connector>
+            <label>Exist</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Which_RecordType</name>
+        <label>Which RecordType ?</label>
+        <locationX>314</locationX>
+        <locationY>650</locationY>
+        <defaultConnector>
+            <targetReference>Send_AGR_Owner_Update_Notification</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>RWLP</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Record_Type_Developer_Name__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>RWLP</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Project_Manger_Email</targetReference>
+            </connector>
+            <label>RWLP</label>
+        </rules>
+        <rules>
+            <name>PSA_OSA_or_Preliminary</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Record_Type_Developer_Name__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>PSA</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Record_Type_Developer_Name__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>OSA</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Record_Type_Developer_Name__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Preliminary_Agreement</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_BAM_And_SCM_Email</targetReference>
+            </connector>
+            <label>PSA OSA or Preliminary</label>
+        </rules>
+    </decisions>
+    <description>CLMCMA-13354 : Send a notification when the agreement owner changed</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>forT_AccountLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!varR_NewRecord.Apttus__Account__r.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!varR_NewRecord.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RelatedOpprtunityLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!varR_NewRecord.Apttus__Related_Opportunity__r.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RWLPServiceCondition1</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;RWLP&apos; &amp;&amp; CONTAINS({!varT_Services},&apos;RBU&apos;), {!varT_RBUContracting}, {!varT_GBOResource})</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RWLPServiceCondition2</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;RWLP&apos; &amp;&amp; CONTAINS({!varT_Services},&apos;RBU&apos;), {!varT_CA}, {!varT_Resource})</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RWLPServiceCondition3</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;RWLP&apos; &amp;&amp; CONTAINS({!varT_Services},&apos;RBU&apos;), {!varR_NewRecord.Apttus__Related_Opportunity__r.Opportunity_Number__c}, {!varR_NewRecord.Legacy_Quintiles_Opportunity_Number__c})</expression>
+    </formulas>
+    <formulas>
+        <name>forT_WarningMessageForRDS</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;PSA&apos; || {!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;OSA&apos; || {!varR_NewRecord.Record_Type_Developer_Name__c}=&apos;Preliminary_Agreement&apos;,  {!varT_Attention}, &apos;&apos;)</expression>
+    </formulas>
+    <interviewLabel>CLM Subflow : Agreement Owner Update Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : Agreement Owner Update Notification - Del</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>408</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Owner_Changed</targetReference>
+        </connector>
+    </start>
+    <status>Obsolete</status>
+    <textTemplates>
+        <name>textT_EmailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>&lt;html&gt;
+    &lt;head&gt;
+        &lt;style&gt;
+            table, td, th {
+                border: 1px solid black;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            span {
+                color: red;
+            }
+            #id1 {
+                font-size: 20px;
+                 background-color: yellow;
+            }
+            #id2 {
+                color: black;
+                background-color: yellow;
+            }
+	        #id3 {
+		        width: 20%;
+                text-align: right;
+	        }
+        &lt;/style&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        Dear {!varR_NewRecord.Owner:User.FirstName}
+        &lt;br&gt;
+        &lt;br&gt;
+        You have been assigned a new contract request.
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;table&gt;
+            &lt;tr&gt;
+                &lt;td id=&apos;id3&apos;&gt;
+			        Type of Agreement &amp;nbsp;   
+		        &lt;/td&gt;
+                &lt;td&gt;
+                    &amp;nbsp; {!varR_NewRecord.Apttus__Subtype__c}                                                                         
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td id=&apos;id3&apos;&gt;
+			        Agreement Number / Name &amp;nbsp;
+		        &lt;/td&gt;
+                &lt;td&gt;
+                    &amp;nbsp; &lt;a href=&quot;{!forT_AgreementLink}&quot;&gt; {!varR_NewRecord.Apttus__FF_Agreement_Number__c} / {!varR_NewRecord.Name}&lt;/a&gt; 
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td id=&apos;id3&apos;&gt;
+			        Account &amp;nbsp;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &amp;nbsp; &lt;a href=&quot;{!forT_AccountLink}&quot;&gt; {!varR_NewRecord.Apttus__Account__r.Name}&lt;/a&gt; 
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td id=&apos;id3&apos;&gt;
+                    Opportunity Link &amp;nbsp;
+                &lt;/td&gt;
+                &lt;td&gt; 
+                    &amp;nbsp; &lt;a href=&quot;{!forT_RelatedOpprtunityLink}&quot;&gt;{!forT_RWLPServiceCondition3} / {!varR_NewRecord.Opportunity_Name__c}&lt;/a&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td id=&apos;id3&apos;&gt;
+			        Date Tracking Started &amp;nbsp;
+		        &lt;/td&gt;
+                &lt;td&gt;
+                    &amp;nbsp; {!varR_NewRecord.Date_Tracking_Started__c}                                                           
+                &lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/table&gt;
+			{!forT_WarningMessageForRDS}
+        &lt;br&gt;
+         &lt;p&gt; 
+        &lt;b&gt;&lt;span&gt;*ATTENTION REQUESTOR/PROJECT LEADER: &lt;/span&gt; The “Date 
+        Tracking Started” referred to in this communication is the actual start date the {!forT_RWLPServiceCondition1} will begin working on this request. Please do not reach out 
+        to the resource until said date. The {!forT_RWLPServiceCondition2} will reach out to you when they are 
+        ready to discuss realistic timelines and expectations. 
+        &lt;/b&gt;    
+        &lt;/p&gt;
+        &lt;p&gt;
+            &lt;b&gt;IMPORTANT: &lt;/b&gt; Please create an execution plan under this contract to 
+            begin tracking of contract lifecycle and available allocation. 
+        &lt;/p&gt;    
+    &lt;/body&gt;
+&lt;/html&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <name>textT_Subject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Agreement {!varR_NewRecord.Apttus__FF_Agreement_Number__c} successfully assigned</text>
+    </textTemplates>
+    <variables>
+        <name>varR_NewRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varT_Attention</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>&lt;br&gt;&lt;br&gt;&lt;span id = &apos;id1&apos;&gt;&lt;b&gt;*ATTENTION* - Please ensure you create an associated Quote/Proposal record before proceeding with your {!varR_NewRecord.Apttus__Subtype__c}&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span id = &apos;id2&apos;&gt;Step by Step guidance can be found &lt;a href=&quot;https://quintiles.sharepoint.com/sites/busops/unit-pricing-tool-apttus/Non%20SF%20Quote_CLM%20Training/Forms/AllItems.aspx?viewpath=%2Fsites%2Fbusops%2Funit%2Dpricing%2Dtool%2Dapttus%2FNon%20SF%20Quote%5FCLM%20Training%2FForms%2FAllItems%2Easpx&quot;&gt;here&lt;/a&gt;&lt;/span&gt;</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>varT_CA</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>CA</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>varT_Email</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_GBOResource</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>GBO resource (CA/PD/BA)</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>varT_RBUContracting</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>RBU Contracting CA</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>varT_Resource</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>resource</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>varT_Services</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

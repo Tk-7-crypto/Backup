@@ -1,0 +1,137 @@
+<aura:component controller="CNT_OWF_CreateReourseRequest" implements="force:lightningQuickActionWithoutHeader,force:hasRecordId,flexipage:availableForAllPageTypes,force:appHostable,lightning:actionOverride" access="global">
+    <!--Declare Attributes-->
+    <aura:attribute name="SubgroupMap" type="Map"/>
+    <aura:attribute name="calculatedHeight" type="String"/>
+    <aura:attribute name="rr" type="pse__Resource_Request__c" default="{'sobjectType':'pse__Resource_Request__c', 
+                                                                       'Is_Bid_Defense__c': 'false'}"/>
+    <aura:attribute name="GenreList" type="List" default="[]" description="Genre Picklist Values"/>    
+    <aura:attribute name="showList" type="boolean" default="true"/>    
+    <aura:attribute name="Resource_Request" type="pse__Resource_Request__c" default="{'sobjectType':'pse__Resource_Request__c', 
+                                                                                     'Is_Bid_Defense__c': 'false'}"/>
+    <aura:attribute name="selectedGenreList" type="List" default="[]" description="Selected Genre Picklist Values"/>
+    <aura:attribute name="MultipleSubgroupList" type="List" default="[]" description="Multiple Subgroup List"/>
+    <aura:attribute name="SelectedMultipleSubgroupList" type="List" default="[]" description="Selected Multiple Subgroups"/>
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="selectAllCountries" type="Boolean" default='false' />
+    <aura:attribute name="selectNoOfRRToBeCreated" type="Integer" default='1' />
+    <aura:attribute name="bidCreatedDate" type = "Date"/>
+    <aura:attribute name="bidDueDate" type = "Date"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>  
+    <aura:attribute name="Spinner" type="boolean" default="true"/>
+    <aura:attribute name="rrCreationModes" type="List" default="[
+                                                                {'label': 'Single Resource Request', 'value': 'singleRequest'},
+                                                                {'label': 'Multiple Resource Requests', 'value': 'multipleRequests'}
+                                                                ]"/>
+    <aura:attribute name="rrCreationMode" type="String" default="singleRequest"/>
+    <!--Component Start-->
+    
+    <aura:attribute name="bidHistoryRecord" type="object" />
+    <force:recordData aura:id="recordLoader" fields="Id, RecordTypeId,Bid_Due_Date__c,CreatedDate" recordId="{!v.recordId}" targetFields="{!v.bidHistoryRecord}" recordUpdated="{!c.doInit}" />																																																																							   
+    <div class="slds-scrollable_none slds-is-relative">
+        <aura:html tag="style">.toastMessage.forceActionsText{white-space : pre-line !important;}</aura:html>
+        <aura:if isTrue="{!v.Spinner}">
+            <div aura:id="spinnerId" class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large " role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-m-horizontal_xx-large slds-m-vertical_smal slds-is-relative">
+            <lightning:radioGroup aura:id="rrCreationModeRadio"
+                                  label="Select Resource Request Creation Mode"
+                                  options="{!v.rrCreationModes}"
+                                  value="{!v.rrCreationMode}"
+                                  type="button"
+                                  variant="label-stacked"
+                                  required="true" />
+        </div>
+        <aura:if isTrue="{!v.rrCreationMode == 'singleRequest'}">
+            <lightning:recordEditForm objectApiName="pse__Resource_Request__c" onload="{!c.handleOnload}" recordTypeId="{!v.Resource_Request.RecordTypeId}" aura:id="createAccountForm">
+                <div class="slds-m-horizontal_xx-large slds-m-vertical_small slds-is-relative" style= "padding-bottom: 2rem;">
+                    <div class="container-fluid">
+                        <div class="form-group">                    
+                            <lightning:inputField fieldName="SubGroup__c" onchange="{!c.handleSubgroupOnChange}" required="true" aura:id="subGrp"/>
+                        </div>
+                        <br/>
+                        <div class="slds-grid">
+                            <div id="isBidDefenseDiv" class="form-group slds-size_1-of-2">
+                                <lightning:input id="isBidDefense" onchange="{!c.isbiddefense}" name="isBidDefense" type="checkbox" label="Is Bid Defense"/>
+                            </div> 
+                            <div id="selectNoOfRRToBeCreated" class="form-group slds-size_1-of-2">
+                                <lightning:input class='input_numberOfRR' variant="label-hidden" id="selectNoOfRRToBeCreated" required='true' style="width:20%" value ="{!v.selectNoOfRRToBeCreated}" onblur ="{!c.validateRRToBeCreated}" name="SelectNoofRRtobecreated" messageWhenPatternMismatch="Please Provide a valid positive number" pattern="[0-9]+"></lightning:input>
+                                <span class="slds-form-element__addon" id="text_selectNoOfRRToBeCreated">Select No. of RR to be created</span>                                 
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="slds-grid">
+                            <div class="form-group slds-size_6-of-12">
+                                <lightning:inputField fieldName="Select_Analysis__c" aura:id="selectAnalysis" name="selectAnalysis" value ="{!v.rr.Select_Analysis__c}"/>
+                                <!--<lightning:helptext content="Applicable only for Analytics team."/>-->
+                    		</div>
+                            <aura:if isTrue="{!(not(v.rr.Is_Bid_Defense__c))}">
+                            <div class="form-group slds-size_3-of-12">
+                                <lightning:input type="date" name="startDate" label="Start Date" aura:id="startDate"/>
+                            </div>
+                            <div class="form-group slds-size_3-of-12 slds-m-left_xx-small">
+                                <lightning:input type="date" name="endDate" label="End Date" aura:id="endDate"/>
+                            </div>
+                            </aura:if>
+                       </div>
+                       <div class="slds-grid">
+                            <div class="form-group slds-size_12-of-12" id="dcalc" style="pointer-events:none;opacity:0.4;">
+                                <lightning:helptext content="To select all countries please select one country and press Ctrl Key + A."    />
+                                <lightning:dualListbox aura:id="selectCountries"
+                                                       name="Genre"
+                                                       label="Select Countries"
+                                                       sourceLabel="Available Countries"
+                                                       selectedLabel="Selected Countries"
+                                                       options="{!v.GenreList }"
+                                                       value="{!v.selectedGenreList}"
+                                                       onchange="{!c.handleGenreChange}"
+                                                       size="5"
+                                                       disableReordering ="true"/>
+                            </div>
+                        </div>
+                    </div>
+                    <br/>
+                    <div style="{!'height:' + v.calculatedHeight + ';position: fixed;left: 0;bottom: 0;text-align: center;width: 100%;z-index: 2;'}" >
+                        <div style = "background: rgba(236, 235, 234, 0.9);height: 3rem;margin-right: 1rem;padding-top: .5rem;">
+                            <lightning:button variant="brand" label="Submit" onclick="{!c.handleResourceRequest}"  />              
+                            <lightning:button variant="neutral" label="Cancel" onclick="{!c.cancelResourceRequest}" />
+                       </div>
+                    </div>
+                </div>
+                
+            </lightning:recordEditForm>   
+        </aura:if>
+        <aura:if isTrue="{!v.rrCreationMode == 'multipleRequests'}">
+            <div class="slds-m-horizontal_xx-large slds-m-vertical_small slds-is-relative">
+                <lightning:dualListbox aura:id="selectCountries"
+                                       name="Multiple Resource Requests"
+                                       label="Select Resource Request Subgroups"
+                                       sourceLabel="Available Subgroups"
+                                       selectedLabel="Selected Subgroups"
+                                       options="{!v.MultipleSubgroupList}"
+                                       value="{!v.SelectedMultipleSubgroupList}"
+                                       size="3"
+                                       disableReordering ="true"/>
+            </div>
+            <div class="slds-m-horizontal_xx-large slds-m-vertical_small slds-is-relative slds-grid">
+                <div class="form-group slds-size_1-of-2">
+                    <lightning:input class="slds-m-right_x-large" type="date" name="startDateForMultipleRR" label="Start Date" aura:id="startDateForMultipleRR"/>
+                </div>
+                
+                <div class="form-group slds-size_1-of-2">
+                    <lightning:input class="slds-m-left_x-large" type="date" name="endDateForMultipleRR" label="End Date" aura:id="endDateForMultipleRR"/>
+                </div>
+            </div>
+            <div style="text-align: center">
+                <lightning:button variant="brand" label="Submit" onclick="{!c.createMultipleAnalyticsRequests}"/>
+                <lightning:button variant="neutral" label="Cancel" onclick="{!c.cancelResourceRequest}" />              
+            </div>
+        </aura:if>
+    </div>
+    <!--Component End-->
+</aura:component>

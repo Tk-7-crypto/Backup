@@ -1,0 +1,430 @@
+<apex:page controller="CNT_CRM_AddNewBNF">
+    <script>
+    window.onload = function() {
+        var bnfPrefix = '{!bnfPrefix}';
+        var Opportunity = JSON.parse('{!opportunityJSONString}');
+        var vOpptyId = Opportunity.Id; 
+        var vOpptyName = ""; 
+        var vAccount = ""; 
+        var accountRecord = "{!accountRecord}"; 
+        var vAccountId = "{!accountRecord.Id}"; 
+        var vOpptyNumber = Opportunity.Opportunity_Number__c; 
+        var vPriorOpptyId = Opportunity.Parent_Opportunity__c; 
+        var vOpptyLeadSource = Opportunity.LeadSource; 
+        var vTherapyArea = Opportunity.Therapy_Area__c; 
+        var vTotalContractVal = Opportunity.Amount;
+        if(vTotalContractVal == undefined){
+            vTotalContractVal = '';
+        }
+        var vOpptyType = Opportunity.Type; 
+        var vOpptyCurrency = Opportunity.CurrencyIsoCode; 
+        var vProjectName = ""; 
+        var vLineDesc = ""; 
+        var vAddLine=""; 
+        var vAddContact=""; 
+        var url; 
+        var vContactURL=""; 
+        var vSalesOrg="{!currentUser.Sales_Org__c}"; 
+        var vSalesOrgId="{!currentUser.Sales_Org_Code__c}"; 
+        var vprofileName = "{!$Profile.Name}"; 
+        var vContractNo = ""; 
+        var vMasterContractNo = ""; 
+        var vContractTerm=""; 
+        var vContractType="";
+        var fieldApiToIdMapJSONString = '{!fieldApiToIdMapJSONString}';
+        var fieldApiToIdMap = JSON.parse(fieldApiToIdMapJSONString); 
+        var mIBNFRecord = "{!mibnfJSONString}";
+        if(mIBNFRecord != ''){
+            alert("A Multi Invoice BNF already exists for this opportunity. BNF cannot be created."); 
+            url = "/" + vOpptyId; 
+            window.parent.location.href = url; 
+            return false; 
+        }
+        if(Opportunity != null){
+            var vOppRecordTypeId = Opportunity.RecordTypeId; 
+            vOpptyName = encodeURIComponent(Opportunity.Name); 
+            vAccount = encodeURIComponent("{!accountRecord.Name}");  
+            //vAccount;
+            if(Opportunity.Contract__c != null && Opportunity.Contract__c != ''){
+                vContractNo = Opportunity.Contract__c; 
+            }
+            if(Opportunity.Master_Contract__c != null && Opportunity.Master_Contract__c != ''){
+                vMasterContractNo = Opportunity.Master_Contract__c; 
+            }
+            var vContractTerm= Opportunity.Contract_Term__c; 
+            var vContractType= Opportunity.Contract_Type__c; 
+            
+            var vContractEndDate = ""; 
+            if (Opportunity.Contract_End_Date__c != null){ 
+                vContractEndDate = Opportunity.Contract_End_Date__c; 
+            } 
+            var vContractStartDate= ""; 
+            if (Opportunity.Contract_Start_Date__c != null){ 
+                vContractStartDate = Opportunity.Contract_Start_Date__c; 
+            }
+            var rUser = "{!currentUser}"; 
+            var vLocaleSid = rUser.LocaleSidKey; 
+            // Get User Country 
+            var vUserCountry=rUser.User_Country__c; 
+            var vmonth = vContractEndDate.substring(5,7); 
+            var vday = vContractEndDate.substring(8,10); 
+            var vyear = vContractEndDate.substring(0,4);
+            var vmonth2 = vContractStartDate.substring(5,7); 
+            var vday2 = vContractStartDate.substring(8,10); 
+            var vyear2 = vContractStartDate.substring(0,4);
+            var vEndDate = ''; 
+            var vStartDate = ''; 
+            if (vLocaleSid == "ar" || vLocaleSid == "en_AU" || vLocaleSid == "en_CA" || vLocaleSid == "en_GB" || vLocaleSid == "en_IE" || vLocaleSid == "en_IE_EURO" || vLocaleSid == "en_NZ" || vLocaleSid == "es" || vLocaleSid == "es_AR" || vLocaleSid == "es_CL" || vLocaleSid == "es_MX" || vLocaleSid == "es_VE" || vLocaleSid == "fr" || vLocaleSid == "fr_BE" || vLocaleSid == "fr_FR" || vLocaleSid == "fr_FR_EURO" || vLocaleSid == "es_PY" || vLocaleSid == "es_UY" || 
+                vLocaleSid == "it" || vLocaleSid == "it_IT" || vLocaleSid == "nl_BE" || vLocaleSid == "pt_BR" ) { 
+                vEndDate = vday + '/' + vmonth + '/' + vyear; 
+                vStartDate = vday2 + '/'+ vmonth2 + '/'+ vyear2; 
+            }else if (vLocaleSid == "en_SG" || vLocaleSid == "en_ZA" || vLocaleSid == "ja_JP" ){ 
+                vEndDate = vyear + '/' + vmonth + '/' + vday; 
+                vStartDate = vyear2 + '/'+ vmonth2 + '/'+ vday2; 
+            }else if (vLocaleSid == "en_US" ){ 
+                vEndDate = vmonth + '/' + vday + '/' + vyear; 
+                vStartDate = vmonth2 + '/'+ vday2 + '/'+ vyear2; 
+            }else if (vLocaleSid == "zh" || vLocaleSid == "zh_CN" || vLocaleSid == "pl")  { 
+                vEndDate = vyear + '-' + vmonth + '-' + vday; 
+                vStartDate = vyear2 + '-'+ vmonth2 + '-'+ vday2; 
+            } else if (vLocaleSid == "ko_KR" || vLocaleSid == "ko"){ 
+                vEndDate = vyear + '. ' + vmonth + '. ' + vday; 
+                vStartDate = vyear2 + '. '+ vmonth2 + '. '+ vday2; 
+            }else if (vLocaleSid == "hu"){ 
+                vEndDate = vyear + '.' + vmonth + '.' + vday + '.'; 
+                vStartDate = vyear2 + '.'+ vmonth2 + '.'+ vday2 +'.'; 
+            }else if (vLocaleSid == "zh_HK"){ 
+                vEndDate = vyear + '?' + vmonth + '?' + vday + '?'; 
+                vStartDate = vyear2 + '?' + vmonth2 + '?' + vday2 + '?'; 
+            }else if (vLocaleSid == "de" || vLocaleSid == "de_AT_EURO" || vLocaleSid == "de_CH" || vLocaleSid == "de_DE" || vLocaleSid == "de_DE_EURO" || vLocaleSid == "no_NO" || vLocaleSid == "ru" || vLocaleSid == "tr" || vLocaleSid == "cs" || vLocaleSid == "cs_CZ" || vLocaleSid == "fi_FI" || vLocaleSid == "fi_FI_EURO" || vLocaleSid == "sk_SK" ){ 
+                vEndDate = vday + '.' + vmonth + '.' + vyear; 
+                vStartDate = vday2 + '.'+ vmonth2 + '.'+ vyear2; 
+            } else if (vLocaleSid == "da_DK" || vLocaleSid == "pt_PT" || vLocaleSid == "nl_NL" || vLocaleSid == "nl"){ 
+                vEndDate = vday + '-' + vmonth + '-' + vyear; 
+                vStartDate = vday2 + '-'+ vmonth2 + '-'+ vyear2; 
+            }else if (vLocaleSid == "sl_SI") { 
+                vEndDate = vday + '.' + vmonth + '.' + vyear.substring(2,4); 
+                vStartDate = vday2 + '.' + vmonth2 + '.' + vyear2.substring(2,4); 
+            }else if (vLocaleSid == "sv_SE")  { 
+                vEndDate = vyear + '-' + vmonth + '-' + vday; 
+                vStartDate = vyear2 + '-'+ vmonth2 + '-'+ vday2; 
+            }
+            var tempStart;
+            var tempEnd;
+            if (vEndDate != ""){ 
+                tempEnd = vEndDate; 
+            }
+            //SFDC End 
+            if (vStartDate != ""){ 
+                tempStart = vStartDate; 
+            }
+            if(tempStart == undefined){
+                tempStart = '';
+            }
+            if(tempEnd == undefined){
+                tempEnd = '';
+            }
+            var vPriorOpptyId = Opportunity.Parent_Opportunity__c; 
+            vProjectName =  "&" + fieldApiToIdMap["Project_Name__c"] + "="  + vOpptyName; 
+            <!--var rQuickOpptype = "{!qrQuickOppty}"; -->
+            var vquickRecordTypeId= '{!quickOppRecordTypeId}';
+            //Get the SAP and BRS Code from Account 
+            if(vAccount != null){ 
+                vAddLine = "&" + fieldApiToIdMap["BRS_Code__c"] + "=" + "{!accountRecord.BRS_Code__c}" + "&" + fieldApiToIdMap["SAP_PC_Code__c"] + "=" + "{!accountRecord.SAP_PC_Code__c}"; 
+            }
+            var sqrBoth = '{!shipToBillToContactRoleJSONString}';
+            if(sqrBoth != ''){  
+                var rBothOpptyContact = JSON.parse(sqrBoth); 
+                var vContactID; 
+                var vContactName; 
+                var vContactAccountID; 
+                var vContactAccountName; 
+                var vContactMailingStreet; 
+                var vContactMailingCity; 
+                var vContactMailingState; 
+                var vContactMailingPostalCode; 
+                var vContactMailingCountry; 
+                var vContactAccountNameLocal; 
+                var vContactNameLocal; 
+                
+                vContactID = isNull(rBothOpptyContact[0].ContactId); 
+                vContactName = isNull(rBothOpptyContact[0].Contact.Name);
+                if(rBothOpptyContact[0].Contact.AccountId != undefined) {
+                    vContactAccountID = isNull(rBothOpptyContact[0].Contact.AccountId); 
+                    vContactAccountName = isNull(rBothOpptyContact[0].Contact.Account.Name);
+                    vContactAccountNameLocal = checkSpecialCharacters(isNull(rBothOpptyContact[0].Contact.Account.NameLocal));
+                }
+                vContactMailingStreet = isNull(rBothOpptyContact[0].Contact.MailingStreet); 
+                vContactMailingCity = checkSpecialCharacters(isNull(rBothOpptyContact[0].Contact.MailingCity)); 
+                vContactMailingState = checkSpecialCharacters(isNull(rBothOpptyContact[0].Contact.MailingState)); 
+                vContactMailingPostalCode = isNull(rBothOpptyContact[0].Contact.MailingPostalCode); 
+                vContactMailingCountry = isNull(rBothOpptyContact[0].Contact.MailingCountry); 
+                 
+                vContactNameLocal = checkSpecialCharacters(isNull(rBothOpptyContact[0].Contact.LastNameLocal) +" "+isNull(rBothOpptyContact[0].Contact.FirstNameLocal)); 
+                if (IsJapanProfile(vprofileName)) { 
+                    //Billing 
+                    vContactURL += "&CF"+ fieldApiToIdMap["Contact__c"] +"_lkid=" + vContactID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "=" + vContactName; 
+                    
+                    vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "_lkid=" + vContactAccountID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "=" + vContactAccountName; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Address__c"] + "=" + vContactMailingStreet; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_City__c"] + "=" + vContactMailingCity; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_State_Province__c"] + "=" + vContactMailingState; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Zip_Postal_Code__c"] + "=" + vContactMailingPostalCode; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Country__c"] + "=" + vContactMailingCountry; 
+                    
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Company_Local__c"] + "=" + vContactAccountNameLocal; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Contact_Local__c"] + "=" + vContactNameLocal; 
+                    
+                }else { 
+                    //Billing 
+                    vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "_lkid=" + vContactID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Contact__c"] + "=" + vContactName; 
+                    
+                    vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "_lkid=" + vContactAccountID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "=" + vContactAccountName; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Address__c"] + "=" + vContactMailingStreet; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_City__c"] + "=" + vContactMailingCity; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_State_Province__c"] + "=" + vContactMailingState; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Zip_Postal_Code__c"] + "=" + vContactMailingPostalCode; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Country__c"] + "=" + vContactMailingCountry; 
+                    
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Company_Local__c"] + "=" + vContactAccountNameLocal; 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Contact_Local__c"] + "=" + vContactNameLocal; 
+                    
+                    
+                    //Shipping 
+                    vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "_lkid=" + vContactID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "=" + vContactName; 
+                    
+                    vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "_lkid=" + vContactAccountID; 
+                    vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "=" + vContactAccountName; 
+                    vContactURL += "&" + fieldApiToIdMap["Address__c"] + "=" + vContactMailingStreet; 
+                    vContactURL += "&" + fieldApiToIdMap["City__c"] + "=" + vContactMailingCity; 
+                    vContactURL += "&" + fieldApiToIdMap["State_Province__c"] + "=" + vContactMailingState; 
+                    vContactURL += "&" + fieldApiToIdMap["Zip_Postal_Code__c"] + "=" + vContactMailingPostalCode; 
+                    vContactURL += "&" + fieldApiToIdMap["Country__c"] + "=" + vContactMailingCountry; 
+                    
+                    vContactURL += "&" + fieldApiToIdMap["Ship_To_Company_Local__c"] + "=" + vContactAccountNameLocal; 
+                    vContactURL += "&" + fieldApiToIdMap["Ship_To_Contact_Local__c"] + "=" + vContactNameLocal; 
+                } 
+            }else{
+                var sqrST = '{!shipToContactRoleJSONString}';
+                if(sqrST != ''){ 
+                    var rOpptyContact = JSON.parse(sqrST);
+                    //Get Contact 
+                    vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Contact_Local__c"] + "_lkid=" + isNull(rOpptyContact[0].ContactId); 
+                    vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Contact_Local__c"] + "=" + isNull(rOpptyContact[0].Contact.Name); 
+                    
+                    //Billing
+                    if(rOpptyContact[0].Contact.AccountId != undefined) {
+                        vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "_lkid=" + isNull(rOpptyContact[0].Contact.AccountId); //EJ - add company name 8/19/2008 
+                        vContactURL += "&CF" + fieldApiToIdMap["Bill_To_Company__c"] + "=" + isNull(rOpptyContact[0].Contact.Account.Name); //EJ - add company name 8/19/2008 
+                        vContactURL += "&" + fieldApiToIdMap["Bill_To_Company_Local__c"] + "=" + checkSpecialCharacters(isNull(rOpptyContact[0].Contact.Account.NameLocal));
+                    }
+                    
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Address__c"] + "=" + checkSpecialCharacters(isNull(rOpptyContact[0].Contact.MailingStreet)); 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_City__c"] + "=" + checkSpecialCharacters(isNull(rOpptyContact[0].Contact.MailingCity)); 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_State_Province__c"] + "=" + checkSpecialCharacters(isNull(rOpptyContact[0].Contact.MailingState)); 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Zip_Postal_Code__c"] + "=" + isNull(rOpptyContact[0].Contact.MailingPostalCode); 
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Country__c"] + "=" + isNull(rOpptyContact[0].Contact.MailingCountry); 
+                    
+                    //Added Contact.Account.NameLocal, Contact.FirstNameLocal, Contact.LastNameLocal - 09SEP09 - Robert 
+                     
+                    vContactURL += "&" + fieldApiToIdMap["Bill_To_Contact_Local__c"] + "=" +checkSpecialCharacters(isNull(rOpptyContact[0].Contact.LastNameLocal) +" "+isNull(rOpptyContact[0].Contact.FirstNameLocal)); 
+                }
+                var sqrBT = '{!billToContactRoleJSONString}';
+                if(sqrBT != ''){ 
+                    var rOpptyContact = JSON.parse(sqrBT);
+                    ContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "_lkid=" + isNull(rSTOpptyContact[0].ContactId); 
+                    vContactURL += "&CF" + fieldApiToIdMap["Delivery_Contact__c"] + "=" + isNull(rSTOpptyContact[0].Contact.Name); 
+                    
+                    //Shipping
+                    if(rSTOpptyContact[0].Contact.AccountId != undefined) {
+                        vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "_lkid=" + isNull(rSTOpptyContact[0].Contact.AccountId); //EJ - add company name 8/19/2008 
+                        vContactURL += "&CF" + fieldApiToIdMap["Ship_To_Company__c"] + "=" + isNull(rSTOpptyContact[0].Contact.Account.Name); //EJ - add company name 8/19/2008 
+                        vContactURL += "&" + fieldApiToIdMap["Ship_To_Company_Local__c"] + "=" + checkSpecialCharacters(isNull(rSTOpptyContact[0].Contact.Account.NameLocal));
+                    }
+                    
+                    vContactURL += "&" + fieldApiToIdMap["Address__c"] + "=" + checkSpecialCharacters(isNull(rSTOpptyContact[0].Contact.MailingStreet)); 
+                    vContactURL += "&" + fieldApiToIdMap["City__c"] + "=" + checkSpecialCharacters(isNull(rSTOpptyContact[0].Contact.MailingCity)); 
+                    vContactURL += "&" + fieldApiToIdMap["State_Province__c"] + "=" + checkSpecialCharacters(isNull(rSTOpptyContact[0].Contact.MailingState)); 
+                    vContactURL += "&" + fieldApiToIdMap["Zip_Postal_Code__c"] + "=" + isNull(rSTOpptyContact[0].Contact.MailingPostalCode); 
+                    vContactURL += "&" + fieldApiToIdMap["Country__c"] + "=" + isNull(rSTOpptyContact[0].Contact.MailingCountry); 
+                    
+                    //Added Contact.Account.NameLocal, Contact.FirstNameLocal, Contact.LastNameLocal - 09SEP09 - Robert 
+                     
+                    vContactURL += "&" + fieldApiToIdMap["Ship_To_Contact_Local__c"] + "=" +checkSpecialCharacters(isNull(rSTOpptyContact[0].Contact.LastNameLocal) +" "+isNull(rSTOpptyContact[0].Contact.FirstNameLocal)); 
+                }
+            }
+            var sqrCS = '{!coverSheetContactRoleJSONString}'; 
+            if(sqrCS != ''){ 
+                var rCSOpptyContact = JSON.parse(sqrCS); 
+                //Get Contact 
+                vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Contact__c"] + "_lkid=" + isNull(rCSOpptyContact[0].ContactId); 
+                vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Contact__c"] + "=" + isNull(rCSOpptyContact[0].Contact.Name); 
+                //vContactURL += "&00NT0000000terj=" + isNull(rCSOpptyContact[0].Contact.Email); 
+                
+                //Populate Address of Cover Sheet Primary from the Oppty Contact
+                if(rCSOpptyContact[0].Contact.AccountId != undefined) {
+                    vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Company__c"] + "_lkid=" + isNull(rCSOpptyContact[0].Contact.AccountId); //EJ - add company name 8/19/2008 
+                    vContactURL += "&CF" + fieldApiToIdMap["Cover_Sheet_Company__c"] + "=" + isNull(rCSOpptyContact[0].Contact.Account.Name); //EJ - add company name 8/19/2008 
+                }
+                
+                vContactURL += "&" + fieldApiToIdMap["Cover_Sheet_Address__c"] + "=" + checkSpecialCharacters(isNull(rCSOpptyContact[0].Contact.MailingStreet)); 
+                vContactURL += "&" + fieldApiToIdMap["Cover_Sheet_City__c"] + "=" + checkSpecialCharacters(isNull(rCSOpptyContact[0].Contact.MailingCity)); 
+                vContactURL += "&" + fieldApiToIdMap["Cover_Sheet_State_Province__c"] + "=" + checkSpecialCharacters(isNull(rCSOpptyContact[0].Contact.MailingState)); 
+                vContactURL += "&" + fieldApiToIdMap["Cover_Sheet_Zip_Postal_Code__c"] + "=" + checkSpecialCharacters(isNull(rCSOpptyContact[0].Contact.MailingPostalCode)); 
+                vContactURL += "&" + fieldApiToIdMap["Cover_Sheet_Country__c"] + "=" + checkSpecialCharacters(isNull(rCSOpptyContact[0].Contact.MailingCountry)); 
+            }
+            var sqrCC = '{!carbonCopyContactRoleJSONString}';
+            if(sqrCC != ''){ 
+                var rCCOpptyContact = JSON.parse(sqrCC);
+                //Get Carbon Copy Contact 
+                vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Contact__c"] + "_lkid=" + isNull(rCCOpptyContact[0].ContactId); 
+                vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Contact__c"] + "=" + isNull(rCCOpptyContact[0].Contact.Name); 
+                //vContactURL += "&00NR0000000PVze=" + isNull(rCCOpptyContact[0].Contact.Email); 
+                
+                //Populate Address of Carbon Copy Primary from the Oppty Contact
+                if(rCCOpptyContact[0].Contact.AccountId != undefined) {
+                    vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Company__c"] + "_lkid=" + isNull(rCCOpptyContact[0].Contact.AccountId); //EJ - add company name 8/19/2008 
+                    vContactURL += "&CF" + fieldApiToIdMap["Carbon_Copy_Company__c"] + "=" + isNull(rCCOpptyContact[0].Contact.Account.Name); //EJ - add company name 8/19/2008 
+                }
+                
+                vContactURL += "&" + fieldApiToIdMap["Carbon_Copy_Address__c"] + "=" + checkSpecialCharacters(isNull(rCCOpptyContact[0].Contact.MailingStreet)); 
+                vContactURL += "&" + fieldApiToIdMap["Carbon_Copy_City__c"] + "=" + checkSpecialCharacters(isNull(rCCOpptyContact[0].Contact.MailingCity)); 
+                vContactURL += "&" + fieldApiToIdMap["Carbon_Copy_State_Province__c"] + "=" + checkSpecialCharacters(isNull(rCCOpptyContact[0].Contact.MailingState)); 
+                vContactURL += "&" + fieldApiToIdMap["Carbon_Copy_Zip_Postal_Code__c"] + "=" + isNull(rCCOpptyContact[0].Contact.MailingPostalCode); 
+                vContactURL += "&" + fieldApiToIdMap["Carbon_Copy_Country__c"] + "=" + isNull(rCCOpptyContact[0].Contact.MailingCountry); 
+            }
+            var sqr2nd = '{!secondCopyContactRoleJSONString}'; 
+            if(sqr2nd != ''){ 
+                var r2ndOpptyContact = JSON.parse(sqr2nd); 
+                vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Contact__c"] + "_lkid=" + isNull(r2ndOpptyContact[0].ContactId); 
+                vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Contact__c"] + "=" + isNull(r2ndOpptyContact[0].Contact.Name);
+                if(r2ndOpptyContact[0].Contact.AccountId != undefined) {
+                    vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Company__c"] + "_lkid=" + isNull(r2ndOpptyContact[0].Contact.AccountId); //EJ - add company name 8/19/2008 
+                    vContactURL += "&CF" + fieldApiToIdMap["X2nd_Copy_Company__c"] + "=" + isNull(r2ndOpptyContact[0].Contact.Account.Name); //EJ - add company name 8/19/2008 
+                }
+                
+                //email 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_Email__c"] + "=" + isNull(r2ndOpptyContact[0].Contact.Email); 
+                //Address 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_Address__c"] + "=" + checkSpecialCharacters(isNull(r2ndOpptyContact[0].Contact.MailingStreet)); 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_City__c"] + "=" + checkSpecialCharacters(isNull(r2ndOpptyContact[0].Contact.MailingCity)); 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_State_Province__c"] + "=" + checkSpecialCharacters(isNull(r2ndOpptyContact[0].Contact.MailingState)); 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_Zip_Postal_Code__c"] + "=" + isNull(r2ndOpptyContact[0].Contact.MailingPostalCode); 
+                vContactURL += "&" + fieldApiToIdMap["X2nd_Country__c"] + "=" + isNull(r2ndOpptyContact[0].Contact.MailingCountry); 
+            }
+            url = "/" + bnfPrefix + "/e?retURL=%2F" + vOpptyId + "&ic=1" ;
+            if(IsProfileNewBnf(vprofileName)) { 
+                url += "&saveURL=/apex/BNFOpptyList?id=" + vOpptyId +"%26ic=1";   
+            }
+            url += "&CF" + fieldApiToIdMap["Opportunity__c"] + "_lkid=" + vOpptyId; 
+            var PriorOppty = '{!priorOppJSONString}';
+            var vPriorOpptyNumber;
+            var vPriorOpptyName;
+            if(PriorOppty != '') { 
+                var rPriorOppty = JSON.parse(PriorOppty);
+                vPriorOpptyNumber = rPriorOppty[0].Opportunity_Number__c;  
+                vPriorOpptyName =encodeURIComponent(rPriorOppty[0].Name); 
+            }
+            // Set Opportunity Type as quick if it is Quick Opportunity 
+            if(vOppRecordTypeId==vquickRecordTypeId){
+                isQuickOpp=true; 
+            }else{
+                isQuickOpp=false; 
+            }
+            url += "&CF" + fieldApiToIdMap["Client__c"] + "_lkid=" + vAccountId + 
+                "&CF" + fieldApiToIdMap["Client__c"] + "=" + vAccount + 
+                "&" + fieldApiToIdMap["Opportunity_Number__c"] + "=" + vOpptyNumber + vAddLine + vContactURL + 
+                "&" + fieldApiToIdMap["Therapy_Area__c"] + "=" + vTherapyArea + 
+                "&" + fieldApiToIdMap["Contract_Value__c"] + "=" + vTotalContractVal + 
+                "&" + fieldApiToIdMap["Billing_Currency__c"] + "=" + vOpptyCurrency + 
+                "&" + fieldApiToIdMap["Contract_Type__c"] + "=" + vContractType+ 
+                "&" + fieldApiToIdMap["Contract_Term__c"] + "=" + vContractTerm+ 
+                "&" + fieldApiToIdMap["Contract_Start_Date__c"] + "=" + tempStart+ 
+                "&" + fieldApiToIdMap["Contract_End_Date__c"] + "=" + tempEnd+ 
+                "&" + fieldApiToIdMap["SAP_Contract__c"] + "=" + vContractNo+ 
+                "&" + fieldApiToIdMap["SAP_Master_Contract__c"] + "=" + vMasterContractNo+ 
+                "&" + fieldApiToIdMap["Original_Prior_Opportunity_Id__c"] + "=" + vPriorOpptyNumber+ 
+                "&CF" + fieldApiToIdMap["Opportunity__c"] + "=" + vOpptyName + vProjectName+ 
+                "&CF" + fieldApiToIdMap["Original_Prior_Opportunity__c"] + "_lkid=" +vPriorOpptyId; 
+            //Quick" + fieldApiToIdMap["BRS_Code__c"] + " Opp 
+            //Adding Default Value in case of Quick Opportunity 
+            vDefaultdata="Default Material Master Data"; 
+            vInvoiceHeaderText="Rechnungstext:Lieferdatum:"; 
+            vFairValue="Stand Alone"; 
+            if(isQuickOpp){ 
+                url += encodeURI("&" + fieldApiToIdMap["Fair_Value_Type__c"] + "=" + vFairValue + "&" + fieldApiToIdMap["Invoice_Default_Day__c"] + "=" + vDefaultdata); 
+                //Check for User Locale and set Header text if Germany 
+                if(vUserCountry=='Germany'){ 
+                    url += encodeURI("&" + fieldApiToIdMap["Invoice_Header_Text__c"] + "=" + vInvoiceHeaderText); 
+                }
+            } 
+            //SAP Org & Code 
+            url += "&" + fieldApiToIdMap["IMS_Sales_Org__c"] + "=" + encodeURIComponent(vSalesOrg); 
+        }else{
+            alert("Error Retrieving Opportunity Information"); 
+            url = "/" + vOpptyId; 
+        }
+        window.parent.location.href = url; 
+    };
+    function trimCurr(vAmount){
+        var vAmountStr = vAmount.toString();
+        var Amount = "0.00"; 
+        if(vAmountStr != "" && vAmountStr != null){ 
+            var mysplitarray = vAmountStr.split(" "); 
+            Amount = mysplitarray[0]; 
+        } 
+        return Amount; 
+    } 
+    function isNull(sVal){ 
+        var sReturnNull; 
+        if(sVal == null){ 
+            sReturnNull=""; 
+        }else{ 
+            sReturnNull = sVal; 
+        } 
+        return sReturnNull;
+    } 
+    // Build our new url with all the default values 
+    function checkSpecialCharacters(StringVal){
+        var sOldString = ""; 
+        var sCorrectedString = ""; 
+        var sCorrectedString2 = ""; 
+        var sChar = ""; 
+        for (var i=0; i< StringVal.length; i++) { 
+            sChar = StringVal.charAt(i); 
+            if (sChar == "%")  { 
+                sCorrectedString = sCorrectedString + "%25"; 
+            } else if (sChar == "&") { 
+                sCorrectedString = sCorrectedString + "%26"; 
+            }else if (sChar == "#"){ 
+                sCorrectedString = sCorrectedString + "%23"; 
+            }else if (sChar == "\""){ 
+                sCorrectedString = sCorrectedString + "%22"; 
+            } else if (sChar == "\n"){ 
+                sCorrectedString = sCorrectedString + "%0A"; 
+            }else if (sChar == "\r"){ 
+                sCorrectedString = sCorrectedString + "%0D"; 
+            }else{ 
+                sCorrectedString = sCorrectedString + sChar; 
+            } 
+        } 
+        return sCorrectedString; 
+    } 
+    function IsProfileNewBnf(profileName) {
+        return true; 
+    } 
+    function IsJapanProfile(profileName)  { 
+        var isJapan = false; 
+        if(profileName.match("Japan") != null) 
+        { 
+            isJapan= true; 
+        } 
+        return isJapan; 
+    } 
+    </script>
+</apex:page>

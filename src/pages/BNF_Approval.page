@@ -1,0 +1,289 @@
+<apex:page standardController="BNF2__c" id="pg" extensions="BNF_Approval_Extension" action="{!Init}">
+
+<c:JQueryBlockUI />
+<style>
+.itemval{
+border:1px solid #F8F8F8;
+list-style-type:none;
+height: 32px;
+cursor:pointer;
+width: 193px;
+
+}
+.ckbox
+{
+float:left;
+}
+.itemtext
+{
+float:left;
+width: 170px;
+height: 32px;
+}
+.itemcls
+{
+float: left;
+height:auto;
+}
+</style>
+<apex:form id="BnfApprovalForm">
+<apex:pageMessages id="ErrorMessages" escape="false"></apex:pageMessages>
+<apex:outputField value="{!BNF2__c.Name}" rendered="false" />
+<apex:outputField value="{!BNF2__c.RecordTypeId}" rendered="false" />
+<apex:outputField value="{!BNF2__c.First_RA__c}" rendered="false" />
+<apex:outputField value="{!BNF2__c.Revenue_Analyst__r.Is_SAP_Revenue_Analyst__c}" rendered="false" />
+
+<apex:outputField value="{!BNF2__c.Revenue_Analyst__r.RA_Sales_Orgs__c}" rendered="false" />
+<apex:outputField value="{!BNF2__c.IMS_Sales_org_code__c}" rendered="false" />
+
+
+
+
+  <script>
+    function doSomething() {
+        //actionColumn
+        var colElements = getElementsByClassName( 'actionColumn', document.body );
+        for ( var i = 0; i < colElements.length; i++ ) {
+            var aryClassElements = getElementsByClassName( 'actionLink', colElements[i] );
+            //alert(aryClassElements);
+            for ( var i = 0; i < aryClassElements.length; i++ ) {
+                //alert(aryClassElements[i]);
+                aryClassElements[i].style.display = 'none';
+            }
+        }
+    }
+    
+    function hideLink() {
+        
+        var historyElem = document.getElementById('pg:history');    
+        var btnElem = historyElem.getElementsByTagName('input');
+        for ( var i = 0; i < btnElem.length; i++ ) { 
+            btnElem[i].style.display = 'none';
+        }
+        var aryClassElements = getElementsByClassName( 'actionLink', historyElem );
+        for ( var i = 0; i < aryClassElements.length; i++ ) {
+            var elemTitle = aryClassElements[i].getAttribute('title') ;
+            if(elemTitle  && elemTitle != '')
+                aryClassElements[i].style.display = 'none';
+            /*if(elemTitle  && elemTitle != ''){
+                aryClassElements[i].href='/apex/BNF_Approval?id=' + '{!BNF2__c.id}';
+            }//*/
+        }
+        
+    }
+
+    function getElementsByClassName( strClassName, obj ) {
+        var ar = arguments[2] || new Array();
+        var re = new RegExp("\\b" + strClassName + "\\b", "g");
+    
+        if ( re.test(obj.className) ) {
+            ar.push( obj );
+        }
+        for ( var i = 0; i < obj.childNodes.length; i++ )
+            getElementsByClassName( strClassName, obj.childNodes[i], ar );
+        
+        return ar;
+    }
+    //doSomething();
+    // added by himanshu parashar: 5 nov 2012
+
+    $(document).ready(function() {
+          $('.itemtext').live('click',function(){
+                var cat =  $(this).prev(".ckbox");
+                if(cat.is(':checked')) {
+                    cat.attr('checked', false);
+                    return false;
+                }
+                else
+                {
+                    cat.attr('checked','checked');
+                }
+
+
+        });
+        
+    });
+
+    function borderit(which,color){
+        //if IE 4+ or NS 6+
+        if (document.all||document.getElementById){
+        var val=$(which).children(".itemtext").text();
+        if(val.length>26)
+        {
+            $(which).css('height','32px');
+        }
+        which.style.borderColor=color;
+        }
+    }
+    
+    function Savejs()
+    {
+        
+        var rejectionSelected = false;
+        var approvalSelected = false;
+        var rejectionValues = '';
+        var approvalValues = '';
+        
+        
+        // Loop through rejection reason checkboxes
+        $(".ckbox-rejection").each(function() {
+            if ($(this).is(':checked')) {
+                rejectionValues += $(this).next().html() + ';';
+                rejectionSelected = true;
+            }
+        });
+        
+        // Loop through missing approval checkboxes
+        $(".ckbox-approval").each(function() {
+            if ($(this).is(':checked')) {
+                approvalValues += $(this).next().html() + ';';
+                approvalSelected = true;
+            }
+        });
+        
+        // If neither group has a selection, show alert and prevent save
+        if (!rejectionSelected && !approvalSelected) {
+            alert('Please select either Rejection Reason or Missing Approval.');
+            return false;
+        }
+        
+        if (rejectionSelected) {
+            rejectionValues = rejectionValues.slice(0, -1);
+            document.getElementById('pg:BnfApprovalForm:Selectedreason').value = rejectionValues;
+        }
+        
+        if (approvalSelected) {
+            approvalValues = approvalValues.slice(0, -1);
+            document.getElementById('pg:BnfApprovalForm:SelectedMissingapproval').value = approvalValues;
+        }
+        
+        // Call save function
+        saveaction();
+        return false;
+    }
+
+  </script>
+  
+<apex:sectionHeader title="Approval Request" description="" subtitle="Purchase/BNF: {!BNF2__c.Name}" /> 
+
+<apex:inputHidden value="{!SelectedRejectionReason}" id="Selectedreason" />
+<apex:inputHidden value="{!SelectedMissingApproval}" id="SelectedMissingapproval" /> 
+
+<apex:pageBlock title="Approve/Reject Approval Request">
+<apex:pageBlockSection collapsible="false" title="" columns="1" showHeader="false" id="BnfRejectionPBS" rendered="{!AllowedToApprove}">  
+
+<apex:outputField value="{!BNF2__c.Name}"/>
+
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="Comments"></apex:outputLabel>
+<apex:inputTextarea value="{!ApproverComments}" rows="5" cols="120" />
+</apex:pageBlockSectionItem>
+
+
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="Rejection Reasons"></apex:outputLabel>
+<apex:outputPanel layout="block" style="margin-bottom: 264px;margin-left: -64px;margin-top: 8px;">
+<!-- 
+<apex:selectList value="{!RejectionReason}" styleClass="{!classRejectionReason}" multiselect="true" size="3">
+    <apex:selectOptions value="{!RejectionReasons}"></apex:selectOptions>
+</apex:selectList> 
+ -->
+<apex:repeat var="Rejections" value="{!RejectionReasons}">
+       <ul class="itemcls">
+        <apex:repeat var="rj" value="{!Rejections}">
+        
+         <li class="itemval" onMouseover="borderit(this,'black')" onMouseout="borderit(this,'white')">
+            <apex:inputCheckbox styleClass="ckbox-rejection" rendered="{!if(rj.value!='',true,false)}" value="{!rj.value}">
+            </apex:inputCheckbox>
+            <span class="itemtext">{!rj.value}</span>
+         </li>
+         </apex:repeat>
+       </ul>
+</apex:repeat>
+
+
+<apex:outputText value="{!ErrorMessage}" styleClass="errorMsg" rendered="{!LEN(ErrorMessage)>0}"/>
+</apex:outputPanel>
+</apex:pageBlockSectionItem>
+    
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="Missing Approvals"></apex:outputLabel>
+<apex:outputPanel layout="block" style="margin-bottom: 264px;margin-left: -64px;margin-top: 8px;">
+<!-- 
+<apex:selectList value="{!RejectionReason}" styleClass="{!classRejectionReason}" multiselect="true" size="3">
+    <apex:selectOptions value="{!RejectionReasons}"></apex:selectOptions>
+</apex:selectList> 
+ -->
+<apex:repeat var="missingItem" value="{!MissingApprovals}">
+       <ul class="itemcls">
+        <apex:repeat var="mA" value="{!missingItem}">
+        
+         <li class="itemval" onMouseover="borderit(this,'black')" onMouseout="borderit(this,'white')">
+            <apex:inputCheckbox styleClass="ckbox-approval" rendered="{!if(mA.value!='',true,false)}" value="{!mA.value}">
+            </apex:inputCheckbox>
+            <span class="itemtext">{!mA.value}</span>
+         </li>
+         </apex:repeat>
+       </ul>
+</apex:repeat>
+
+
+<apex:outputText value="{!ErrorMessage}" styleClass="errorMsg" rendered="{!LEN(ErrorMessage)>0}"/>
+</apex:outputPanel>
+</apex:pageBlockSectionItem>
+
+    <apex:pageBlockSectionItem rendered="{!BNF.Revenue_Analyst__r.Is_SAP_Revenue_Analyst__c == false || (BNF.Revenue_Analyst__r.Is_SAP_Revenue_Analyst__c == TRUE && NOT(CONTAINS(BNF.Revenue_Analyst__r.RA_Sales_Orgs__c,BNF.IMS_Sales_org_code__c)))}">
+    <apex:outputLabel for="SAP_RA" value="SAP Revenue Analyst"></apex:outputLabel>
+    <apex:outputPanel >
+    <apex:inputField id="SAP_RA" value="{!BNF.Revenue_Analyst__c}" styleClass="{!classRevenueAnalyst}"/>
+    <apex:outputText value="{!ErrorMessage2}" styleClass="errorMsg" rendered="{!LEN(ErrorMessage2)>0}"/>
+    </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+
+
+
+
+
+
+
+
+<apex:pageBlockSectionItem >
+<apex:outputLabel ></apex:outputLabel>
+<apex:outputPanel >
+
+<!-- Added By: Himanshu Parashar :: 5 nov 2012 :: Rejection reason changes -->
+<apex:actionFunction name="saveaction" action="{!Reject}" status="RetrieveAddressContactsStatus" reRender="BnfRejectionPBS,ErrorMessages" immediate="false"/>
+
+<apex:actionStatus id="RetrieveAddressContactsStatus" startText="Processing..." stopText="">         
+    <apex:facet name="stop">
+        <apex:outputPanel >
+
+             <apex:commandButton value="Approve" action="{!Approve}" status="RetrieveAddressContactsStatus" reRender="BnfRejectionPBS,ErrorMessages"/>
+
+
+             <apex:commandButton value="Reject"  onClick="return Savejs();"/>
+           
+             <apex:commandButton value="Cancel" action="{!Cancel}" immediate="true" status="RetrieveAddressContactsStatus"/>    
+         </apex:outputPanel>
+     </apex:facet>
+     <apex:facet name="start"> 
+         <apex:outputPanel > 
+             Processing...<img src="/apexpages/devmode/img/saveStatus.gif" />
+         </apex:outputPanel>                          
+             
+     </apex:facet>  
+       
+</apex:actionStatus>
+
+
+
+</apex:outputPanel>
+</apex:pageBlockSectionItem>
+</apex:pageBlockSection>
+</apex:pageBlock>
+      </apex:form>
+<apex:relatedList list="ProcessSteps" id="history"/>
+<script>
+    hideLink();
+</script>
+</apex:page>

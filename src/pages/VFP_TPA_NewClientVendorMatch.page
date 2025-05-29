@@ -1,0 +1,915 @@
+<apex:page controller="CNT_TPA_NewClientVendorMatch" sideBar="false" showHeader="false" standardStylesheets="false" lightningStylesheets="true">
+    <apex:slds />
+    <apex:includeLightning />
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" /> 
+            <!-- stylesheet for new style tab -->
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}" />
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->  
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script><!-- Added by C.P.Pandey under CR-7565 -->
+            
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- Added by C.P.Pandey Custom popup start -->
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" type="text/css" />
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript" />
+    <style>
+        .labelText {
+            color:#4a4a56;
+            font-weight:bold;
+        }
+        .headingText {
+            color: #000;
+            font-size: 1.3em;
+        }
+        /**** Error Message Style Start ****/
+        .message .messageText h4
+        {
+            font-size:13px;
+            margin-left: 30px;
+            margin-top: 0px;
+        }
+        
+        .message ul li
+        {
+            list-style:disc;
+        }
+        
+        .message ul
+        {                
+            margin-left: 40px;
+            margin-top: 20px;
+        }
+        .successMsg
+        {
+            font-size:13px;
+            margin-left: 30px;
+            margin-top: 0px;
+        
+        }
+       .textbox { 
+            background: white; 
+            border: 1px solid #DDD; 
+            border-radius: 5px; 
+            box-shadow: 0 0 5px #DDD inset; 
+            color: #666;
+            padding: 5px;
+            outline: none; 
+            height:25px; 
+        }
+        .tags {
+          list-style: none;
+          margin: 0;
+          overflow: hidden; 
+          padding: 0;
+        }
+        .tags li {
+          float: left; 
+        }
+        .tag {
+          background: #eee;
+          border-radius: 3px 3px 3px 3px;
+          color: black;
+          display: inline-block;
+          height: 26px;
+          line-height: 26px;
+          padding: 0 10px 0 10px;
+          position: relative;
+          margin: 5px 5px 5px 5px;
+          text-decoration: none;
+          -webkit-transition: color 0.2s;
+          white-space: nowrap; 
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .tag::before {
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: inset 0 1px rgba(0, 0, 0, 0.25);
+          content: '';
+          height: 6px;
+          left: 10px;
+          position: absolute;
+          top: 10px;
+        }
+        .tag:hover {
+          background-color: black;
+          color: white;
+        }
+        body .detailList .dataCol input[type="text"], body .detailList .dataCol input[type="date"], body .detailList .dataCol input[type="password"], body .detailList .dataCol textarea, body .detailList .dataCol select, .slds-vf-scope .detailList .dataCol input[type="text"], .slds-vf-scope .detailList .dataCol input[type="date"], .slds-vf-scope .detailList .dataCol input[type="password"], .slds-vf-scope .detailList .dataCol textarea, .slds-vf-scope .detailList .dataCol select {
+            min-width: 0;
+        }
+        .slds-scope .slds-badge{
+            vertical-align: unset;
+        }
+        /**** Error Message Style End ****/
+    </style>       
+    <script type="text/javascript">
+        
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMAFeeMasterRulesConfig', []);
+        
+             
+        myapp.filter('split', function() {
+            return function(input, splitChar, splitIndex) {
+                // do some bounds checking here to ensure it has that index
+                return input.split(splitChar)[splitIndex];
+            }
+        });
+            
+        myapp.filter('filteredRecord', function() {
+            
+            return function (input) {
+                var output = [];
+                if (TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList != '') {
+                    angular.forEach(compList, function (item) {
+                        
+                        angular.forEach(input, function (item2) {
+                            if (item.id > item2.id) {
+                                output.push(item2);
+                            }
+                         });  
+                    });
+                }
+                return output;
+            } 
+        });
+        
+        
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$log', function ($scope, $filter, $log) 
+        {
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.TPA_AMA_Client_Vendor_Match__c = {};
+            $scope.TPA_AMA_Client_Vendor_Match__c.id = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.Client_Name__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.Truncated_Name__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Id__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Name__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.TPA_Account_Address__c = '';
+            $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList = [];
+            $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList = [];
+            $scope.TPA_AMA_Client_Vendor_Match__c.ToUpdateInDatabase = false;
+            $scope.isMultipeMappingUpdateAcknowledged = false;
+            $scope.errorMsg = '';
+            $scope.successMsg = '';
+            $scope.showerrorMsg = false;
+            $scope.showsuccessMsg = false;
+            $scope.infoMsg = '';
+            $scope.isBatchProcessing = '{!isBatchProcessing}';
+            
+            $scope.updateRecords = [];
+            $scope.suggestedAccountsList = [];
+            
+            $scope.showUpdateRecordsButton = false;
+           
+            
+            //Variables for Pagination
+            $scope.size = 10;
+            $scope.counter = 0;
+            $scope.pageNumber;
+            $scope.totalPages;
+            $scope.hasPrevious;
+            $scope.hasNext;
+            
+            $scope.showUpdateButton = false;
+            $scope.showSaveButton = true;
+            
+            $scope.getAllSuggestedAccounts = function() {
+                if($scope.suggestedAccountsList == null || $scope.suggestedAccountsList.length == 0) {
+                    $scope.suggestedAccountsList = [];
+                    for(var i = 0; i < $scope.suggestedAccounts.length; i++ ) {
+                        var Account = {};
+                        Account.id = $scope.suggestedAccounts[i].Id;
+                        Account.name = $scope.suggestedAccounts[i].Name;
+                        Account.isAMAAccount = $scope.suggestedAccounts[i].Is_AMA_Account__c;
+                        Account.isTPAAccount = $scope.suggestedAccounts[i].Is_TPA_Account__c;
+                        $scope.suggestedAccountsList.push(Account); 
+                    }
+                }
+             }
+            
+            $scope.getContracts = function() {
+                if($scope.amaNewClientsVendors == null || $scope.amaNewClientsVendors.length == 0) {
+                    $scope.amaNewClientsVendors = [];
+                    for(var i = $scope.counter; i < $scope.amaNewClientsVendorsList.length; i++ ) {
+                        var TPA_AMA_Client_Vendor_Match__c = {};
+                        TPA_AMA_Client_Vendor_Match__c.id = $scope.amaNewClientsVendorsList[i].id;
+                        TPA_AMA_Client_Vendor_Match__c.Client_Name__c = $scope.amaNewClientsVendorsList[i].Client_Name__c;
+                        TPA_AMA_Client_Vendor_Match__c.Truncated_Name__c = $scope.amaNewClientsVendorsList[i].Truncated_Name__c;
+                        TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Id__c = ($scope.amaNewClientsVendorsList[i].Mapped_Account_Id__c == null || $scope.amaNewClientsVendorsList[i].Mapped_Account_Id__c == '') ? '' : $scope.amaNewClientsVendorsList[i].Mapped_Account_Id__c;
+                        TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Name__c = ($scope.amaNewClientsVendorsList[i].Mapped_Account_Name__c == null || $scope.amaNewClientsVendorsList[i].Mapped_Account_Name__c == '') ? '' : $scope.amaNewClientsVendorsList[i].Mapped_Account_Name__c;
+                        TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c = ($scope.amaNewClientsVendorsList[i].IMS_Client_Names__c == null || $scope.amaNewClientsVendorsList[i].IMS_Client_Names__c == '') ? '' : $scope.amaNewClientsVendorsList[i].IMS_Client_Names__c;
+                        TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList = []; 
+                        var IMSClientList = ($scope.amaNewClientsVendorsList[i].IMS_Client_Names__c == '' ? $scope.amaNewClientsVendorsList[i].IMS_Client_Names__c : TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c.split(";"));
+                        if(IMSClientList != '') {
+                            for(var j=0; j < IMSClientList.length; j++) {
+                                var acc = {};
+                                acc.id = IMSClientList[j].split('"')[1];
+                                acc.name = IMSClientList[j].split('"')[0];
+                                TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList.push(acc);
+                            }
+                        }
+                        TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c = ($scope.amaNewClientsVendorsList[i].IMS_Total_Clients__c == null || $scope.amaNewClientsVendorsList[i].IMS_Total_Clients__c == '') ? '' : $scope.amaNewClientsVendorsList[i].IMS_Total_Clients__c;
+                        TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList = [];
+                        var totalClientList = ($scope.amaNewClientsVendorsList[i].IMS_Total_Clients__c == '' ? $scope.amaNewClientsVendorsList[i].IMS_Total_Clients__c : TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c.split(";"));
+                        if(totalClientList != '') {
+                            for(var k=0; k < totalClientList.length; k++) {
+                                var acc = {};
+                                acc.id = totalClientList[k].split('"')[1];
+                                acc.name = totalClientList[k].split('"')[0];
+                                TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList.push(acc);
+                            }
+                        }
+                        TPA_AMA_Client_Vendor_Match__c.TPA_Account_Address__c = '';
+                        TPA_AMA_Client_Vendor_Match__c.ToUpdateInDatabase = false;
+                        
+                        $scope.amaNewClientsVendors.push(angular.copy(TPA_AMA_Client_Vendor_Match__c));
+                    }
+                }
+                
+                $scope.pageNumber = Math.floor($scope.counter / $scope.size) + 1;
+                if ($scope.amaNewClientsVendorsList.length % $scope.size > 0) {
+                  $scope.totalPages = Math.floor($scope.amaNewClientsVendorsList.length / $scope.size) + 1;
+                } else {
+                  $scope.totalPages = Math.floor($scope.amaNewClientsVendorsList.length / $scope.size);
+                }
+                //To find if it has previous elements
+                if($scope.counter > 0) {
+                    $scope.hasPrevious = true;
+                } else {
+                    $scope.hasPrevious = false;
+                }
+                //To find if it has next elements
+                if($scope.counter+$scope.size < $scope.amaNewClientsVendorsList.length) {
+                    $scope.hasNext = true;
+                } else {
+                    $scope.hasNext = false;
+                }
+                
+            }
+            
+            $scope.changeListSize = function() {
+                $scope.counter = 0;
+                $scope.size = parseInt($scope.size);
+                $scope.getContracts();
+            }
+            
+            $scope.first = function() {
+                $scope.counter = 0;
+                $scope.getContracts();
+            }
+            
+            $scope.last = function() {
+                if($scope.amaNewClientsVendorsList.length % $scope.size > 0) { 
+                    $scope.counter = $scope.amaNewClientsVendorsList.length-($scope.amaNewClientsVendorsList.length % $scope.size);
+                } else {
+                    $scope.counter = $scope.amaNewClientsVendorsList.length - $scope.size;
+                }
+                $scope.getContracts();
+            }
+            
+            $scope.next = function() {
+                $scope.counter = $scope.counter+$scope.size;
+                $scope.getContracts();
+            }
+            
+            $scope.previous = function() {
+                $scope.counter = $scope.counter-$scope.size;
+                $scope.getContracts();
+            }
+    
+            $scope.emptyFields = function() {
+                $scope.TPA_AMA_Client_Vendor_Match__c.Client_Name__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.Truncated_Name__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Id__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Name__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.TPA_Account_Address__c = '';
+                $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList = [];
+                $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList = [];
+                $scope.TPA_AMA_Client_Vendor_Match__c.ToUpdateInDatabase = false;
+                $('[id$="accLookup"]').val('');
+                $('[id$="accLookup_lkid"]').val('');
+                $scope.errorMsg = '';
+                $scope.successMsg = '';
+                $scope.showerrorMsg = false;
+                $scope.showsuccessMsg = false;
+            }
+            
+           
+            
+            //Function to show existing Rules when year get changed
+            $scope.showExistingRules = function () {
+                //Populating Existing Rules for current year
+                showLoading();
+                $scope.amaNewClientsVendorsList = JSON.parse('{!JSENCODE(amaNewClientsAndVendorsLists)}');
+                $scope.suggestedAccounts =  JSON.parse('{!JSENCODE(serializedSuggestedAccounts)}'); 
+                
+                $scope.getContracts();
+                $scope.getAllSuggestedAccounts();
+                $scope.$log.info('$scope.infoMsg = ' +$scope.isBatchProcessing); 
+                if(($scope.isBatchProcessing == 'true' || $scope.isBatchProcessing == true) && ($scope.amaNewClientsVendorsList == null || $scope.amaNewClientsVendorsList == '')) {
+                    $scope.infoMsg = 'Please wait, system is identifying new Clients and Vendors.';
+                    $scope.$log.info('$scope.infoMsg = ' +$scope.infoMsg); 
+                
+                } else if($scope.amaNewClientsVendorsList == '' || $scope.amaNewClientsVendorsList == null) {
+                    $scope.infoMsg = 'Sorry, we do not have any new clients and vendors in the system.';
+                    $scope.$log.info('$scope.infoMsg = ' +$scope.infoMsg);
+                } else {
+                    $scope.infoMsg = '';
+                }
+                $scope.$apply();
+                hideLoading();
+            }
+           
+            
+            $scope.editRule = function(index) {
+                $scope.showUpdateButton = true;
+                $scope.showSaveButton = false;
+                $scope.TPA_AMA_Client_Vendor_Match__c = angular.copy($scope.amaNewClientsVendors[index]);
+                $('[id$="accLookup"]').val('');
+                $('[id$="accLookup_lkid"]').val('');
+                $scope.errorMsg = '';
+                $scope.successMsg = '';
+            }
+            
+            $scope.isSuggestedAccountForRecord = function() {
+                 
+                return function(data)
+                { 
+                   for(var i = 0; i < $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList.length; i++ ) {
+                        if($scope.TPA_AMA_Client_Vendor_Match__c.SuggestedTotalClientList[i].id == data.id) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                
+            }
+            
+            $scope.isSuggestedIMSAccForRecord = function() {
+                 
+                return function(data)
+                {
+                   for(var i = 0; i < $scope.TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList.length; i++ ) {
+                       if($scope.TPA_AMA_Client_Vendor_Match__c.SuggestedIMSClientList[i].id == data.id) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                
+            }
+            
+            $scope.showUpdatenewButton = function(index,value) {                
+                if(value == true)
+                {
+                    $scope.updateRecords.push(angular.copy($scope.amaNewClientsVendors[index]));
+                }
+                else if(value == false)
+                {    
+                    var itemIndex = $scope.updateRecords.indexOf($scope.amaNewClientsVendors[index]);
+                    $scope.updateRecords.splice(itemIndex, 1);     
+                }
+                
+                if($scope.updateRecords.length > 0){
+                    $scope.showUpdateRecordsButton = true;
+                } else {
+                    $scope.showUpdateRecordsButton = false;
+                }
+                if($scope.updateRecords.length > 1 && !$scope.isMultipeMappingUpdateAcknowledged) {
+                    $scope.popupConfirm('You have selected more than one record to map. Please click Yes to continue.',
+                        function() {
+                            $scope.isMultipeMappingUpdateAcknowledged = true;
+                        },
+                        function() {
+                            angular.forEach($scope.amaNewClientsVendors, function(obj) {
+                                obj.ToUpdateInDatabase = false;
+                            });
+                            $scope.updateRecords = [];
+                        },
+                        true,
+                        false);
+                }
+                $scope.emptyFields();
+            }
+            
+            $scope.saveMapping = function() {
+            
+                $scope.searchMapObj = {};
+                $scope.searchMapObj.AMA_Account_Search_Text__c = $scope.TPA_AMA_Client_Vendor_Match__c.Client_Name__c ;
+                $scope.searchMapObj.TPA_Account_Address__c = $('[id$="accLookup_lkid"]').val();
+                if($scope.searchMapObj.AMA_Account_Search_Text__c == null || $scope.searchMapObj.AMA_Account_Search_Text__c == '')
+                {
+                     $scope.errorMsg = 'Please provide the Client Name to save the mapping.';
+                     $scope.showerrorMsg = true;
+                     $scope.showsuccessMsg = false;
+                     return false;
+                }
+                showLoading();
+                CNT_TPA_NewClientVendorMatch.saveMapping(JSON.stringify($scope.searchMapObj), function(result, event){
+                      
+                    if(event.type == 'exception'){
+                        $scope.$log.info('Exception: ' + event.message);
+                                                            
+                    }
+                    // added by supriya johari under Issue-11508 starts
+                    else if(result != null && result == 'duplicate'){
+                        $scope.errorMsg = 'Sorry, client or vendor name exists in crosswalk already.';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    else if(result != null && result == 'alreadyExistAsNewClient'){
+                        $scope.errorMsg = 'Sorry, it exists as new client or vendor in the system.';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    // added by supriya johari under Issue-11508 ends
+                    else if(result != null && result == 'FIELD_CUSTOM_VALIDATION_EXCEPTION'){
+                        $scope.errorMsg = 'Billing Address field values should not be blanked for TPA Vendor Accounts if Is TPA Account flag is checked.';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    else if(result != null && result == 'error'){
+                        $scope.errorMsg = 'Sorry could not perform the action';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    else if(result != null && result == 'success' ){
+                        $scope.emptyFields();
+                        $scope.successMsg = 'Record saved successfully.';
+                        $scope.showerrorMsg = false;
+                        $scope.showsuccessMsg = true;
+                        $scope.$log.info('success message: ' + $scope.successMsg);
+                    }
+                    else {
+                        
+                    }
+                    hideLoading();
+                    $scope.applyChanges();
+                    
+                },
+                {escape: false}
+                );
+            }
+             
+            $scope.updateMapping = function() {
+                $scope.matchObj = {};
+                $scope.matchObj.id = $scope.TPA_AMA_Client_Vendor_Match__c.id;
+                $scope.matchObj.Client_Name__c = $scope.TPA_AMA_Client_Vendor_Match__c.Client_Name__c ;
+                $scope.matchObj.Truncated_Name__c = $scope.TPA_AMA_Client_Vendor_Match__c.Truncated_Name__c;
+                $scope.matchObj.Mapped_Account_Id__c = $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Id__c;
+                $scope.matchObj.Mapped_Account_Name__c = $scope.TPA_AMA_Client_Vendor_Match__c.Mapped_Account_Name__c;
+                $scope.matchObj.IMS_Client_Names__c = $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c;
+                $scope.matchObj.IMS_Total_Clients__c = $scope.TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c;
+                $scope.matchObj.TPA_Account_Address__c = $('[id$="accLookup_lkid"]').val();
+                showLoading();
+                CNT_TPA_NewClientVendorMatch.updateRecord(JSON.stringify($scope.matchObj), function(result, event){
+                                                  
+                    if(event.type == 'exception'){
+                        $scope.$log.info('Exception: ' + event.message);
+                                                         
+                    }
+                    else if(result != null && result == 'FIELD_CUSTOM_VALIDATION_EXCEPTION'){
+                        $scope.errorMsg = 'Billing Address field values should not be blanked for TPA Vendor Accounts if Is TPA Account flag is checked.';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    else if(result != null && result == 'error'){
+                        $scope.errorMsg = 'Sorry could not perform the action';
+                        $scope.showerrorMsg = true;
+                        $scope.showsuccessMsg = false;
+                    }
+                    else if(result != null && result.length > 0 ){
+                        $scope.$log.info('saving data' + result);
+                        $scope.amaNewClientsVendors = [];
+                        $scope.isMultipeMappingUpdateAcknowledged = false;
+                        $scope.amaNewClientsVendorsList = JSON.parse(result);
+                        $scope.getContracts();
+                        $scope.emptyFields();
+                        $scope.successMsg = 'Mapping for record updated successfully.';
+                        $scope.showerrorMsg = false;
+                        $scope.showsuccessMsg = true;
+                        
+                    }
+                    else {
+                        $scope.$log.info('saving data' + result);
+                    }
+                    hideLoading();
+                    $scope.applyChanges();
+                },
+                {escape: false}
+                );
+            }
+            
+            $scope.suggestedAccountSelected = function(selectedAccount) {
+                $('[id$="accLookup_lkid"]').val(selectedAccount.id);
+                $('[id$="accLookup"]').val(selectedAccount.name);
+                $scope.$log.info(JSON.stringify(selectedAccount));
+            }
+            
+            $scope.updateMultipleRecords = function() {
+                $scope.popupConfirm('You are going to update the selected mapping. Please click Yes to continue.',
+                    function() {
+                        $scope.$log.info('in update Multiple Records:0 '+$scope.updateRecords);
+                        angular.forEach($scope.updateRecords, function(value){
+                                delete value.SuggestedIMSClientList;
+                                delete value.SuggestedTotalClientList;
+                                delete value.ToUpdateInDatabase;
+                                delete value.TPA_Account_Address__c;
+                        });
+                        $scope.$log.info('in update Multiple Records:1 '+$scope.updateRecords);
+                        $scope.$log.info('in update Multiple Records:2 '+JSON.stringify($scope.updateRecords));                
+                        showLoading();
+                        CNT_TPA_NewClientVendorMatch.updateMultipleRecord(JSON.stringify($scope.updateRecords), function(result, event){
+                            $scope.$log.info('in update Multiple Records:3 ');  
+                            
+                            if(event.type == 'exception'){
+                                $scope.$log.info('Exception: ' + event.message);                                   
+                            }
+                            else if(result != null && result == 'exception'){
+                                $scope.errorMsg = 'Sorry, could not saved the records.';
+                                $scope.showerrorMsg = true;
+                                $scope.showsuccessMsg = false;
+                            }
+                            else if(result != null && result == 'error'){
+                                $scope.errorMsg = 'Sorry, could not performed the action.';
+                                $scope.showerrorMsg = true;
+                                $scope.showsuccessMsg = false;
+                            }
+                            else if(result != null && result.length > 0){
+                                $scope.amaNewClientsVendors = [];
+                                $scope.updateRecords = [];
+                                $scope.isMultipeMappingUpdateAcknowledged = false;
+                                $scope.amaNewClientsVendorsList = JSON.parse(result);
+                                $scope.getContracts();
+                                $scope.successMsg = 'Records updated in the crosswalk successfully.';
+                                $scope.showerrorMsg = false;
+                                $scope.showsuccessMsg = true;
+                                $scope.$log.info('in update Multiple Records:4 ');
+                                $scope.$log.info('in update Multiple Records:4 '+result);
+                                $scope.applyChanges();
+                                
+                            }
+                            else {
+                                $scope.$log.info('result: ' +result); 
+                                $scope.$log.info('event: ' +event.message);
+                            }
+                            hideLoading();
+                            $scope.applyChanges();
+                           
+                        },
+                        {escape: false}
+                        );
+                    },
+                    function() {},
+                    true,
+                    false
+                );
+            }
+             
+            $scope.clearSelections = function() {
+                angular.forEach($scope.amaNewClientsVendors, function(obj) {
+                    obj.ToUpdateInDatabase = false;
+                });
+                $scope.updateRecords = [];
+            }
+            
+            $scope.cancel = function() {
+                $scope.showUpdateButton = false;
+                $scope.showSaveButton = true;
+                $scope.emptyFields();
+                
+            }
+            
+            $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo, isTranslationNeeded)
+            {
+                if(isTranslationNeeded == null)
+                    isTranslationNeeded = true;
+                if(isYesNo)
+                {
+                    popup(msg, {'verify':true, 'animate':true}, function(r)
+                    {
+                        if(r)
+                            truePart();
+                        else
+                            falsePart();
+                        haltScreen = false;
+                        $scope.applyChanges();
+                    });
+                    $.each($(".aButtons button"), function(k, v){
+                        if($(v).text() == 'Yes' && isTranslationNeeded)
+                            $(v).html('{!$Label.TPA_yes}');
+                        else if($(v).text() == 'No' && isTranslationNeeded)
+                            $(v).html('{!$Label.TPA_No}');
+                    });
+                }
+                else
+                {
+                    popup(msg, {'confirm':true, 'animate':true}, function(r)
+                    {
+                        if(r)
+                            truePart();
+                        else
+                            falsePart();
+                        haltScreen = false;
+                        $scope.applyChanges();
+                    });
+                    $.each($(".aButtons button"), function(k, v){
+                        if($(v).text() == 'Ok' && isTranslationNeeded)
+                            $(v).html('{!$Label.TPA_OK}');
+                        else if($(v).text() == 'Cancel' && isTranslationNeeded)
+                            $(v).html('{!$Label.TPA_Cancel}');
+                    });
+                }
+            }
+            
+            $scope.applyChanges = function() {
+            
+                if($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
+                    $scope.$apply();
+                }
+            }
+            
+        }]);
+        
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+            
+        function showNewClientVendors(){
+            angularScope = angular.element($('#controllerPage')).scope();
+            showLoading();
+            $("#rulesPanelDivID").removeAttr('style');
+            var currentText = $('#showNewClientVendorLnk').text();
+            var showText = 'Show New Clients and Vendors:';
+            var hideText = 'Hide New Clients and Vendors:';
+            if(currentText == showText) {
+                $('#showNewClientVendorLnk').text(hideText);
+                $("#rulesPanelDivID").show();
+                angularScope.showExistingRules();
+            } else if(currentText == hideText) {
+                $('#showNewClientVendorLnk').text(showText);
+                $("#rulesPanelDivID").hide();
+            }
+            hideLoading();
+        }
+    </script>
+    </head>
+        
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+        <c:VFC_TPA_LoadingImage />
+        <apex:form id="theForm">
+        <div class="slds-scope">
+        <div id="ng-app" ng-app="AMAFeeMasterRulesConfig" class="slds-p-around_x-small">
+            <div id="controllerPage" ng-controller="controllerPage">
+                <div style="display:none;" ng-show="true">
+                <apex:outputPanel id="block1">
+                    <div class="slds-page-header slds-m-bottom_x-small">
+                        <div class="slds-media">
+                            <div class="slds-media__body">
+                                <h1 class="slds-page-header__title slds-truncate slds-align-middle slds-p-around_x-small" title="TPA Multilingual Editor">Mapping crosswalk</h1>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Error Message Box Start -->
+                     <div id ="errorBox" ng-show="showerrorMsg" class="message errorM3" role="alert">
+                         <img class="msgIcon" title="ERROR" src="/s.gif" style="float:left;" alt="ERROR" />
+                         <div class="messageText">
+                             <span style="color:#cc0000"><h4>Errors</h4></span>
+                         </div>
+                         <ul>
+                            <li>{{errorMsg}}</li>
+                         </ul>
+                     </div>
+                    <!-- Error Message Box End -->
+                    <!-- Success Message Box starts -->
+                    <div id ="successBox" ng-show="showsuccessMsg" class="slds-theme_success slds-p-around_medium slds-m-bottom_x-small">
+                         <div class="successMsg">
+                             <span style="color:white;font-size: 15px;"><center>{{successMsg}}</center></span>
+                         </div>
+                    </div>
+                    <!-- Success Message Box Ends -->
+                    <apex:pageBlock >
+                         <apex:pageBlockSection title="Mapping configuration" collapsible="false" columns="2">
+                             <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Client Name" />
+                                    <apex:outputPanel id="opPanel2">
+                                        <div>
+                                            <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                                <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                <input  type="text" maxlength="255" id="idFee" ng-model="TPA_AMA_Client_Vendor_Match__c.Client_Name__c" style="word-wrap: break-word;"/>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel value="Map to TPA Address" />
+                                 <apex:outputPanel id="opPanel3">
+                                    <apex:inputField id="accLookup" value="{!clientVendorMatch.TPA_Account_Address__c}"  html-placeholder="Select the Address from the lookup"/>
+                                 </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel value="Truncated Name" />
+                                 <apex:outputPanel >
+                                     <div>
+                                        <apex:outputPanel id="opPanel4">
+                                             <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                             <input  type="text" id="idFee" ng-model="TPA_AMA_Client_Vendor_Match__c.Truncated_Name__c" />
+                                        </apex:outputPanel>
+                                     </div>
+                                 </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection collapsible="false" columns="1">
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel value="Suggested IQVIA TPA Clients" />
+                                 <apex:outputPanel >
+                                             <div ng-show="TPA_AMA_Client_Vendor_Match__c.IMS_Client_Names__c != ''">
+                                                 <table class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right">
+                                                     <thead class="slds-theme_shade">
+                                                         <th class="slds-size_1-of-8">Select</th>
+                                                         <th> Address Name</th>
+                                                         <th> Address Id</th>
+                                                         <th> Is AMA Account </th>
+                                                         <th> Is TPA Account </th>
+                                                      
+                                                     </thead>
+                                                     <tr ng-repeat= "account in suggestedAccountsList | filter : isSuggestedIMSAccForRecord()" >
+                                                         <td class="slds-size_1-of-8"><input type="radio" name="suggestedAccounts" ng-click="suggestedAccountSelected(account);" /></td>
+                                                         <td class="slds-cell-wrap"><a target="_blank" ng-href="/{{account.id}}">{{account.name}}</a> </td>
+                                                         <td class="slds-cell-wrap"><a target="_blank" ng-href="/{{account.id}}">{{account.id}}</a> </td>
+                                                         <td align="center"> <input id="check3" type="checkbox" ng-checked="account.isAMAAccount"  ng-disabled="true" /></td>
+                                                         <td align="center"> <input id="check4" type="checkbox" ng-checked="account.isTPAAccount"  ng-disabled="true" /></td>
+                                                     </tr>
+                                                 </table>
+                                             </div>
+                                     
+                                 </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                             <apex:pageBlockSectionItem >
+                                 <apex:outputLabel styleClass="slds-size_2-of-10" value="Suggested IQVIA Total Clients" />
+                                 <apex:outputPanel styleClass="slds-size_8-of-10">
+                                             <div ng-show="TPA_AMA_Client_Vendor_Match__c.IMS_Total_Clients__c != ''">
+                                                 <table class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right">
+                                                     <thead  class="slds-theme_shade">
+                                                         <th class="slds-size_1-of-8">Select</th>
+                                                         <th> Address Name</th>
+                                                         <th> Address Id</th>
+                                                         <th> Is AMA Account </th>
+                                                         <th> Is TPA Account </th>
+                                                     </thead>
+                                                     <tr ng-repeat= "account in suggestedAccountsList | filter : isSuggestedAccountForRecord()" >
+                                                         <td class="slds-size_1-of-8"><input type="radio" name="suggestedAccounts" ng-click="suggestedAccountSelected(account);" /></td>
+                                                         <td class="slds-cell-wrap"><a target="_blank" ng-href="/{{account.id}}">{{account.name}}</a> </td>
+                                                         <td class="slds-cell-wrap"><a target="_blank" ng-href="/{{account.id}}">{{account.id}}</a> </td>
+                                                         <td align="center"> <input id="check1" type="checkbox" ng-checked="account.isAMAAccount"  ng-disabled="true" /></td>
+                                                         <td align="center"> <input id="check2" type="checkbox" ng-checked="account.isTPAAccount"  ng-disabled="true" /></td>
+                                                     </tr>
+                                                 </table>
+                                             </div>
+                                 </apex:outputPanel>
+                             </apex:pageBlockSectionItem>
+                             
+                         </apex:pageBlockSection>
+                         
+                    <apex:pageBlockButtons location="bottom">
+                        <div>
+                            <button class="slds-button slds-button_success" onclick="return false;"  ng-show="showSaveButton" ng-click="saveMapping();">Save Mapping</button>
+                            <button class="btn btn-default" onclick="return false;" ng-click="emptyFields();" ng-show="showSaveButton">Reset</button>
+                            <button class="slds-button slds-button_success" id="btnUpdateMapping"  onclick="return false;" style="display:none;" ng-show="showUpdateButton" ng-click="updateMapping();">Update Mapping</button>
+                            <button class="btn btn-default" id="btnCancel" onclick="return false;" style="display:none;" ng-show="showUpdateButton" ng-click="cancel();">Cancel</button>
+                        </div>
+                    </apex:pageBlockButtons>
+                    </apex:pageBlock>
+                 </apex:outputPanel>
+                 <u><i><span id="showNewClientVendorLnk" onClick="showNewClientVendors();" style="cursor:pointer;margin-left:20px;">Show New Clients and Vendors:</span></i></u>
+                 <p></p>
+                 <div id="rulesPanelDivID" style="display:none;">
+                     <div ng-show="amaNewClientsVendors.length > 0" >
+                        <apex:outputPanel id="rulesPanelID">
+                          
+                            <apex:pageBlock title="Existing New Clients and Vendors" id="page2">
+                                <button class="btn btn-default" onclick="return false;" ng-show="(amaNewClientsVendors|filter:{ToUpdateInDatabase:true}).length>0" ng-click="updateMultipleRecords();" style="margin: 0;left: 50%;">Update selected records</button>
+                                <button class="btn btn-default" onclick="return false;" ng-show="(amaNewClientsVendors|filter:{ToUpdateInDatabase:true}).length>0" ng-click="clearSelections();" style="margin: 0;left: 50%;">Clear Selections</button>
+                                <table class="list slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" style="margin-bottom:10px;" ng-show="">
+                                    <tr class="slds-theme_shade slds-text-heading slds-line-height_reset">
+                                        <th>Action</th>
+                                        <th><apex:outputLabel title="AMA Client/Vendor Address Name">Client Name</apex:outputLabel></th>
+                                        <th><apex:outputLabel title="Name used for search AMA Client/Vendor Address">Truncated Name</apex:outputLabel></th>
+                                        <th><apex:outputLabel title="ID for one to one mapped Address record">Mapped Address ID</apex:outputLabel></th>
+                                        <th><apex:outputLabel title="Only one IQVIA Address record found">Mapped Address Name</apex:outputLabel></th>
+                                        <th><apex:outputLabel title="IQVIA Client/Vendor Address Name/s found with IsTPA Account-True, USA Clients">IQVIA Client Names</apex:outputLabel></th>
+                                        <th><apex:outputLabel title="IQVIA Client/Vendor Address Name/s found with no filter">IQVIA Total Clients</apex:outputLabel></th>
+                                    </tr>
+                                    <tr class="dataRow" ng-repeat="obj in amaNewClientsVendors" ng-show="$index >= counter && $index < counter + size" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                        <td><a href="javascript:void(0)" style="text-decoration:underline;" ng-click="editRule($index)" >Provide Mapping</a>
+                                        <input type="checkbox" ng-show="obj.Mapped_Account_Id__c" ng-model="obj.ToUpdateInDatabase" ng-change="showUpdatenewButton($index,obj.ToUpdateInDatabase)" />
+                                        </td>
+                                        <td class="dataCell">
+                                            {{obj.Client_Name__c}}
+                                        </td>
+                                        <td class="dataCell">
+                                            {{obj.Truncated_Name__c}}
+                                        </td>
+                                        <td class="dataCell" >
+                                            {{obj.Mapped_Account_Id__c}}
+                                        </td>
+                                        <td class="dataCell" >
+                                            {{obj.Mapped_Account_Name__c}}
+                                        </td>
+                                        <td class="tags">
+                                            <span class="tag" ng-repeat="x in obj.SuggestedIMSClientList">{{x.name}}</span>
+                                        </td>
+                                        <td class="tags">
+                                            <span class="tag" ng-repeat="y in obj.SuggestedTotalClientList">{{y.name}}</span>
+                                        </td>
+                                    </tr>
+                               </table><br/>
+                            </apex:pageBlock>
+                            
+                            <div style="float:left" >
+                                <span class="slds-badge slds-badge_inverse">Showing Page # {{pageNumber}} of {{totalPages}}</span>&nbsp;&nbsp;
+                                Show Records: <select ng-model="size" ng-change="changeListSize();">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                </select> &nbsp;&nbsp;
+                                <span class="slds-badge slds-badge_inverse">Total New Clients and Vendors identified by the system: {{amaNewClientsVendorsList.length}}</span>
+                            </div>
+                            <div style="float:right">
+                                <div class="slds-button-group" role="group">
+                                    <button class="slds-button slds-button_neutral" ng-show="hasPrevious" ng-click="first();" onclick="return false;" title="First">◄</button>
+                                    <button class="slds-button slds-button_neutral" ng-show="hasPrevious" ng-click="previous();" onclick="return false;" title="Previous">Previous</button>
+                                    <button class="slds-button slds-button_neutral" ng-show="hasNext" ng-click="next();" onclick="return false;" title="Next">Next</button>
+                                    <button class="slds-button slds-button_neutral" ng-show="hasNext" ng-click="last();" onclick="return false;" title="Last">►</button>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                    <div ng-if="infoMsg" class="slds-badge">
+                        <apex:outputPanel layout="block" >
+                            {{infoMsg}}
+                        </apex:outputPanel>
+                    </div>
+                    
+                 </div>
+                 </div>
+            </div> 
+        </div>
+    </div>
+    </apex:form>
+    </body>
+    </html>
+    <style>
+        .Custom66Tab .tertiaryPalette, .individualPalette .Custom66Block .tertiaryPalette, .layoutEdit .individualPalette .Custom66Block .tertiaryPalette {
+                background-color: #af8970;
+                border-color: #af8970;
+        }
+    </style>
+</apex:page>

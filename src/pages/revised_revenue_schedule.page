@@ -1,0 +1,124 @@
+<apex:page standardController="OpportunityLineItem" extensions="RevisedRevenueScheduleController" showHeader="false" sidebar="false">
+<c:JQueryBlockUI />
+<Script>
+// unblock parent UI when click on cross of child window   
+     jQuery(window).bind(
+                "beforeunload", 
+                function() { 
+                    window.opener.YUIHideLoading();    
+                }
+            );
+            
+function setFocusOnLoad() {}
+
+function CloseAfterSave(errorOccured,saveCompleted)
+{    
+   //   alert('closeaftersave(): errorOccured: ' +errorOccured + ' saveCompleted: ' +  saveCompleted);
+    // Added by Ghanshyam Saini - Issue-08341 Start
+    var hasErrorMsg = document.querySelectorAll("[id*=err]");
+    if( hasErrorMsg.length > 1 ){
+        return false;
+    }
+    // Added by Ghanshyam Saini - Issue-08341 End
+    else if(errorOccured == "false" && saveCompleted == "true") 
+       {
+        window.close();
+        if({!!OriginalRevSchedules})
+        {
+            window.opener.jsrevisedprice('{!RevisedPriceId}');
+            window.opener.DisableSaveButton(true);
+        }
+          // window.opener.jslistprice(0,'{!ListPriceId}','col10',1);
+       }
+       return false;  
+}
+</Script>
+
+<apex:form > 
+<apex:outputField value="{!OpportunityLineItem.PricebookEntry.Product2.Material_Type__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.PricebookEntry.Product2.Item_Category_Group__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Product_Start_Date__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Product_End_Date__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Project_Start_Date__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Project_Start_Date__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Project_End_Date__c}" rendered="false"/>
+<apex:outputField value="{!OpportunityLineItem.Revised_Revenue_Schedule__c}" rendered="false"/>
+<apex:outputText ><font size="+1">Edit {!IF(OriginalRevSchedules==false,'Revised ','')}Revenue Schedule for {!OpportunityLineItem.PricebookEntry.Product2.Name}</font></apex:outputText>
+<apex:pageBlock >
+<apex:pageMessages id="err"/>
+<apex:pageBlockButtons >     
+    <apex:actionStatus id="go3">
+         <apex:facet name="stop">                  
+             <apex:commandButton value="Save" action="{!Save}" status="go3" disabled="false" rerender="go3,tableopp,ErrorPanel,err" onclick="document.getElementById('{!$Component.SaveCompletedId}').value='false';"/>             
+         </apex:facet>
+         <apex:facet name="start">
+             <apex:commandButton status="go3" value="Saving..." disabled="true" />
+         </apex:facet>
+    </apex:actionStatus>
+     <apex:actionStatus id="go" rendered="{!hideSaveCloseButton}">
+         <apex:facet name="stop">                  
+             <apex:commandButton value="Save & Close" action="{!Save}" status="go" disabled="false" rerender="go,tableopp,ErrorPanel,err" oncomplete="return CloseAfterSave('{!errorOccured}',document.getElementById('{!$Component.SaveCompletedId}').value);" onclick="document.getElementById('{!$Component.SaveCompletedId}').value='false';"/>             
+         </apex:facet>
+         <apex:facet name="start">
+             <apex:commandButton status="go" value="Saving..." disabled="true" />
+         </apex:facet>
+    </apex:actionStatus>
+      <apex:actionStatus id="go2">
+         <apex:facet name="stop">                  
+             <apex:commandButton value="Save & Add More" onclick="document.getElementById('{!$Component.SaveCompletedId}').value=false;" action="{!SaveMore}" reRender="go2,tableopp,ErrorPanel" status="go2" rendered="{!!OriginalRevSchedules}" /> 
+         </apex:facet>
+         <apex:facet name="start">
+             <apex:commandButton status="go2" value="Saving..." disabled="true" />
+         </apex:facet>
+    </apex:actionStatus> 
+<apex:commandButton value="Cancel" action="{!Cancel}" onclick="window.close();return false;" rendered="{!hideSaveCloseButton}" />
+</apex:pageBlockButtons>
+<br/>
+<br/>
+<apex:outputPanel rendered="{!OriginalRevSchedules}">
+<b>Please note: </b>You cannot edit the total sales price on this screen.  You can edit the revenue dates only.  If you need to change the sales price or add/remove revenue schedules you will need to edit the revenue schedules on the opportunity line item&nbsp;<apex:outputLink value="/{!OpportunityLineItem.Id}" target="new">here</apex:outputLink><br/><br/> 
+</apex:outputPanel>
+<apex:outputPanel id="TotalPanel">
+<apex:outputText ><b>Total {!IF(OriginalRevSchedules==false,'Revised ','Sales ')}Price: </b></apex:outputText>
+<apex:outputField value="{!RevisedPrice.Revenue}"/>
+<br/>
+<apex:commandButton action="{!Recalc}" value="Recalculate" reRender="TotalPanel,tableopp" rendered="{!!OriginalRevSchedules}"/>
+</apex:outputPanel> 
+
+<br/>
+<apex:outputField value="{!OpportunityLineItem.CurrencyIsoCode}" rendered="false"/>
+<br/>
+<apex:outputField value="{!OpportunityLineItem.Name}" rendered="false"/>
+                 <apex:pageBlockTable value="{!OLIS_wrapper}" var="oppLvlSch" id="tableopp"> 
+        <apex:column width="180">
+            <apex:facet name="header"><apex:commandLink action="{! sorting }" reRender="tableopp">Date{!IF(ascending == true,'▲','▼')}
+                <apex:param name="Date" value="ScheduleDate" assignTo="{!fieldName}"/>
+                </apex:commandLink></apex:facet>
+            <apex:inputField value="{!oppLvlSch.ScheduleDate}" required="false" id="colDate"/>
+        </apex:column>
+        <apex:column width="180" >
+            <apex:facet name="header"><apex:commandLink action="{! sorting }" reRender="tableopp">Revenue ({!OpportunityLineItem.CurrencyIsoCode}){!IF(descending == false,'▲','▼')}
+                <apex:param name="Amount" value="Revenue" assignTo="{!fieldName}"/>
+                </apex:commandLink></apex:facet>
+            <apex:inputField value="{!oppLvlSch.Revenue}" required="false" id="colRevenue" rendered="{!!OriginalRevSchedules}"/>                    
+            <apex:outputField value="{!oppLvlSch.Revenue}" id="colRevenue2" rendered="{!OriginalRevSchedules}"/>
+        </apex:column>
+        <apex:column width="180" id="clearBtn" rendered="{!!OriginalRevSchedules}">                    
+            <input type="button" onclick="document.getElementById('{!$Component.colDate}').value='';document.getElementById('{!$Component.colRevenue}').value='';" value="Clear"/>                   
+        </apex:column>
+    </apex:pageBlockTable>
+<!--  
+    //  If an invalid (i.e. incorrectly formatted) date is entered on the VF page, the native validation will show an error 
+    //  and the code doesn't enter the Save() function in the controller.  We need to use a Javacript function
+    //  to set the SaveCompleted hidden input to false as soon as the user clicks the "Save" button
+    //  After a successful Save the ErrorPanel is re-rendered and the hidden input value updated to reflect that a save has occurred.
+    //  The "SaveAndClose()" javascript function then evaluates the hidden field to determine whether a native UI validation error has occurred or not 
+-->    
+<apex:outputPanel id="ErrorPanel">
+<apex:inputHidden value="{!SaveCompleted}" id="SaveCompletedId" />
+</apex:outputPanel>    
+                      
+
+</apex:pageBlock>
+</apex:form>
+</apex:page>

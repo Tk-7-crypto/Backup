@@ -1,0 +1,98 @@
+<apex:page standardController="BNF2__c" extensions="CNT_CRM_ShowOpportunityProducts">
+    <html>
+        <script>
+        window.onload = function() { 
+            var OpptyId = "{!bNFRecord.Opportunity__c}"; 
+            var OpptyCurrency = "{!bNFRecord.CurrencyIsoCode}"; 
+            var output = "<table width='80%' class=list border='0' cellspacing='0' cellpadding='0'><tr class='headerRow' height='20'>"; 
+            output += "<th wrap>Product Name</th>"; 
+            output += "<th wrap>Delivery Country</th>"; 
+            output += "<th wrap>Sales Price<br> (" + OpptyCurrency + ") <br></th>"; 
+            output += "<th wrap>Book<br>Number</br></th>"; 
+            output += "<th wrap>Material<br>Number</br></th>"; 
+            output += "<th wrap>WBS Id</th>"; 
+            output += "<th wrap>Business<br>Line</br></th>"; 
+            output += "<th wrap>Business<br>Type</br></th>"; 
+            output += "<th wrap>Service<br>Line</br></th>"; 
+            output += "<th wrap>Practice<br>Area</br></th>"; 
+            output += "</tr>"; 
+            var OpptyLineList = JSON.parse('{!JSENCODE(OpportunityLineItemListStr)}');
+            for (var j = 0; j < OpptyLineList.length; j++) { 
+                output += "<tr onmouseover=hiOn(this) onmouseout=hiOff(this)>"; 
+                output +="<td><a href='/"+OpptyLineList[j].Id+"' target='_parent'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                output +="<td>"+ IsRecNull(OpptyLineList[j].Delivery_Country__c) + "</td>"; 
+                output +="<td>"+ Comma(Number(OpptyLineList[j].UnitPrice)) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Book_No__c) + "</td>"; 
+                output += "<td wrap>" + IsRecNull(OpptyLineList[j].PricebookEntry.ProductCode) + "</td>"; 
+                if(OpptyLineList[j].WBS__c == null){ 
+                    output += "<td>&nbsp</td>"; 
+                }else{ 
+                    output += "<td><a href='/" + OpptyLineList[j].WBS__c +"' target='_parent'>" + IsRecNull(OpptyLineList[j].WBS__r.Name) + "</a></td>"; 
+                } 
+                output += "<td wrap>" + IsRecNull(OpptyLineList[j].Business_Line__c) + "</td>"; 
+                output += "<td wrap>" + IsRecNull(OpptyLineList[j].Business_Type__c) + "</td>"; 
+                output += "<td wrap>" + IsRecNull(OpptyLineList[j].Service_Line__c) + "</td>"; 
+                output += "<td wrap>" + IsRecNull(OpptyLineList[j].Practice_Area__c) + "</td>"; 
+            } 
+            output += "</table>"; 
+            document.getElementById("ResultsHolder").innerHTML = output;  
+        };
+        function IsRecNull(sVal){ 
+            var returnVal; 
+            if(sVal==null){ 
+                returnVal = "&nbsp"; 
+            }else{ 
+                returnVal = sVal; 
+            } 
+            return returnVal; 
+        } 
+        function Comma(number) { 
+            number = '' + number; 
+            if (number.length > 3) { 
+                var mod = number.length % 3; 
+                var output = (mod > 0 ? (number.substring(0,mod)) : ''); 
+                for (i=0 ; i < Math.floor(number.length / 3); i++) { 
+                    if ((mod == 0) && (i == 0)) 
+                        output += number.substring(mod+ 3 * i, mod + 3 * i + 3); 
+                    else 
+                        output+= ',' + number.substring(mod + 3 * i, mod + 3 * i + 3); 
+                } 
+                return (output); 
+            } 
+            else return number; 
+        } 
+        </script>
+        <style type="text/css"> 
+            body, td {margin:0px; color:#333;} 
+            body {background-repeat: repeat-x; background-position: left top; font-size: 75%; font-family: 'Arial', 'Helvetica', sans-serif; background-color: #F3F3EC;} 
+            a {color:#333;} 
+            a:hover {text-decoration:underline;} 
+            th {text-align: left; font-weight: bold; white-space: nowrap;} 
+            form {margin:0px; padding:0px;} 
+            h1, h2, h3, h4, h5, h6 {font-family: "Verdana", "Geneva", sans-serif; font-size: 100%; margin:0px; display:inline;} 
+            .titleSeparatingColon {display: none;} 
+            .bPageBlock {width:100%;} 
+            .bPageBlock .pbSubheader {background-color:#222; color:#FFF; font-weight:bold; font-size: 91%; padding:2px 2px 2px 5px; margin-top: 3px; overflow: hidden; margin-bottom: 2px;} 
+            .bPageBlock .pbBody {background-color:#F3F3EC;} 
+            .bPageBlock .detailList {width:100%;} 
+            .bPageBlock .detailList th, .bPageBlock .detailList td {vertical-align:top;} 
+            .bPageBlock .labelCol {padding:2px 10px 2px 2px; text-align:right; font-size: 91%; font-weight: bold; color:#333;} 
+            .bPageBlock .detailList .labelCol {width: 18%;} 
+            .bPageBlock .dataCol {padding:2px 2px 2px 10px; text-align:left;} 
+            .bPageBlock .detailList .dataCol {width:32%;} 
+            .bPageBlock .detailList .data2Col {padding: 2px 2px 2px 10px; text-align: left; width: 82%;} 
+            .bEditBlock .detailList .dataCol, .bEditBlock .detailList .data2Col {padding: 0 2px 0 10px;} 
+            .bPageBlock .detailList .col02 {border-right: 20px solid #F3F3EC;} 
+            .bPageBlock .detailList tr td, .bPageBlock .detailList tr th {border-bottom:1px solid #E3DEB8;} 
+            .editPage .bPageBlock .detailList tr td, .editPage .bPageBlock .detailList tr th {border-bottom: none;} 
+            .bPageBlock .detailList th.last, .bPageBlock .detailList td.last, .bPageBlock.bLayoutBlock .detailList tr td, .bPageBlock.bLayoutBlock .detailList tr th {border-bottom:none;} 
+            .bPageBlock .detailList table td, .bPageBlock .detailList table th {border-bottom-style: none;} 
+            .lead .tertiaryPalette {background-color: #EBAF59; border-color: #EBAF59;} 
+        </style> 
+        <body class="opportunity"> 
+            <div class="pbBody"> 
+                <div id="ResultsHolder"></div> 
+            </div> 
+        </body> 
+    </html>
+</apex:page>

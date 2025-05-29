@@ -1,0 +1,615 @@
+<template>
+  <lightning-spinner if:true={showPageSpinner} alternative-text="Loading" size="large" variant="brand" class="spinner-z-index">
+  </lightning-spinner>
+  <c-lwc_helper></c-lwc_helper>
+  <!-- page header-->
+  <div class="slds-page-header slds-m-bottom_medium">
+    <div class="slds-grid">
+      <div class="slds-size_3-of-4">
+        <div class="slds-media">
+          <div class="slds-media__figure">
+            <lightning-icon icon-name="custom:custom45" size="medium"></lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <span>Project Metric</span>
+            <span class="slds-page-header__title slds-truncate">{ projectName }</span>
+          </div>
+        </div>
+      </div>
+      <div class="slds-size_1-of-4 slds-text-align_right">
+        <lightning-button-group>
+          <a href={projectUrl} class="slds-button slds-button_outline-brand" onclick={handleClick}>
+            &lt;&lt;Return to Project</a>
+          <button id="hack-for-css" class="slds-button slds-button_icon slds-button_icon-border-filled icon-outline-brand" title="Refresh" onclick={refreshAll}>
+            <lightning-icon class="refresh-icon" icon-name="utility:refresh" alternative-text="Refresh"
+            size="x-small" variant="brand"></lightning-icon>
+            <span class="slds-assistive-text">Refresh</span>
+          </button>
+        </lightning-button-group>
+        <div if:true={isReadOnly} class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+          <i>&#9432;  Read Only Mode</i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- tabs -->
+  <div class="tab-container slds-p-around_medium slds-theme_default">
+    <lightning-tabset>
+      <lightning-tab label="Manage Active Metrics" icon-name="custom:custom102">
+        <div class="slds-text-align_right active-metrics-tab-buttons">
+          <!-- render add / hide metric buttons when not is read only mode!-->
+          <template if:false={isReadOnly}>
+            <lightning-button-group>
+              <!-- when we have metrics to add!-->
+              <template if:true={hasFilteredActivePsaMetrics}>
+                <lightning-button name="add-metric" variant="brand" label="Add Metric" onclick={handleClick}></lightning-button>
+              </template>
+              <!-- when there are no active / non-standard psa metrics to add-->
+              <template if:false={hasFilteredActivePsaMetrics}>
+                <span class="slds-dropdown-trigger">
+                  <lightning-button name="add-metric" variant="brand" label="Add Metric" disabled></lightning-button>
+                  <div class="slds-dropdown slds-dropdown_bottom slds-text-align_center slds-nubbin_bottom slds-p-around_medium slds-theme_warning slds-theme_alert-texture"
+                    style="min-width:12rem; border-radius:12px;">
+                    <div class="slds-media slds-media_center">
+                      <span class="slds-media__figure">
+                        <lightning-icon if:false={viewFilters} icon-name="utility:warning" size="x-small" variant="inverse">
+                        </lightning-icon>
+                      </span>
+                      <div class="slds-media__body">
+                        <div class="slds-text-title_caps" id="panel-heading-id">
+                          No active metric records to add
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </span>
+              </template>
+              <!-- when we have some metrics selected, allow retirement -->
+              <template if:true={hideRetireMetricButton}>
+                <lightning-button name="retire-metrics" label="Retire Selected" onclick={handleClick}></lightning-button>
+              </template>
+              <!-- hide metric button -->
+              <!-- <lightning-button name="hide-metric" variant="error" label="Hide Metric" onclick={handleClick} disabled={metricRemovedDisabled}></lightning-button> -->
+            </lightning-button-group>
+          </template>
+        </div>
+        <!-- filter heading -->
+  <div class="slds-p-around_x-small slds-theme_shade cursor-pointer" onclick={toggleFilter}>
+    <div class="slds-grid">
+      <div class="slds-size_2-of-3">
+        <div class="slds-media slds-accordion__summary-heading">
+          <div class="slds-media__figure">
+            <!-- icon when not expanded -->
+            <lightning-icon if:false={viewFilters} icon-name="utility:chevronright" size="x-small">
+            </lightning-icon>
+            <!-- icon when is expanded -->
+            <lightning-icon if:true={viewFilters} icon-name="utility:chevrondown" size="x-small">
+            </lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <span>Filter</span>
+          </div>
+        </div>
+      </div>
+      <div class="slds-size_1-of-3 slds-text-align_right slds-p-right_small">
+        <lightning-icon icon-name="utility:filterList" size="x-small"></lightning-icon>
+      </div>
+    </div>
+  </div>
+  <!-- filter details -->
+  <div class="slds-box slds-theme_default" if:true={viewFilters}>
+    <!-- style="box-shadow: 9px 12px 10px -10px rgba(0,0,0,0.4);"> -->
+      <div aria-hidden="false" class="slds-grid slds-wrap slds-grid_align-spread">
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium slds-hide serviceMetricFilter">
+          <lightning-record-edit-form object-api-name="Lightning_Filter__c" onload={serviceLineFilterChangeLoad}>
+            <lightning-input-field field-name="Service_Line__c" class="service-line-filter"
+              value={filterServiceLine}
+              onchange={serviceLineFilterChange}>
+            </lightning-input-field>
+          </lightning-record-edit-form>
+        </div>
+        <!--
+          Frequency!
+        -->
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+          <!--<lightning-combobox
+              name="frequency"
+              label="Frequency"
+              value={filterFrequency}
+              options={projFreqOptions}
+              onchange={frequencyFilterChange}>
+          </lightning-combobox>-->
+          <lightning-record-edit-form object-api-name="PSA_Metric__c">
+            <lightning-input-field field-name="Frequency__c" 
+              value={filterFrequency}
+              onchange={frequencyFilterChange}>
+            </lightning-input-field>
+          </lightning-record-edit-form>
+        </div>
+        <!--Category-->
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+          <lightning-record-edit-form object-api-name="PSA_Metric__c">
+            <lightning-input-field field-name="Category__c" 
+              value={filterCategory}
+              onchange={handleCategoryChange}>
+            </lightning-input-field>
+          </lightning-record-edit-form>
+        </div>
+        <!--Protocol-->
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+          <lightning-combobox dropdown-alignment="auto"
+              name="protocol"
+              label="Protocol"
+              value={filterProtocolName}
+              options={filterProtocolOptions}
+              onchange={handleProtocolNameChange}>
+          </lightning-combobox>
+        </div>
+        <!--Retired-->
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+          <lightning-input type="checkbox"
+                       label="Retired" value={filterRetired} onchange={handleRetiredMetricChange}
+                       checked={filterRetired}>
+          </lightning-input>
+        </div>
+      <!--Non Standard-->
+      <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+        <lightning-input type="checkbox"
+                     label="Non Standard" value={filterNonStandard} onchange={handleNonStandardMetricChange}
+                     checked={filterNonStandard}>
+        </lightning-input>
+      </div>
+    </div>        
+      <div class="slds-grid slds-wrap">
+        <div class="slds-col slds-size_2-of-12 slds-col_bump-left">
+          <lightning-input type="checkbox"
+                    label="Client Facing" value={filterClientFacing} onchange={handleClientFacingMetricChange}
+                    checked={filterClientFacing}>
+          </lightning-input>
+        </div>
+        <div class="slds-col slds-size_2-of-12 slds-p-right_medium">
+          <lightning-input type="checkbox"
+                      label="All" value={filterAll} onchange={handleAllMetricChange}
+                      checked={filterAll}>
+          </lightning-input>
+        </div>
+      </div>
+    </div>
+  <!-- when no data loaded from filter! -->
+  <template if:false={hasLoadedData}>
+    <section class="slds-box slds-m-top_small">
+      <div class="slds-media slds-media_center">
+        <span class="slds-icon_container slds-icon-action-delete slds-icon_container--circle slds-media__figure">
+          <lightning-icon if:false={viewFilters} icon-name="utility:warning" size="x-small" variant="inverse">
+          </lightning-icon>
+        </span>
+        <div class="slds-media__body slds-text-title_caps">
+          <div class="slds-text-heading_small" id="panel-heading-id-3">
+            No Records Found Use the <a onclick={toggleFilter}>Filter</a> to refine your search
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+        <!-- datatable for metrics -->
+        <div class="slds-p-around_medium metric-datatable-wrapper lgc-bg " if:true={hasLoadedData} style="height:400px;">
+          <lightning-datatable
+              key-field="id"
+              class="metric-datatable-container"
+              data={projectMetrics}
+              columns={state.metricColumns}
+              sorted-by={state.metricSortedBy}
+              sorted-direction={state.metricSortedDirection}
+              onsort={updateProjectMetricSorting}
+              onrowaction={handleRowAction}
+              onrowselection={handleRowSelection}
+              min-column-width ="30">
+          </lightning-datatable>
+        </div>
+      </lightning-tab>
+      <lightning-tab label="Enter Manual Metrics Data" icon-name="standard:number_input">
+        <!--
+          component for manual metric data
+        -->
+        <c-lwc_psa_metrics-manual is-read-only={isReadOnly}></c-lwc_psa_metrics-manual>
+      </lightning-tab>
+      <!--
+        dashboard roles tab
+      -->
+      <lightning-tab label="Set Dashboard Roles" icon-name="custom:custom77">
+        <template if:true={currentAssignedResources}>
+        <div class="slds-p-around_medium lgc-bg" style="height:400px;">
+          <lightning-datatable hide-checkbox-column
+              key-field="id"
+              class="assigned-resources-datatable"
+              data={currentAssignedResources}
+              columns={state.currentResourceColumns}
+              is-loading={state.currentResourceTableLoadingState}
+              onrowaction={handleRowAction}
+              sorted-by={state.currentResourceSortedBy}
+              sorted-direction={state.currentResourceSortedDirection}
+              onsort={updateCurrentResourceSorting}>
+          </lightning-datatable>
+          </div>
+        </template>
+      </lightning-tab>
+    </lightning-tabset>
+  </div>
+  <div class="page-modals!">
+    <c-lwc_modal
+      show-modal={state.showRetireMetricsModal} onclose={onmodalcancel} modal-heading='Retire Metrics' size="small">
+      <div slot="modal-content" class="slds-text-align_center">
+        <div class="slds-grid">
+          <div class="slds-col slds-size_2-of-6">
+          </div>
+          <div class="slds-col slds-size_1-of-6">
+            Please choose a date to retire metrics: 
+          </div> 
+          <div class="slds-col slds-size_1-or-6">
+            <lightning-input value={retireDate} onchange={retireDateChanged} type="date" variant="label-inline" style="min-height: 30em;"></lightning-input>
+          </div>
+        </div>
+      </div>
+      <span slot="modal-footer" class="retire-metrics-modal-footer">
+        <button class="slds-button slds-button_neutral" onclick={onmodalcancel}>Cancel</button>
+        <button class="slds-button slds-button_brand" onclick={onmodalok}>Retire</button>
+      </span>
+    </c-lwc_modal>
+    <!--
+      add metric modal
+    -->
+    <c-lwc_modal show-modal={state.showAddMetricModal} onclose={onmodalcancel} modal-heading='Add Metric'
+    size="large" class="add-metric-modal">
+      <div slot="modal-content" class="slds-text-align_center" style="min-height:20rem;">
+        <div class="slds-box slds-theme_shade" if:true={hasFilteredActivePsaMetrics}>
+          <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Filter PSA Metric Name</div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Tower</div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Unique ID</div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Account</div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Service Line</div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Source System</div>
+          </div>
+            
+          <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                metric name filter
+              -->
+              <lightning-input
+                  name="MetricName"
+                  label="Filter PSA Metric Name"
+                  variant="label-hidden"
+                  value={psaMetricsFilterName}
+                  type="search"
+                  onchange={handleFilterChange}>
+              </lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium slds-text-align_center">
+              <!--
+                tower filter!
+              -->
+              <lightning-combobox
+                  name="Tower"
+                  label="Tower"
+                  variant="label-hidden"
+                  value={psaMetricsFilterTower}
+                  onchange={handleFilterChange}
+                  options={towerOptions}>
+                </lightning-combobox>
+            </div>
+            
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                Unique ID
+              -->
+              <div class="dropdown">
+                <div class="dropdown-header" onclick={toggleDropdown}>
+                    <p>{selectedLabels}</p>
+                    <lightning-icon icon-name="utility:down" alternative-text="Toggle dropdown" size="xx-small"></lightning-icon>
+                </div>
+                <div class="dropdown-body" if:true={isDropdownOpen}>
+                    <lightning-input
+                        type="search"
+                        placeholder="Search..."
+                        onchange={handleSearch}
+                        class="search-box"
+                    ></lightning-input>
+                    <template if:true={isReset}>
+                        <button class="slds-button slds-button_neutral" onclick={resetUniqueIds}>Reset Unique Id</button>
+                    </template>
+                    
+                    <div class="options-container">
+                        <template for:each={filteredOptions} for:item="option">
+                          <div key={option.value} class="option">
+                              <lightning-input
+                                  type="checkbox"
+                                  checked={option.checked}
+                                  label={option.label}
+                                  onchange={handleCheck}
+                                  data-id ={option.value}
+                              ></lightning-input>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                account filter!
+              -->
+              <lightning-record-edit-form object-api-name="Lightning_Filter__c">
+                <lightning-input-field
+                    field-name="Account__c"
+                    variant="label-hidden"
+                    class="psa-metric-account-filter"
+                    value={psaMetricsFilterAccount}
+                    onchange={handleFilterChange}>
+                </lightning-input-field>
+              </lightning-record-edit-form>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                service line filter!
+              -->
+              <lightning-record-edit-form object-api-name="Lightning_Filter__c">
+                <lightning-input-field
+                    field-name="Service_Line__c"
+                    variant="label-hidden"
+                    class="psa-metric-service-line-filter"
+                    value={psaMetricsFilterServiceLine}
+                    onchange={handleFilterChange}>
+                </lightning-input-field>
+              </lightning-record-edit-form>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium" style="position: relative">
+              <!--
+                source system
+              -->
+              <template if:true={sourceSystemPicklistValues.data}>
+              <lightning-combobox
+                  name="Source_System__c"
+                  variant="label-hidden"
+                  label="Source System"
+                  value={psaMetricsFilterSourceSystem}
+                  onchange={handleFilterChange}
+                  options={sourceSystemPicklistValues.data.values}>
+                </lightning-combobox>
+              </template>
+              <!--<template if:true={psaMetricsFilterSourceSystem}>
+                <lightning-button-icon class="clear-filter-button" name="clearSourceSystem" variant="bare" icon-name="utility:close" onclick={handleFilterChange}></lightning-button-icon>
+              </template>-->
+            </div>
+            
+          </div>
+        <div class="slds-grid">
+          <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Retired Date</div>
+          <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Filter Description</div>
+          <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Filter GRA Requirements</div>
+          <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Non Standard</div>
+          <div class="slds-col slds-size_1-of-6 slds-p-right_medium">Client Facing</div>
+          </div>
+          <div class="slds-grid">
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium slds-text-align_center">
+              <!--
+                Retired Date filter!
+              -->
+              <lightning-combobox
+                  name="retiredDate"
+                  label="Retired Date"
+                  variant="label-hidden"
+                  value={psaMetricsFilterRetiredDate}
+                  onchange={handleFilterChange}
+                  options={retiredDateOptions}>
+                </lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                description filter!
+              -->
+              <lightning-input
+                  name="Description__c" 
+                  label="Filter Description"
+                  variant="label-hidden"
+                  value={psaMetricsFilterDescription}
+                  type="search"
+                   onchange={handleFilterChange}>
+              </lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium">
+              <!--
+                GRA filter!
+              -->
+              <lightning-input
+                  name="GRA_Requirements__c"
+                  label="Filter GRA Requirements"
+                  variant="label-hidden"
+                  value={psaMetricsFiltergraRequirement}
+                  type="search"
+                   onchange={handleFilterChange}>
+              </lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium slds-text-align_center">
+              <!--
+                non-standard filter!
+              -->
+              <lightning-combobox
+                  name="Non_Standard__c"
+                  label="Non Standard"
+                  variant="label-hidden"
+                  value={psaMetricsFilterNonStandard}
+                  onchange={handleFilterChange}
+                  options={nonStandardOptions}>
+                </lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-6 slds-p-right_medium slds-text-align_center">
+              <!--
+                Client Facing filter!
+              -->
+              <lightning-combobox
+                  name="Client_Facing__c"
+                  label="Client Facing"
+                  variant="label-hidden"
+                  value={psaMetricsFilterClientFacing}
+                  onchange={handleFilterChange}
+                  options={clientFacingOptions}>
+                </lightning-combobox>
+            </div>
+          </div>
+        </div>
+        <div class="slds-p-left_xx-small slds-p-right_xx-small">
+          <div class="" if:true={hasFilteredActivePsaMetrics}>
+            <div class="psametric-datatable-wrapper">
+              <lightning-datatable key-field="id" class="psametric-datatable" data={filteredActivePsaMetrics}
+                columns={state.psaMetricColumns} is-loading={state.psaMetricTableLoadingState}
+                sorted-by={state.psaMetricSortedBy} sorted-direction={state.psaMetricSortedDirection}
+                onsort={updatePsaMetricSorting}>
+              </lightning-datatable>
+            </div>
+          </div>
+          <div class="slds-p-around_x-large" if:false={hasFilteredActivePsaMetrics}>
+            <section class="slds-box slds-m-top_small">
+              <div class="slds-media slds-media_center">
+                <span class="slds-icon_container slds-icon-action-delete slds-icon_container--circle slds-media__figure">
+                  <lightning-icon if:false={viewFilters} icon-name="utility:warning" size="x-small" variant="inverse">
+                  </lightning-icon>
+                </span>
+                <div class="slds-media__body slds-text-title_caps slds-text-align_left slds-m-left_medium">
+                  <div class="slds-text-heading_small" id="panel-heading-id-2">
+                    No Active 'Non-Standard Metric' Records to add
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+      <span slot="modal-footer" class="add-metric-modal-footer">
+        <button class="slds-button slds-button_neutral" onclick={onmodalcancel}>Cancel</button>
+        <button class="slds-button slds-button_brand" onclick={onmodalok} if:true={hasFilteredActivePsaMetrics}>Add</button>
+      </span>
+    </c-lwc_modal>
+    <!--
+      edit assigned resource modal !
+    -->
+    <c-lwc_modal show-modal={state.showEditAssignedResourceModal} onclose={onmodalcancel}>
+      <!-- modal-heading -->
+      <span slot="modal-heading">
+        Edit {state.editRecordName}
+      </span>
+      <!-- modal-content -->
+      <div slot="modal-content" class="slds-p-around_medium">
+        <!-- assigned resource edit form! -->
+        <lightning-record-edit-form class="assigned-resources" record-id={state.editRecordId}
+          object-api-name={state.editObjectApiName} onsuccess={onAssignResourceSuccess} onerror={onAssignResourceError}
+          onload={onAssignResourceLoad}>
+          <lightning-messages></lightning-messages>
+          <template if:true={showAssignedResourceForm}>
+            <!-- first row resource name / oversight dashboard-->
+            <div class="slds-grid slds-p-bottom_medium">
+              <div class="slds-size_1-of-2 slds-p-right_medium">
+                <div class="slds-form-element__label">Resource Name</div>
+                <div class="slds-truncate">{selectedAssignedResource.resourceName}</div>
+              </div>
+              <div class="slds-col slds-size_1-of-2 ">
+                <div class="oversight-dashboard-role-container">
+                  <lightning-input-field field-name="Oversight_Dashboard_Role__c" label="" disabled={showSpinner}>
+                  </lightning-input-field>
+                </div>
+              </div>
+            </div>
+            <!-- 2nd row field resource location /active -->
+            <div class="slds-grid slds-m-top_medium">
+              <div class="slds-size_1-of-2 slds-p-right_medium">
+                <div class="slds-form-element__label">Resource Location</div>
+                <div class="slds-truncate">{selectedAssignedResource.resourceLocation}</div>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-left_medium">
+                <div class="slds-m-top_small">
+                  <lightning-input-field field-name="Active__c" label="" disabled={showSpinner}></lightning-input-field>
+                </div>
+              </div>
+            </div>
+          </template>
+        </lightning-record-edit-form>
+      </div>
+      <!-- modal-footer -->
+      <span slot="modal-footer">
+        <!-- modal footer spinner -->
+        <div if:true={showSpinner} class="slds-is-relative">
+          <lightning-spinner alternative-text="saving..." variant="brand">
+          </lightning-spinner>
+        </div>
+        <!-- modal buttons -->
+        <button class="slds-button slds-button_neutral" onclick={onmodalcancel} disabled={showSpinner}>Cancel</button>
+        <button class="slds-button slds-button_brand" onclick={onmodalok} disabled={showSpinner}>OK</button>
+      </span>
+    </c-lwc_modal>
+    <!--
+      edit metrics
+          text-transform: uppercase;
+    -->
+    <c-lwc_modal show-modal={state.showEditMetricModal} onclose={onmodalcancel} size="small">
+      <!-- modal-heading -->
+      <div slot="modal-heading" class="">
+        <template if:true={isCreatingClone}>Clone Project Metric</template>
+        <template if:false={isCreatingClone}>Edit Project Metric</template>
+      </div>
+      <!-- modal-content-->
+      <div slot="modal-content" class="slds-p-around_medium slds-m-bottom_large slds-p-bottom_large">
+        <template if:true={state.showEditMetricModal}>
+          <lightning-record-edit-form class="edit-metrics"
+            record-id={state.editRecordId}
+            object-api-name={state.editObjectApiName}
+            onsuccess={onEditRecordSuccess}
+            onerror={onEditMetricError}
+            onload={onEditRecordLoad}>
+            <lightning-messages></lightning-messages>
+            <div class="slds-grid slds-wrap" if:true={showEditRecordForm}>
+              <div class="slds-col slds-size_1-of-2 slds-p-left_medium slds-p-right_medium slds-p-bottom_medium edit-metric-field-size" for:each={metricFieldsToEdit} for:item="mfield" key={mfield.fieldName}>
+                <div class="xedit-metric-field-container">
+                  <!-- when field is not disabled ! -->
+                  <template if:false={mfield.fieldDisabled}>
+                    <lightning-input-field
+                      field-name={mfield.fieldName}
+                      disabled={showSpinner}
+                      onchange={handleEditMetricChange}>
+                    </lightning-input-field>
+                  </template>
+                  <!-- when field is disabled -->
+                  <template if:true={mfield.fieldDisabled}>
+                    <lightning-input-field
+                      field-name={mfield.fieldName}
+                      disabled={mfield.fieldDisabled}>
+                    </lightning-input-field>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </lightning-record-edit-form>
+        </template>
+      </div>
+      <!-- modal-footer-->
+      <div slot="modal-footer">
+        <!-- modal footer spinner -->
+        <div if:true={showSpinner} class="slds-is-relative">
+          <lightning-spinner alternative-text="saving..." variant="brand">
+          </lightning-spinner>
+        </div>
+        <!-- modal buttons -->
+
+        <!-- cancel button -->
+        <button class="slds-button slds-button_neutral" onclick={onmodalcancel} disabled={showSpinner}>Cancel</button>
+        <!--
+          save button, renderd when is creating clone is NOT true
+        -->
+        <button if:false={isCreatingClone} class="slds-button slds-button_brand" onclick={onmodalok} disabled={showSpinner}>Save</button>
+        <!--
+          clone button, rendering when isCreating Clone is true
+          -->
+        <button if:true={isCreatingClone} class="slds-button slds-button_destructive" onclick={cloneEditMetric} disabled={showSpinner}>Clone</button>
+      </div>
+    </c-lwc_modal>
+  </div>
+</template>

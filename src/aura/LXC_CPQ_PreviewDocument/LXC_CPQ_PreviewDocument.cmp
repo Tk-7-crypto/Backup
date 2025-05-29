@@ -1,0 +1,229 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId,force:hasSObjectName" access="global" controller="CNT_CPQ_PreviewDocumentController">
+    <aura:attribute name="selectedDocumentId" type="string"/>
+    <aura:attribute name="agreementRecord" type="object" />
+    <aura:attribute name="stdQuoteRecord" type="object" />
+    <aura:attribute name="quoteRecord" type="object" />
+    <aura:attribute name="contentDocList" type="List"/>
+    <aura:attribute name="contractDetailsObj" type="Object"/>
+    <aura:attribute name="showSpinner" type="Boolean" default="true" />
+    <aura:attribute name="hasModalOpen" type="boolean" default="false"/>
+    <aura:attribute name="bidHistoryId" type="String" />
+
+    <aura:if isTrue="{!(v.sObjectName == 'Apttus_Proposal__Proposal__c')}">
+        <force:recordData aura:id="recordLoader" fields="Id, Name, Contract__c, Clinical_Bid__c, Clinical_Bid__r.Record_Type_Developer_Name__c" recordId="{!v.recordId}" targetFields="{!v.quoteRecord}" recordUpdated="{!c.doInit}" />
+    </aura:if>
+    <aura:if isTrue="{!(v.sObjectName == 'Apttus__APTS_Agreement__c')}">
+        <force:recordData aura:id="recordLoader" fields="Id, Name, Contract__c, Record_Type_Developer_Name__c,Bid_History__c" recordId="{!v.recordId}" targetFields="{!v.agreementRecord}" recordUpdated="{!c.doInit}" />
+    </aura:if>
+    <aura:if isTrue="{!(v.sObjectName == 'Quote')}">
+        <force:recordData aura:id="recordLoader" fields="Id, Name, ContractId, Bid_History__c" recordId="{!v.recordId}" targetFields="{!v.stdQuoteRecord}" recordUpdated="{!c.doInit}" />
+    </aura:if>
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if>
+    <div class="slds-page-header slds-page-header_joined slds-page-header_bleed slds-shrink-none test-headerRegion slds-is-relative slds-page-header-no-border">
+        <h2 class="slds-card__header-title" style="line-height: revert;">
+            <lightning:icon iconName="standard:file" size="small" alternativeText="Triage Documents"/>
+            <span class="slds-card__header-link baseCard__header-title-container slds-truncate" style="padding-left: 10px;">Triage Documents</span>
+        </h2>
+    </div> 
+    <aura:if isTrue="{!v.contractDetailsObj.isDocumentListNotEmpty}">
+        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+            <thead>
+                <tr class="slds-line-height_reset">
+                    <th class="slds-text-title_caps" scope="col" style="width:50%">
+                        <div class="slds-truncate" title="Fine Name">File Name</div>
+                    </th>
+                    <th class="slds-text-title_caps" scope="col" style="width:50%">
+                        <div class="slds-truncate" title="File Type">File Type</div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.contentDocList}" var="CD">
+                    <tr>
+                        <th scope="row">
+                            <div class="slds-truncate" title="{!CD.ContentDocument.Title}">
+                                <a onclick="{!c.getSelected}" data-Id="{!CD.ContentDocumentId}">{!CD.ContentDocument.Title}</a>
+                            </div>
+                        </th>
+                        <th scope="row">
+                            <div class="slds-truncate" title="File Type">{!CD.ContentDocument.FileType}</div>
+                        </th>
+                    </tr>  
+                </aura:iteration>
+            </tbody>
+        </table>
+        <aura:set attribute="else">
+            <div class="backgroundcolor">
+                <div class="slds-form-element__control slds-align_absolute-center">
+                    <div class="blockBorder" style="margin:15px">    
+                        <div class="slds" style="width: 100%;text-align: center;padding:10px;">
+                            <span class="outputText"><b> No attached documents to display</b></span>
+                        </div>    
+                    </div>
+                </div>
+            </div>
+        </aura:set>
+    </aura:if>
+    <div class="slds-page-header slds-page-header_joined slds-page-header_bleed slds-shrink-none test-headerRegion slds-is-relative slds-page-header-no-border">
+        <h2 class="slds-card__header-title" style="line-height: revert;">
+            <lightning:icon iconName="standard:contract" size="small" alternativeText="Triage Information"/>
+            <span class="slds-card__header-link baseCard__header-title-container slds-truncate" style="padding-left: 10px;"> Triage Information</span>
+        </h2>
+    </div> 
+    <div class="backgroundcolor" style="width: 100%;padding-left:20px;padding-top:10px;">
+        <aura:if isTrue="{!AND(not(empty(v.contractDetailsObj.contractId)),empty(v.bidHistoryId))}"> 
+            <lightning:recordViewForm aura:id="viewForm" recordId="{!v.contractDetailsObj.contractId}" objectApiName="Contract">
+                <div class="slds-grid">
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="Line_Manager__c" />
+                        <lightning:outputField fieldName="IQVIA_Business_Account_Manager__c" />
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="Triage_Comments__c" />
+                        <lightning:outputField fieldName="Date_Tracking_started__c" />
+                    </div>
+                </div>
+                <div class="slds-grid">
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="IQVIA_Project_Manager__c" />
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="IQVIA_Supporting_Contract_Manager__c" />
+                    </div>
+                </div>
+                <div class="slds-grid">
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="Requestor_Name__c" />
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <div class="slds-grid" style="width: 100%;padding-left:4px;padding-top:5px;">
+                            <div class="slds-col slds-size_1-of-3"><label class="slds-form-element__label" for="form-element-01">Contract Owner</label></div>
+                            <div class="slds-col slds-size_2-of-3"><lightning:outputField variant="label-hidden" fieldName="OwnerId" /></div>
+                        </div>
+                    </div>
+                </div>
+            </lightning:recordViewForm>
+        </aura:if>
+        <aura:if isTrue="{!AND(not(empty(v.contractDetailsObj.contractId)),not(empty(v.bidHistoryId)))}">
+            <lightning:recordViewForm aura:id="viewForm" recordId="{!v.bidHistoryId}" objectApiName="Bid_History__c">
+                <div class="slds-grid">
+                    <div class="slds-col slds-size_1-of-2">
+                        <lightning:outputField fieldName="Contract_Project_Manager__c" />
+                        <lightning:outputField fieldName="Contract_IQVIA_Business_Account_Manager__c" />
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <div style="padding-left:5px;">
+                            <label class="slds-form-element__label" for="form-element-01">Bid Owner</label>
+                        	<lightning:outputField variant="label-hidden" fieldName="OwnerId" />
+                        </div>
+                        <lightning:outputField style="padding-top:8px;" fieldName="Requester_Name__c" />
+                    </div>
+                </div>
+                <div class="slds-grid">
+                    <lightning:outputField fieldName="Date_Tracking_Started__c" />
+                    <lightning:outputField fieldName="Triage_Notes__c" />
+                </div>
+            </lightning:recordViewForm>
+        </aura:if>
+    </div>
+    <aura:if isTrue="{!v.agreementRecord.Record_Type_Developer_Name__c == 'Vendor_Agreement'}">
+        <div class="slds-page-header slds-page-header_joined slds-page-header_bleed slds-shrink-none test-headerRegion slds-is-relative slds-page-header-no-border">
+            <h2 class="slds-card__header-title" style="line-height: revert;">
+                <lightning:icon iconName="standard:contract" size="small" alternativeText="Web Form Response"/>
+            <span class="slds-card__header-link baseCard__header-title-container slds-truncate" style="padding-left: 10px;"> Web Form Response</span>
+            </h2>
+        </div> 
+        <div class="backgroundcolor" style="width: 100%;padding-left:20px;padding-top:10px;">
+            <aura:if isTrue="{!not(empty(v.contractDetailsObj.contractId))}"> 
+                <lightning:recordViewForm aura:id="viewForm" recordId="{!v.contractDetailsObj.contractId}" objectApiName="Contract">
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Requestor_Name__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Expected_Customer_Signature_Date_Lab__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Business_Line__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Require_Senior_Finance_Review__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Business_Line_Other__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Date_Vendor_Must_Start_Works__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Customer_Name__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Qualification_Status_of_Vendor__c" />
+                        </div>
+                    </div>
+                     <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Vendor_Name__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Milestone_Impacted_by_Vendor_Services__c" />                       
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Vendor_Cost_IQVIA__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Date_of_Next_Study_Milestone__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Related_to_the_impact_of_Covid_19__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Qualification_Status_of_Vendor_Response__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="IQVIA_Cost_Approver__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="EU_Personal_Data__c" />
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="Vendor_budget_costs_covered__c" />
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning:outputField fieldName="EU_Personal_Data_Travel__c" />
+                        </div>
+                    </div>
+                </lightning:recordViewForm>
+            </aura:if>
+        </div>
+    </aura:if>
+    <aura:if isTrue="{!v.hasModalOpen}">
+        <section class="slds-modal slds-fade-in-open" role="dialog" aria-modal="true" onclick="{!c.closeModel}">
+            <div class="slds-modal__container">
+                <div class="slds-modal__content slds-p-around_medium slds-text-align_center" style="background: transparent;">
+                    <div style="width: 50%; margin: 0 auto; text-align: left">
+                        <lightning:fileCard fileId="{!v.selectedDocumentId}"/>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

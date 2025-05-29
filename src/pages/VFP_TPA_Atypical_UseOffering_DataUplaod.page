@@ -1,0 +1,642 @@
+<apex:page controller="CNT_TPA_Atyp_UseOff_DataUpload" sidebar="false" cache="false" title="Atypical Use Offering Combination Upload" id="pg" tabStyle="IMS_Use_Offering_Atypical_Combination__c" standardStylesheets="false" lightningStyleSheets="true" >
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+            <!-- stylesheet for new style tab -->
+            <apex:stylesheet value="/sCSS/52.0/sprites/1297816277000/Theme3/default/gc/versioning.css" />
+
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}" />
+            <!-- *** Angular-JS Library reference ** -->
+
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <script src="../static/102010/js/picklist.js"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->
+
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+
+            <!-- *** JQuery UI Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" />
+            <!-- *** JQuery UI Stylesheet reference *** -->
+
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** -->
+
+            <!-- *** Yahoo Javascript Library reference *** -->
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/dragdrop/dragdrop-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/treeview-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/menu-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo/yahoo-min.js')}" />
+            <!-- *** Yahoo Javascript Library reference *** -->
+
+            <!-- *** Yahoo Css Library reference *** -->
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/assets/skins/sam/skin.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+            <!-- *** Yahoo Css Library reference *** -->
+
+            <!-- *** Multi Select Control CSS reference *** -->
+            <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+            <!-- *** Multi Select Control CSS reference *** -->
+
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!--  Multi Select Control Javascript Library reference  -->
+
+            <style type="text/css">
+               <!-- .tableWrapper 
+                {
+                    height: 400px;
+                    overflow-x: hidden;
+                } -->
+             .detailList table  {
+                table-layout: auto !important;
+                }
+            </style>
+            
+            <!-- ****** AngularJS script Start ****** -->
+            <script type="text/javascript">
+                //*** Wait Panel Start ***//
+                // Create a namespace for our custom functions
+                YAHOO.namespace("force.com");
+                
+                /**
+                 * Builds the wait panel.
+                 */
+                YAHOO.force.com.buildWaitPanel = function() 
+                {
+                    document.body.className = document.body.className + " yui-skin-sam";
+                    YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                        "waitPanel",  // The id of our dialog container
+                        { 
+                            width           :   "300px", // You can play with this until it is right
+                            visible         :   false,   // Should be invisible when rendered
+                            draggable       :   false,   // Make the dialog draggable
+                            close           :   false,   // Do not include a close title button
+                            modal           :   true,    // Make it modal
+                            fixedCenter     :   true,    // Keep centered if window is scrolled
+                            zindex          :   40,      // Make sure it is on top of everything
+                            constraintoviewport: true,
+                            
+                            // This line adds the appear/disapper fade effect
+                            effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                        });
+                
+                    // header
+                    YAHOO.force.com.waitPanel.setHeader("{!$Label.TPA_Please_wait}");// text updated by sumita  dabas issue 5222 27 august 2014,Modified by Govind under ER-1940
+                    // set image
+                    YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+                    // Render the dialog to the document.body level of the DOM
+                    YAHOO.force.com.waitPanel.render(document.body);
+                }
+                
+                /**
+                 * Callback when the action button is clicked
+                 */
+                function onActionClick() 
+                {
+                    // show the modal panel
+                    if(YAHOO.force.com.waitPanel != null)
+                        YAHOO.force.com.waitPanel.show();
+                    // return false to allow the action to proceed
+                    return false;
+                }
+            
+                /**
+                 * Callback when the action is completed
+                 */
+                function onActionComplete() 
+                {
+                    // hide the modal panel
+                    //hideRequiredInput();
+                    if(YAHOO.force.com.waitPanel != null)
+                        YAHOO.force.com.waitPanel.hide();
+                    window.scrollTo(0,0);
+                }
+            
+                YAHOO.force.com.onDOMReady = function() 
+                {
+                    // add our custom skin css to the body tag
+                    document.body.className = document.body.className + " yui-skin-sam";  
+                    
+                    // build the wait panel
+                    YAHOO.force.com.buildWaitPanel();
+                }
+            
+                // build the tree as soon as the DOM is in a usable state
+                YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady); 
+                //*** Wait Panel End ***//
+                
+                //AngularJs App Start----------------------------------------------------------------------------------
+                var myapp = angular.module('AypicalUseOfferings', ['ui.bootstrap']);
+                var contrl = myapp.controller('controllerPage', ['$scope', '$filter', '$modal', '$log', '$window', function($scope, $filter, $modal, $log, $window) 
+                { 
+                    <!-- Initialize Services -->
+                    $scope.$log = $log;
+                    <!-- Initialize Services -->
+                    
+                    //Map of all existing master Aypical use and offering combinations
+                    //Key : UseCategory Id + Use Id + Pri Offering Id [+ sec Off Id]
+                    //Value : Aypical use and offering combinations Object
+                    $scope.existingUseOffCombMap = {!JSONAtypicalUseOffCombMap};
+                    $scope.$log.info('$scope.existingUseOffCombMap = ' + JSON.stringify($scope.existingUseOffCombMap));
+                    
+                    //List of all active master use categories
+                    $scope.useCategoryList = {!jsonUseCategoryList};                                             
+                    //$scope.$log.info('jsonUseCategoryList = ' + JSON.stringify({!jsonUseCategoryList}));
+                    $scope.useCategoryList.splice(0, 0, {Category_Name__c: '--None--'});
+                    //$scope.$log.info('jsonUseCategoryList.Category_Name__c = ' + $scope.useCategoryList[0].Category_Name__c);
+                    
+                    //List of all active master use category and use junction object records
+                    $scope.use_CategoryCombList = {!jsonUse_categoryCombList};
+                    //$scope.$log.info('jsonUse_categoryCombList = ' + JSON.stringify({!jsonUse_categoryCombList}));
+                    $scope.use_CategoryCombList.splice(0, 0, {'IMS_TPA_Purpose__r':{'Primary_Purpose_Name__c': '--None--'}});
+                    //$scope.$log.info('use_CategoryCombList[0].IMS_TPA_Purpose__r.Primary_Purpose_Name__c = ' + JSON.stringify($scope.use_CategoryCombList[0]));
+                                                                                                              
+                    //List of all active master primary offerings Data
+                    $scope.offeringsList = {!jsonOfferingList};
+                    //$scope.$log.info('jsonOfferingList = ' + JSON.stringify({!jsonOfferingList}));
+                    $scope.offeringsList.splice(0, 0, {Asset_Name__c: '--None--'});
+                    $.each($scope.offeringsList, function(k,v)
+                    {
+                        //$scope.$log.info('v.IMS_Secondary_Data_Assets__r : ' + JSON.stringify(v.IMS_Secondary_Data_Assets__r));
+                        if(v.IMS_Secondary_Data_Assets__r != null && v.IMS_Secondary_Data_Assets__r.records != null && v.IMS_Secondary_Data_Assets__r.records.length > 0 )
+                        {
+                            v.IMS_Secondary_Data_Assets__r.records.splice(0, 0, {'Secondary_Asset_Name__c': '--None--'});
+                            
+                        }
+                    });
+                    
+                    //Offering Country list
+                    $scope.countryList = {!RegionList};
+                    //$scope.$log.info('RegionList = ' + JSON.stringify({!RegionList}));
+                                        
+                    //$scope.secOfferingsList = [];
+                    
+                    //Offering Categories list
+                    $scope.offCategoryList = {!OfferingCategoryList};
+                    //$scope.$log.info('offCategoryList = ' + JSON.stringify({!OfferingCategoryList}));
+                    
+                    $scope.searchColumns = [];
+                    $scope.searchColumns.push('Use_Category__r.Category_Name__c~Use Category');
+                    $scope.searchColumns.push('Use_Name__r.Primary_Purpose_Name__c~Use Name');
+                    $scope.searchColumns.push('Offering_Country_del__c~Offering Country'); 
+                    $scope.searchColumns.push('Offering_Category__c~Offering Category');   
+                    $scope.searchColumns.push('Offering_Name__r.Asset_Name__c~Primary Offering Name');
+                    $scope.searchColumns.push('Secondary_Offering_Name__r.Secondary_Asset_Name__c~Secondary Offering Name');                
+                    $scope.$log.info($scope.searchColumns);
+                    $scope.searchByColumn = $scope.searchColumns[0].split('~')[0];
+                    
+                    $scope.useOffComb = {};
+                    $scope.useOffComb.selectedUseCategory = $scope.useCategoryList[0];
+                    $scope.useOffComb.selectedUse = $scope.use_CategoryCombList[0];
+                    $scope.useOffComb.selectedOfferingContry = $scope.countryList[0];
+                    $scope.useOffComb.selectedOfferingCategory = $scope.offCategoryList[0];
+                    $scope.useOffComb.selectedPriOffering = $scope.offeringsList[0];
+                    $scope.useOffComb.isActive = false;
+                    $scope.useOffComb.isFutureApproved = false;
+                    
+                    $scope.saveType = '';
+                    
+                    $scope.UseOffCombObj = {};
+                    $scope.UseOffCombObj.Id = '';
+                                                                 
+                    //filter all uses that come under selected use category
+                    $scope.filterUsesByCategory = function()
+                    {
+                        return function(data)
+                        {
+                            //$scope.$log.info('data.TPA_Purpose_Category__c = ' + data.TPA_Purpose_Category__c);
+                            //$scope.$log.info('$scope.useOffComb.selectedUseCategory = ' + JSON.stringify($scope.useOffComb.selectedUseCategory) + 'Id = ' + $scope.useOffComb.selectedUseCategory.Id);
+                            $scope.$log.info('selsected use = ' + JSON.stringify($scope.useOffComb.selectedUse));
+                            if((    data.Category_Name__c != '--None--' &&  data.TPA_Purpose_Category__c == $scope.useOffComb.selectedUseCategory.Id) 
+                                ||  data.IMS_TPA_Purpose__r.Primary_Purpose_Name__c == '--None--')
+                            {
+                                return true;
+                            }
+                            return false;
+                        }
+                    }
+                    
+                    //Filter all primary offerings that come under selected country
+                    $scope.filterOfferingsByCountry = function()
+                    {
+                        return function(data)
+                        {
+                            //$scope.$log.info('data.BU__c = ' + data.BU__c );
+                            $scope.$log.info('$scope.useOffComb.selectedPriOffering in filterOfferingsByCountry  = ' + JSON.stringify($scope.useOffComb.selectedPriOffering) );
+                            if((data.BU__c == $scope.useOffComb.selectedOfferingContry && data.Geo_Level__c == $scope.useOffComb.selectedOfferingCategory) || data.Asset_Name__c == '--None--' )
+                            {
+                                return true;
+                            }
+                            return false;
+                        }
+                    }
+                    
+                    /*$scope.UpdateSecOfferingList = function()
+                    {
+                        //$scope.secOfferingsList = $scope.useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r;
+                        $scope.$log.info('size = ' + $scope.useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r );
+                    }*/
+                                                                 
+                    $scope.SaveReuest = function()
+                    {
+                        //$scope.$log.info('$scope.useOffComb = ' + JSON.stringify($scope.useOffComb));
+                        if($scope.useOffComb.isActive) {
+                            if(!$scope.validateForm())
+                            {
+                                return false;
+                            }
+                        }
+                        if($scope.saveType != 'Edit')
+                        {
+                            delete $scope.UseOffCombObj["Id"];
+                            $scope.saveType = '';
+                        }
+                        
+                        if($scope.useOffComb.isActive) {
+                            $scope.UseOffCombObj.Use_Category__c = $scope.useOffComb.selectedUseCategory.Id;
+                            $scope.UseOffCombObj.Use_Name__c = $scope.useOffComb.selectedUse.IMS_TPA_Purpose__c;
+                            $scope.UseOffCombObj.Offering_Country_del__c = $scope.useOffComb.selectedOfferingContry;
+                            $scope.UseOffCombObj.Offering_Name__c = $scope.useOffComb.selectedPriOffering.Id;
+                            if($scope.useOffComb.selectedSecOffering != null && $scope.useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != null)
+                                $scope.UseOffCombObj.Secondary_Offering_Name__c = $scope.useOffComb.selectedSecOffering.Id;
+                            else
+                                $scope.UseOffCombObj.Secondary_Offering_Name__c = null;
+                        }
+                        $scope.UseOffCombObj.isActive__c = $scope.useOffComb.isActive;
+                        
+                        //$scope.UseOffCombObj.is_Approved_For_Future__c = $scope.useOffComb.isFutureApproved;
+                                 
+                        //$scope.$log.info('$scope.UseOffCombObj= ' + JSON.stringify($scope.UseOffCombObj));
+                        
+                        onActionClick();
+                        
+                        CNT_TPA_Atyp_UseOff_DataUpload.saveRequest(JSON.stringify($scope.UseOffCombObj).replace(/null/i, "\"\""), function(result, event)
+                        {
+                            $scope.$log.warn(result);
+                            if(event.type == 'exception')
+                            {
+                                onActionComplete(); 
+                                $scope.$log.info('Error: ' + event.message);
+                                return false;                                    
+                            }
+                            else
+                            {   
+                                onActionComplete(); 
+                                $scope.$log.info('Success');
+                                $scope.existingUseOffCombMap = result;
+                                $scope.resetForm();
+                                $scope.applyChanges();
+                            }
+                        });
+                    }
+                    
+                    $scope.resetForm = function()
+                    {
+                        $scope.saveType = '';
+                        $scope.UseOffCombObj.Id = '';
+                        $scope.useOffComb.selectedUseCategory = $scope.useCategoryList[0];
+                        $scope.useOffComb.selectedUse= $scope.use_CategoryCombList[0];
+                        $scope.useOffComb.selectedOfferingContry = $scope.countryList[0];
+                        $scope.useOffComb.selectedOfferingCategory = $scope.offCategoryList[0];
+                        $scope.useOffComb.selectedPriOffering = $scope.offeringsList[0];
+                        $scope.useOffComb.selectedSecOffering = '';
+                        $scope.useOffComb.isActive = false;
+                        $scope.useOffComb.isFutureApproved = false;
+                    }
+                                                                 
+                    $scope.editRecord = function(obj)
+                    {
+                        $scope.saveType = 'Edit';
+                        $scope.UseOffCombObj.Id = angular.copy(obj.Id);
+                        $.each($scope.useCategoryList, function(k, v)
+                        {
+                            if(obj.Use_Category__c == v.Id)
+                                $scope.useOffComb.selectedUseCategory = v;                            
+                        });
+                        
+                        $.each($scope.use_CategoryCombList , function(k, v)
+                        {
+                            //$scope.$log.info('obj.Use_Name__c = ' + obj.Use_Name__c +' v.IMS_TPA_Purpose__c =   ' + v.IMS_TPA_Purpose__c);
+                            //$scope.$log.info('obj.USe_Category_Name__c = ' + obj.Use_Category__c + ' v.IMS_TPA_Purpose__c =   ' + v.TPA_Purpose_Category__c);
+                            if(obj.Use_Name__c == v.IMS_TPA_Purpose__c && obj.Use_Category__c == v.TPA_Purpose_Category__c)
+                                $scope.useOffComb.selectedUse = v;                            
+                        });
+                        
+                        $scope.useOffComb.selectedOfferingContry = obj.Offering_Country_del__c;
+                                                                     
+                        $.each($scope.offeringsList , function(k, v)
+                        {
+                            if(obj.Offering_Name__c == v.Id)
+                            {
+                                $scope.useOffComb.selectedPriOffering = v;
+                                $scope.useOffComb.selectedOfferingCategory = v.Geo_Level__c;
+                                if(v.IMS_Secondary_Data_Assets__r != null)
+                                {
+                                    $.each(v.IMS_Secondary_Data_Assets__r.records , function(k1, v1)
+                                    {   
+                                        if(obj.Secondary_Offering_Name__c == v1.Id)
+                                            $scope.useOffComb.selectedSecOffering = v1;
+                                    });
+                                }
+                            }
+                        });
+                        
+                        $scope.useOffComb.isActive = obj.isActive__c;
+                        
+                        //$scope.useOffComb.isFutureApproved = obj.is_Approved_For_Future__c;
+                    }
+                                                                 
+                    $scope.validateForm = function()
+                    {
+                        if($scope.useOffComb.selectedUseCategory == null || $scope.useOffComb.selectedUseCategory == '' || $scope.useOffComb.selectedUseCategory.Category_Name__c== '--None--')
+                        {
+                            $scope.popupAlert('Please select Use Category');
+                            $scope.isUseCategoryEmpty = true;
+                            return false;
+                        }
+                        if($scope.useOffComb.selectedUse == null || $scope.useOffComb.selectedUse == '' || $scope.useOffComb.selectedUse.IMS_TPA_Purpose__r.Primary_Purpose_Name__c == '--None--')
+                        {
+                            $scope.popupAlert('Please select Use');
+                            $scope.isUseNameEmpty = true;
+                            return false;
+                        }
+                        if($scope.useOffComb.selectedOfferingContry == null || $scope.useOffComb.selectedOfferingContry == '' || $scope.useOffComb.selectedOfferingContry == '--None--')
+                        {
+                            $scope.popupAlert('Please select Offering Country');
+                            $scope.isOfferingCountryEmpty = true;
+                            return false;
+                        }
+						if($scope.useOffComb.selectedOfferingCategory == null || $scope.useOffComb.selectedOfferingCategory == '' || $scope.useOffComb.selectedOfferingCategory == '--None--')
+                        {
+                            $scope.popupAlert('Please select Offering Category');
+                            $scope.isOfferingCategoryEmpty = true;
+                            return false;
+                        }
+                        if($scope.useOffComb.selectedPriOffering == null || $scope.useOffComb.selectedPriOffering == '' || $scope.useOffComb.selectedPriOffering.Asset_Name__c == '--None--')
+                        {
+                            $scope.popupAlert('Please select Primary Offering');
+                            $scope.isPriOfferingEmpty = true;
+                            return false;
+                        }
+                        if(($scope.useOffComb.selectedPriOffering != null && $scope.useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != null) && ($scope.useOffComb.selectedSecOffering == null || $scope.useOffComb.selectedSecOffering == '' || $scope.useOffComb.selectedSecOffering.Secondary_Asset_Name__c == '--None--'))
+                        {
+                            $scope.popupAlert('Please select Secondary Offering');
+                            $scope.isSecOfferingEmpty = true;
+                            return false;
+                        }
+                        if($scope.saveType != 'Edit')
+                        {
+                            if($scope.useOffComb.selectedSecOffering != null)
+                            {
+                                $scope.key = '' + $scope.useOffComb.selectedUseCategory.Id 
+                                                + $scope.useOffComb.selectedUse.IMS_TPA_Purpose__c
+                                                + $scope.useOffComb.selectedPriOffering.Id
+                                                + $scope.useOffComb.selectedSecOffering.Id;
+                            }
+                            else
+                            {
+                                $scope.key = '' + $scope.useOffComb.selectedUseCategory.Id 
+                                                + $scope.useOffComb.selectedUse.IMS_TPA_Purpose__c
+                                                + $scope.useOffComb.selectedPriOffering.Id;
+                            }
+                            $scope.$log.info('$scope.key = ' + $scope.key);
+                            $scope.$log.info('$scope.existingUseOffCombMap[$scope.key] = ' + $scope.existingUseOffCombMap[$scope.key]);
+                            if($scope.existingUseOffCombMap[$scope.key] != null)
+                            {
+                                $scope.popupAlert('This record already exists.');
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    }
+                                                                             
+                    //*** function triggers and applies all angular scope changes explicitly ***//
+                    $scope.applyChanges = function()
+                    {
+                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                            $scope.$apply();
+                    }
+                    
+                    $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true}, 
+                        function(r)
+                        {
+                            if(r && truePart != null)
+                                truePart();
+                        });  
+                    }
+                    //****** Angular Apply All Changes Event End ******//
+                    
+                    $scope.searchByText = function()
+                    {
+                        if($scope.searchTxt != null && $scope.searchTxt.length > 1)
+                        {    
+                            if($scope.existingUseOffCombMapCopy == null)
+                                $scope.existingUseOffCombMapCopy = angular.copy($scope.existingUseOffCombMap);
+                            $scope.existingUseOffCombMap = [];
+                            angular.forEach($scope.existingUseOffCombMapCopy, function(v, k){
+                                if($scope.searchByColumn == 'Use_Category__r.Category_Name__c' && (v.Use_Category__r.Category_Name__c != null && v.Use_Category__r.Category_Name__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                                else if($scope.searchByColumn == 'Use_Name__r.Primary_Purpose_Name__c' && (v.Use_Name__r.Primary_Purpose_Name__c != null && v.Use_Name__r.Primary_Purpose_Name__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                                else if($scope.searchByColumn == 'Offering_Country_del__c' && (v.Offering_Country_del__c != null && v.Offering_Country_del__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                                else if($scope.searchByColumn == 'Offering_Category__c' && (v.Offering_Category__c != null && v.Offering_Category__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                                else if($scope.searchByColumn == 'Offering_Name__r.Asset_Name__c' && (v.Offering_Name__r.Asset_Name__c != null && v.Offering_Name__r.Asset_Name__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                                else if($scope.searchByColumn == 'Secondary_Offering_Name__r.Secondary_Asset_Name__c' && (v.Secondary_Offering_Name__c != null && v.Secondary_Offering_Name__r.Secondary_Asset_Name__c != null && v.Secondary_Offering_Name__r.Secondary_Asset_Name__c.toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1))
+                                    $scope.existingUseOffCombMap.push(angular.copy(v));
+                            });
+                        }
+                        else
+                        {
+                            if($scope.existingUseOffCombMapCopy != null)
+                                $scope.existingUseOffCombMap = angular.copy($scope.existingUseOffCombMapCopy);
+                        }
+                    }
+                    
+                    $scope.export = function()
+                    {
+                        window.location.href = '/apex/VFP_TPA_Atyp_UseOff_DataUplaodXML'; 
+                    }
+                    
+                }]);
+                
+                
+                //AngularJs App End----------------------------------------------------------------------------------
+            </script>
+            <!-- ****** AngularJS script End ****** -->
+            <apex:slds />
+            <apex:includeLightning />
+        </head>
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-size: cover; min-height: 100vh">
+             <div class="slds-scope">
+            <apex:form >
+                <div id="ng-app" ng-app="AypicalUseOfferings">
+                    <div id="controllerPage" ng-controller="controllerPage">
+                        <apex:pageMessages id="message" />
+                        <apex:pageBlock title="Atypical Uses and Offerings"><!-- Updated by Babita Dadarwal under Issue-10655-->
+                            <apex:pageBlockButtons location="top">
+                                <button class="btn btn-default" style="font-weight: bold; font-size: 12px" ng-click="SaveReuest()" onclick="return false;">Save</button>
+                                <button class="btn btn-default" style="font-weight: bold; font-size: 12px" ng-click="resetForm()" onclick="return false;">Reset</button>
+                            </apex:pageBlockButtons>
+                            <apex:pageBlockSection html-style="background-color:white;" columns="2" title="New Record">
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Use Category" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idUseCateory" ng-model="useOffComb.selectedUseCategory" ng-options="v.Category_Name__c for v in useCategoryList" ng-change="useOffComb.selectedUse= use_CategoryCombList[0];" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Use" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idUse" ng-model="useOffComb.selectedUse" ng-options="v.IMS_TPA_Purpose__r.Primary_Purpose_Name__c for v in use_CategoryCombList | filter : filterUsesByCategory()" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Offering Country" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idOffCountry" ng-model="useOffComb.selectedOfferingContry" ng-options="v for v in countryList" ng-change="useOffComb.selectedPriOffering = offeringsList[0];useOffComb.selectedOfferingCategory = offCategoryList[0];" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Offering Category" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idOffCategory" ng-model="useOffComb.selectedOfferingCategory" ng-options="v for v in offCategoryList" ng-change="useOffComb.selectedPriOffering = offeringsList[0];" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Primary Offering" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idPriOffering" ng-model="useOffComb.selectedPriOffering" ng-options="v.Asset_Name__c for v in offeringsList | filter : filterOfferingsByCountry()" ng-change="useOffComb.selectedSecOffering = useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r.records[0];" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Is Active" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <input id="idIsActive" ng-model="useOffComb.isActive" type="checkbox"/>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Secondary Offering" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" html-ng-show="useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != 'undefined' && useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != null"/>
+                                    <apex:outputPanel html-ng-show="useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != 'undefined' && useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r != null">
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <select id="idSecOffering" ng-model="useOffComb.selectedSecOffering" ng-options="v.Secondary_Asset_Name__c for v in useOffComb.selectedPriOffering.IMS_Secondary_Data_Assets__r.records" ng-disabled="saveType=='Edit'">
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <!-- <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Is Future Approved" styleClass="labelText" style="color:#4a4a56;padding-left:5px;" />
+                                    <apex:outputPanel >
+                                        <input id="idIsFutureApproved" ng-model="useOffComb.isFutureApproved" type="checkbox"/>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem> -->
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection html-style="background-color:white;" columns="1" title="Existing Records">
+                                <apex:outputPanel >
+                                    <label>Search By : 
+                                        <select id="searchId" ng-model="searchByColumn" ng-change="searchByText();" ng-options="v.split('~')[0] as v.split('~')[1] for v in searchColumns"></select>
+                                        <input placeholder="Enter Atleast Two Characters To Search..." ng-change="searchByText();" style="width:300px;" ng-model="searchTxt" type="text" />
+                                    </label>
+                                    <button class="slds-button slds-button--neutral slds-truncate" style="font-weight: bold; font-size: 12px" ng-click="export();" onclick="return false;">Export To Excel</button>
+                                </apex:outputPanel>
+                                <apex:outputPanel >
+                                    <div class="tableWrapper">
+                                       <table id="manualReviewApproval" class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" role="grid">
+                                           <thead class="slds-theme_shade"> 
+                                           <tr class="slds-text-heading slds-line-height_reset ">
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="#" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Use Category" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Use" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Offering Country" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Offering Category" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Primary Offering" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Secondary Offering" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Is Active" /></th>
+                                                <!--<th class="headerRow"><apex:outputLabel value="Is Future Approved" /></th> -->
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Last Modified By" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Last Modified Date" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Action" /></th>
+                                            </tr>
+                                           </thead>
+                                            <tr class="dataRow" ng-repeat="(key, data) in existingUseOffCombMap" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                                <td class="dataCell">{{$index + 1}}</td>
+                                                <td class="dataCell">{{data.Use_Category__r.Category_Name__c}}</td>
+                                                <td class="dataCell">{{data.Use_Name__r.Primary_Purpose_Name__c}}</td>
+                                                <td class="dataCell">{{data.Offering_Country_del__c}}</td>
+                                                <td class="dataCell">{{data.Offering_Category__c}}</td>
+                                                <td class="dataCell">{{data.Offering_Name__r.Asset_Name__c}}</td>
+                                                <td class="dataCell">{{data.Secondary_Offering_Name__r.Secondary_Asset_Name__c}}</td>
+                                                <td class="dataCell">{{data.isActive__c ? "Yes" : "No"}}</td>
+                                                <!-- <td class="dataCell">{{data.is_Approved_For_Future__c ? "Yes" : "No"}}</td> -->
+                                                <td class="dataCell">{{data.LastModifiedBy.Name}}</td>
+                                                <td class="dataCell">{{data.LastModifiedDate | date:'MM/dd/yyyy'}}</td>
+                                                <td><a href="javascript:void(0)" style="text-decoration: underline;" ng-click="editRecord(data);">Edit</a></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSection>
+                        </apex:pageBlock>
+                    </div>
+                </div>
+            </apex:form>
+            </div>
+        </body>
+    </html>
+</apex:page>

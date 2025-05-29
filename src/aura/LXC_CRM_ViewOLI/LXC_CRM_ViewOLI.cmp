@@ -1,0 +1,92 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="flexipage:availableForAllPageTypes,force:hasRecordId">
+        <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+        <aura:attribute name="listOfOli" type="List"/>
+        <aura:attribute name="source" type="String"/>
+        <aura:handler event="c:LXE_CRM_ReloadEvent" action="{!c.reload}"/>
+        <aura:attribute name="headerList" type="List" required="true" default="Name,Sales Price,Delivery Country,Billing System,Revenue Type,Sale Type,Product Start Date,Product End Date,Line Description"/>
+        <aura:attribute name="headerApiList" type="List"  default="Name,UnitPrice,Delivery_Country__c,Billing_System__c,Revenue_Type__c,Sale_Type__c,Product_Start_Date__c,Product_End_Date__c,Description,Id"/>
+        <aura:attribute name="selectedValues" type="Object[]"/>
+        <aura:attribute name="resultObjectWrapper" type="Object[]" />
+        <aura:attribute name="isAddProduct" type="boolean" default="false"/>
+        <article class="slds-card slds-m-vertical_medium">
+            <div class="slds-card__body">
+                <aura:if isTrue="{!v.resultObjectWrapper.length > 0}">
+                    <span>
+                        <table class="slds-table slds-table_bordered slds-table_resizable-cols slds-table--header-fixed slds-table_cell-buffer" role="grid">
+                            <thead>
+                                <tr class="slds-hint-parent">
+                                    <aura:iteration items="{!v.headerList}" var="headerItem" >
+                                        <th role="gridcell" class="slds-is-sortable setMaxWith" scope="col">
+                                            <div class="line-height-heading slds-th__action slds-text-link_reset slds-text-title_caps" >
+                                                <span class="slds-assistive-text">Sort</span>
+                                                <span class="slds-truncate" title="{!headerItem}">{!headerItem}</span>
+                                                <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                            </div>
+                                        </th>
+                                    </aura:iteration>
+                                    <th colspan="3" role="gridcell" class="{!v.source != 'Quote__c'?'slds-is-sortable setMaxWith':'slds-hide'}" scope="col" >
+                                        <div class="slds-align_absolute-center line-height-heading slds-th__action slds-text-link_reset slds-text-title_caps" >
+                                            <span class="slds-assistive-text">Sort</span>
+                                            <span class="slds-truncate" title="Action">Action</span>
+                                            <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <aura:iteration items="{!v.resultObjectWrapper}" var="productItem" indexVar="index">
+                                    <tr class="slds-hint-parent">
+                                        <aura:iteration items="{!productItem.dataColumns}" var="productData">
+                                            <td>
+                                                <aura:if isTrue="{! productData.api == 'Name' || productData.api == 'bundleProductName'}">
+                                                    <div class="slds-truncate setMaxWith" title="{!productData.data}">
+                                                        <a  href="javascript:void(0);" onclick="{!c.navigateToRecord}" data-id="{!index}">
+                                                            {!productData.data}
+                                                        </a>
+                                                    </div>
+                                                    <aura:set attribute="else">
+                                                        <div class="slds-truncate setMaxWith" title="{!productData.data}">{!productData.data}</div>
+                                                    </aura:set>
+                                                </aura:if>
+                                            </td>
+                                        </aura:iteration>
+                                        <td class="{!v.source != 'Quote__c'? '':'slds-hide'}">
+                                            <div class="slds-align_absolute-center" id="{!'popoverbutton_' + index}" onmouseover="{!c.showpopover}" onmouseout="{!c.hidepopover}">
+                                                <section class="slds-popover slds-nubbin_right slds-hide setWidth" aura:id="popoversection" role="tooltip" style="position:absolute;top:-7px;right:97px;" aria-label="Dialog Title" aria-describedby="dialog-body-id-2">
+                                                    <div class="slds-popover__body" id="dialog-body-id-2">
+                                                        <aura:if isTrue="{!productItem.isNonMaterialProduct}">
+                                                            <lightning:buttonIcon iconClass="blueFill" name="{!index}" iconName="utility:contract_alt" alternativeText="Resolve" onclick="{!c.resolveLineItem}"/>
+                                                        </aura:if>
+                                                        <lightning:buttonIcon iconClass="blueFill" name="{!index}" iconName="utility:replace" alternativeText="Change" onclick="{!c.changeLineItem}"/>
+                                                        <lightning:buttonIcon iconClass="blueFill" name="{!index}" iconName="utility:edit" alternativeText="Edit" onclick="{!c.editRecord}"/>
+                                                        <button class="slds-button slds-button_icon-border" type="button" title="Clone" id="{!index}" onclick="{!c.cloneRecord}">
+                                                            <lightning:icon aura:id="cloneIcon" size="x-small" iconName="action:clone" alternativeText="Clone1" />
+                                                        </button>
+                                                        <lightning:buttonIcon iconClass="blueFill" name="{!index}" iconName="utility:delete" alternativeText="Delete" onclick="{!c.deleteRecord}"/>
+                                                    </div>
+                                                </section>
+                                                <lightning:icon size="x-small" class="icn" iconName="utility:threedots" alternativeText="Action" title="Action"/> 
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </aura:iteration>
+                            </tbody>
+                        </table>
+                    </span>
+                    <aura:set attribute="else">
+                        <tr class="slds-hint-parent">
+                            <td colspan="{!v.headerList.length}" role="gridcell" class="slds-is-sortable slds-p-top_x-small" scope="row">
+                                <div class="slds-text slds-text-heading_small line-height-heading" >{!$Label.c.CRM_CL0007_OPPORTUNITY_PRODUCTS_MSG}</div>    
+                            </td>
+                        </tr>
+                    </aura:set>
+                </aura:if>
+            </div>
+            <footer class="slds-card__footer">
+                <div class="slds-grid slds-grid_align-end">
+                    <lightning:navigation aura:id = "navService"/>
+                    <button class="slds-button slds-button_neutral" onclick="{!c.editAllRecord}" disabled="{!v.isAddProduct}">Edit Products</button>
+                </div>
+            </footer>
+        </article>
+    </aura:component>

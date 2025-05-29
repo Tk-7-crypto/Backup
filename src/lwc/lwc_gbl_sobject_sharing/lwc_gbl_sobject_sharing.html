@@ -1,0 +1,139 @@
+<template>
+    <lightning-card>
+        <template if:true={showSpinner}> 
+            <lightning-spinner></lightning-spinner>
+        </template>
+        <div class="slds-text-heading_medium slds-text-align_center slds-is-relative">SObject Sharing <div class="slds-text-heading_medium slds-text-align_right slds-m-right_small slds-is-absolute" style="display: inline-block;float: right;top: -2px;right: 0;"><lightning-button-icon onclick={fetchSobjectSharingRecordsFn} icon-name="utility:refresh" class="lighntingIcon" alternative-text="refresh!" title="refresh" size="x-small"></lightning-button-icon></div></div>
+        <template if:true={isAnyBatchProcessing}>
+            <div class="slds-notify slds-notify_alert slds-m-top_small slds-theme_alert-texture slds-theme_offline" role="alert">
+                <span class="slds-assistive-text"></span>
+                <h2>Some sharing is under process, please wait till they finish.
+                </h2>
+                <div class="slds-notify__close">
+                </div>
+            </div>  
+            <br/>
+        </template>
+        <lightning-tabset>
+            <lightning-tab label="Sharing">
+            <template if:true={isErrorFound}>
+                <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                    <span class="slds-assistive-text"></span>
+                    <h2>No records found.
+                    </h2>
+                    <div class="slds-notify__close">
+                    </div>
+                </div>
+                <br/>
+            </template>
+            <div class="slds-m-top_small">
+                <template for:each={allRecords} for:item="rec">
+                    <div key={rec.type} class="slds-grid slds-grid_align-left firstHierarchy">
+                        <div class="slds-col slds-grow-none slds-m-left_small">
+                            <span>
+                                <lightning-button-icon onclick={setParentBlockvisibility} icon-name="utility:add" class="lighntingIcon" alternative-text="Success!" title="default style" size="x-small"></lightning-button-icon>
+                            </span>
+                        </div>&nbsp;&nbsp;
+                        <div class="slds-col slds-size_2-of-6 slds-m-right_small">
+                            <span title={rec.type}>{rec.type}</span>
+                        </div>
+                        
+                        <div class="slds-col slds-size_1-of-6">
+                            <span><lightning-input type="checkbox" onchange={checkAllCheckboxes} label=" "></lightning-input></span>
+                        </div>
+                    </div>
+                    <div key={rec.type} class="setParentBlockvisibility slds-hide slds-m-bottom_medium">
+                        <template for:each={rec.subData} for:item="subdata">
+                            <div key={subdata.parentObj} class="slds-grid hierarhylevel2 hierarchyLevelParent firstBlock">
+                                <div class="slds-col slds-grow-none">
+                                    <span>
+                                        <lightning-button-icon onclick={setSecondBlockvisibility} icon-name="utility:add" class="lighntingIcon" alternative-text="Success!" title="default style" size="x-small"></lightning-button-icon>
+                                    </span>
+                                </div>&nbsp;&nbsp;
+                                <div class="slds-col slds-size_3-of-6 slds-truncate slds-m-right_small">
+                                    <span title={subdata.parentObj}>{subdata.parentObj}</span>
+                                </div>
+                                
+                                <div class="slds-col slds-size_1-of-6">
+                                    <span><lightning-input class="selectAll selectParent" onchange={checkAllChildCheckbox} type="checkbox" label=" "></lightning-input></span>
+                                </div>
+                            </div>
+                            <div key={subdata.parentObj} id={subdata.parentObj} class="setChildBlockvisibility slds-hide">
+                                <template for:each={subdata.childObj} for:item="childobj">
+                                    <div key={childobj.childObjName} class="slds-grid hierarhylevel3 hierarchyLevelChild secondBlock">
+                                        <div class="slds-col slds-grow-none">
+                                            <span></span>
+                                        </div>&nbsp;&nbsp;
+                                        <div class="slds-col slds-size_3-of-6 slds-truncate slds-m-right_small">
+                                            <span title={childobj.childObjName}>{childobj.childObjName}</span>
+                                        </div>
+                                        
+                                        <div class="slds-col slds-size_2-of-6 ">
+                                            <span style="display: inline-flex;"><lightning-input type="checkbox" data-sharingtype={rec.type} data-recid={childobj.id} onchange={setCheckboxVal} name="testName" class="selectAll selectAllByParent selectBySelf checkBoxSelectedId" label=" "></lightning-input> {childobj.status}</span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <br/><br/>
+            <!-- <p slot="footer"> -->
+                <div class="slds-text-align_center">
+                    <!-- <button type="button" class="slds-button slds-button_neutral" onclick={closeModal}>Cancel</button> -->
+                    <button type="button" disabled={disableSaveBtn} class="slds-button slds-button_brand" onclick={saveSharing}>Initiate Sharing</button>
+                </div>
+            <!-- </p> -->
+            </lightning-tab>
+            <lightning-tab label="Advance Territory Sharing" onactive={sObjectSharingProcessedRecordsFn}>
+                <template if:true={isNoTerritoryErrorFound}>
+                    <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                        <span class="slds-assistive-text"></span>
+                        <h2>No records found.
+                        </h2>
+                        <div class="slds-notify__close">
+                        </div>
+                    </div>
+                    <br/>
+                </template>
+                <div class="slds-grid slds-grid_align-left slds-m-top_small territoryHierrchies">
+                    <div class="slds-col slds-grow-none slds-m-left_small">
+                        <span>
+                            <lightning-button-icon onclick={setParentBlockvisibility} icon-name="utility:add" class="lighntingIcon" alternative-text="Success!" title="default style" size="x-small"></lightning-button-icon>
+                        </span>
+                    </div>&nbsp;&nbsp;
+                    <div class="slds-col slds-size_1-of-6 slds-m-right_small">
+                        <span>All Territory</span>
+                    </div>
+                    <div class="slds-col slds-size_1-of-6">
+                        <span><lightning-input type="checkbox" onchange={checkAllTerritory} label=" "></lightning-input></span>
+                    </div>
+                </div>
+                <div class="slds-scrollable slds-m-top_small setParentBlockvisibility slds-hide slds-m-bottom_medium" style="max-height: 200px;">
+                    <template for:each={allTerritoryArray} for:item="ter">
+                        <div key={ter.recId} class="slds-grid hierarhylevel2 hierarchyLevelParent firstBlock">
+                            <div class="slds-col slds-size_1-of-6 slds-truncate slds-m-right_small">
+                                <span title={ter.recName}>{ter.recName}</span>
+                            </div>
+                            <div class="slds-col slds-size_1-of-6">
+                                <span style="display: inline-flex;"><lightning-input class="selectAll selectParent" data-tername={ter.recName} data-terid={ter.terIdList} data-recid={ter.recId} onchange={checkCurrentTerritory} type="checkbox" label=" "></lightning-input> {ter.maintenanceStatus}</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="slds-text-align_center">
+                    <!-- <button type="button" class="slds-button slds-button_neutral" onclick={closeModal}>Cancel</button> -->
+                    <button type="button" disabled={disableSaveBtn} class="slds-button slds-button_brand" onclick={saveTerritorySharing}>Initiate Sharing</button>
+                </div>
+            </lightning-tab>
+        </lightning-tabset>
+    </lightning-card>
+
+
+    <!--
+<lightning-icon icon-name="utility:add" alternative-text="Success!" title="default style"></lightning-icon>
+
+
+    -->
+</template>

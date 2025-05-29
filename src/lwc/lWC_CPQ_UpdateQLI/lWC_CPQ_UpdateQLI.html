@@ -1,0 +1,93 @@
+<template>
+    <div role="dialog" class="slds-modal slds-fade-in-open slds-modal_large">
+        <template if:true={isLoading}>
+            <lightning-spinner variant="brand" alternative-text="Loading" style="z-index: 100;"></lightning-spinner>
+        </template>
+        <div class="slds-modal__container">
+            <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={showUpdateQLI}>
+                <lightning-icon
+                    icon-name="utility:close"
+                    size="small"
+                    alternative-text="Indicates close"
+                >
+                </lightning-icon>
+            </button>
+            <header class="slds-modal__header">
+                <h1 class="slds-text-heading--medium">Update Pricing & Discount</h1>
+            </header>
+            <template lwc:if={hasData}>
+                <div class="slds-modal__content slds-p-around--medium">
+                    <div class="slds-grid slds-gutters slds-grid_align-spread">
+                        <div class="slds-col">
+                            <div class="slds-p-bottom_small slds-grid slds-grid_align-spread">
+                                <div class="slds-grid">
+                                    <lightning-input type="search" label="Search" onchange={handleSearchChange} ></lightning-input>
+                                    <lightning-button label="Search" variant="brand" onclick={handleSearch} style="margin-top:auto;" class="slds-p-left_small"></lightning-button>
+                                </div>  
+                            </div>
+                        </div>  
+                        <div class="slds-col">
+                            <lightning-combobox 
+                                label="Page size"
+                                name="object"
+                                disabled={disableCombobox}
+                                value={recordSize}
+                                placeholder="Record Size"
+                                options={getRecordSizeList}
+                                onchange={handleRecordSizeChange} ></lightning-combobox>
+                        </div>
+                    </div>
+                    <br />
+                    <div>
+                        <template if:true={displayRecords} >
+                            <c-l-w-c_-c-p-q_-custom_-data_-table
+                                    key-field="Id"
+                                    data={displayRecords}
+                                    columns={columns}
+                                    draft-values={draftValues}
+                                    oncellchange={handleCellChange}
+                                    onvaluechange={handleValueChange}
+                                    oncancel={handleCancel}
+                                    row-number-offset={pageOffSet}
+                                    onsave={handleSave}>
+                            </c-l-w-c_-c-p-q_-custom_-data_-table>
+                        </template>
+                    </div>
+                    <br />
+                    <div style="background: rgb(243, 243, 243);height:50px;">        
+                        <div class="slds-grid" style="height:4em;float: right;">
+                            <button class="slds-button slds-button_icon icon_button" title="First" role="first" onclick={handleFirst} disabled={disablePreviousButtons}>
+                                <svg viewBox="0 0 1024 1024" class="icon">
+                                    <g><path d="M1024 1024 256 512 1024 0Z"  /><path d="M0 128l256 0 0 768-256 0 0-768Z"  /></g>
+                                </svg>  
+                            </button>
+                            <button class="slds-button slds-button_icon icon_button" title="Previous" role="previous" onclick={handlePrevious} disabled={disablePreviousButtons}>
+                                <svg viewBox="0 0 1024 1024" class="icon">
+                                    <g><path d="M1024 1024 256 512 1024 0Z"  /></g>
+                                </svg>
+                            </button>
+                            <span class="vcenter currentpage">{pageNumber}</span>
+                            <span class="vcenter" style="font-weight: 500;">&nbsp;/&nbsp;{totalPages}</span>
+                            <button class="slds-button slds-button_icon icon_button" title="Next" role="next" onclick={handleNext} disabled={disableNextButtons}>
+                                <svg viewBox="0 0 1024 1024" class="icon">
+                                    <g><path d="M0 0 768 512 0 1024Z"  /></g>
+                                </svg>
+                            </button>
+                            <button class="slds-button slds-button_icon icon_button" title="Last" role="last" onclick={handleLast} disabled={disableNextButtons}>
+                                <svg viewBox="0 0 1024 1024" class="icon">
+                                    <g><path d="M0 0 768 512 0 1024Z"  /><path d="M768 128l256 0 0 768-256 0 0-768Z"  /></g>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template lwc:else>
+                <div class="slds-modal__content slds-p-around--medium">
+                    <div class="slds-text-heading_small slds-text-align_center slds-text-color_error">Please add some products.</div>
+                </div>
+            </template>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--open"></div>
+</template>

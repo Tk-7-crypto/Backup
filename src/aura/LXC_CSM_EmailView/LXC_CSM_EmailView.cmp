@@ -1,0 +1,667 @@
+<aura:component controller="CNT_CSM_EmailView"
+    implements="flexipage:availableForAllPageTypes,lightning:isUrlAddressable,lightning:actionOverride,force:lightningQuickActionWithoutHeader,force:hasRecordId,flexipage:availableForRecordHome,force:hasRecordId,force:hasSObjectName"
+    access="global">
+    <aura:attribute name="emailMsg" type="EmailMessage" />
+    <aura:attribute name="countForRelation" type="Integer" default="0" />
+    <aura:attribute name="countForAttachments" type="Integer" default="0" />
+    <aura:attribute name="countForApprovalHistory" type="Integer" default="0" />
+    <aura:attribute name="countForRelated" type="Integer" default="0" />
+    <aura:attribute name="emailMessageRelationsRecord" type="Sobject[]" />
+    <aura:attribute name="emailMsgRelation" type="Sobject" />
+    <aura:attribute name="emailMsgAttachmentsRelation" type="Sobject[]" />
+    <aura:attribute name="defaultTab" type="String" default="message" />
+    <aura:attribute name="toggle" type="Boolean" default="true" />
+    <lightning:navigation aura:id="navId" />
+    <lightning:workspaceAPI aura:id="workspace" />
+    <aura:handler name="init" value="{!this}" action="{!c.Init}" />
+    <aura:attribute name="title" type="String" default="Custom Title" />
+    <aura:handler event="aura:waiting" action="{!c.showLoadingSpinner}" />
+    <aura:handler event="aura:doneWaiting" action="{!c.hideLoadingSpinner}" />
+    <aura:attribute name="recordTypeForPIIDataIdentified" type="String[]" default="['ActivityPlan', 'RandDCase', 'VirtualTrialsCase']"/>
+    <aura:attribute name="isRecordTypeAllowed" type="Boolean" default="false"/>
+    <div>
+        <lightning:layout multipleRows="true">
+            <lightning:layoutItem size="12" class="slds-p-bottom_medium">
+                <div class="page-section page-header">
+                    <lightning:card>
+                        <aura:set attribute="title">
+                            <lightning:icon iconName="standard:email" size="medium" />
+                            <span style="padding-left: 8px;">{!v.emailMsg.Subject}</span>
+                        </aura:set>
+                        <aura:set attribute="actions">
+                            <lightning:button label="Reply All" onclick="{! c.navigateToReplyAllComponent }" />
+                            <lightning:button label="Reply" onclick="{! c.navigateToReplyToComponent }" />
+                            <lightning:button label="Forward" onclick="{! c.navigateToMyForwardComponent }" />
+                            <aura:if isTrue="{!v.isRecordTypeAllowed}">
+                                <lightning:buttonStateful state="{!v.emailMsg.PII_Data_Identified__c}"
+                                    labelWhenOff="PII Data" labelWhenOn="PII Data identified"
+                                    labelWhenHover="PII Data non-identified" iconNameWhenOff="utility:add"
+                                    iconNameWhenOn="utility:check" iconNameWhenHover="utility:close"
+                                    onclick="{!c.togglePIIDataIdentified}" />
+                            </aura:if>
+
+                        </aura:set>
+                    </lightning:card>
+                </div>
+            </lightning:layoutItem>
+            <lightning:layoutItem size="12">
+                <!-- lightning:layout pullToBoundary="medium" -->
+                <lightning:layout>
+                    <lightning:layoutItem size="8" flexibility="auto" class="slds-p-right_medium">
+                        <lightning:card>
+                            <div class="slds-p-right_medium slds-p-left_medium">
+                                <lightning:tabset class="slds-tabs_default slds-tabs_medium"
+                                    selectedTabId="{!v.defaultTab}">
+                                    <lightning:tab label="Message" id="message">
+                                        <div>
+                                            <p>
+                                            <div class="slds-form-element__static" style="margin-left: 80%;">
+                                                <lightning:formattedDateTime value="{!v.emailMsg.MessageDate}"
+                                                    day="numeric" month="numeric" year="numeric" hour="2-digit"
+                                                    minute="2-digit" hour12="true" />
+                                            </div>
+                                            </p>
+                                        </div>
+                                        <p>From : {!v.emailMsg.FromName}</p>
+                                        <p>To : {!v.emailMsg.ToAddress}</p>
+
+                                        <div class="slds-form-element__control" style="margin-top: 5%;">
+                                            <aura:if isTrue="{!not(empty(v.emailMsg.HtmlBody))}">
+                                                <!--<div class="slds-form-element__static">
+                                                    <lightning:inputRichText placeholder="Mail body" aura:id="bodyText" value="{!v.emailMsg.HtmlBody}" />
+                                                </div>-->
+
+                                                <div class="slds-form-element__static" style="overflow-x: auto;">
+                                                    <lightning:formattedRichText value="{!v.emailMsg.HtmlBody}"
+                                                        placeholder="Mail body" aura:id="bodyText" />
+                                                </div>
+
+
+                                                <aura:set attribute="else">
+                                                    <div class="slds-form-element__static">{!v.emailMsg.TextBody}</div>
+                                                </aura:set>
+                                            </aura:if>
+                                        </div>
+                                    </lightning:tab>
+                                    <lightning:tab label="Details" id="details">
+                                        <div class="slds-section slds-is-open" aura:id="information">
+                                            <h3 class="slds-section__title">
+                                                <button aria-controls="expando-information"
+                                                    class="slds-button slds-section__title-action">
+                                                    <span onclick="{!c.toggleSection}" data-auraId="information">
+                                                        <lightning:icon
+                                                            class="slds-section__title-action-icon slds-button__icon_left"
+                                                            iconName="utility:switch" alternativeText="Expand"
+                                                            title="Expand" size="x-small" />
+                                                    </span>
+                                                    <span class="slds-truncate" title="Information">Information</span>
+                                                </button>
+                                            </h3>
+                                            <div class="slds-section__content" id="expando-information">
+                                                <div class="slds-form" role="list">
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Related To</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        <a data-recordid="{!v.emailMsg.ParentId}"
+                                                                            data-objectname="Case"
+                                                                            onclick="{!c.navigateToRecord}">{!v.emailMsg.Parent.CaseNumber}</a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Status</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '3'}">
+                                                                        <div class="slds-form-element__static">Sent
+                                                                        </div>
+                                                                    </aura:if>
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '0'}">
+                                                                        <div class="slds-form-element__static">New</div>
+                                                                    </aura:if>
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '1'}">
+                                                                        <div class="slds-form-element__static">Read
+                                                                        </div>
+                                                                    </aura:if>
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '2'}">
+                                                                        <div class="slds-form-element__static">Replied
+                                                                        </div>
+                                                                    </aura:if>
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '4'}">
+                                                                        <div class="slds-form-element__static">Forwarded
+                                                                        </div>
+                                                                    </aura:if>
+                                                                    <aura:if isTrue="{!v.emailMsg.Status == '5'}">
+                                                                        <div class="slds-form-element__static">Draft
+                                                                        </div>
+                                                                    </aura:if>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Message
+                                                                    Date</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        <lightning:formattedDateTime
+                                                                            value="{!v.emailMsg.MessageDate}"
+                                                                            year="numeric" month="numeric" day="numeric"
+                                                                            hour="2-digit" minute="2-digit"
+                                                                            hour12="true" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <aura:if isTrue="{!v.isRecordTypeAllowed}">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">PII Data
+                                                                    Identified</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        <lightning:input type="checkbox"
+                                                                            label="PII Data Identified"
+                                                                            checked="{!v.emailMsg.PII_Data_Identified__c}"
+                                                                            disabled="true" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            </aura:if>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Created By</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        <span
+                                                                            class="slds-avatar slds-avatar_profile-image-large slds-avatar_circle slds-avatar_x-small">
+                                                                            <span
+                                                                                class="slds-assistive-text">{!v.emailMsg.CreatedBy.Name}</span>
+                                                                        </span>
+                                                                        <a class="slds-p-left_x-small"
+                                                                            data-recordid="{!v.emailMsg.CreatedById}"
+                                                                            data-objectname="User"
+                                                                            onclick="{!c.navigateToRecord}">{!v.emailMsg.CreatedBy.Name}</a>
+                                                                        <span> ,
+                                                                            <lightning:formattedDateTime
+                                                                                value="{!v.emailMsg.CreatedDate}"
+                                                                                year="numeric" month="numeric"
+                                                                                day="numeric" hour="2-digit"
+                                                                                minute="2-digit" hour12="true" />
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Last Modified
+                                                                    By</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        <span
+                                                                            class="slds-avatar slds-avatar_profile-image-large slds-avatar_circle slds-avatar_x-small">
+                                                                            <span
+                                                                                class="slds-assistive-text">{!v.emailMsg.LastModifiedBy.Name}</span>
+                                                                        </span>
+                                                                        <a class="slds-p-left_x-small"
+                                                                            data-recordid="{!v.emailMsg.LastModifiedById}"
+                                                                            data-objectname="User"
+                                                                            onclick="{!c.navigateToRecord}">{!v.emailMsg.LastModifiedBy.Name}</a>
+                                                                        <span> ,
+                                                                            <lightning:formattedDateTime
+                                                                                value="{!v.emailMsg.LastModifiedDate}"
+                                                                                year="numeric" month="numeric"
+                                                                                day="numeric" hour="2-digit"
+                                                                                minute="2-digit" hour12="true" />
+                                                                        </span>
+                                                                    </div>
+
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-section slds-is-open" aura:id="addressInformation">
+                                            <h3 class="slds-section__title">
+                                                <button aria-controls="expando-addressInformation"
+                                                    class="slds-button slds-section__title-action">
+                                                    <span onclick="{!c.toggleSection}" data-auraId="addressInformation">
+                                                        <lightning:icon
+                                                            class="slds-section__title-action-icon slds-button__icon_left"
+                                                            iconName="utility:switch" alternativeText="Expand"
+                                                            title="Expand" size="x-small" />
+                                                    </span>
+                                                    <span class="slds-truncate" title="Address Information">Address
+                                                        Information</span>
+                                                </button>
+                                            </h3>
+                                            <div class="slds-section__content" id="expando-addressInformation">
+                                                <div class="slds-form" role="list">
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">From
+                                                                    Address</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.FromAddress}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">From Name</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.FromName}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">To Address</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.ToAddress}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">CC Address</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.CcAddress}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">BCC
+                                                                    Address</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.BccAddress}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-section slds-is-open" aura:id="messageContent">
+                                            <h3 class="slds-section__title">
+                                                <button aria-controls="expando-messageContent" aria-expanded="true"
+                                                    class="slds-button slds-section__title-action">
+                                                    <span onclick="{!c.toggleSection}" data-auraId="messageContent">
+                                                        <lightning:icon
+                                                            class="slds-section__title-action-icon slds-button__icon_left"
+                                                            iconName="utility:switch" alternativeText="Expand"
+                                                            title="Expand" size="x-small" />
+                                                    </span>
+                                                    <span class="slds-truncate" title="Message Content">Message
+                                                        Content</span>
+                                                </button>
+                                            </h3>
+                                            <div aria-hidden="false" class="slds-section__content"
+                                                id="expando-messageContent">
+                                                <div class="slds-form" role="list">
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Subject</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <div class="slds-form-element__static">
+                                                                        {!v.emailMsg.Subject}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-form__row">
+                                                        <div class="slds-form__item" role="listitem">
+                                                            <div
+                                                                class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent">
+                                                                <span class="slds-form-element__label">Body</span>
+                                                                <div class="slds-form-element__control">
+                                                                    <aura:if
+                                                                        isTrue="{!not(empty(v.emailMsg.HtmlBody))}">
+                                                                        <div class="slds-form-element__static">
+                                                                            <lightning:inputRichText
+                                                                                placeholder="Mail body"
+                                                                                aura:id="bodyText2"
+                                                                                value="{!v.emailMsg.HtmlBody}" />
+                                                                        </div>
+
+                                                                        <aura:set attribute="else">
+                                                                            <div class="slds-form-element__static">
+                                                                                {!v.emailMsg.TextBody}</div>
+                                                                        </aura:set>
+                                                                    </aura:if>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </lightning:tab>
+                                </lightning:tabset>
+                            </div>
+                        </lightning:card>
+                    </lightning:layoutItem>
+                    <lightning:layoutItem size="4" flexibility="auto">
+                        <lightning:card>
+                            <div class="slds-p-right_medium slds-p-left_medium">
+                                <lightning:tabset class="slds-tabs_default slds-tabs_medium">
+                                    <lightning:tab label="Related">
+                                        <div class="slds-size--1-of-1">
+                                            <div class="container forceRelatedListSingleContainer"
+                                                data-aura-class="forceRelatedListSingleContainer">
+                                                <article
+                                                    class="slds-card slds-card_boundary headerBottomBorder forceRelatedListCardDesktop"
+                                                    data-aura-class="forceRelatedListCardDesktop">
+                                                    <div class="slds-grid slds-page-header forceRelatedListCardHeader"
+                                                        data-aura-class="forceRelatedListCardHeader">
+                                                        <header
+                                                            class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                            <div class="slds-media__figure stencil slds-avatar slds-avatar_small"
+                                                                aria-hidden="true">
+                                                                <div class="extraSmall forceEntityIcon"
+                                                                    style="background-color: #FCB95B"
+                                                                    data-aura-class="forceEntityIcon">
+                                                                    <lightning:icon iconName="standard:file"
+                                                                        size="small" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-media__body">
+                                                                <h2 class="slds-card__header-title">
+                                                                    <a
+                                                                        class="slds-card__header-link baseCard__header-title-container">
+                                                                        <span
+                                                                            class="slds-truncate slds-m-right--xx-small"
+                                                                            title="Attachments">
+                                                                            Attachments ({!v.countForAttachments})
+                                                                        </span>
+                                                                    </a>
+                                                                </h2>
+                                                            </div>
+                                                        </header>
+                                                    </div>
+                                                    <div class="slds-card__body slds-card__body_inner">
+                                                        <p class="slds-p-horizontal_small">
+                                                            <aura:iteration items="{!v.emailMsgAttachmentsRelation}"
+                                                                var="con">
+                                                                <aura:if isTrue="{!not(empty(con.Name))}">
+                                                                    <a href="{!'/servlet/servlet.FileDownload?file='+con.Id}"
+                                                                        target="_blank">
+                                                                        {!con.Name}
+                                                                    </a>
+                                                                    <p>
+                                                                        <lightning:formattedDateTime
+                                                                            value="{!con.LastModifiedDate}"
+                                                                            year="numeric" month="numeric" day="numeric"
+                                                                            hour="2-digit" minute="2-digit"
+                                                                            hour12="true" />
+                                                                    </p>
+
+                                                                    <br></br>
+                                                                    <aura:set attribute="else">
+                                                                        <a href="{!'/lightning/r/ContentDocument/'+con.ContentDocumentId+'/view'}"
+                                                                            target="_blank">
+                                                                            {!(con.ContentDocument.Title)}.{!con.ContentDocument.FileExtension}
+                                                                        </a>
+                                                                        <p>
+                                                                            <lightning:formattedDateTime
+                                                                                value="{!con.ContentDocument.LastModifiedDate}"
+                                                                                year="numeric" month="numeric"
+                                                                                day="numeric" hour="2-digit"
+                                                                                minute="2-digit" hour12="true" />
+                                                                        </p>
+
+                                                                        <br></br>
+                                                                    </aura:set>
+                                                                </aura:if>
+                                                            </aura:iteration>
+                                                        </p>
+                                                    </div>
+                                                    <footer class="slds-card__footer">
+                                                        <aura:if isTrue="{!v.countForAttachments != 0}">
+                                                            <a class="slds-card__footer-action"
+                                                                href="javascript:void(0);"
+                                                                onclick="{!c.navigateToAttachmentsRelatedList}">View All
+                                                                <span class="slds-assistive-text">Attachments</span>
+                                                            </a>
+                                                        </aura:if>
+                                                    </footer>
+                                                </article>
+                                            </div>
+                                        </div>
+                                        <div class="slds-size--1-of-1">
+                                            <div class="container forceRelatedListSingleContainer"
+                                                style="margin-top:12px;"
+                                                data-aura-class="forceRelatedListSingleContainer">
+                                                <article
+                                                    class="slds-card slds-card_boundary headerBottomBorder forceRelatedListCardDesktop"
+                                                    data-aura-class="forceRelatedListCardDesktop">
+                                                    <div class="slds-grid slds-page-header forceRelatedListCardHeader"
+                                                        data-aura-class="forceRelatedListCardHeader">
+                                                        <header
+                                                            class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                            <div class="slds-media__figure stencil slds-avatar slds-avatar_small"
+                                                                aria-hidden="true">
+                                                                <div class="extraSmall forceEntityIcon"
+                                                                    style="background-color: #FCB95B"
+                                                                    data-aura-class="forceEntityIcon">
+                                                                    <lightning:icon iconName="standard:email"
+                                                                        size="small" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-media__body">
+                                                                <h2 class="slds-card__header-title">
+                                                                    <a
+                                                                        class="slds-card__header-link baseCard__header-title-container">
+                                                                        <span
+                                                                            class="slds-truncate slds-m-right--xx-small"
+                                                                            title="Sender and Recipients">
+                                                                            Sender and Recipients
+                                                                            ({!v.countForRelation})
+                                                                        </span>
+                                                                    </a>
+                                                                </h2>
+                                                            </div>
+                                                        </header>
+                                                    </div>
+                                                    <div class="slds-card__body slds-card__body_inner">
+                                                        <p class="slds-p-horizontal_small">
+                                                            <aura:iteration items="{!v.emailMessageRelationsRecord}"
+                                                                var="con">
+                                                                <div>
+                                                                    <div>
+                                                                        <aura:if
+                                                                            isTrue="{!con.RelationObjectType == 'User'}">
+                                                                            <span
+                                                                                class="slds-avatar slds-avatar_profile-image-large slds-avatar_circle">
+                                                                                <span
+                                                                                    class="slds-assistive-text">User</span>
+                                                                            </span>
+                                                                        </aura:if>
+                                                                        <aura:if
+                                                                            isTrue="{!con.RelationObjectType == 'Contact'}">
+                                                                            <span
+                                                                                class="slds-avatar slds-avatar_profile-image-large">
+                                                                                <span
+                                                                                    class="slds-assistive-text">Contact</span>
+                                                                            </span>
+                                                                        </aura:if>
+                                                                        <a data-recordid="{!con.RelationId}"
+                                                                            data-objectname="{!con.RelationObjectType}"
+                                                                            onclick="{!c.navigateToRecord}"
+                                                                            class="senderAndRecipients">
+                                                                            {!con.Relation.Name}
+                                                                        </a>
+                                                                    </div>
+                                                                    <div class="slds-list--horizontal"
+                                                                        style="padding-left:3rem;margin-top:-0.7rem;">
+                                                                        <div>Type:</div>
+                                                                        <div style="padding-left:1.5rem;">
+                                                                            {!con.RelationObjectType}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </aura:iteration>
+                                                        </p>
+                                                    </div>
+                                                    <footer class="slds-card__footer">
+                                                        <aura:if isTrue="{!v.countForRelation != 0}">
+                                                            <a class="slds-card__footer-action"
+                                                                href="javascript:void(0);"
+                                                                onclick="{!c.navigateToSenderRelatedList}">View All
+                                                                <span class="slds-assistive-text">Sender and
+                                                                    Recipients</span>
+                                                            </a>
+                                                        </aura:if>
+                                                    </footer>
+                                                </article>
+                                            </div>
+                                        </div>
+                                        <div class="slds-size--1-of-1">
+                                            <div class="container forceRelatedListSingleContainer"
+                                                style="margin-top:12px;"
+                                                data-aura-class=" forceRelatedListSingleContainer">
+                                                <article
+                                                    class="slds-card slds-card_boundary headerBottomBorder forceRelatedListCardDesktop"
+                                                    data-aura-class="forceRelatedListCardDesktop">
+                                                    <div class="slds-grid slds-page-header forceRelatedListCardHeader"
+                                                        data-aura-class="forceRelatedListCardHeader">
+                                                        <header
+                                                            class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                            <div class="slds-media__figure stencil slds-avatar slds-avatar_small"
+                                                                aria-hidden="true">
+                                                                <div class="extraSmall forceEntityIcon"
+                                                                    style="background-color: #FCB95B"
+                                                                    data-aura-class="forceEntityIcon">
+                                                                    <lightning:icon iconName="standard:related_list"
+                                                                        size="small" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-media__body">
+                                                                <h2 class="slds-card__header-title">
+                                                                    <a
+                                                                        class="slds-card__header-link baseCard__header-title-container">
+                                                                        <span
+                                                                            class="slds-truncate slds-m-right--xx-small"
+                                                                            title="Approval History">
+                                                                            Approval History
+                                                                            ({!v.countForApprovalHistory})
+                                                                        </span>
+                                                                    </a>
+                                                                </h2>
+                                                            </div>
+                                                        </header>
+                                                    </div>
+                                                    <div class="slds-card__body slds-card__body_inner">
+
+                                                    </div>
+                                                    <footer class="slds-card__footer">
+                                                        <aura:if isTrue="{!v.countForApprovalHistory != 0}">
+                                                            <a class="slds-card__footer-action"
+                                                                href="javascript:void(0);"
+                                                                onclick="{!c.navigateToApprovalHistoryRelatedList}">View
+                                                                All
+                                                                <span class="slds-assistive-text">Approval
+                                                                    History</span>
+                                                            </a>
+                                                        </aura:if>
+                                                    </footer>
+                                                </article>
+                                            </div>
+                                        </div>
+                                        <div class="slds-size--1-of-1">
+                                            <div class="container forceRelatedListSingleContainer"
+                                                style="margin-top:12px;"
+                                                data-aura-class=" forceRelatedListSingleContainer">
+                                                <article
+                                                    class="slds-card slds-card_boundary headerBottomBorder forceRelatedListCardDesktop"
+                                                    data-aura-class="forceRelatedListCardDesktop">
+                                                    <div class="slds-grid slds-page-header forceRelatedListCardHeader"
+                                                        data-aura-class="forceRelatedListCardHeader">
+                                                        <header
+                                                            class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                            <div class="slds-media__figure stencil slds-avatar slds-avatar_small"
+                                                                aria-hidden="true">
+                                                                <div class="extraSmall forceEntityIcon"
+                                                                    style="background-color: #FCB95B"
+                                                                    data-aura-class="forceEntityIcon">
+                                                                    <lightning:icon iconName="standard:case"
+                                                                        size="small" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-media__body">
+                                                                <h2 class="slds-card__header-title">
+                                                                    <a
+                                                                        class="slds-card__header-link baseCard__header-title-container">
+                                                                        <span
+                                                                            class="slds-truncate slds-m-right--xx-small"
+                                                                            title="Related">
+                                                                            Related (1)
+                                                                        </span>
+                                                                    </a>
+                                                                </h2>
+                                                            </div>
+                                                        </header>
+                                                    </div>
+                                                    <div class="slds-card__body slds-card__body_inner">
+                                                        <a data-recordid="{!v.emailMsg.ParentId}" data-objectname="Case"
+                                                            onclick="{!c.navigateToRecord}">{!v.emailMsg.Parent.CaseNumber}</a>
+                                                    </div>
+                                                    <footer class="slds-card__footer">
+
+                                                    </footer>
+                                                </article>
+                                            </div>
+                                        </div>
+                                    </lightning:tab>
+                                </lightning:tabset>
+                            </div>
+                        </lightning:card>
+                    </lightning:layoutItem>
+                </lightning:layout>
+            </lightning:layoutItem>
+        </lightning:layout>
+    </div>
+</aura:component>

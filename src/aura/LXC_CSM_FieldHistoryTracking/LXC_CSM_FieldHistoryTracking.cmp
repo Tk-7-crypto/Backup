@@ -1,0 +1,90 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,force:lightningQuickAction,force:hasRecordId" controller="CNT_CSM_FieldHistoryTracking" access="global">
+    
+    <aura:attribute name="objectList" type="Object[]" description="It is used to store list of object names.it is assigned to select object dropdown"/>
+    <aura:attribute name="selectedItem" type="String" description="It is used to store selectd object name based on the Selection on the object dropdown."/>
+    <aura:attribute name="options" type="List" description="It is used to store the name and label of the object default fields based on the Selection on the object dropdown."/>
+    <aura:attribute name="value" type="List" description="It is used to store  the default selected checkbox names seperated by Comma."/>
+    <aura:attribute name="customoptions" type="List" description="It is used to store the name and label of the object custom fields based on the Selection on the object dropdown."/>
+    <aura:attribute name="customvalue" type="List" description="It is used to store  the custom selected checkbox names seperated by Comma."/>
+    <aura:attribute name="cardTitle" type="String" description="It is used to store the selected object name."/>
+    <aura:attribute name="Spinner" type="boolean" default="false" description="It is used to store spinner value.if the value is true spinner will show and false spinner will hide"/>
+    <aura:attribute name="allchecked" type="boolean" default="false" description="Its used to store boolean value based on the action performed on Select All checkbox."/>
+    <aura:attribute name="selectAll" type="String" default="Select All" description="Its used to store Clear All or Slelect All"/>
+    <aura:attribute name="litems" type="List" description="Its used to store the list of integers"/>
+    <aura:attribute name="clitems" type="List" description="Its used to store the list of integers"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    
+    <lightning:card variant="narrow">
+        <aura:set attribute="title">
+            <lightning:icon iconName="utility:settings" variant="warning"/> {!v.cardTitle}
+        </aura:set>
+        <aura:set attribute="footer">
+            <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="4" largeDeviceSize="4" mediumDeviceSize="4" smallDeviceSize="1"/> 
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="4" mediumDeviceSize="6" smallDeviceSize="12"> 
+                    <lightning:select aura:id="selectObj" messageWhenValueMissing="{!v.msgTitle}" name="select" label="Select Object" 
+                                      required="true" value="{!v.selectedItem}" onchange="{!c.showFieldGroupCheckbox}">
+                        <option value="">-- None --</option>
+                        <aura:iteration items="{!v.objectList}" var="objList">
+                            <option value="{!objList.value}" text="{!objList.name}"></option>
+                        </aura:iteration>
+                    </lightning:select>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="2" largeDeviceSize="2" mediumDeviceSize="1" smallDeviceSize="1"/> 
+                <lightning:layoutItem flexibility="auto" padding="around-large" size="12" largeDeviceSize="2" mediumDeviceSize="2" smallDeviceSize="12"> 
+                    <lightning:input type="checkbox" label="{!v.selectAll}" aura:id="selectAll" checked="{!v.allchecked}" name="selectAll" onchange="{!c.handleSelectAll}" />   
+                </lightning:layoutItem>
+                <!-- <lightning:layoutItem flexibility="auto" padding="around-large" > 
+                <div aura:id="div1"></div>
+            </lightning:layoutItem> -->
+            </lightning:layout>
+        </aura:set>
+        <aura:set attribute="actions">
+            <lightning:buttonGroup >
+                <lightning:button label="Refresh" iconName="utility:refresh" iconPosition="left" onclick="{!c.doInit}"/>
+                <lightning:button label="Save" iconName="utility:save" iconPosition="left" aura:id="btnsaveForm" onclick="{!c.saveForm}"/>
+            </lightning:buttonGroup>
+        </aura:set>
+    </lightning:card>
+    
+    <ui:scrollerWrapper class="scrollerSize"> 
+        <div aura:id="defaultCheckList" class="slds-hide" title="">
+            <form aura:id="myForm" class="slds-form--stacked" >
+                <lightning:card aura:id="myFormDefaultFieldSet" class="slds-hide" title="Default History Tracking Fields">
+                    <lightning:layout aura:id="" horizontalAlign="space" multipleRows="true">
+                        <aura:iteration items="{!v.options}" var="item">
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="3" smallDeviceSize="6">
+                                <lightning:input type="checkbox" label="{!item.label}" aura:id="1" disabled="true" checked="{!item.checked}" name="{!item.value}" />   
+                            </lightning:layoutItem>
+                        </aura:iteration>
+                        <aura:iteration items="{!v.litems}" var="item">
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="3" smallDeviceSize="6"/>
+                        </aura:iteration>
+                    </lightning:layout>
+                </lightning:card>    
+                <lightning:card aura:id="myFormCustomFieldSet" class="slds-hide" title="History Tracking Fields">
+                    <lightning:layout aura:id="" horizontalAlign="space" multipleRows="true">
+                        <aura:iteration items="{!v.customoptions}" var="item">
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="3" smallDeviceSize="6">
+                                <lightning:input type="checkbox" label="{!item.label}" aura:id="customcheckbox" checked="{!item.checked}" name="{!item.value}" />   
+                            </lightning:layoutItem>
+                        </aura:iteration>
+                        <aura:iteration items="{!v.clitems}" var="item">
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="3" smallDeviceSize="6"/>
+                        </aura:iteration>
+                    </lightning:layout>
+                </lightning:card>
+                
+            </form>
+        </div>
+        
+    </ui:scrollerWrapper>
+    <aura:if isTrue="{!v.Spinner}">
+        <lightning:spinner variant="brand" aura:id="loadingSpinner" />
+    </aura:if>
+    
+</aura:component>

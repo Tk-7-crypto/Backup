@@ -1,0 +1,57 @@
+<aura:component controller="CNT_CSM_LoginHistory" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global">
+    <aura:attribute name="emailMsg" type="LoginHistory" />
+    <aura:attribute name="emailMessageRelationsRecord" type="Sobject[]" />
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="rowToRemove" type="LoginHistory" />
+    <aura:attribute name="modalPromise" type="Aura.Action" />
+    <aura:attribute name="noDataReturned" type="Boolean" />
+    <aura:attribute name="sortedBy" type="String" />
+    <aura:attribute name="sortedDirection" type="String" />
+    <aura:attribute name="defaultSortDirection" type="String" />
+    <aura:attribute name="showSpinner" type="Boolean" />
+    <aura:attribute name="columns" type="List" default="[]" />
+    <aura:attribute name="data" type="List" default="[]" />
+    <aura:attribute name="isCommunityUser" type="Boolean" />
+    <aura:attribute name="isActive" type="Boolean" default="false" />
+    <aura:attribute name="passwordActionButtonLabel" type="String" default="NONE" />
+    <aura:attribute name="headerTitle" type="Aura.Component[]">
+        <b>
+            <h2>Login History</h2>
+        </b>
+    </aura:attribute>
+    <lightning:navigation aura:id="navId" />
+    <aura:handler name="init" value="{!this}" action="{!c.Init}" />
+    <aura:if isTrue="{!v.isCommunityUser}">
+        <div style="position:relative">
+            <aura:if isTrue="{!v.showSpinner}">
+                <div class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <aura:if isTrue="{!$Browser.formFactor == 'DESKTOP'}">
+                <lightning:card title="{!v.headerTitle}" iconName="standard:user" class="slds-card slds-card_boundary">
+                    <aura:set attribute="actions">
+                        <aura:if isTrue="{!v.passwordActionButtonLabel != 'NONE'}">
+                            <lightning:button label="{!v.passwordActionButtonLabel}" onclick="{! c.resetOrUnlock }" />
+                        </aura:if>
+                        <aura:if isTrue="{! NOT(v.isActive) }">
+                            <lightning:button label="Reactivate CSH User" onclick="{! c.reactive }" />
+                        </aura:if>
+                    </aura:set>
+                    <lightning:datatable columns="{!v.columns}" data="{!v.data}" keyField="Id" hideCheckboxColumn="true" showRowNumberColumn="false" />
+                    <aura:If isTrue="{!v.noDataReturned}">
+                        <br />
+                        <b>
+                            <p align="center">No data to display.</p>
+                        </b>
+                    </aura:If>
+                </lightning:card>
+            </aura:if>
+
+        </div>
+    </aura:if>
+</aura:component>

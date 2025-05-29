@@ -1,0 +1,363 @@
+<apex:page standardController="MIBNF_Component__c" extensions="MI_BNF_MDM_Extension" id="pg" action="{!ShowInfoMessages}">
+
+      <!-- Related list hover block - begin-->
+      <div style="display: none;" class="RLPanelShadow" id="RLPanelShadow">
+      <div class="rls_top">
+          <div class="rls_tl"></div>
+          <div class="rls_tr"></div>
+      </div>
+      <div class="rls_l"></div>
+      <div class="rls_r"></div>
+      <div class="RLPanel" id="RLPanel" onblur="sfdcPage.getRelatedListPanel('RLPanel').hideRLDelayed(null, 100)" onfocus="sfdcPage.getRelatedListPanel('RLPanel').showRL();hideShowMoreLink();" onmouseout="sfdcPage.getRelatedListPanel('RLPanel').hideRLDelayed(null, 100)" onmouseover="sfdcPage.getRelatedListPanel('RLPanel').showRL();hideShowMoreLink();">
+          <iframe id="RLPanelFrame" name="RLPanelFrame" src="/emptyHtmlDoc.html" title="Hidden Frame - Ignore" frameborder="0"></iframe>
+      </div>
+      <div class="rls_bottom">
+      <div class="rls_bl"></div>
+      <div class="rls_br"></div></div></div>
+      <div style="visibility: visible;" class="listHoverLinks" id="myHoverLinks"/>
+      <!-- Related list hover block - end -->
+      <script type="text/javascript">
+          try { sfdcPage.registerRelatedListPanel('RLPanel',false);} catch(e) {}   
+      
+      </script>     
+  <script>  
+   var mibnfid='';   
+    String.prototype.startsWith = function(str) 
+        {return (this.match("^"+str)==str)}
+    
+    function hideLink() {
+        var historyElem = document.getElementById('pg:history'); 
+        var isOwnerQueue = {!isOwnerQueue};
+        var aryClassElements = getElementsByClassName( 'actionLink', historyElem );        
+        if(aryClassElements) {
+            for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemHref = aryClassElements[i].getAttribute('href') ;
+                if(elemHref && elemHref != '' && (elemHref.indexOf('ProcessInstanceWorkitemWizardStageManager') != -1) ){
+                    aryClassElements[i].href='/apex/MI_BNF_Approval?id=' + '{!MIBNF_Component__c.id}';
+                   
+                }
+                 //updated by dheeraj kumar 24 Nov Issue-09972
+                else if(elemHref && elemHref != '' && (elemHref.indexOf('REASSIGN') != -1) ){
+                         if(isOwnerQueue) {
+                            aryClassElements[i].style.display = 'none';
+                            aryClassElements[i].parentElement.childNodes[1].textContent = '';
+                        } else {
+                            aryClassElements[i].href='/apex/MIBNF_Reassign?id=' + '{!MIBNF_Component__c.id}';
+                        }
+                        
+               }
+            }
+        }    
+        
+        btnLink('pg:history');
+    }
+    
+    /*
+     * function to suppress 'Show More' link on related list hovers.
+     */
+    function hideShowMoreLink(){
+        var arrPShowMore = getElementsByClassName('pShowMore', document.getElementById('RLPanelFrame').contentWindow.document);
+        for ( var i = 0; i < arrPShowMore.length; i++ ){
+            arrPShowMore[i].style.display = 'none';
+        }
+    }
+
+    function getElementsByClassName( strClassName, obj ) {
+        
+        var ar = arguments[2] || new Array();
+        var re = new RegExp("\\b" + strClassName + "\\b", "g");
+    
+        if ( re.test(obj.className) ) {
+            ar.push( obj );
+        }
+        for ( var i = 0; i < obj.childNodes.length; i++ ) 
+            getElementsByClassName( strClassName, obj.childNodes[i], ar );
+            
+        
+        return ar;
+    }
+    
+ function btnLink(elmid) {
+        
+        var historyElem = document.getElementById(elmid); 
+        var aryClassElements = getElementsByClassName('btn', historyElem );  
+        if(aryClassElements) {
+             for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemtitle = aryClassElements[i].getAttribute('title') ;
+                var elemclick = aryClassElements[i].getAttribute('onclick') ;
+                if(elemtitle=='Submit for Approval')
+                {
+                    var popupmsg="if((Modal.confirm && Modal.confirm('Once you submit this record for approval, you might not be able to edit it or recall it from the approval process depending on your settings. Continue?')) || (!Modal.confirm && window.confirm('Once you submit this record for approval, you might not be able to edit it or recall it from the approval process depending on your settings. Continue?'))){ navigateToUrl('/apex/MI_BNF_Comp_Submit_Approval?id={!MIBNF_Component__c.id}',null,'piSubmit');}";
+                        // get old onclick attribute
+                    var onclick = aryClassElements[i].getAttribute("onclick");  
+                    // if onclick is not a function, it's not IE7, so use setAttribute
+                    if(typeof(onclick) != "function") {
+                       aryClassElements[i].setAttribute('onclick',popupmsg); // for FF,IE8,Chrome
+                    // if onclick is a function, use the IE7 method and call onclick() in the anonymous function
+                    } else {
+                            aryClassElements[i].onclick = function() { 
+                            popupmsg;
+                            onclick();
+                        }; // for IE7
+                    }
+                }
+                 
+                // Japan Profile
+                if(elemtitle=='承認申請')
+                {
+                    
+                    var popupmsg="if((Modal.confirm && Modal.confirm('設定によって、このレコードの承認申請をすると、レコードの編集や申請の取り消しができなくなる場合があります。続けますか??')) || (!Modal.confirm && window.confirm('設定によって、このレコードの承認申請をすると、レコードの編集や申請の取り消しができなくなる場合があります。続けますか?'))){ navigateToUrl('/apex/MI_BNF_Comp_Submit_Approval?id={!MIBNF_Component__c.id}',null,'piSubmit');}";
+                    // get old onclick attribute
+                    var onclick = aryClassElements[i].getAttribute("onclick");  
+                    // if onclick is not a function, it's not IE7, so use setAttribute
+                    if(typeof(onclick) != "function") {
+                       aryClassElements[i].setAttribute('onclick',popupmsg); // for FF,IE8,Chrome
+                    // if onclick is a function, use the IE7 method and call onclick() in the anonymous function
+                    } else {
+                            aryClassElements[i].onclick = function() { 
+                            popupmsg;
+                            onclick();
+                        }; // for IE7
+                    }
+
+                }  
+                
+             
+            }
+        }         
+  }
+  
+    //Method to add custom VF page on Recall Approval Process Button
+    function modifyApprovalHistory(approvalElem){
+        var APPROVAL_HISTORY_DIV_ID = 'pg:history';  
+        if(!approvalElem)
+            var approvalElem =  document.getElementById(APPROVAL_HISTORY_DIV_ID);
+        
+        var aryClassElements = getElementsByClassName( 'btn', approvalElem );
+        if(aryClassElements.length >= 1) {
+            if(aryClassElements &&  aryClassElements[0].attributes[2].nodeValue == 'piRemove'){
+                var x = function(){                                                  
+                    window.location.href = '/apex/VFP_CRM_Recall_Approval_Request?id=' + '{!id}';
+                };
+                if (aryClassElements[0].addEventListener)
+                    aryClassElements[0].addEventListener ('click',x,false);                
+                aryClassElements[0].setAttribute('onclick',  x);
+            } 
+         } 
+    }
+
+    /*
+   *JS Function to modify 'Attach File' button on Notes & Attachment related list.
+   */
+   function modifyAttachmentLink(notesElem){
+        var uiTheme = '{!$User.UIThemeDisplayed }';
+        var NOTES_DIV_ID = 'pg:notes';//'{!id}_RelatedNoteList';//a067000000iE49p_RelatedNoteList;
+        if(!notesElem)
+            notesElem = document.getElementById(NOTES_DIV_ID);
+        var anchorElements = notesElem.getElementsByTagName('a'); 
+        var aryClassActionElements = getElementsByClassName( 'actionLink', notesElem );         
+        var aryClassElements = getElementsByClassName( 'btn', notesElem ); 
+        if(aryClassElements) {
+            for ( var i = 0; i < aryClassElements.length; i++ ) {
+                var elemOnclick = aryClassElements[i].getAttribute('onclick').toString();
+                if(elemOnclick && elemOnclick != '' && (elemOnclick.indexOf('NoteAttach') != -1) && (elemOnclick.indexOf('navigateToUrl') != -1) ){
+                    var x = function(){                                                  
+                              window.location.href = '/apex/MIBNFComponent_Attachment?id=' + '{!id}';
+                            };
+                    if (aryClassElements[i].addEventListener)
+                         aryClassElements[i].addEventListener ('click',x,false);
+                    else if (aryClassElements[i].attachEvent)
+                         aryClassElements[i].attachEvent ('onclick',x);
+                    aryClassElements[i].setAttribute('onclick',  x);
+                    /* This code is not working in IE 7 and 8 - something to do with circular ref
+                    aryClassElements[i].onclick = function(){                                                  
+                                                  window.location.href = '/apex/MIBNFComponent_Attachment?id=' + '{!id}';
+                                                  return false;
+                                                };//*/                    
+                }
+                else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('MIBNFComponent_Attachment') != -1){
+                      var x = function(){                                                  
+                          window.location.href = '/apex/MIBNFComponent_Attachment?id=' + '{!id}';
+                      };
+                      if (aryClassElements[i].addEventListener)
+                          aryClassElements[i].addEventListener ('click',x,false);
+                      else if (aryClassElements[i].attachEvent)
+                          aryClassElements[i].attachEvent ('onclick',x);                     
+                      aryClassElements[i].setAttribute('onclick',  x);
+                }
+                else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('GinaRLNewFile') != -1){
+                      var x = function(){                                                  
+                          window.location.href = '/apex/MIBNFComponent_Attachment?id=' + '{!id}';
+                      };
+                      if (aryClassElements[i].addEventListener)
+                          aryClassElements[i].addEventListener ('click',x,false);
+                      else if (aryClassElements[i].attachEvent)
+                          aryClassElements[i].attachEvent ('onclick',x);                     
+                      aryClassElements[i].setAttribute('onclick',  x);
+                }
+                else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('ViewAllNotesPage') != -1) {
+                    aryClassElements[i].style.display = 'none';
+                }
+            } 
+        }
+        if(aryClassActionElements) {
+                for ( var i = 0; i < aryClassActionElements.length; i++ ) {
+                    if(aryClassActionElements[i].innerHTML == 'Edit') {
+                        aryClassActionElements[i].style.display = 'none';
+                        aryClassActionElements[i].parentNode.removeChild(aryClassActionElements[i].nextSibling);
+                    }
+                }
+            }
+        if(uiTheme =='Theme4d') {
+           for ( var i = 0; i < anchorElements.length; i++) {
+               if(anchorElements[i].text && anchorElements[i].text.includes('Show more')) {
+                       anchorElements[i].style.display = 'none';
+                       anchorElements[i].parentNode.removeChild(anchorElements[i].nextSibling);
+               }
+               if(anchorElements[i].text && anchorElements[i].text.includes('Go to list')) {
+                   anchorElements[i].href = 'javascript:void(0)';
+                   var x = function(){ 
+                       //window.location.href = '/lightning/r/'+  '{!id}' + '/related/CombinedAttachments/view';
+                       window.location.href = '/apex/VFP_CRM_Attachment?parentId=' + '{!id}';
+                   }
+                   if (anchorElements[i].addEventListener)
+                       anchorElements[i].addEventListener ('click',x,false);
+                   else if (anchorElements[i].attachEvent)
+                       anchorElements[i].attachEvent ('onclick',x);
+                   anchorElements[i].setAttribute('onclick',  x);
+                   break;
+               };
+           }
+       }
+    }
+    
+    function hideRecallButton() {
+        //alert('hide button');
+           var showButton = {!recallbuttonview};
+           var showUnlockButton = {!unlockbuttonview};
+           var showlockbutton = {!showlockbuttonview};
+		   var showreassignbutton = {!showReassignbuttonview};
+        
+           let recallbutton = document.getElementsByName("recall_approval_request");
+           let unlockbutton = document.getElementsByName("unlock_record");
+           let lockbutton = document.getElementsByName("lock_record");
+           let approvebutton = document.getElementsByName("approve_reject");
+           let reassignbutton = document.getElementsByName("reassign");
+           if(showButton == false) {
+               for ( var i = 0; i < recallbutton.length; i++ ){
+                   recallbutton[i].style.display = 'none'; 
+               }
+               for ( var i = 0; i < approvebutton.length; i++ ){
+                   approvebutton[i].style.display = 'none'; 
+               }
+           }
+           if(showUnlockButton == false) {
+               for ( var i = 0; i < unlockbutton.length; i++ ){
+                   unlockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showlockbutton == false)  {
+               for ( var i = 0; i < lockbutton.length; i++ ){
+                   lockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showreassignbutton == false){
+               for ( var i = 0; i < reassignbutton.length; i++ ){
+                   reassignbutton[i].style.display = 'none'; 
+               }
+           }
+       }
+    
+    function hideUploadSignedContractButton(){
+        var showUploadContractBUtton = {!showUploadSignedContractButton};
+        let uploadContractBUtton = document.getElementsByName("upload_signed_contract");
+        if(showUploadContractBUtton == false) {
+            for ( var i = 0; i < uploadContractBUtton.length; i++ ){
+                uploadContractBUtton[i].style.display = 'none'; 
+            }
+        }
+    }
+  </script>
+  
+  <apex:pageMessages ></apex:pageMessages>
+    
+  <apex:detail relatedList="false"/>
+  <apex:relatedList list="Notes__r" id="notesonly"></apex:relatedList>
+  <apex:relatedList list="CombinedAttachments" title="Notes & Attachments" id="notes">
+      <a name="pg:notes_target"></a>
+      <script  type="text/javascript">      
+      try { sfdcPage.registerRelatedList('pg:notes', '0', 'Notes &amp; Attachments', false, '/apex/MI_BNF_Comp_Detail?id={!id}', 'id={!id}&relatedListId=pg:notes&hideDL=1&noh=1&keepPref=1',false,false, true, 'pg:notes');} catch(e) {}
+      
+      </script>
+  </apex:relatedList>
+  <apex:relatedList list="ProcessSteps" title="Approval History" id="history"> 
+      <a name="pg:history_target"></a>
+      <script  type="text/javascript">
+      try { sfdcPage.registerRelatedList('pg:history', '0', 'Approval History', false, '/apex/MI_BNF_Comp_Detail?id={!id}', 'id={!id}&relatedListId=pg:history&hideDL=1&noh=1&keepPref=1',false,false, true, 'pg:history');} catch(e) {}
+      </script>
+  </apex:relatedList> 
+  <apex:relatedList list="OpenActivities" title="Open Activities"  id="activities">
+      <a name="pg:activities_target"></a>
+      <script  type="text/javascript">
+      try { sfdcPage.registerRelatedList('pg:activities', '0', 'Open Activities', false, '/apex/MI_BNF_Comp_Detail?id={!id}', 'id={!id}&relatedListId=pg:activities&hideDL=1&noh=1&keepPref=1',false,false, true, 'pg:activities');} catch(e) {}
+      </script>
+  </apex:relatedList>
+  <apex:relatedList list="ActivityHistories" title="Activity History" id="activity">
+      <a name="pg:activity_target"></a>
+      <script  type="text/javascript">
+      try { sfdcPage.registerRelatedList('pg:activity', '0', 'Activity History', false, '/apex/MI_BNF_Comp_Detail?id={!id}', 'id={!id}&relatedListId=pg:activity&hideDL=1&noh=1&keepPref=1',false,false, true, 'pg:activity');} catch(e) {}
+      </script>
+  </apex:relatedList>
+  <a name="history"></a>
+  
+  <script>
+      hideLink();
+      modifyAttachmentLink();
+      modifyApprovalHistory();
+	  hideRecallButton();
+      hideUploadSignedContractButton();			   
+      /*override the behaviour of show more link on the related list block       
+       *to change the approval link by calling hidelink() alongwith showMore.
+      */
+      var proxied = showMoreList;  
+      showMoreList = function() {  
+                       
+                       var x = proxied.apply(this, arguments);
+                           setTimeout(hideLink,2000);   
+                           setTimeout(hideLink,5000); 
+                           setTimeout(modifyAttachmentLink,2000); 
+                           setTimeout(modifyApprovalHistory,3000); 
+                           setTimeout(modifyApprovalHistory,6000); 
+                           return x;  
+                   }; 
+                   
+      // to override the 'Attach file' button in hover link's display                          
+      var hvrFrm = document.getElementById('RLPanelFrame');      
+      hvrFrm.onmouseover = function(){
+                            var notesElem = this.contentWindow.document.getElementById('{!id}_RelatedNoteList'); 
+                            //var notesElem = document.frames['RLPanelFrame'].document.getElementById('{!id}_RelatedNoteList'); 
+                            //modifyAttachmentLink(notesElem );
+                            modifyAttachmentLink(this.contentWindow.document);
+                            modifyApprovalHistory(this.contentWindow.document);
+                      };             
+ </script> 
+  
+  <script  type="text/javascript">
+      var cnt = sfdcPage.relatedListsById['pg:notes'].visibleRowCount;
+      var div = document.createElement('div');
+      var str = '' + sfdcPage.relatedListPanel.linksHtml;
+      str = str.replace(/,/g , '<span class="pipe"> | </span>');
+      div.innerHTML = str; //sfdcPage.relatedListPanel.linksHtml;//[0];
+      var elements = div.childNodes;
+        
+      a = div.getElementsByTagName("a");
+      for (var c = 0; c < a.length; c++) {
+         sfdcPage.getRelatedListPanel('RLPanel').addEventsToLinks(a[c]);
+      }
+      document.getElementById('myHoverLinks').appendChild(div);
+ 
+</script>
+  
+
+ 
+</apex:page>

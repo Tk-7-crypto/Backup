@@ -1,0 +1,147 @@
+<apex:component controller="MI_BNF_Comp_Extension" id="MIBNF_Comp"
+    allowDML="true">
+    <!-- Attributes passed to controller for displaying Product -->
+    <apex:attribute name="MIBNF_CompId1" description="MIBNF_CompId"
+        type="String" assignTo="{!MIBNF_CompId}" />
+    <apex:attribute name="MIBNF_Status1" description="MIBNF Status" type="String" assignTo="{!MIBNF_Status}" />
+    <apex:attribute name="Revised_Status1" description="Revised Status" type="Boolean" assignTo="{!Revised_Status}" />
+    <apex:attribute name="MIBNFLineItemList1" description="MIBNF LineItem List" type="MI_BNF_LineItem__c[]" assignTo="{!MIBNFLineItemList}" />
+    <apex:attribute name="OLIItemList1" description="OLI List" type="OpportunityLineItem[]" assignTo="{!OLIItemList}" />
+    <apex:attribute name="MIBNF_SalesOrgCode1" description="MIBNF Sales Org Code" type="String" assignTo="{!MIBNF_SalesOrgCode}" />
+    <c:JQueryBlockUI />
+    <script>
+function DeleteConfirm(oliid,HiddenVariableId)
+{
+    var isConfirm = confirm("Click OK to drop the product from this BNF or click Cancel to go back");
+    if (isConfirm)
+    {
+   
+       YUIShowLoading();
+   
+       deleteData(oliid,HiddenVariableId);  
+    }
+}
+function refreshWindow(){
+    YUIHideLoading();
+    window.location.href = window.location.href;
+   
+}
+
+</script>
+
+
+    <apex:pageBlockSection title="BNF Product List" columns="1" collapsible="true" rendered="{!oliList.size>0}" id="inprdlist">
+          <script>
+                 PageBlockSectionCollapse('{!$Component.inprdlist}');
+          </script> 
+        <apex:pageMessages id="errorMessages" escape="false" rendered="false" />
+        <apex:actionFunction action="{!deleteproduct}" status="MyStatus" name="deleteData" rerender="divproduct" oncomplete="refreshWindow();">
+                        <apex:param name="selectedInvoice" assignTo="{!selectedInvoice}" value="" />
+                        <apex:param name="MIBNF_CompId" assignTo="{!MIBNF_CompId}" value="" />
+                       
+        </apex:actionFunction>
+
+        <apex:actionStatus startText="Removing Product Please wait..." id="MyStatus" startStyle="color:red;font-weight:bold"></apex:actionStatus>
+
+
+        <apex:outputpanel layout="block" id="divproduct" style="height:232px; width:84%; overflow-x:scroll ; overflow-y: scroll; padding-bottom:10px;">
+        
+            
+            <apex:dataTable style="width:100%;" border="0" value="{!oliList}" var="oli" id="theTable" cellspacing="3" cellpadding="6" bgcolor="#DCDCDC" rendered="{!oliList.size>0}">
+                            <apex:column width="100px" headerValue="#" rendered="{!!(IsMIBNFSubmitted || isRevised)}" >
+                                <apex:image value="{!$Resource.delete_img}" style="cursor:pointer;padding-top:5px;" id="btnCBNF" title="Drop Product from this Invoice"
+                          onclick="DeleteConfirm('{!oli.id}','{!MIBNF_CompId}');return false;" />
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Product<br/>Name</apex:facet>
+                                <apex:outputlink value="/{!oli.Id}">{!oli.PricebookEntry.Name}</apex:outputlink><br/>	                                
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Product<br/>Code</apex:facet>
+                                <apex:outputText value="{!oli.PricebookEntry.ProductCode}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Sales<br/>Price</apex:facet>
+                                <apex:outputText value="{!oli.CurrencyIsoCode} {!oli.TotalPrice}"/>
+                                
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Data Period<br/>Start</apex:facet>
+                                <apex:outputfield value="{!oli.Product_Start_Date__c}" />
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Data Period<br/>End</apex:facet>
+                                <apex:outputfield value="{!oli.Product_End_Date__c}" />
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Billing<br/>Frequency</apex:facet>
+                                <apex:outputText value="{!oli.Billing_Frequency__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Delivery<br/>Media</apex:facet>
+                                <apex:outputText value="{!oli.Delivery_Media__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Delivery<br/>Country</apex:facet>
+                                <apex:outputText value="{!oli.Delivery_Country__c}"/>
+                            </apex:column>
+                			<apex:column rendered="{!wbsCodeCheck}">
+                                <apex:facet name="header">WBS Code</apex:facet>
+                                <apex:outputText value="{!oli.WBS_R_Element__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Delivery/Rpt<br/>Frequency</apex:facet>
+                                <apex:outputText value="{!oli.Proj_Rpt_Frequency__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Product<br/>Invoice Text</apex:facet>
+                                <apex:outputText value="{!oli.Sales_Text__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Discount %</apex:facet>
+                                <apex:outputText value="{!oli.Discount_Percentage_Formula__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Discount<br/>Reason / Surcharge Text</apex:facet>
+                                <apex:outputpanel rendered="{!oli.Discount_Reason__c!=null}">{!oli.Discount_Reason__c}</apex:outputpanel>
+                                <apex:outputpanel rendered="{!oli.Surcharge_Text__c!=null}">{!oli.Surcharge_Text__c}</apex:outputpanel>
+                                  
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">PO line item<br/>number</apex:facet>
+                                <apex:outputText value="{!oli.PO_line_item_number__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Nbr of<br/>Users</apex:facet>
+                                <apex:outputText value="{!oli.Nbr_of_Users__c}"/>
+                            </apex:column>
+                            <!-- Added By Sneha Rathi : 21 dec 2012 : Therapy_Area Column -->
+                             <apex:column >
+                                <apex:facet name="header">Therapy<br/>Area</apex:facet>
+                                <apex:outputText value="{!oli.Therapy_Area__c}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Other<br/>Ship To</apex:facet>
+                                <apex:outputText value="{!oli.Other_Ship_To_Address__r.Name}"/>
+                            </apex:column>
+                            <apex:column rendered="{!RenderPrebilling}">
+                                <apex:facet name="header">Prebilling?</apex:facet>
+                                <apex:outputText value="{!oli.Prebilling__c}"/>
+                            </apex:column>
+                            <apex:column rendered="{!isRevised}">
+                                <apex:facet name="header">Revised<br/>Sales Price</apex:facet>
+                                <apex:outputText value="{!oli.Revised_Price__c}"/>
+                            </apex:column>
+                            <apex:column rendered="{!isRevised}">
+                                <apex:facet name="header">Cancel</apex:facet>
+                                <apex:outputText value="{!IF(oli.MIBNF_Cancel__c,'Yes','')}"/>
+                            </apex:column>
+                            
+                        </apex:dataTable>
+            
+            <apex:outputPanel id="optPnl">
+            </apex:outputPanel>
+        </apex:outputpanel>
+
+    </apex:pageBlockSection>
+</apex:component>

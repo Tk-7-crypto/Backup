@@ -1,0 +1,1004 @@
+<template>
+    <div if:true={showHeader} class="slds-m-bottom_small">
+        <lightning-card>
+            <h1 slot="title">
+                <div class="title-icon">
+                <lightning-icon icon-name="custom:custom79" size="medium"></lightning-icon>
+                </div>
+                <span>Service Milestone</span>
+                <span class="slds-page-header__title slds-truncate" title="name">{milestoneName} - Manage Deliverables</span>
+            </h1>
+            <div slot="actions">
+                <lightning-button-group>
+                    <lightning-button if:false={isReadOnly} name="ADD_DELIVERABLE" label="Add Deliverable" onclick={handleClick}></lightning-button>
+                    <lightning-button class="test-modal" name="TEST_MODAL" label="Test Modal" onclick={handleClick}></lightning-button>
+                    <div if:true={targetId}>
+                            <lightning-button name="RETURN_TO_TARGET" label="Return to Target" onclick={handleClick}></lightning-button>
+                    </div>
+                    <div if:false={targetId}>
+                            <lightning-button name="RETURN_TO_SERVICE" label="Return to Service" onclick={handleClick}></lightning-button>
+                    </div>
+                </lightning-button-group>
+                <div if:true={isReadOnly} class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                <i>&#9432;  Read Only Mode</i>
+                </div>
+            </div>
+        </lightning-card>
+    </div>
+
+    <div if:true={showDataTable} class="slds-m-bottom_small">
+
+        <lightning-card>
+            <h1 slot="title">
+                <div class="title-icon">
+                <lightning-icon icon-name="custom:custom98" size="medium"></lightning-icon>
+                </div>
+                <span class="slds-page-header__title slds-truncate" title="name">Deliverable Units</span>
+            </h1>
+            <div slot="actions">
+                <span class="slds-p-right_medium">{filterVisibleCount} items ({filterHiddenCount} filtered)</span>
+                <lightning-button-group>
+                    <lightning-button-icon-stateful icon-name="utility:filterList" name="FILTER_DELIVERABLES" onclick={handleClick} selected={viewFilters}></lightning-button-icon-stateful>
+                </lightning-button-group>
+            </div>
+            <div if:true={viewFilters} class="slds-section slds-is-open slds-p-around_medium">
+                <h3 class="slds-section__title slds-theme_shade">
+                    <span class="slds-truncate slds-p-horizontal_small" title="Information">Filter Deliverables</span>
+                </h3>
+                <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                    <div class="slds-col slds-size_1-of-4" style="display:none;">
+                        <c-lwc_filter-list
+                            options-list={filterByServiceServices}
+                            default-selections={selectedServices}
+                            search-key-name="service"
+                            search-key-name-plural="services"
+                            onfilterapplied={serviceFilterApplied}>
+                        </c-lwc_filter-list>
+                    </div>
+                    <div class="slds-col slds-size_1-of-4">
+                        <c-lwc_filter-list
+                            options-list={filterByStatusStatuses}
+                            default-selections={selectedStatuses}
+                            search-key-name="status"
+                            search-key-name-plural="statuses"
+                            onfilterapplied={statusFilterApplied}>
+                        </c-lwc_filter-list>
+                    </div>
+                    <div class="slds-col slds-size_1-of-4">
+                        <div class="slds-m-bottom_small">
+                            <lightning-input type="date" name="FILTER_START_DATE" value={filterStartDate} onchange={dateFilterApplied} label="During period of"></lightning-input>
+                            <a style="text-decoration: underline;" name="RESET_START_DATE" onclick={handleClick}>( Reset )</a>
+                        </div>
+                        <div class="slds-m-bottom_small">
+                            <lightning-input type="date" name="FILTER_END_DATE" value={filterEndDate}
+                                onchange={dateFilterApplied} label="Through"></lightning-input>
+                            <a style="text-decoration: underline;" name="RESET_END_DATE" onclick={handleClick}>( Reset )</a>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_1-of-4">
+                        <div class="slds-m-bottom_small">
+                            <lightning-combobox name="resource-filter" label="Resource" placeholder="Select a resource..."
+                                onchange={resourceFilterApplied} value={filterResource.selected} options={filterResource.options}>
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <lightning-datatable
+                data={displayedDeliverables}
+                columns={deliverableUnitColumns}
+                onrowaction={deliverableRowAction}
+                hide-checkbox-column
+                key-field="Id">
+            </lightning-datatable>
+            <div if:true={showPagination} class="slds-clearfix slds-p-vertical_small">
+                <lightning-button-group class="slds-float_right">
+                    <lightning-button if:false={onFirstPage} onclick={firstPage} label="First" variant="base" class="slds-p-around_xx-small"></lightning-button>
+                    <lightning-button if:true={onFirstPage} disabled label="First" variant="base" class="slds-p-around_xx-small"></lightning-button>
+                    <lightning-button-icon if:true={pagination.previous} variant="bare" icon-name="utility:jump_to_left" onclick={previousPage} class="slds-p-around_x-small"></lightning-button-icon>
+                    <lightning-button-icon if:false={pagination.previous} variant="bare" icon-name="utility:jump_to_left" disabled class="slds-p-around_x-small"></lightning-button-icon>
+                    <div class="page-input-text slds-p-around_x-small">Page </div>
+                    <div class="page-input slds-m-top_xx-small">
+                        <lightning-input type="number" name="PAGE_NUMBER" label="Page Number" variant="label-hidden" value={pagination.current} onchange={changePage}></lightning-input>
+                    </div>
+                    <div class="page-input-text slds-p-around_x-small"> of {pagination.pageCount}</div>
+                    <lightning-button-icon if:true={pagination.next} variant="bare" icon-name="utility:jump_to_right" onclick={nextPage} class="slds-p-around_x-small"></lightning-button-icon>
+                    <lightning-button-icon if:false={pagination.next} variant="bare" icon-name="utility:jump_to_right" disabled class="slds-p-around_x-small"></lightning-button-icon>
+                    <lightning-button if:false={onLastPage} variant="base" onclick={lastPage} label="Last" class="slds-p-around_xx-small"></lightning-button>
+                    <lightning-button if:true={onLastPage} variant="base" disabled label="Last" class="slds-p-around_xx-small"></lightning-button>
+                </lightning-button-group>
+                <span class="slds-p-around_x-small slds-m-right_medium slds-float_right">Showing 50 per page</span>
+            </div>
+        </lightning-card>
+    </div>
+
+    <c-lwc_modal hide-header-close="true" show-modal={addFromTarget} size="small">
+            <span slot="modal-heading">
+                <div class="title-icon">
+                    <lightning-icon icon-name="custom:custom44" alternative-text="Project" ></lightning-icon>
+                </div>
+                <h2 class="slds-text-heading_medium slds-hyphenate">Select Project</h2>
+            </span>
+            <div slot="modal-content" class="slds-p-around_medium">
+                    <div class="slds-p-around_medium">
+                        <lightning-datatable
+                            class="task-assignment-display"
+                            data={projectsByProgram}
+                            columns={projectColumns}
+                            onrowselection={selectProjectSuccess}
+                            max-row-selection=1
+                            key-field="Id" >
+                        </lightning-datatable>
+                    </div>
+            </div>
+            <span slot="modal-footer">
+                <lightning-button name="SELECT_PROJECT_CANCEL" label="Cancel" onclick={handleClick}></lightning-button>
+            </span>
+    </c-lwc_modal>
+
+    <c-lwc_modal hide-header-close="true" show-modal={selectMilestoneDialog} size="small">
+            <span slot="modal-heading">
+                <div class="title-icon">
+                    <lightning-icon icon-name="custom:custom79" alternative-text="Milestone" ></lightning-icon>
+                </div>
+                <h2 class="slds-text-heading_medium slds-hyphenate">Select Milestone</h2>
+            </span>
+            <div slot="modal-content" class="slds-p-around_medium">
+                <div class="slds-p-around_medium">
+                    <lightning-datatable
+                        class="task-assignment-display"
+                        data={milestonesByProject}
+                        columns={milestoneColumns}
+                        onrowselection={selectMilestoneSuccess}
+                        max-row-selection=1
+                        key-field="Id" >
+                    </lightning-datatable>
+                </div>
+            </div>
+            <span slot="modal-footer">
+                <lightning-button name="SELECT_MILESTONE_BACK" label="Back" onclick={handleClick}></lightning-button>
+                <lightning-button name="SELECT_MILESTONE_CANCEL" label="Cancel" onclick={handleClick}></lightning-button>
+            </span>
+    </c-lwc_modal>
+
+    <c-lwc_modal show-modal={addDeliverableDialog} size="medium" hide-header-close={state.busy}>
+        <span slot="modal-heading">
+            <h2 class="slds-text-heading_medium slds-hyphenate">Add Deliverable</h2>
+        </span>
+        <div slot="modal-content" class="slds-p-around_medium slds-is-relative">
+
+            <div if:false={targetId} class="slds-section slds-is-open project-section">
+                <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                    <lightning-button-icon name="project-section" class="expando-button" icon-name="utility:switch" onclick={expandSection} variant="bare"></lightning-button-icon>
+                    <span class="slds-truncate slds-p-horizontal_small" title="Project">Project Information</span>
+                </h3>
+                <lightning-record-edit-form object-api-name="Lightning_Filter__c" record-id={lightningFilterId}>
+                    <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                        <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                            <lightning-input-field field-name="Program__c" disabled> </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                            <lightning-input-field field-name="Target__c" onchange={targetChanged}> </lightning-input-field>
+                        </div>
+                    </div>
+                </lightning-record-edit-form>
+            </div>
+
+            <lightning-record-edit-form
+                object-api-name="pse__Project_Task__c"
+                onsubmit={interruptSubmit}
+                onsuccess={addDeliverableSuccess}
+                onerror={addDeliverableError}
+                onload={addDeliverableLoad}
+                record-type-id={newDeliverableTaskRecordTypeId}
+                class="add-deliverable">
+                <div if:true={showDeliverableGeneralInfo} class="slds-section slds-is-open general-section">
+                    <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                        <lightning-button-icon name="general-section" class="expando-button" icon-name="utility:switch" onclick={expandSection} variant="bare"></lightning-button-icon>
+                        <span class="slds-truncate slds-p-horizontal_small" title="Information">General Information</span>
+                    </h3>
+
+                    <lightning-messages>
+                    </lightning-messages>
+
+                    <div style="display:none">
+                        <lightning-button type="submit" class="CLICK-ADD-DELIVERABLE" label="CLICK ME"></lightning-button>
+                    </div>
+
+                    <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={presetDeliverableFieldsWithData} for:item="presetField">
+                            <div if:true={presetField.hidden} class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={presetField.fieldName} style="display:none">
+                                <lightning-input-field if:true={presetField.hasDefault} field-name={presetField.fieldName} value={presetField.value} disabled={presetField.disabled}>
+                                </lightning-input-field>
+                                <lightning-input-field if:false={presetField.hasDefault} field-name={presetField.fieldName} disabled={presetField.disabled}>
+                                </lightning-input-field>
+                            </div>
+                            <div if:false={presetField.hidden} class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={presetField.fieldName}>
+                                <lightning-input-field if:true={presetField.hasDefault} field-name={presetField.fieldName} value={presetField.value} disabled={presetField.disabled}>
+                                </lightning-input-field>
+                                <lightning-input-field if:false={presetField.hasDefault} field-name={presetField.fieldName} disabled={presetField.disabled}>
+                                </lightning-input-field>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={generalDeliverableFieldsWithData} for:item="generalField">
+                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={generalField.fieldName}>
+
+                            <!-- when not a custom dependent combobox field (default) -->
+                            <template if:false={generalField.isCustomComboField}>
+                                <template if:false={generalField.isCustomLookup}>
+                                    <lightning-input-field
+                                        if:true={generalField.hasDefault}
+                                        field-name={generalField.fieldName}
+                                        data-id-add={generalField.fieldName}
+                                        value={generalField.value}
+                                        disabled={generalField.disabled}
+                                        data-id-fieldname={generalField.fieldName}
+                                        onchange={fieldChangedDependentLookupWorkaround}>
+                                    </lightning-input-field>
+                                    <lightning-input-field if:false={generalField.hasDefault}
+                                        field-name={generalField.fieldName}
+                                        data-id-add={generalField.fieldName} disabled={generalField.disabled}
+                                        data-id-fieldname={generalField.fieldName}
+                                        onchange={fieldChangedDependentLookupWorkaround}>
+                                    </lightning-input-field>
+                                </template>
+                                <c-lwc_lookup if:true={generalField.isCustomLookup} onsearch={handleSearch} label="Drug" 
+                                    placeholder="Select a drug..." errors={drugErrors} data-id-fieldname={generalField.fieldName}
+                                    onselectionchange={handleLookupChange}>
+                                </c-lwc_lookup>
+                                <span if:true={generalField.isCustomLookup} style="display:none">
+                                    <lightning-input-field class={generalField.fieldName} field-name={generalField.fieldName}></lightning-input-field>
+                                </span>
+                            </template>
+
+                            <!--
+                                When Is a custom dependent field; inject comboboxes to workaround unsupported dependent lookups in input-fields
+                            -->
+                            <template if:true={generalField.isCustomComboField}>
+                                <!-- hidden input field, updated when combobox is changed! -->
+                                <span class="slds-hide">
+                                    <lightning-input-field class={generalField.fieldName} field-name={generalField.fieldName}
+                                        data-id-fieldname={generalField.fieldName} onchange={fieldChanged} value={generalField.fieldValue}>
+                                    </lightning-input-field>
+                                </span>
+                                <template if:true={generalField.is_Trade_Name__c}>
+                                    <lightning-combobox
+                                        class={generalField.fieldName}
+                                        name={generalField.fieldName}
+                                        label={generalField.fieldLabel}
+                                        placeholder={generalField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Trade_Name__c.selected}
+                                        options={dependentLookupItems.Trade_Name__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                                <template if:true={generalField.is_Formulation__c}>
+                                    <lightning-combobox
+                                        class={generalField.fieldName}
+                                        name={generalField.fieldName}
+                                        label={generalField.fieldLabel}
+                                        placeholder={generalField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Formulation__c.selected}
+                                        options={dependentLookupItems.Formulation__c.options}>
+                                    </lightning-combobox>
+                                </template>
+
+                                <template if:true={generalField.is_Resource__c}>
+                                    <lightning-combobox
+                                        class={generalField.fieldName}
+                                        name={generalField.fieldName}
+                                        label={generalField.fieldLabel}
+                                        placeholder={generalField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Resource__c.selected}
+                                        options={dependentLookupItems.Resource__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                            </template>
+
+                            </div>
+                        </template>
+                        <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" style="display: none">
+                            <lightning-input-field field-name="Target__c" value={selectedTarget}></lightning-input-field>
+                        </div>
+                    </div>
+                </div>
+
+                <div if:true={showDeliverableServiceLineInfo} class={deliverableServiceLineInfoClass}>
+                    <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                        <lightning-button-icon name="service-line-section" class="expando-button slds-m-left_small" icon-name="utility:switch" onclick={expandSection} variant="bare"></lightning-button-icon>
+                        <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineName} Information</span>
+                    </h3>
+                    <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={serviceLineDeliverableFieldsWithData} for:item="serviceLineField">
+                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={serviceLineField.fieldName}>
+                                <div class={serviceLineField.className}>
+                                    <lightning-input-field if:true={serviceLineField.hasDefault} field-name={serviceLineField.fieldName} value={serviceLineField.value}
+                                    disabled={serviceLineField.disabled}
+                                    onchange={handleClientNotificationChangeEdit}>
+                                    </lightning-input-field>
+                                </div>
+                                <div class={serviceLineField.className}>
+                                    <lightning-input-field if:false={serviceLineField.hasDefault} data-id-add={serviceLineField.fieldName} field-name={serviceLineField.fieldName}
+                                    disabled={serviceLineField.disabled}
+                                    class={serviceLineField.className}
+                                    onchange={handleClientNotificationChangeEdit}>
+                                    </lightning-input-field>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <lightning-button class="add-deliverable-hidden-4" name="ADD_DELIVERABLE_HIDDEN" type="submit" label="Hidden" variant="brand" style="display:none"></lightning-button>
+                </div>
+
+                <div if:true={showDeliverableBillingInfo} class={deliverableBillingInfoClass}>
+                    <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                        <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                        <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+                    </h3>
+                    <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={billingDeliverableFieldsWithData} for:item="billingField">
+                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={billingField.fieldName}>
+                                <lightning-input-field if:true={billingField.hasDefault} field-name={billingField.fieldName} value={billingField.value} disabled={billingField.disabled}>
+                                </lightning-input-field>
+                                <lightning-input-field if:false={billingField.hasDefault} field-name={billingField.fieldName} disabled={billingField.disabled}>
+                                </lightning-input-field>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </lightning-record-edit-form>
+            <div if:true={modalButtonStatus.addDeliverable} class="slds-spinner_container modal-spinner">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </div>
+        <span slot="modal-footer">
+            <lightning-button name="ADD_DELIVERABLE_CANCEL" label="Cancel" onclick={handleClick} class="slds-m-left_x-small" disabled={modalButtonStatus.addDeliverable}></lightning-button>
+            <lightning-button name="ADD_DELIVERABLE_SUBMIT" label="Create" onclick={handleClick} variant="brand" class="slds-m-left_x-small" disabled={modalButtonStatus.addDeliverable}></lightning-button>
+            <lightning-button if:true={showCreateAndAddTask} name="ADD_DELIVERABLE_SUBMIT_WITH_TASK" label="Create and Add Task" onclick={handleClick} variant="brand" class="slds-m-left_x-small" disabled={modalButtonStatus.addDeliverable}></lightning-button>
+        </span>
+    </c-lwc_modal>
+
+    <div if:true={cloneDeliverableDialog} onkeydown={handleKeyDown}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" aria-modal="true">
+            <div class="slds-modal__container">
+
+                <header class="slds-modal__header">
+                    <lightning-button-icon name="CLOSE" icon-name={ICON_CLOSE} variant="bare-inverse" onclick={handleClick} class="slds-modal__close"></lightning-button-icon>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Clone Deliverable</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                            class="clone-deliverable"
+                            object-api-name="pse__Project_Task__c"
+                            onsuccess={cloneDeliverableSuccess} 
+                            onsubmit={interruptSubmit}
+                            onload={cloneDeliverableLoad}
+                            onerror={cloneDeliverableError}
+                            layout-type="Full"
+                            record-type-id={newDeliverableTaskRecordTypeId}>
+                        <lightning-messages>
+                        </lightning-messages>
+
+                        <div style="display:none">
+                            <lightning-button type="submit" class="CLICK-CLONE-DELIVERABLE" label="CLICK ME"></lightning-button>
+                        </div>
+
+                        <div if:true={showDeliverableGeneralInfo} class="slds-section slds-is-open general-section">
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="general-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">General Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={presetDeliverableFieldsWithData} for:item="presetField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={presetField.fieldName}>
+                                        <lightning-input-field if:true={presetField.hasDefault} field-name={presetField.fieldName} value={presetField.value}
+                                        disabled={presetField.disabled}>
+                                        </lightning-input-field>
+                                        <lightning-input-field if:false={presetField.hasDefault} field-name={presetField.fieldName}
+                                        disabled={presetField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                                <template for:each={generalDeliverableFieldsWithData} for:item="generalField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={generalField.fieldName}>
+                                        <lightning-input-field if:true={generalField.hasDefault} field-name={generalField.fieldName} value={generalField.value}
+                                        data-id-clone={generalField.fieldName} disabled={generalField.disabled}>
+                                        </lightning-input-field>
+                                        <lightning-input-field if:false={generalField.hasDefault} field-name={generalField.fieldName}
+                                        data-id-clone={generalField.fieldName} disabled={generalField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div if:true={showDeliverableServiceLineInfo} class={deliverableServiceLineInfoClass}>
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineName} Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={serviceLineDeliverableFieldsWithData} for:item="serviceLineField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={serviceLineField.fieldName}>
+                                        <div class={serviceLineField.className}>
+                                            <lightning-input-field if:true={serviceLineField.hasDefault} field-name={serviceLineField.fieldName}
+                                            data-id-clone={serviceLineField.fieldName} onchange={handleClientNotificationChangeEdit} value={serviceLineField.value} disabled={serviceLineField.disabled}>
+                                            </lightning-input-field>
+                                        </div>
+                                        <div class={serviceLineField.className}>
+                                            <lightning-input-field if:false={serviceLineField.hasDefault} field-name={serviceLineField.fieldName}
+                                            data-id-clone={serviceLineField.fieldName} onchange={handleClientNotificationChangeEdit} disabled={serviceLineField.disabled}>
+                                            </lightning-input-field>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div if:true={showDeliverableBillingInfo} class={deliverableBillingInfoClass}>
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={billingDeliverableFieldsWithData} for:item="billingField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={billingField.fieldName}>
+                                        <lightning-input-field if:true={billingField.hasDefault} field-name={billingField.fieldName} value={billingField.value} disabled={billingField.disabled}>
+                                        </lightning-input-field>
+                                        <lightning-input-field if:false={billingField.hasDefault} field-name={billingField.fieldName} disabled={billingField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                    </lightning-record-edit-form>
+
+                    <div if:true={modalButtonStatus.cloneDeliverable} class="slds-spinner_container modal-spinner">
+                        <div role="status" class="slds-spinner slds-spinner_medium">
+                            <span class="slds-assistive-text">Loading</span>
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button name="CLONE_DELIVERABLE_CANCEL" label="Cancel" class="slds-m-left_x-small" onclick={handleClick} disabled={modalButtonStatus.cloneDeliverable}></lightning-button>
+                    <lightning-button name="CLONE_DELIVERABLE_SUBMIT" label="Create" class="slds-m-left_x-small" onclick={handleClick} variant="brand" disabled={modalButtonStatus.cloneDeliverable}></lightning-button>
+                    <lightning-button name="CLONE_DELIVERABLE_SUBMIT_WITH_TASK" label="Create and Add Task" class="slds-m-left_x-small" onclick={handleClick} variant="brand" disabled={modalButtonStatus.cloneDeliverable}></lightning-button>
+                </footer>
+
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+    <div if:true={editDeliverableDialog} onkeydown={handleKeyDown}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" aria-modal="true">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning-button-icon name="CLOSE" icon-name={ICON_CLOSE} variant="bare-inverse" onclick={handleClick} class="slds-modal__close"></lightning-button-icon>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Edit Deliverable</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                            class="edit-deliverable"
+                            object-api-name="pse__Project_Task__c"
+                            onsuccess={editDeliverableSuccess} 
+                            onsubmit={interruptSubmit}
+                            onload={editDeliverableLoad}
+                            onerror={editDeliverableError}
+                            layout-type="Full"
+                            record-id={editedRow.Id}>
+                        <lightning-messages>
+                        </lightning-messages>
+
+                        <div style="display:none">
+                            <lightning-button type="submit" class="CLICK-EDIT-DELIVERABLE" label="CLICK ME"></lightning-button>
+                        </div>
+
+                        <div if:true={showEditDeliverableGeneralInfo} class="slds-section genral-section slds-is-open">
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="general-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">General Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                    <lightning-input-field disabled field-name="pse__Milestone__c" value={milestoneId}></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                    <lightning-input-field field-name="Target__c" value={selectedTarget}></lightning-input-field>
+                                </div>
+                                <template for:each={generalDeliverableFieldsWithData} for:item="generalField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={generalField.fieldName}>
+                                    <!-- when not a custom dependent combobox field (default) -->
+                                    <template if:false={generalField.isCustomComboField}>
+                                        <lightning-input-field field-name={generalField.fieldName} data-id-edit={generalField.fieldName} disabled={generalField.disabled}
+                                            data-id-fieldname={generalField.fieldName}
+                                            onchange={fieldChangedDependentLookupWorkaround}>
+                                        </lightning-input-field>
+                                    </template>
+                                    <!--
+                                        When Is a custom dependent field; inject comboboxes to workaround unsupported dependent lookups in input-fields
+                                    -->
+                                    <template if:true={generalField.isCustomComboField}>
+                                        <!-- hidden input field, updated when combobox is changed! -->
+                                        <span class="slds-hide">
+                                            <lightning-input-field class={generalField.fieldName} field-name={generalField.fieldName}
+                                                data-id-fieldname={generalField.fieldName} onchange={fieldChanged} value={generalField.fieldValue}>
+                                            </lightning-input-field>
+                                        </span>
+                                        <template if:true={generalField.is_Trade_Name__c}>
+                                            <lightning-combobox class={generalField.fieldName} name={generalField.fieldName} label={generalField.fieldLabel}
+                                                placeholder={generalField.placeholder} onchange={handleCustomComboboxChange}
+                                                value={dependentLookupItems.Trade_Name__c.selected} options={dependentLookupItems.Trade_Name__c.options}>
+                                            </lightning-combobox>
+                                        </template>
+                                        <template if:true={generalField.is_Formulation__c}>
+                                            <lightning-combobox class={generalField.fieldName} name={generalField.fieldName} label={generalField.fieldLabel}
+                                                placeholder={generalField.placeholder} onchange={handleCustomComboboxChange}
+                                                value={dependentLookupItems.Formulation__c.selected} options={dependentLookupItems.Formulation__c.options}>
+                                            </lightning-combobox>
+                                        </template>
+
+                                        <template if:true={generalField.is_Resource__c}>
+                                            <lightning-combobox class={generalField.fieldName} name={generalField.fieldName} label={generalField.fieldLabel}
+                                                placeholder={generalField.placeholder} onchange={handleCustomComboboxChange}
+                                                value={dependentLookupItems.Resource__c.selected} options={dependentLookupItems.Resource__c.options}>
+                                            </lightning-combobox>
+                                        </template>
+                                    </template>
+
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div if:true={showEditDeliverableServiceLineInfo} class={deliverableServiceLineInfoClass}>
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineName} Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={serviceLineDeliverableFieldsWithData} for:item="taskField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={taskField.fieldName}>
+                                        <div class={taskField.className}>
+                                            <lightning-input-field field-name={taskField.fieldName} data-id-edit={taskField.fieldName} disabled={taskField.disabled} onchange={handleClientNotificationChangeEdit}>
+                                            </lightning-input-field>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div if:true={showEditDeliverableBillingInfo} class={deliverableBillingInfoClass}>
+                            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+                            </h3>
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={billingDeliverableFieldsWithData} for:item="billingField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={billingField.fieldName} >
+                                        <lightning-input-field field-name={billingField.fieldName} disabled={billingField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                    </lightning-record-edit-form>
+
+                    <!-- START TASK SECTION -->
+                    <div if:true={showEditDeliverableTasks}>
+                        <h3 slot="title">
+                            <span class="slds-truncate slds-p-horizontal_small" title="Tasks">Tasks</span>
+                        </h3>
+                        <div slot="actions">
+                            <lightning-button-group>
+                                <lightning-button name="EXPAND_ALL" label="Expand All" onclick={handleClick}></lightning-button>
+                                <lightning-button name="COLLAPSE_ALL" label="Collapse All" onclick={handleClick}></lightning-button>
+                                <lightning-button if:false={addTaskDialog} name="ADD_NEW_TASK" label="Add Task" onclick={handleClick}></lightning-button>
+                                <lightning-button if:false={addTaskDialog} name="EDIT_TASK" label="Edit Task" onclick={handleClick} disabled={disableEditTask}></lightning-button>
+                                <lightning-button if:false={addTaskDialog} name="ADD_CHILD_TASK" label="Add Child Task" onclick={handleClick} disabled={disableAddChildTask}></lightning-button>
+                                <lightning-button if:false={addTaskDialog} name="EDIT_TASK_ASSIGNMENTS" label="Edit Assignments" onclick={handleClick} disabled={disableAddTaskAssignment}></lightning-button>
+                                <lightning-button if:false={addTaskDialog} name="DELETE_TASK" label="Delete" onclick={handleClick} disabled={disableDeleteTask}></lightning-button>
+                            </lightning-button-group>
+                        </div>
+                        <lightning-tree-grid
+                            class="task-display"
+                            data={editedTasks}
+                            columns={projectTaskColumns}
+                            onrowselection={selectTask}
+                            key-field="Id">
+                        </lightning-tree-grid>
+                    </div>
+
+                    <lightning-record-edit-form if:true={addTaskDialog}
+                        class="add-task"
+                        object-api-name="pse__Project_Task__c"
+                        onsuccess={addTaskSuccess}
+                        onload={addTaskLoad}
+                        onerror={addTaskError}
+                        record-type-id={newTaskRecordTypeId} >
+                        <lightning-messages>
+                        </lightning-messages>
+                        <div class="slds-section slds-is-open">
+
+                            <h3 class="slds-section__title slds-theme_shade">
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">Add New Task</span>
+                            </h3>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                    <lightning-input-field disabled field-name="Type__c" value={TASK_TYPE}></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                    <lightning-input-field disabled field-name="pse__Milestone__c" value={milestoneId}></lightning-input-field>
+                                </div>
+                            </div>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={generalTaskFieldsWithData} for:item="taskField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={taskField.fieldName} >
+                                        <lightning-input-field if:true={taskField.hasDefault} field-name={taskField.fieldName} disabled={taskField.disabled} value={taskField.value}>
+                                        </lightning-input-field>
+                                        <lightning-input-field if:false={taskField.hasDefault} field-name={taskField.fieldName} disabled={taskField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={serviceLineTaskFieldsWithData} for:item="taskField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={taskField.fieldName}>
+                                        <div class={taskField.className}>
+                                            <lightning-input-field if:true={taskField.hasDefault} field-name={taskField.fieldName} disabled={taskField.disabled} value={taskField.value}>
+                                            </lightning-input-field>
+                                        </div>
+                                        <div class={taskField.className}>
+                                            <lightning-input-field if:false={taskField.hasDefault} field-name={taskField.fieldName} disabled={taskField.disabled}>
+                                            </lightning-input-field>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid_reverse slds-wrap slds-gutters_small">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-button label="Cancel" name="ADD_TASK_CANCEL" onclick={handleClick} disabled={modalButtonStatus.addTask}></lightning-button>
+                                    <lightning-button variant="brand" name="ADD_TASK_SUBMIT" label="Add Task" onclick={handleClick} disabled={modalButtonStatus.addTask}></lightning-button>
+                                </div>
+                            </div>
+                        </div>
+                        <div if:true={modalButtonStatus.addTask} class="slds-spinner_container modal-spinner">
+                            <div role="status" class="slds-spinner slds-spinner_medium">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </lightning-record-edit-form>
+
+                    <lightning-record-edit-form if:true={editTaskDialog}
+                        class="edit-task"
+                        object-api-name="pse__Project_Task__c"
+                        onsuccess={editTaskSuccess}
+                        onload={editTaskLoad}
+                        onerror={editTaskError}
+                        layout-type="Full"
+                        record-id={editedTask.Id} >
+                        <lightning-messages>
+                        </lightning-messages>
+                        <div class="slds-section slds-is-open">
+                            <h3 class="slds-section__title slds-theme_shade">
+                                <span class="slds-truncate slds-p-horizontal_small" title="Information">Edit Task</span>
+                            </h3>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={generalTaskFieldsWithData} for:item="taskField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={taskField.fieldName} >
+                                        <lightning-input-field field-name={taskField.fieldName} value={taskField.value} disabled={taskField.disabled}>
+                                        </lightning-input-field>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <template for:each={serviceLineTaskFieldsWithData} for:item="taskField">
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal" key={taskField.fieldName} >
+                                        <div class={taskField.className}>
+                                            <lightning-input-field field-name={taskField.fieldName} value={taskField.value} disabled={taskField.disabled}>
+                                            </lightning-input-field>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-button label="Cancel" name="EDIT_TASK_CANCEL" onclick={handleClick} disabled={modalButtonStatus.editTask}></lightning-button>
+                                    <lightning-button variant="brand" name="EDIT_TASK_SUBMIT" label="Save Task" onclick={handleClick} disabled={modalButtonStatus.editTask}></lightning-button>
+                                </div>
+                            </div>
+                        </div>
+                        <div if:true={modalButtonStatus.editTask} class="slds-spinner_container modal-spinner">
+                            <div role="status" class="slds-spinner slds-spinner_medium">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </lightning-record-edit-form>
+
+                    <div if:true={editTaskAssignmentsDialog} class="slds-section slds-is-open">
+                        <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                            <div class="slds-col slds-size_1-of-1">
+                                <div class="slds-section slds-is-open">
+                                    <h3 class="slds-section__title slds-theme_shade">
+                                        <span class="slds-truncate slds-p-horizontal_small" title="Information">Task Assignments for {editedTask.Name}</span>
+                                    </h3>
+                                    <lightning-datatable
+                                        class="task-assignment-display"
+                                        data={editedTaskAssignments}
+                                        columns={taskAssignmentColumns}
+                                        onrowselection={selectTaskAssignment}
+                                        max-row-selection=1
+                                        key-field="Id" >
+                                    </lightning-datatable>
+                                </div>
+                            </div>
+                            <div if:false={addTaskAssignmentDialog} class="slds-col slds-size_1-of-1">
+                                <lightning-button-group>
+                                    <lightning-button name="EDIT_TASK_ASSIGNMENTS_CLOSE" label="Go Back" icon-name="utility:chevronleft" onclick={handleClick} class="slds-m-around_xx-small"></lightning-button>
+                                    <lightning-button variant="brand" name="ADD_TASK_ASSIGNMENT" label="Add Assignment" onclick={handleClick} class="slds-m-around_xx-small"></lightning-button>
+                                    <lightning-button  name="EDIT_TASK_ASSIGNMENT" label="Edit Assignment" onclick={handleClick} class="slds-m-around_xx-small" disabled={disableEditTaskAssignment}></lightning-button>
+                                    <lightning-button  name="DELETE_TASK_ASSIGNMENT" label="Delete Assignment" onclick={handleClick} class="slds-m-around_xx-small" disabled={disableDeleteTaskAssignment}></lightning-button>
+                                </lightning-button-group>
+                            </div>
+                            <div if:true={addTaskAssignmentDialog} class="slds-col slds-size_1-of-1">
+                                <lightning-record-edit-form
+                                    class="add-task-assignment"
+                                    object-api-name="pse__Project_Task_Assignment__c"
+                                    record-type-id={newTaskAssignmentRecordTypeId}
+                                    layout-type="Full"
+                                    onload={addTaskAssignmentLoad}
+                                    onsubmit={addTaskAssignmentSubmit}
+                                    onsuccess={addTaskAssignmentSuccess}>
+
+                                    <div class="slds-section slds-is-open">
+                                        <h3 class="slds-section__title slds-theme_shade">
+                                            <span class="slds-truncate slds-p-horizontal_small" title="Information">Add Project Task Assignment</span>
+                                        </h3>
+
+                                        <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                            <lightning-messages></lightning-messages>
+                                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                                <lightning-input-field field-name="pse__Project_Task__c" value={editedTask.Id} disabled="disabled"> </lightning-input-field>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                                <lightning-input-field field-name="pse__Resource__c"> </lightning-input-field>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                                <lightning-input-field field-name="pse__Resource_Role__c"> </lightning-input-field>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                                <lightning-input-field field-name="Resource_Location__c"> </lightning-input-field>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                                <lightning-input-field field-name="Is_Primary__c"> </lightning-input-field>
+                                            </div>
+
+                                        </div>
+                                        <div class="slds-grid slds-m-top_small">
+                                            <div class="slds-col slds-size_1-of-1">
+                                                <lightning-button label="Cancel" name="ADD_TASK_ASSIGNMENT_CLOSE" onclick={handleClick} class="slds-m-around_xx-small"></lightning-button>
+                                                <lightning-button variant="brand" type="submit" label="Add" class="slds-m-around_xx-small"></lightning-button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </lightning-record-edit-form>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div if:true={changeTaskAssignmentDialog} class="slds-col slds-size_1-of-1">
+                        <lightning-record-edit-form
+                            class="edit-task-assignment"
+                            object-api-name="pse__Project_Task_Assignment__c"
+                            record-type-id={newTaskAssignmentRecordTypeId}
+                            layout-type="Full"
+                            record-id={editedTaskAssignment.Id}
+                            onload={changeTaskAssignmentLoad}
+                            onsuccess={changeTaskAssignmentSuccess}>
+
+                            <div class="slds-section slds-is-open">
+                                <h3 class="slds-section__title slds-theme_shade">
+                                    <span class="slds-truncate slds-p-horizontal_small" title="Information">Edit Project Task Assignment</span>
+                                </h3>
+
+                                <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                                    <lightning-messages></lightning-messages>
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                        <lightning-input-field field-name="pse__Project_Task__c" value={editedTask.Id} disabled="disabled"> </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                        <lightning-input-field field-name="pse__Resource__c"> </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                        <lightning-input-field field-name="pse__Resource_Role__c"> </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                        <lightning-input-field field-name="Resource_Location__c"> </lightning-input-field>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2 slds-form-element_horizontal">
+                                        <lightning-input-field field-name="Is_Primary__c"> </lightning-input-field>
+                                    </div>
+
+                                </div>
+                                <div class="slds-grid slds-m-top_small">
+                                    <div class="slds-col slds-size_1-of-1">
+                                        <lightning-button label="Cancel" name="EDIT_TASK_ASSIGNMENT_CLOSE" onclick={handleClick} class="slds-m-around_xx-small"></lightning-button>
+                                        <lightning-button variant="brand" type="submit" label="Save" class="slds-m-around_xx-small"></lightning-button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </lightning-record-edit-form>
+                    </div>
+                    <!-- END TASK SECTION -->
+
+                    <div if:true={modalButtonStatus.editDeliverable} class="slds-spinner_container modal-spinner">
+                        <div role="status" class="slds-spinner slds-spinner_medium">
+                            <span class="slds-assistive-text">Loading</span>
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+
+                </div>
+                <footer if:true={showEditDeliverableFooter} class="slds-modal__footer">
+                    <lightning-button name="EDIT_DELIVERABLE_CANCEL" label="Cancel" onclick={handleClick} disabled={modalButtonStatus.editDeliverable}></lightning-button>
+                    <lightning-button name="EDIT_DELIVERABLE_SUBMIT" label="Save Changes" onclick={handleClick} variant="brand" disabled={modalButtonStatus.editDeliverable}></lightning-button>
+                    <!-- Maybe we ought to just ahve a DONE button here, and put a submit button inside the form -->
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+    <div if:true={confirmDeleteDeliverableDialog} onkeydown={handleKeyDown}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small" aria-modal="true">
+            <div class="slds-modal__container">
+
+                <header class="slds-modal__header">
+                    <lightning-button-icon name="CLOSE" icon-name={ICON_CLOSE} variant="bare-inverse" onclick={handleClick} class="slds-modal__close"></lightning-button-icon>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Confirm Delete</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                   <p>Are you sure you want to delete deliverable unit "{editedRow.Name}"?</p>
+                    <lightning-record-edit-form
+                        class="delete-deliverable"
+                        object-api-name="pse__Project_Task__c"
+                        onsuccess={setDeleteReasonSuccess}
+                        onload={deleteDeliverableLoaded}
+                        onerror={deleteDeliverableError}
+                        layout-type="Full"
+                        record-id={editedRow.Id}>
+                        <div class="slds-grid">
+                            <div class="slds-col slds-form-element_horizontal">
+                                <lightning-input-field field-name="Reason_for_Deletion__c"> </lightning-input-field>
+                            </div>
+                        </div>
+                    </lightning-record-edit-form>
+
+                    <div if:true={modalButtonStatus.deleteDeliverable} class="slds-spinner_container">
+                        <div role="status" class="slds-spinner slds-spinner_medium">
+                            <span class="slds-assistive-text">Loading</span>
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button name="DELETE_DELIVERABLE_CANCEL" label="Cancel" onclick={handleClick} disabled={modalButtonStatus.deleteDeliverable}></lightning-button>
+                    <lightning-button name="DELETE_DELIVERABLE_SUBMIT" type="Delete" label="Delete" onclick={handleClick} variant="destructive" disabled={modalButtonStatus.deleteDeliverable}></lightning-button>
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+    <div if:true={confirmDeleteTaskDialog} onkeydown={handleKeyDown}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small" aria-modal="true">
+            <div class="slds-modal__container">
+
+                <header class="slds-modal__header">
+                    <lightning-button-icon name="CLOSE" icon-name={ICON_CLOSE} variant="bare-inverse" onclick={handleClick} class="slds-modal__close"></lightning-button-icon>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Confirm Delete</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                   <p>Are you sure you want to delete task "{editedTask.Name}"?</p>
+                    <lightning-record-edit-form
+                        class="delete-task"
+                        object-api-name="pse__Project_Task__c"
+                        onsuccess={setDeleteReasonSuccess}
+                        onload={deleteDeliverableLoaded}
+                        onerror={deleteDeliverableError}
+                        layout-type="Full"
+                        record-id={editedTask.Id}>
+                        <div class="slds-grid">
+                            <div class="slds-col slds-form-element_horizontal">
+                                <lightning-input-field field-name="Reason_for_Deletion__c"> </lightning-input-field>
+                            </div>
+                        </div>
+                    </lightning-record-edit-form>
+
+                    <div if:true={modalButtonStatus.deleteDeliverable} class="slds-spinner_container">
+                        <div role="status" class="slds-spinner slds-spinner_medium">
+                            <span class="slds-assistive-text">Loading</span>
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button name="DELETE_TASK_CANCEL" label="Cancel" onclick={handleClick} disabled={modalButtonStatus.deleteDeliverable}></lightning-button>
+                    <lightning-button name="DELETE_TASK_SUBMIT" type="Delete" label="Delete" onclick={handleClick} variant="destructive" disabled={modalButtonStatus.deleteDeliverable}></lightning-button>
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+    <c-lwc_modal
+        show-modal={showMetricsModal}
+        modal-heading="Performance Miss Detected">
+        <div slot="modal-content" class="slds-p-around_small slds-is-relative">
+            <div>A performance miss had been identified. Click Cancel to amend the deliverable record, or Save to proceed to the generated performance miss.</div>
+            <ul class="slds-list_dotted">
+                <li for:each={failedMetrics} for:item="metric" key={metric.Id}>{metric.Metric_Name__c}</li>
+            </ul>
+            <div if:true={modalButtonStatus.metrics} class="slds-spinner_container modal-spinner saving-record">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Saving</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </div>
+        <div slot="modal-footer">
+            <lightning-button if:false={modalButtonStatus.metrics} label="Cancel" variant="neutral" onclick={modalCancelSave}></lightning-button>
+            <lightning-button if:false={modalButtonStatus.metrics} label="Save" variant="brand" onclick={modalConfirmSave}></lightning-button>
+            <lightning-button if:true={modalButtonStatus.metrics} label="Saving" variant="brand" disabled></lightning-button>
+        </div>
+    </c-lwc_modal>
+
+    <div if:true={showPageSpinner} class="slds-spinner_container main-page-spinner">
+        <div role="status" class="slds-spinner slds-spinner_medium">
+            <span class="slds-assistive-text">Loading</span>
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+        </div>
+    </div>
+</template>

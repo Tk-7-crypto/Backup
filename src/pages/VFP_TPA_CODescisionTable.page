@@ -1,0 +1,204 @@
+<apex:page language="{!language}" controller="CNT_TPA_CODescisionTable"  action="{!requestValidateOnLoad}" showHeader="false" sidebar="false">
+    <apex:slds />
+    <script type="text/javascript">
+    console.log('currentLoggedInUserProfile0 in VFP_TPA_CommercialReviewForm::::'+'{!currentUserProfileName}');
+    function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+    if('{!currentUserProfileName}' == 'tpa Profile') {
+        var qryString = '';
+        var urlParams = getUrlVars();
+        for(var key in urlParams) {
+            if(urlParams.hasOwnProperty(key)) {
+                var val = urlParams[key];
+                qryString += key + '=' + val + '&';
+            }
+        }
+        qryString = qryString.slice(0, -1);
+        window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_CODescisionTable&' + qryString;
+    }
+    if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+        var globalBar = document.getElementsByClassName("globalHeaderBar");
+        if(globalBar != null  && globalBar.length > 0) {
+            globalBar[0].classList.add("hideGlobalHeader");
+        }
+        var searchBar = document.getElementsByClassName("zen-navViaSearch");
+        if(searchBar != null  && searchBar.length > 0) {
+            searchBar[0].classList.add("hideGlobalHeader");
+        }
+        var navigationMenu = document.getElementsByClassName("zen-hasMessages");
+        if(navigationMenu != null && navigationMenu.length > 0) {
+            navigationMenu[0].classList.add("hideGlobalHeader");
+        }
+    }
+    </script>
+    <apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+        <!-- Added for site to community logic submission end-->  
+        <html>
+            <head>
+                
+                <!-- *** Angular-JS Library reference ** -->
+                <apex:includeScript value="{!$Resource.AngularJS}"/>
+                <!-- *** Angular-JS Library reference ** -->
+                
+                <!-- ****** AngularJS script Start ****** -->
+                <script type="text/javascript">
+                
+                var myapp = angular.module('TpaAccessRequest', []);
+                
+                <!-- Page Controller Start -->
+                    var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$log', '$window', function ($scope, $filter, $log, $window)
+                                                                    {
+                                                                        $scope.$log = $log;
+                                                                        $scope.SelectedComReviewList = [];
+                                                                        $scope.SelectedComRevArray = [];
+                                                                        
+                                                                        function getParameterByName(name)
+                                                                        {
+                                                                            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                                                                            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                                                                            return results == null ? "" : results[1].replace(/\+/g, " ").replace("%40", "@");
+                                                                        }
+                                                                        $scope.searchComRcrd = function(lastRecId) {
+                                                                            showLoading();
+                                                                            CNT_TPA_CODescisionTable.getRelatedComList(lastRecId,getParameterByName('id').trim(),getParameterByName('viewMode').trim(), getParameterByName('MailType').trim(), function(result, event)
+                                                                                                                       {
+                                                                                                                           if(event.type == 'exception')
+                                                                                                                               return false;
+                                                                                                                           else {
+                                                                                                                               console.log(result+'---,,,,,');
+                                                                                                                               $scope.$log.info('Total rows : '+result);
+                                                                                                                               var actionWithComments = '';
+                                                                                                                               var DateFormat = '';
+                                                                                                                               angular.forEach(result, function(value, key) {
+                                                                                                                                   actionWithComments = '';
+                                                                                                                                   if(value.Action__c == 'Questions / Comments'){
+                                                                                                                                       actionWithComments = value.Action__c + (value.Additional_Questions_For_TP_Processor__c != null ? (': ' + value.Additional_Questions_For_TP_Processor__c) : '');
+                                                                                                                                   }
+                                                                                                                                   else if(value.Action__c == 'Potential Denial - Request TP Processor to arrange meeting with IQVIA Legal'){
+                                                                                                                                       actionWithComments = value.Action__c + (value.Additional_Text_For_Potential_Denial__c != null ? (': ' + value.Additional_Text_For_Potential_Denial__c) : '');
+                                                                                                                                   }
+                                                                                                                                       else if(value.Action__c == 'Under Validation'){
+                                                                                                                                           actionWithComments = value.Action__c + (value.Comment_For_Under_Validation__c != null ? (': ' + value.Comment_For_Under_Validation__c) : '');
+                                                                                                                                       }else{
+                                                                                                                                           actionWithComments = value.Action__c;
+                                                                                                                                       }
+                                                                                                                                   value.Date_of_Action_Response__c = $scope.getDateInJS(value.Date_of_Action_Response__c)
+                                                                                                                                   value.Action__c = actionWithComments;
+                                                                                                                                   if(value.Manual_Review_Reason__c == 'Vendor Requires Secondary Review'){
+                                                                                                                                        $scope.SelectedComReviewList.unshift(value);
+                                                                                                                                   }else{
+                                                                                                                                        $scope.SelectedComReviewList.push(value);
+                                                                                                                                   }
+                                                                                                                               });
+                                                                                                                               console.log($scope.SelectedComReviewList);
+                                                                                                                               var lastID = result[result.length - 1].Id
+                                                                                                                               
+                                                                                                                               if(result.length == 2000){
+                                                                                                                                   $scope.searchComRcrd(lastID);
+                                                                                                                               }
+                                                                                                                               else{
+                                                                                                                                   console.log(result.length+'---,,,,,');
+                                                                                                                                   $scope.applyChanges();
+                                                                                                                                   hideLoading();
+                                                                                                                               }
+                                                                                                                           }
+                                                                                                                       });
+                                                                            
+                                                                        }
+                                                                        
+                                                                        $scope.createKeyInitial = function(comreview){
+                                                                            var key = '';
+                                                                            if(comreview.Manual_Review_Reason__c != null && comreview.Manual_Review_Reason__c.indexOf('Additional Term') > -1){
+                                                                                key += comreview.TPA_Additional_Term__r.Name + ';';
+                                                                                key += comreview.TPA_Additional_Term__r.Addtional_Term__c + ';';
+                                                                                key += comreview.TPA_Additional_Term__r.Category__c + ';';
+                                                                                key += comreview.Manual_Review_Reason__c ;
+                                                                                return key;
+                                                                            }
+                                                                            key +=comreview.Associated_Use_to_Review__c + ';';
+                                                                            
+                                                                            key +=comreview.Associated_Offering_s_Use_Category_s__c + ';';
+                                                                            key +=comreview.Associated_Offering_Category__c + ';';
+                                                                            key +=comreview.BU__c + ';';
+                                                                            key +=comreview.Associated_Offering_to_Review__c+';';
+                                                                            key +=comreview.Manual_Review_Reason__c;
+                                                                            return key;
+                                                                            
+                                                                        }
+                                                                        $scope.applyChanges = function()
+                                                                        {
+                                                                            if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                                                                                $scope.$apply();
+                                                                        }
+                                                                        $scope.getDateInJS = function(dateInJS){
+                                                                            if(typeof dateInJS == 'number'){
+                                                                                dateInJS = new Date(dateInJS);
+                                                                                var separator = '-';
+                                                                                var dateJstoStr = '' + (dateInJS.getMonth() + 1) + separator + dateInJS.getDate() + separator + dateInJS.getFullYear() ;
+                                                                                return dateJstoStr;
+                                                                            }
+                                                                            return dateInJS;
+                                                                        }
+                                                                        $scope.tableType = getParameterByName('MailType').trim() == 'rr' ? 'ReviewMail' : 'ForYourRecords';
+                                                                        $scope.searchComRcrd(null);
+                                                                    }]
+                                                  
+                                                 )
+                    </script>
+                
+                <style type="text/css">
+                    .COTable{
+                    margin-left : 10% !important;
+                    margin-right : 10% !important;
+                    }
+                    table tr.tableData td.tableData{
+                    border:1px solid #0CB6F3 !important; 
+                    padding: 0px 2px 0 2px;
+                    text-align: centre;
+                    }
+                    .hideGlobalHeader
+                    {
+                    display: none !important;
+                    }
+                    
+                </style>
+            </head>
+            <body id="pageBody">
+                <c:VFC_TPA_LoadingImage />
+                <div ng-app="TpaAccessRequest">
+                    <div id="controllerPage" ng-controller="controllerPage">
+                        <apex:PageBlock html-class="COTable" rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}" >
+                            <apex:pageblockSection columns="1" collapsible="false" html-style="background-color:white;">
+                                <table>
+                                    <tr class = 'tableData'>
+                                        <th class = 'tableData'>Manual Review Reason</th>
+                                        <th class = 'tableData'>Associated Offering(s) to Review</th>
+                                        <th class = 'tableData'>Associated Offering(s) Use(s) Requested</th>
+                                        <th class = 'tableData' ng-show="tableType == 'ReviewMail'">Commercial Owner Name</th>
+                                        <th class = 'tableData'>Date of Review</th>
+                                        <th class = 'tableData'>Commercial Owner Descision</th>
+                                    </tr>
+                                    <tr class = 'tableData' ng-repeat = "v in SelectedComReviewList">                               
+                                        <td class = 'tableData'>{{v.Manual_Review_Reason__c}} </td>
+                                        <td class = 'tableData'>{{v.Associated_Offering_to_Review__c}}</td>
+                                        <td class = 'tableData'>{{v.Associated_Use_to_Review__c}} </td>
+                                        <td class = 'tableData' ng-show="tableType == 'ReviewMail'">{{v.Commercial_Owner_Name__c}}</td>
+                                        <td class = 'tableData'>{{v.Date_of_Action_Response__c}}</td>
+                                        <td class = 'tableData'>{{v.Action__c}} </td>
+                                    </tr>
+                                </table>
+                            </apex:pageblockSection>
+                        </apex:PageBlock>
+                    </div>
+                </div>
+            </body>
+        </html>
+    </apex:outputPanel>
+</apex:page>

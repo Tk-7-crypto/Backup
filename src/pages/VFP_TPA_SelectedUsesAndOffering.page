@@ -1,0 +1,212 @@
+<apex:page controller="CNT_TPA_SelectedUsesAndOfferings" showHeader="true" sidebar="false">
+    <head>
+    	<apex:includeScript value="{!$Resource.AngularJS}"/>    
+    </head>
+    <apex:slds />
+    <!-- Added for site to community logic submission start -->
+    <script type="text/javascript">
+        function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+		}
+    	console.log('till here');
+        if('{!currentUserProfileName}' == 'tpa Profile') {
+            console.log('till here1');
+            var qryString = '';
+            var urlParams = getUrlVars();
+            for(var key in urlParams) {
+                if(urlParams.hasOwnProperty(key)) {
+                    var val = urlParams[key];
+                    qryString += key + '=' + val + '&';
+                }
+            }
+            console.log('till here2');
+            console.log('quryString-1:::'+JSON.stringify(urlParams));
+            console.log('quryString:::'+qryString);
+            qryString = qryString.slice(0, -1);
+            console.log('quryString0:::'+qryString);
+            console.log('quryString1:::'+'{!tpaCommunityUrl}');
+            console.log('till here3');
+            window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_SelectedUsesAndOfferings&' + qryString;
+        }
+    	console.log('till here5');
+    console.log('{!currentUserProfileName}');
+    if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+        var globalBar = document.getElementsByClassName("globalHeaderBar");
+        if(globalBar != null  && globalBar.length > 0) {
+            globalBar[0].classList.add("hideGlobalHeader");
+        }
+        var searchBar = document.getElementsByClassName("zen-navViaSearch");
+        if(searchBar != null  && searchBar.length > 0) {
+            searchBar[0].classList.add("hideGlobalHeader");
+        }
+        var navigationMenu = document.getElementsByClassName("zen-hasMessages");
+        if(navigationMenu != null && navigationMenu.length > 0) {
+            navigationMenu[0].classList.add("hideGlobalHeader");
+        }
+    }
+    </script>
+    <style>
+        .hideGlobalHeader
+        {
+        	display: none !important;
+        }
+    </style>
+    <script type="text/javascript">
+    	var useOfferingDisplayApp = angular.module('useOfferingDisplayApp',[]);
+    	var reqId = getParameterByName('reqId');
+    	var contrl = useOfferingDisplayApp.controller('controllerPage',['$scope','$log',function($scope,$log){
+        	$scope.useOffRecs = [];
+            $scope.useOffMap = new Map();
+            $scope.showRecords = false;
+            angular.element(document).ready(function () {
+                $scope.useOffRecs = [];
+                showLoading();
+            	$scope.fetchUseOffRecords(reqId);
+                console.log($scope.useOffRecs);
+            });
+            
+            $scope.fetchUseOffRecords = function(reqId){
+            	Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.CNT_TPA_SelectedUsesAndOfferings.fetchUseOffRecords}',reqId,
+                    function(result,event){
+                		if(event.type == 'exception'){
+                            return false;                                    
+                		}
+                        var tempResult = [];
+                		if(result != null ){
+                            console.log(result);
+                            //tempResult = JSON.parse(result.data);
+                            $scope.useOffRecs = result;
+                        }
+                        
+                        
+                        if($scope.useOffRecs.length > 0){
+                            $scope.showUseOffRecs();
+                        }
+                	}
+                );
+            }
+            $scope.parseHTML = function(value) {
+                var t = document.createElement('template');
+                var doc = new DOMParser().parseFromString(value, "text/html");
+                t.innerHTML = doc.documentElement.textContent;
+                return t.innerHTML.replace(/<[^>]+>/g, '');
+            }
+            $scope.showUseOffRecs = function(){
+				
+                angular.forEach($scope.useOffRecs,function(rec){
+               		var isSecOffPresent = false;
+            		var offeringsName = '';
+            		var offeringCategory = rec.Geo_Level__c;
+            
+            		angular.forEach(rec.TPA_Secondary_Data_Assets__r, function(secOffRec){
+                		isSecOffPresent = true;
+                		offeringsName += secOffRec.Secondary_Asset_Name__c + ',';
+            		});
+            		if(!isSecOffPresent){
+                		offeringsName = rec.Asset_Name__c.indexOf('Other') != -1 ? ( rec.Asset_Name__c + ' : ' + rec.Other_Text__c ) : rec.Asset_Name__c ;
+            		}
+                    else{
+                    	offeringsName = offeringsName.substring(0,offeringsName.length-1);
+                    }
+                    
+                    offeringsName = $scope.parseHTML(offeringsName);
+                    rec.BU__c = $scope.parseHTML(rec.BU__c);
+                    var useName = (rec.Purpose__r.Name.indexOf('Other') != -1 ? (rec.Purpose__r.Name + ' : ' + rec.Purpose__r.Other_Details__c) : rec.Purpose__r.Name);
+                	var key = rec.Purpose__r.Purpose_Category_Name__c + ';' + useName;
+                    //console.log(offeringsName+'//'+key+'//'+offeringCategory+'//'+rec.BU__c);
+                    if($scope.useOffMap.has(key)){
+                    	$scope.useOffMap.set(key,$scope.updateUseOffComb($scope.useOffMap.get(key),offeringsName,offeringCategory,rec.BU__c));
+                    }
+                    else{
+                    	$scope.useOffMap.set(key,$scope.addNewUseOffComb(useName,rec.Purpose__r.Purpose_Category_Name__c,offeringsName,offeringCategory,rec.BU__c));
+                    }
+                });
+                $scope.useOffRecs = [];
+                angular.forEach($scope.useOffMap,function(key,Value){
+                	$scope.useOffRecs.push(key);
+                });
+                $scope.showRecords = true;
+                hideLoading();
+                console.log($scope.useOffRecs);
+                $scope.applyChanges();
+            }
+            
+            $scope.addNewUseOffComb = function(use,useCate,off,offCate,bU){
+            	var newComb = {};
+                
+                newComb.useCategoryName = useCate;
+                newComb.useName = use;
+                newComb.offCategories = offCate;
+                newComb.offerings = off;
+                newComb.region = bU;
+                return newComb;
+            }
+            $scope.updateUseOffComb = function(existingComb,off,offCate,bU){
+            	existingComb.offerings += ',' + off;
+                if(existingComb.offCategories.indexOf(offCate) == -1){
+                    existingComb.offCategories += ','+offCate;
+                }
+                if(existingComb.region.indexOf(bU) == -1){
+                    existingComb.region += ','+bU;
+                }
+                return existingComb;
+            }
+            $scope.applyChanges = function(){
+        		if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+            		$scope.$apply();
+    		}
+        }]);
+    
+    	function getParameterByName(name) 
+        {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+            var results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+    	
+    </script>
+    <body>
+        <c:VFC_TPA_LoadingImage />
+        <div ng-app="useOfferingDisplayApp">
+        	<div id="controllerPage" ng-controller="controllerPage">
+    <apex:PageBlock rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}" >
+    <apex:pageblockSection title="{!$Label.TPA_Selected_Uses_and_Offerings}" columns="1" collapsible="false" html-style="background-color:white;">
+        <table class="list" ng-show="showRecords">
+            <tr class="headerRow">
+                <th>{!$Label.TPA_Category_Name}</th>
+                <th>{!$Label.TPA_Use_Name}</th>
+                <th>{!$Label.TPA_Offering_Category_Name}</th>
+                <th>{!$Label.TPA_Offerings}</th>
+                <th>{!$Label.TPA_Region}</th>
+            </tr>
+            <tr class="dataRow" ng-repeat="v in useOffRecs track by $index" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                <td class="dataCell" style="vertical-align:top;">
+                    {{v.useCategoryName}}
+                </td>
+                <td class="dataCell" style="vertical-align:top;">
+                    {{v.useName}}
+                </td>
+                <td class="dataCell" style="vertical-align:top;">{{v.offCategories}}</td>
+                <td class="dataCell" style="vertical-align:top;">
+                    {{v.offerings}}
+                </td>
+                <td class="dataCell" style="vertical-align:top;">
+                    {{v.region}}
+                </td>
+            </tr>
+        </table>
+    </apex:pageblockSection>
+        
+    </apex:PageBlock>
+        	</div>
+		</div>
+    </body>
+</apex:page>

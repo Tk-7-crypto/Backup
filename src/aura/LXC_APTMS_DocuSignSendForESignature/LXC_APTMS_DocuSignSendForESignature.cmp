@@ -1,0 +1,521 @@
+<aura:component controller="CNT_APTMS_DocuSignESignature" implements="force:appHostable,lightning:isUrlAddressable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global">
+    <aura:html tag="style">
+        .toastMessage.forceActionsText {
+            white-space : pre-line !important;
+        }
+    </aura:html>
+    <aura:attribute name="lstDocuments" type="CNT_APTMS_DocuSignESignature.AttachmentWrapper[]" />
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="showPage1" type="Boolean" default="true" />
+    <aura:attribute name="showPage2" type="Boolean" default="false" />
+    <aura:attribute name="showPage3" type="Boolean" default="false" />
+    <aura:attribute name="showPage4" type="Boolean" default="false" />
+    <aura:attribute name="showPage5" type="Boolean" default="false" />
+    <aura:attribute name="checkUser" type="Boolean" default="true" />
+    <aura:attribute name="checkUserPage" type="Boolean" default="false" />
+    <aura:attribute name="recordId" type="String" /> 
+    <aura:attribute name="agrId" type="String" />
+    <aura:attribute name="executionOrder" type="String" />
+    <aura:attribute name="options" type="List" default="[
+        {'label': 'Yes', 'value': 'True'},
+        {'label': 'No', 'value': 'False'}]"/>
+    <aura:attribute name="hasError" default="false" type="Boolean"/>
+    <aura:attribute name="errorList" default="[]" type="List"/>
+    <aura:attribute name="selectedRowsList" type="String[]" />
+    <aura:attribute name="csfOption" type="String" default="True"/>
+    <aura:attribute name="setSigningOrderCheck" type="Boolean" default="false"/>
+    <aura:attribute name="showMCASection" type="Boolean" default="false"/><!-- P3 Addition-->
+    <aura:attribute name="selectedAttachments" type="List" default="[]" />
+    <aura:attribute name="docusignEmailList" type="CNT_APTMS_DocuSignESignature.DocusignUserMetadataWrapper[]"/>
+    <aura:attribute name="recipientList" type="CNT_APTMS_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:attribute name="recipientList1" type="CNT_APTMS_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:attribute name="recipientList2" type="CNT_APTMS_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:attribute name="emailTemplateList" type="CNT_APTMS_DocuSignESignature.EmailTemplateWrapper[]"/>
+    <aura:attribute name="dummyRecipientList" type="CNT_APTMS_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:attribute name="firstRow" type="Integer" default="0" />
+    <aura:attribute name="emailSubject" type="String" />
+    <aura:attribute name="emailBlurb" type="String" />
+    <aura:attribute name="internalDefaultTemplate" type="String" />
+    <aura:attribute name="externalDefaultTemplate" type="String" />    
+    <aura:attribute name="templateName" type="String" />
+    <aura:attribute name="userNameDefaultValue" type="String" />
+    <aura:attribute name="labelDefaultValue" type="String" default = "Apptus User"/>
+    <aura:attribute name="executionOrderCheck" type="Boolean" default="false" />
+    <aura:attribute name="docuSignAccId" type="String" />
+    <aura:attribute name="reminderAndExp" type="CNT_APTMS_DocuSignESignature.ReminderAndExpWrapper" />
+    <aura:attribute name="displaySO" type="String" default="None"/>
+    <aura:attribute name="displaySSO" type="String" default="None"/>  
+    <aura:attribute name="hideTemplate" type="Boolean" default="true"/>
+    <aura:attribute name="loaded" type="Boolean" default="false" />
+    <aura:attribute name="subjectMaxLength" type="Integer" />
+    <aura:attribute name="currentProgressStep" default="s1" type="String"/>
+    <aura:attribute name="record" type="Object"/>
+    <aura:attribute name="simpleRecord" type="Object"/>
+    <aura:attribute name="recordError" type="String"/>
+    <aura:attribute name="expiredate" type="Date"/>  
+    <aura:attribute name="batchId" type="String"/>
+    <aura:attribute name="batchJobStatus" type="String"/>
+    <aura:attribute name="progress" type="Integer" default="0"/>
+    <aura:attribute name="defaultReminderDelay" type="Integer"/>
+    <aura:attribute name="defaultReminderFrequency" type="Integer"/>
+    <aura:attribute name="defaultExpireAfter" type="Integer"/>
+    <aura:attribute name="defaultExpireWarn" type="Integer"/>
+    <aura:attribute name="docuSignEnvelopeId" type="String"/>
+    <aura:attribute name="envId" type="String"/>
+    <aura:attribute name="loadScreen" type="Boolean" default="true"/>
+    <aura:attribute name="isDocuPreviewLoaded" type="Boolean" default="true"/>    
+    <aura:attribute name="enableFinalizeInDocuSign" type="Boolean"/>
+    <aura:attribute name="sendAsUserEmail" type="String"/>
+    <aura:attribute name="sendAsUserName" type="String"/>
+    <aura:attribute name="selectedSendAsUserEmail" type="String"/>
+    <aura:attribute name="cancelSend" type="Boolean" default="false"/>    
+    <!-- Attributes specific to Autocomplete component-->
+    <aura:attribute name="label" type="String"/>
+    <aura:attribute name="objectApiName" type="String" default="Agreement_Contacts__c"/>
+    <aura:attribute name="idFieldApiName" type="String" default="Id"/>
+    <aura:attribute name="valueFieldApiName" type="String" default="Name__c"/>
+    <aura:attribute name="extendedWhereClause" type="String" default=""/>
+    <aura:attribute name="maxRecords" type="Integer" default="10"/>    
+    <aura:attribute name="results" type="List" />
+    <aura:attribute name="openDropDown" type="Boolean" default="false" />
+    <aura:attribute name="selectedOption" type="String" />
+    <aura:attribute name="inputValue" type="String" />
+    <aura:attribute name="inputSearchFunction" type="Object" />
+    <aura:attribute name="enableFinalizeInDocuSignForContractAdmin" type="Boolean"/>        
+    <aura:attribute name="isModalOpen" type="Boolean" default="false"/>
+    <aura:attribute name="hasErrors" type="Boolean" default="false"/>      
+    <aura:attribute name="documentSize" type="Integer" />    
+    <aura:attribute name="previewUrl" type="String" />
+    <aura:attribute name="defaultRecipientId" default="1" type="String"/>    
+    <aura:attribute name="recordType" type="String"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <lightning:navigation aura:id="navigate" />
+    
+    <div class="c-container">
+        <lightning:layout multipleRows="true">
+            <!-- Errors -->
+            <aura:if isTrue="{!v.hasError}">
+                <lightning:layoutItem padding="around-small" size="12">
+                    <lightning:layout class="errBox">
+                        <lightning:layoutItem flexibility="auto">	
+                            <ul>
+                                <aura:iteration items="{!v.errorList}" var="err">
+                                    <li>{!err}</li>    
+                                </aura:iteration>
+                            </ul>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+            </aura:if>            
+            <aura:if isTrue="{!v.loadScreen}">
+                <aura:if isTrue="{!!v.showPage5}">
+                    <lightning:layoutItem flexibility="auto" padding="around-small" size="12" >
+                        <lightning:card title="Send For eSignature" iconName="standard:record_signature_task" >
+                            <aura:set attribute="actions" >                                
+                                <lightning:button variant="Neutral" label="Cancel" onclick="{!c.goto0}"/>
+                                <aura:if isTrue="{!v.showPage1}">
+                                    <lightning:button variant="brand" label="Next" onclick="{!c.gotoCheckUserPage}"/>
+                                </aura:if>
+                                <aura:if isTrue="{!v.checkUserPage}">
+                                    <lightning:button variant="brand-outline" label="Previous" onclick="{!c.goto1}"/>
+                                    <lightning:button variant="brand" label="Next" onclick="{!c.goto2}"/> 
+                                </aura:if>
+                                <aura:if isTrue="{!v.showPage2}">
+                                    <lightning:button variant="brand-outline" label="Previous" onclick="{!c.gotoCheckUserPage}"/>
+                                    <lightning:button variant="brand" label="Next" onclick="{!c.goto3}"/>     
+                                </aura:if>
+                                <aura:if isTrue="{!v.showPage3}">
+                                    <lightning:button variant="brand-outline" label="Previous" onclick="{!c.goto2}"/>
+                                    <lightning:button variant="brand" label="Next" onclick="{!c.goto4}"/>  
+                                </aura:if>
+                                <aura:if isTrue="{!v.showPage4}">
+                                    <lightning:button variant="brand-outline" label="Previous" onclick="{!c.goto3}"/>
+                                <!--<aura:if isTrue="{!and(v.recordType != 'PSA', v.recordType != 'MSA', v.recordType != 'Preliminary_Agreement')}">
+                                    <lightning:button variant="brand" label="Preview and Send" onclick="{!c.openModel}"/>
+                                </aura:if>-->
+                                    <lightning:button variant="brand" label="Finalize in Docusign" onclick="{!c.finalizedInDocuSign}"/>
+                                </aura:if>
+                            </aura:set>                                
+                        </lightning:card>
+                    </lightning:layoutItem>                        
+                </aura:if>
+                <!-- PAGE 1 STARTS HERE -->                
+                <aura:if isTrue="{!v.showPage1}">
+                    <lightning:layoutItem padding="around-small" size="12">
+                        <div class="pageContainer" >
+                            <lightning:card title="Add Document(s)">
+                                <div class= "slds-m-around_small" style ="padding-bottom: 30px;">                                    
+                                    <lightning:datatable keyField="attId"
+                                                         selectedRows = "{! v.selectedRowsList }"
+                                                         data="{! v.lstDocuments }"
+                                                         columns="{! v.columns }"
+                                                         onrowselection="{! c.updateSelectedAttachments }"/>
+                                </div>
+                            </lightning:card>
+                        </div>     
+                    </lightning:layoutItem>
+                </aura:if>
+                <!-- PAGE 1 ENDS HERE -->
+                <!-- PAGE UserCheck STARTS HERE -->
+                <aura:if isTrue="{!v.checkUserPage}">
+                    <lightning:layoutItem padding="around-small" size="12">
+                        <div  style="height:300px; background-color:white; border-radius: 5px;">
+                            <lightning:layout>
+                                <lightning:layoutItem padding="around-small"  size="12" >
+                                    <div class="slds-m-around_medium " style="font-weight: bold;">
+                                        <lightning:select aura:id="sendAsEmail" label="Select Send As User Email"  name="sendAsUserEmail" value="{!v.selectedSendAsUserEmail}" onchange = "{!c.checkSelectedUser}" >                                            
+                                            <aura:iteration var="option" items="{!v.docusignEmailList }">
+                                                <option value="{!option.value}" selected="{!option.value == v.userNameDefaultValue}" >{!option.label}</option>
+                                            </aura:iteration>
+                                            <option value="LoggedInUser">Logged In User</option>                                        
+                                        </lightning:select>
+                                    </div>   
+                                </lightning:layoutItem>                                
+                            </lightning:layout>
+                        </div>
+                    </lightning:layoutItem>               
+                </aura:if>
+                <!-- PAGE UserCheck ENDS HERE -->
+                <!-- PAGE 2 STARTS HERE -->
+                <aura:if isTrue="{!v.showPage2}">                    
+                    <lightning:layoutItem padding="around-small" size="12">
+                        <div>
+                            <lightning:card >
+                                <lightning:layout>
+                                    <lightning:layoutItem padding="around-small" flexibility="auto">
+                                        <div class="page-section page-main">
+                                            <div class="slds-grid slds-gutters margin0" style="padding: 10px;">
+                                                <table style="margin-left: 10px;">
+                                                    <tr>
+                                                        <td style="padding: 0px 10px 0px 10px; width: 140px; font-weight: bold;">Add Recipient(s)</td>
+                                                        <td style="width: 300px;">
+                                                            <div class="slds-col">
+                                                                <!-- ******************** Autocomplete code ********************** -->
+                                                                <div class="slds-form-element">
+                                                                    <label class="slds-form-element__label" for="combobox-id-21"
+                                                                           style="{! empty(v.label) ? 'display:none;' : 'display:block;'}">{!v.label}</label>
+                                                                    <div class="slds-form-element__control">
+                                                                        <div class="slds-combobox_container">
+                                                                            <div class="{! v.openDropDown ? 'slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open' : 'slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click'}"
+                                                                                 aria-expanded="true" aria-haspopup="listbox" role="combobox">
+                                                                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                                                    <input variant="label-hidden" type="text"
+                                                                                           class="slds-input slds-combobox__input slds-combobox__input-value"
+                                                                                           id="combobox-id-21" aria-autocomplete="list" aria-controls="listbox-id-11"
+                                                                                           autoComplete="off" onkeyup="{!c.searchHandler}" role="textbox" placeholder="Search For Recipients"
+                                                                                           value="{!v.inputValue}" />                                                                                    
+                                                                                </div>
+                                                                                <div id="listbox-id-11" class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid"
+                                                                                     role="listbox">
+                                                                                    <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                                                        <aura:iteration items="{!v.results}" var="result">
+                                                                                            <li role="presentation" class="slds-listbox__item" data-id="{!result.id}"
+                                                                                                data-value="{!result.value + ' ('+result.email+')' + ' ('+result.type+')'}" onclick="{!c.optionClickHandler}">
+                                                                                                <div id="{!result.id}"
+                                                                                                     class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
+                                                                                                     role="option">
+                                                                                                    <span class="slds-media__figure slds-listbox__option-icon"></span>
+                                                                                                    <span class="slds-media__body">
+                                                                                                        <span class="slds-truncate" title="Agreement Team">
+                                                                                                            <span>Name - {!result.value}</span>
+                                                                                                            <p>Email - {!result.email}</p>
+                                                                                                            <p>Type - {!result.type}</p>
+                                                                                                        </span>
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </li>
+                                                                                        </aura:iteration>
+                                                                                    </ul>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td><lightning:button variant="brand" label="Add to List" onclick="{!c.addToListHandler}"/></td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <aura:if isTrue="{!AND(v.executionOrderCheck, v.executionOrder == 'Account Only')}">
+                                                <div class="slds-m-around_medium " style="font-weight: bold;">
+                                                    <lightning:card class="slds-size_1-of-2 slds-p-left_large">
+                                                        <lightning:select label="Select Email Template"  name="Email Template" value="{!v.templateName}"  >
+                                                            <aura:iteration var="option" items="{!v.emailTemplateList }">
+                                                                <option value="{!option.value}"  selected="{!option.value == v.externalDefaultTemplate}">{!option.label}</option>
+                                                            </aura:iteration>
+                                                        </lightning:select>
+                                                    </lightning:card>
+                                                </div>
+                                            </aura:if>
+                                            <aura:if isTrue="{!AND(v.executionOrderCheck, v.executionOrder == 'Legal Entities Only')}">
+                                                <div class="slds-m-around_medium " style="font-weight: bold;">
+                                                    <lightning:card class="slds-size_1-of-2 slds-p-left_large">
+                                                        <lightning:select label="Select Email Template"  name="Email Template" value="{!v.templateName}"  >
+                                                            <aura:iteration var="option" items="{!v.emailTemplateList }">
+                                                                <option value="{!option.value}"  selected="{!option.value == v.internalDefaultTemplate}">{!option.label}</option>
+                                                            </aura:iteration>
+                                                        </lightning:select>
+                                                    </lightning:card>
+                                                </div>
+                                            </aura:if>
+                                            <div class="slds-grid slds-gutters margin0 slds-p-bottom_xx-small">
+                                                <table class="slds-table slds-table_cell-buffer" width="100%">
+                                                    <thead>
+                                                        <tr class="slds-line-height_reset">
+                                                            <th>S.No.</th>
+                                                            <th>Name</th>
+                                                            <th>Type</th>
+                                                            <th>Email</th>
+                                                            <th>Title</th>
+                                                            <th>Routing order</th>
+                                                            <th>Recipient type</th>
+                                                            <aura:if isTrue="{!(!v.executionOrderCheck)}">   
+                                                                <th>Email template</th>
+                                                            </aura:if> 
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <aura:iteration items="{!v.recipientList}" var="rcpt" indexVar="index">
+                                                            <tr>
+                                                                <td width="1%">
+                                                                    <div style="padding-top: 20px">
+                                                                        {!index+1}
+                                                                    </div>
+                                                                </td>
+                                                                <td width="18%">
+                                                                    <div>
+                                                                        <lightning:input value="{!rcpt.name}" name="input2" placeholder="Enter Name" readonly="" style="font-weight: bold;"/>
+                                                                    </div>
+                                                                </td>
+                                                                <aura:if isTrue="{!(rcpt.userType == 'IQVIA User Contact')}">
+                                                                    <td width="7%">
+                                                                        <div>
+                                                                            <lightning:input value="IQVIA" name="input1" placeholder="Enter User Type" readonly="" style="font-weight: bold;"/>
+                                                                        </div>
+                                                                    </td>
+                                                                </aura:if>
+                                                                <aura:if isTrue="{!(rcpt.userType == 'Contact')}">
+                                                                    <td width="7%">
+                                                                        <div>
+                                                                            <lightning:input value="Customer" name="input1" placeholder="Enter User Type" readonly="" style="font-weight: bold;"/>
+                                                                        </div>
+                                                                    </td>
+                                                                </aura:if>
+                                                                <td width="25%">
+                                                                    <div>
+                                                                        <lightning:input type="email" value="{!rcpt.email}" name="input3"  readonly="" placeholder="Enter email address" style="font-weight: bold;"/>
+                                                                    </div>
+                                                                </td>
+                                                                <td width="12%">
+                                                                    <div>
+                                                                        <lightning:input value="{!rcpt.privateMessage}" name="input4" placeholder="Enter title" style="font-weight: normal;"/>
+                                                                    </div>
+                                                                </td> 
+                                                                <td width="1%" id="{!'tdSo'+(index+1)}" >
+                                                                    <div>
+                                                                        <lightning:input type= "number" 
+                                                                                         min="1" 
+                                                                                         value="{!rcpt.signingOrder}" 
+                                                                                         name="{!'inputSigningOrder'+(index+1)}"  
+                                                                                         style="width:40px; font-weight: normal;"
+                                                                                         messageWhenRangeUnderflow="Routing Order Can't be less than 1"
+                                                                                         messageWhenPatternMismatch ="Please Enter a valid Routing Order"
+                                                                                         pattern="[0-9]*" 
+                                                                                         required="true"/>
+                                                                    </div>
+                                                                </td>
+                                                                <td width="10%">
+                                                                    <div>
+                                                                        <lightning:select value="{!rcpt.recipientType}"  name="Recipient Type" >
+                                                                            <option value="Signer">Need to Sign</option>
+                                                                            <option value="Carbon copy">Receives a Copy</option>
+                                                                        </lightning:select>
+                                                                    </div>
+                                                                </td>
+                                                                <aura:if isTrue="{!(!v.executionOrderCheck)}">
+                                                                    <td width="13%">
+                                                                        <div>
+                                                                            <aura:if isTrue = "{!(rcpt.userType == 'IQVIA User Contact')}">
+                                                                                <lightning:select value="{!rcpt.emailTemplate}" name="Email Template" >
+                                                                                    <aura:iteration var="option" items="{!v.emailTemplateList }">
+                                                                                        <option value="{!option.value}" selected="{!option.value == v.internalDefaultTemplate}">{!option.label}</option>
+                                                                                    </aura:iteration>
+                                                                                </lightning:select>
+                                                                            </aura:if>
+                                                                            <aura:if isTrue = "{!(rcpt.userType == 'Contact')}">    
+                                                                                <lightning:select value="{!rcpt.emailTemplate}" name="Email Template" >
+                                                                                    <aura:iteration var="option" items="{!v.emailTemplateList }">
+                                                                                        <option value="{!option.value}" selected="{!option.value == v.externalDefaultTemplate}">{!option.label}</option>
+                                                                                    </aura:iteration>
+                                                                                </lightning:select>
+                                                                            </aura:if>
+                                                                        </div>
+                                                                    </td>
+                                                                </aura:if>
+                                                                <td width="1%">
+                                                                    <div class="slds-clearfix" style="padding-top : 20px;  padding-left : 15px">
+                                                                        <a onclick="{!c.removeSelectedRecepient}" data-record="{!index}">
+                                                                            <lightning:icon iconName="utility:delete" class="slds-icon slds-icon_small" size="x-small" alternativeText="Delete"/>
+                                                                        </a>
+                                                                    </div>
+                                                                </td> 
+                                                            </tr>
+                                                        </aura:iteration>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                            </lightning:card>
+                        </div>
+                    </lightning:layoutItem>
+                </aura:if>
+                <!-- PAGE 2 ENDS HERE -->
+                <!-- PAGE 3 STARTS HERE -->
+                <aura:if isTrue="{!v.showPage3}">
+                    <lightning:layoutItem padding="around-small" size="12">
+                        <aura:if isTrue="{!v.executionOrderCheck}">
+                            <div  class="pageContainer">
+                                <lightning:layout  >
+                                    <lightning:layoutItem padding="around-small"  size="12" >
+                                        <lightning:input name="subject1" label="Email Subject" placeholder="" value="{!v.emailSubject}" maxlength="{!v.subjectMaxLength}"/>
+                                        <lightning:inputRichText 
+                                                                 value="{!v.emailBlurb}"
+                                                                 labelVisible="true"
+                                                                 label="Email Body"/>
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{!(!v.executionOrderCheck)}">
+                            <aura:iteration items="{!v.recipientList}" var="rcpt" indexVar="index">
+                                <div  class="pageContainer">
+                                    <lightning:layout  >
+                                        <lightning:layoutItem padding="around-small"  size="12" >
+                                            <b><h2 class= "slds-p-bottom_medium">Recipient {!index+1} : {!rcpt.name}</h2></b>
+                                            <lightning:input name="subject1" label="Email Subject" placeholder="" value="{!rcpt.emailSubject}" maxlength="{!v.subjectMaxLength}"/>
+                                            <lightning:inputRichText 
+                                                                     value="{!rcpt.emailBody}"
+                                                                     labelVisible="true"
+                                                                     label="Email Body"/>
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+                                </div>
+                                <br/>
+                            </aura:iteration>
+                        </aura:if>
+                    </lightning:layoutItem>
+                </aura:if>
+                <!-- PAGE 3 ENDS HERE -->
+                <!-- PAGE 4 STARTS HERE -->
+                <aura:if isTrue="{!v.showPage4}">
+                    <lightning:layoutItem padding="around-small" size="12">
+                        <div class="pageContainer" >
+                            <lightning:layout>
+                                <lightning:layoutItem padding="around-small">
+                                    <b><h2 class= "slds-p-bottom_medium">Reminders</h2></b> 
+                                    <p>Send reminders to signers <input type="number"    min="0" name="reminderDelay"  value="{!v.reminderAndExp.reminderDelay}" style="width: 50px; text-align: center;"  onchange="{!c.updateReminderAndExp}" required=""/> day(s) after receipt.</p>
+                                    <br/>
+                                    <p>Continue to send reminders every <input type="number" min="0" name="reminderFrequency" id="text-input-id-48" value="{!v.reminderAndExp.reminderFrequency}" style="width: 50px !important; text-align: center;" onchange="{!c.updateReminderAndExp}"/> day(s).</p> 
+                                    <b><h2 class= "slds-p-top_x-large slds-p-bottom_medium">Expiration</h2></b> 
+                                    <p>Expire request in <input name="expireAfter" type="number" min="1" aura:id="expireAfterInput" value="{!v.reminderAndExp.expireAfter}" required="true" style="width: 50px !important; text-align: center;" onchange="{!c.updateReminderAndExp}" /> day(s): If sent today, it will expire on {!v.expiredate}.</p>
+                                    <br/>
+                                    <p>Warn signers <input type="number" min="1" name="expireWarn" id="text-input-id-48" value="{!v.reminderAndExp.expireWarn}" style="width: 50px !important; text-align: center;" onchange="{!c.updateReminderAndExp}"/> day(s) before request expires.</p>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </div>
+                    </lightning:layoutItem>
+                </aura:if>
+                <!-- PAGE 4 ENDS HERE -->
+                <!-- PAGE 5 STARTS HERE -->
+                <aura:if isTrue="{!v.showPage5}">
+                    <div style="margin:0px 200px; background-color:white;">
+                        <lightning:layoutItem padding="around-small" size="12" class="slds-align_absolute-left noBorder">
+                            <lightning:layout>
+                                <aura:if isTrue="{!!v.hasErrors}">
+                                    {!$Label.c.CLM_CL00018_DOCUSIGN_ESIGNATURE_SUCCESS}
+                                </aura:if>
+                            </lightning:layout>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem padding="around-small" size="12" class="slds-align_absolute-left noBorder">
+                            <lightning:layout>
+                                Batch Job Status : <div id="batchJobStatusDiv">{!v.batchJobStatus}</div>
+                            </lightning:layout>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto" padding="around-small" size="12">
+                            <div class="page-footer page-section slds-align_absolute-center">
+                                <lightning:button variant="brand" label="Go Back to Agreement Record" onclick="{!c.goto0}"/>
+                            </div>
+                        </lightning:layoutItem>
+                    </div>
+                </aura:if>
+                <!-- PAGE 5 ENDS HERE -->
+            </aura:if>
+            <!-- Cancel button  -->
+            <aura:if isTrue="{!v.cancelSend}">
+                <lightning:layoutItem flexibility="auto" padding="around-small" size="12">
+                    <div class="page-footer page-section slds-align_absolute-center">
+                        <lightning:button variant="brand" label="Go Back to Agreement Record" onclick="{!c.goto0}"/>
+                    </div>
+                </lightning:layoutItem>
+            </aura:if>
+        </lightning:layout>
+    </div>
+    <div class="exampleHolder">
+        <aura:if isTrue="{! v.loaded }">
+            <lightning:spinner alternativeText="Loading" size="large"/> 
+        </aura:if>
+    </div>
+    <aura:if isTrue="{!v.isModalOpen}">            
+        <!-- Modal/Popup Box starts here-->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Preview - DocuSign envelope recipients</h2>
+                </header>
+                <!--Modal/Popup Box Body Starts here-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:select name="selectRecipient" label="Select a Recipient" aura:id="APTS_selectRecipient" onchange="{!c.displaySelectedRecipient}" required="true">
+                        <aura:iteration items="{!v.recipientList}" var="recipient">
+                            <option text="{!recipient.name}" value="{!recipient.recipientId}" />
+                        </aura:iteration>
+                    </lightning:select>
+                    <br></br>
+                    <div>
+                        <aura:if isTrue="{!v.isDocuPreviewLoaded}">
+                            <lightning:layout horizontalAlign="spread" verticalAlign="center">
+                                <lightning:layoutItem size="9" padding="around-small">
+                                    <div class="loadingIcon" >
+                                        <lightning:spinner alternativeText="Loading" size="large"/>
+                                    </div> 
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </aura:if>
+                    </div>
+                    <iframe id="previewIframe" width="100%" height="1000px;" frameBorder="0"/>
+                </div>
+                <!--Modal/Popup Box Footer Starts here-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral"
+                                      label="Send"
+                                      title="Send"
+                                      onclick="{!c.sendEnvelope }"/>
+                    <lightning:button variant="neutral"
+                                      label="Close"
+                                      title="Close"
+                                      onclick="{!c.closeModel }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

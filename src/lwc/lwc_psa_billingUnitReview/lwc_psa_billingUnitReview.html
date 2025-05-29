@@ -1,0 +1,239 @@
+<template>
+    <c-lwc_helper></c-lwc_helper>
+
+    <div class="slds-m-bottom_small">
+        <lightning-card icon-name="custom:custom17">
+            <h1 slot="title">
+                <span>Billing Unit Review</span>
+                <span class="slds-page-header__title slds-truncate" title="name"></span>
+            </h1>
+            <div slot="actions">
+                <lightning-button-group>
+                    <!-- <lightning-button label={returnToProject} onclick={handleClick}></lightning-button> -->
+                    <a href={projectUrl} class="slds-button slds-button_outline-brand">
+                        {returnToProject}
+                    </a>
+                    <lightning-button-icon-stateful icon-name="utility:filterList" name="FILTER_DELIVERABLES" onclick={handleFiltersToggle} selected={viewFilters}></lightning-button-icon-stateful>
+                </lightning-button-group>
+            </div>
+
+            <div if:true={viewFilters} class="slds-grid slds-wrap slds-p-horizontal_small">
+                <div class="slds-col slds-size_1-of-4 slds-p-horizontal_small">
+                    <c-lwc_filter-list options-list={servicelineNamesList} default-selections={selectedserviceline}
+                        search-key-name="service Line" search-key-name-plural="Service Lines" onfilterapplied={serviceLineFilterApplied}>
+                    </c-lwc_filter-list>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-p-horizontal_small">
+                    <lightning-input type="checkbox"
+                        label="Show Only Eligible For Billing Milestones"
+                        name="showEligibleForBilling"
+                        checked
+                        value="true"
+                        onchange={handleCheckboxChange}>
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-p-horizontal_small">
+                    <div class="slds-m-bottom_small">
+
+                    <lightning-input type="date" name={startDate} label="Select Service Start Date" onchange={handlestartDateChange} ></lightning-input>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-p-horizontal_small slds-m-bottom_small">
+                    <lightning-input type="date" name={endDate} label="Select Service End Date" onchange={handleendDateChange}></lightning-input>
+                </div>
+            </div>
+        </lightning-card>
+    </div>
+
+    <lightning-accordion
+        allow-multiple-sections-open
+        onsectiontoggle={handleSectionToggle}
+        active-section-name={activeSections}>
+
+        <article class="slds-card slds-m-bottom_small">
+            <lightning-accordion-section name="A" label="Service Milestones">
+                <div slot="actions">
+                    <lightning-button-group>
+                        <label class="slds-form-element__label">Actual Date (for Billing)</label>
+                        <lightning-input class="slds-m-right_small" type="date" label ="Actual Date(for Billing)" variant="label-hidden" name={actualDate} onchange={handleActualDateChange} value = {today}></lightning-input>
+                        <!--lightning-button label="Bill New Units (mass)" onclick={approveForBilling} disabled={requiresSelectedMilestonetable}></!--lightning-button-->
+                        <lightning-button label="Bill New Units" onclick={billSelectedUnits} disabled={requiresSelectedMilestonetable}></lightning-button>
+                    </lightning-button-group>
+                </div>
+
+            <div class="lgc-bg">
+                <!-- onrowselection= getSelectedName -->
+                <lightning-datatable
+                    key-field="id"
+                    class="milestonetable"
+                    data={milestones}
+                    columns={columns}
+                    onrowaction={handleRowAction}
+                    onselect={handleSelect}
+                    onsave={handleSave}
+                    onsort={updatePsaMilestoneSorting}
+                    sorted-by={psaMilestoneSortingBy}
+                    sorted-direction={psaMilestoneSortingDirection}
+                    min-column-width ="40"
+					hide-checkbox-column = "true"
+                    >
+                </lightning-datatable>
+
+                <div if:true={milestoneTableLoadingState} class="slds-relative">
+                    <lightning-spinner alternative-text="loading..." > </lightning-spinner>
+                </div>
+            </div>
+            </lightning-accordion-section>
+        </article>
+</lightning-accordion>
+
+<!--
+    add units modal
+-->
+<c-lwc_modal show-modal={showAddUnits} onclose={closeAddUnits} size="large">
+     <div slot="modal-heading">Add Units</div>
+     <div slot="modal-content">
+        <!--
+            spinner for add units popup
+        -->
+        <div if:true={showAddUnitSpinner}>
+            <div style="position: absolute;margin-left: 50%;margin-top: 10%;">
+                <lightning-spinner alternative-text="saving..." variant="brand">
+                </lightning-spinner>
+            </div>
+        </div>
+
+
+        <lightning-accordion allow-multiple-sections-open onsectiontoggle={handleSectionToggle}
+            active-section-name={activeSections}>
+            <article class="slds-card slds-m-bottom_small slds-border_bottom">
+                <lightning-accordion-section name="B" label="Eligible Deliverables">
+                    <div slot="actions">
+                        <span class="slds-m-around_x-small">Selected Service : {selectedservice}</span>
+                        <span class="slds-m-around_x-small">Selected Units : {sumofeligibleunits}</span>
+                        <div class="slds-button-group">
+                            <lightning-button label="Add Selected" onclick={addSelected} disabled={requiresSelecetdEligibleDeliverables}></lightning-button>
+                            <lightning-button label="Hold" onclick={makeSelectedHold} disabled={requiresSelecetdEligibleDeliverables}></lightning-button>
+
+                            <!-- hold not billed reason ! -->
+                            <div if:true={showHoldNotBilledReason}>
+                                <section class="slds-popover slds-nubbin_top-right slds-theme_shade slds-rise-from-ground" role="dialog"
+                                    aria-label="Dialog Title" aria-describedby="popup-001"
+                                    style='position: absolute;z-index:9004;box-shadow: 5px 5px 5px;white-space: normal;margin-top: 3%;right: 6rem;'>
+                                    <div class="slds-popover__body" id="dialog-body-id-51">
+                                        <div class="slds-theme_shade">
+                                            <div class="">
+                                                <label for="input-exclude-bill-reason" class="slds-form-element__label slds-text-title_caps slds-m-bottom_x-small">
+                                                    Hold Reason
+                                                </label>
+                                                <textarea
+                                                    name="not-billed-reason"
+                                                    maxlength="255"
+                                                    oninput={onNotBilleReasonChange}
+                                                    disabled={showAddUnitSpinner}
+                                                    placeholder="Type reason here..."
+                                                    class="slds-textarea"></textarea>
+                                                <div class="slds-p-around_small ">
+                                                    <div class="">
+                                                        <button class="slds-button slds-button_neutral" onclick={cancelMakeSelectedHold}>
+                                                            Cancel
+                                                        </button>
+
+                                                        <button class="slds-button slds-button_brand slds-float_right" onclick={doMakeSelectedHold}
+                                                                disabled={hasNotBilledReason}>
+                                                            Hold
+                                                        </button>
+                                                        <!-- <lightning-button label="Hold" onclick={doMakeSelectedHold}
+                                                        class="slds-float_right">
+                                                        </lightning-button> -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <div class="slds-backdrop slds-backdrop_open"></div>
+                            </div>
+
+                            <lightning-button label="Exclude" onclick={excludeDeliverable} disabled={requiresSelecetdEligibleDeliverables}></lightning-button>
+
+                            <!-- exclued not billed reason ! -->
+                            <div if:true={showExcludeNotBilledReason}>
+                                <section class="slds-popover slds-nubbin_top-right slds-theme_shade slds-rise-from-ground" role="dialog"
+                                    aria-label="Dialog Title" aria-describedby="popup-001"
+                                    style='position: absolute; box-shadow: 5px 5px 5px;z-index:9004;white-space: normal;margin-top: 3%;right: 2rem;'>
+                                    <div class="slds-popover__body" id="dialog-body-id-52">
+                                        <div class="slds-theme_shade">
+                                            <div class="">
+                                                <label for="input-exclude-bill-reason" class="slds-form-element__label slds-text-title_caps slds-m-bottom_x-small">
+                                                    Exclude Reason
+                                                </label>
+                                                <textarea
+                                                    name="not-billed-reason"
+                                                    placeholder="Type reason here..."
+                                                    maxlength="255"
+                                                    oninput={onNotBilleReasonChange}
+                                                    disabled={showAddUnitSpinner}
+                                                    class="slds-textarea"></textarea>
+                                                <div class="slds-p-around_small ">
+                                                    <div class="">
+                                                        <button class="slds-button slds-button_neutral" onclick={cancelExcludeDeliverable}>
+                                                            Cancel
+                                                        </button>
+                                                        <button class="slds-button slds-button_brand slds-float_right" onclick={doExcludeDeliverable}
+                                                            disabled={hasNotBilledReason}>
+                                                            Exclude
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <div class="slds-backdrop slds-backdrop_open"></div>
+                            </div>
+
+                        </div>
+                        <!-- <lightning-button-group>
+
+                        </lightning-button-group> -->
+
+                    </div>
+                    <div class="lgc-bg" style="height: 200px;">
+                        <lightning-datatable key-field="id" class="eligibletable"
+                            data={onEligibleDeliverablesdata}
+                            columns={eligiblecolumns}
+                            onrowselection={getSelectedEligibleUnits}>
+                        </lightning-datatable>
+                    </div>
+                </lightning-accordion-section>
+            </article>
+
+            <article class="slds-card slds-m-bottom_small">
+                <lightning-accordion-section name="C" label="On Hold Deliverables">
+                    <div slot="actions">
+                        <lightning-button-group>
+                            <span class="slds-m-around_x-small">Selected Service : {selectedservice}</span>
+                            <span class="slds-m-around_x-small">Selected Units : {sumofholdunits}</span>
+                            <lightning-button label="Remove Hold" onclick={removeSelectedHold} disabled={requiresSelectedHoldtable}></lightning-button>
+                        </lightning-button-group>
+                    </div>
+                    <div class="lgc-bg" style="height: 200px;">
+                        <lightning-datatable key-field="id" class="holdtable"
+                            data={onholdDeliverablesdata}
+                            columns={onholdcolumns}
+                            onrowselection={getSelectedHoldUnits}>
+                        </lightning-datatable>
+                    </div>
+                </lightning-accordion-section>
+            </article>
+
+        </lightning-accordion>
+
+     </div>
+     <div slot="modal-footer">
+        <button class="slds-button slds-button_neutral" onclick={closeAddUnits}>Cancel</button>
+     </div>
+</c-lwc_modal>
+
+</template> 

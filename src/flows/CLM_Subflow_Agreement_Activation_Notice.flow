@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Set_Email_Recipients</name>
+        <label>Set Email Recipients</label>
+        <locationX>270</locationX>
+        <locationY>566</locationY>
+        <assignmentItems>
+            <assignToReference>varT_emailRecipients</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Loop_through_Agreement_Teams.Email__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_through_Agreement_Teams</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_If_Contact_Terminated</name>
+        <label>Check If Contact Terminated?</label>
+        <locationX>402</locationX>
+        <locationY>458</locationY>
+        <defaultConnector>
+            <targetReference>Loop_through_Agreement_Teams</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Terminated</defaultConnectorLabel>
+        <rules>
+            <name>Not_Terminated</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Loop_through_Agreement_Teams.Contact__r.Employment_Status_FF__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>T</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Email_Recipients</targetReference>
+            </connector>
+            <label>Not Terminated</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_if_email_recipients_found</name>
+        <label>Check if email recipients found?</label>
+        <locationX>182</locationX>
+        <locationY>842</locationY>
+        <defaultConnectorLabel>Not Found</defaultConnectorLabel>
+        <rules>
+            <name>Found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varT_emailRecipients</leftValueReference>
+                <operator>IsEmpty</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Notification_and_Email_Message</targetReference>
+            </connector>
+            <label>Found</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Agreement_Activated</name>
+        <label>Is Agreement Activated?</label>
+        <locationX>336</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Agreement_Activated</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Apttus__Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Effect</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Apttus__Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldRecord.Apttus__Status__c</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Apttus__Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Activated</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Apttus__Status_Category__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldRecord.Apttus__Status_Category__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Agreement_Teams</targetReference>
+            </connector>
+            <label>Agreement Activated</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>legalEntity2ConditionalBR</name>
+        <dataType>String</dataType>
+        <expression>IF(ISBLANK({!varR_NewRecord.Legal_Entity_2__c}), &quot;&quot;, &quot;&lt;br/&gt;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <name>legalEntity3ConditionalBR</name>
+        <dataType>String</dataType>
+        <expression>IF(ISBLANK({!varR_NewRecord.Legal_Entity_3__c}), &quot;&quot;, &quot;&lt;br/&gt;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <name>varT_agreementEndDate</name>
+        <dataType>String</dataType>
+        <expression>TEXT(MONTH({!varR_NewRecord.Apttus__Contract_End_Date__c})) &amp; &quot;/&quot; &amp; TEXT(DAY({!varR_NewRecord.Apttus__Contract_End_Date__c})) &amp; &quot;/&quot; &amp; TEXT(YEAR({!varR_NewRecord.Apttus__Contract_End_Date__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>varT_agreementStartDate</name>
+        <dataType>String</dataType>
+        <expression>TEXT(MONTH({!varR_NewRecord.Apttus__Contract_Start_Date__c})) &amp; &quot;/&quot; &amp; TEXT(DAY({!varR_NewRecord.Apttus__Contract_Start_Date__c})) &amp; &quot;/&quot; &amp; TEXT(YEAR({!varR_NewRecord.Apttus__Contract_Start_Date__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>varT_otherPartySignedDate</name>
+        <dataType>String</dataType>
+        <expression>TEXT(MONTH({!varR_NewRecord.Apttus__Other_Party_Signed_Date__c})) &amp; &quot;/&quot; &amp; TEXT(DAY({!varR_NewRecord.Apttus__Other_Party_Signed_Date__c})) &amp; &quot;/&quot; &amp; TEXT(YEAR({!varR_NewRecord.Apttus__Other_Party_Signed_Date__c}))</expression>
+    </formulas>
+    <interviewLabel>CLM Subflow: Agreement Activation Notice {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow: Agreement Activation Notice</label>
+    <loops>
+        <name>Loop_through_Agreement_Teams</name>
+        <label>Loop through Agreement Teams</label>
+        <locationX>182</locationX>
+        <locationY>350</locationY>
+        <collectionReference>Get_Agreement_Teams</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Check_If_Contact_Terminated</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Check_if_email_recipients_found</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Agreement_Teams</name>
+        <label>Get Agreement Teams</label>
+        <locationX>182</locationX>
+        <locationY>242</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Loop_through_Agreement_Teams</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Type__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>IQVIA User Contact</stringValue>
+            </value>
+        </filters>
+        <filters>
+            <field>Agreement__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>varR_NewRecord.Id</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Agreement_Contacts__c</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Email__c</queriedFields>
+        <queriedFields>Contact__c</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>210</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Agreement_Activated</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Send_Notification_and_Email_Message</name>
+        <label>Send Notification and Email Message</label>
+        <locationX>50</locationX>
+        <locationY>950</locationY>
+        <flowName>CLM_Subflow_Send_Notfication</flowName>
+        <inputAssignments>
+            <name>varC_EmailRecipients</name>
+            <value>
+                <elementReference>varT_emailRecipients</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailBody</name>
+            <value>
+                <elementReference>emailBody</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailSubject</name>
+            <value>
+                <stringValue>IQVIA Contract Activation Notice</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_FromAddress</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>varR_NewRecord.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_SenderType</name>
+            <value>
+                <stringValue>CurrentUser</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <textTemplates>
+        <name>emailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>&lt;table width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background-color: #cccccc; padding: 0; margin: 0; font-family: Arial, sans-serif;&quot;&gt;
+	&lt;tr&gt;
+		&lt;td align=&quot;center&quot;&gt;
+			&lt;table width=&quot;650&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background-color: #ffffff; border-collapse: collapse;&quot;&gt;
+				&lt;tr&gt;
+					&lt;td style=&quot;padding: 10px 15px;&quot;&gt;
+						&lt;img src=&quot;https://iqvia.my.salesforce.com/servlet/servlet.ImageServer?id=0152K0000076pGS&amp;oid=00D6A000001Vlzd&quot; alt=&quot;IQVIA Logo&quot; style=&quot;height: 40px;&quot;&gt;
+					&lt;/td&gt;
+				&lt;/tr&gt;
+				&lt;tr&gt;
+					&lt;td style=&quot;padding: 10px 15px; color: #000000;&quot;&gt;Dear, &lt;/td&gt;
+				&lt;/tr&gt;
+				&lt;tr&gt;
+					&lt;td style=&quot;padding: 0 15px 15px 15px; color: #000000;&quot;&gt;
+					The following IQVIA Agreement has been activated:
+					&lt;/td&gt;
+				&lt;/tr&gt;
+				&lt;tr&gt;
+					&lt;td style=&quot;padding: 0 15px 15px 15px&quot;&gt;
+						&lt;table width=&quot;100%&quot; border=&quot;1&quot; cellpadding=&quot;1&quot; cellspacing=&quot;0&quot; style=&quot;border-collapse: collapse; border-color: #000000; font-size: 14px; color: #000;&quot;&gt;
+							&lt;tr&gt;&lt;td&gt;Type of Agreement&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.Apttus__Subtype__c}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Agreement Number / Name&lt;/td&gt;&lt;td&gt;&lt;a href=&quot;{!$Setup.CLM_Configuration__c.Instance_Url__c}/r/Apttus__APTS_Agreement__c/{!varR_NewRecord.Id}/view&quot;&gt;{!varR_NewRecord.Apttus__FF_Agreement_Number__c} / {!varR_NewRecord.Name}&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Account&lt;/td&gt;&lt;td&gt;&lt;a href=&quot;{!$Setup.CLM_Configuration__c.Instance_Url__c}/r/Account/{!varR_NewRecord.Apttus__Account__c}/view&quot;&gt;{!varR_NewRecord.Apttus__Account__r.Name}&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Legal Entity Customer&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.Legal_Entity_Customer__c}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Client Address&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.Client_Address__c}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;IQVIA Legal Entity 1/2/3&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.Legal_Entity_1__r.Name} {!legalEntity2ConditionalBR} {!varR_NewRecord.Legal_Entity_2__r.Name} {!legalEntity3ConditionalBR} {!varR_NewRecord.Legal_Entity_3__r.Name}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Opportunity Number / Name&lt;/td&gt;&lt;td&gt;&lt;a href=&quot;{!$Setup.CLM_Configuration__c.Instance_Url__c}/r/Opportunity/{!varR_NewRecord.Apttus__Related_Opportunity__c}/view&quot;&gt;{!varR_NewRecord.Opportunity_Number__c} / {!varR_NewRecord.Legacy_Quintiles_Opportunity_Number__c} / {!varR_NewRecord.Opportunity_Name__c}&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Currency&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.CurrencyIsoCode}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Agreement Payment Term&lt;/td&gt;&lt;td&gt;{!varR_NewRecord.Payment_Term__c}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Agreement Start Date&lt;/td&gt;&lt;td&gt;{!varT_agreementStartDate}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Agreement End Date&lt;/td&gt;&lt;td&gt;{!varT_agreementEndDate}&lt;/td&gt;&lt;/tr&gt;
+							&lt;tr&gt;&lt;td&gt;Other Party Signed Date&lt;/td&gt;&lt;td&gt;{!varT_otherPartySignedDate}&lt;/td&gt;&lt;/tr&gt;
+						&lt;/table&gt;
+					&lt;/td&gt;
+				&lt;/tr&gt;
+				&lt;tr&gt;&lt;td&gt;&lt;br/&gt;&lt;/td&gt;&lt;/tr&gt;
+				&lt;tr&gt;
+					&lt;td style=&quot;padding: 0 15px 15px 15px; color: #000000;&quot;&gt;
+						Thank You,&lt;br/&gt;IQVIA						
+						&lt;br/&gt;&lt;br/&gt;
+					&lt;/td&gt;
+				&lt;/tr&gt;
+			&lt;/table&gt;
+		&lt;/td&gt;
+	&lt;/tr&gt;
+&lt;/table&gt;</text>
+    </textTemplates>
+    <variables>
+        <name>varR_NewRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varT_emailRecipients</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

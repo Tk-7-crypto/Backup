@@ -1,0 +1,115 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes" controller="CNT_CRM_OpportunitySplit" access="global">  
+    <aura:attribute name="oppSplitRecords" type="Map" />
+    <aura:attribute name="oppSplitWrapperList" type="List" />
+    <aura:attribute name="oppSplitWrapperDeleteList" type="List" />
+    <aura:attribute name="oppRecord" type="Opportunity" />
+    <aura:attribute name="oppAmount" type="Decimal" />
+    <aura:attribute name="oppTeamMembers" type="List"/>
+    <aura:attribute name="fieldsToShowLabel" type="List" default="Action,Team Member,Percent (%),Amount,Note"/>
+    <aura:attribute name="oppTeamMembersFields" type="List" default="Id,OpportunityId,UserId,Name"/>
+    <aura:attribute name="oppSplitsfields" type="List" default="Id,OpportunityId,SplitOwnerId,SplitTypeId,SplitPercentage,SplitAmount,SplitNote"/>
+    <aura:attribute name="oppfields" type="List" default="Id,Name,CurrencyIsoCode,Amount"/>
+    <aura:attribute name="showResult" type="Boolean" default="false"/>
+    <aura:attribute name="totalPercent" type="Decimal" />
+    <aura:attribute name="totalAmount" type="Decimal"/>
+    <aura:attribute name="errors" type="Object[]"/>
+    <aura:attribute name="decimalPlace" type="Decimal"/>
+    <aura:attribute name="decimalPlaceStep" type="Decimal"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="c:LXE_CRM_ReloadEvent" action="{!c.callReloadEvent}"/>
+    <c:LXC_CRM_Spinner />
+    <c:LXC_CRM_AddOpportunityTeamMember />
+    <div class="slds-page-header">
+        <div class="slds-media">
+            <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon-standard-opportunity" title="Opportunity Split">
+                    <lightning:icon iconName="standard:opportunity_splits" variant="error" alternativeText="Opportunity Split Icon"/>
+                </span>
+            </div>
+            <div class="slds-media__body">
+                <p class="slds-text-body_small slds-line-height_reset">Add Opportunity Splits to</p>
+                <h1 class="slds-page-header__title slds-truncate slds-align-middle" title="{!v.oppRecord.Name}"><a href="javascript:void(0);" onclick="{!c.navigateToOpp}">{!v.oppRecord.Name}</a></h1>
+            </div>
+        </div>
+    </div>
+    <article class="slds-card">
+        <div class="slds-m-around_small slds-p-top_small slds-p-bottom_small whiteColor">
+            <div class="slds-align_absolute-center">
+                <lightning:button label="Add Opportunity Team Member" onclick="{!c.addOpportunityTeamMember}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+                <lightning:button label="Save" onclick="{!c.saveSplits}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+                <lightning:button label="Save &amp; Close" onclick="{!c.saveClose}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+            </div>
+            <div class="slds-m-around_small">
+                <aura:if isTrue="{!v.errors.length > 0}">
+                    <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                        <ul>
+                            <aura:iteration items="{!v.errors}" var="error">
+                                <li>{!error.message}</li>
+                            </aura:iteration>
+                        </ul>
+                    </div>
+                </aura:if>
+            </div>
+            <div class="slds-card__body slds-m-around_small slds-card__body_inner slds-p-top_small slds-p-bottom_small">
+                <table class="slds-table slds-table_bordered slds-table_resizable-cols slds-table--header-fixed" role="grid">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <aura:iteration items="{!v.fieldsToShowLabel}" var="headerItem">
+                                <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                    <div class="slds-text-title_caps slds-th__action slds-text-link_reset defaultCursor">
+                                        <span class="slds-assistive-text">Sort</span>
+                                        <span class="slds-truncate" title="{!headerItem}">{!headerItem}</span>
+                                        <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                    </div>
+                                </th>
+                            </aura:iteration>
+                        </tr>
+                    </thead>
+                    <aura:if isTrue="{!v.showResult}" >
+                        <tbody>
+                            <aura:iteration items="{!v.oppSplitWrapperList}" var="oppSplitWrapper" indexVar="i">
+                                <tr class="slds-hint-parent">  
+                                    <td>
+                                        <a href="javascript:void(0);" id="{!i}" title="Del" onclick="{!c.deleteSpiltRecord}">Del</a>
+                                    </td>
+                                    <td>
+                                        <lightning:select class="slds-truncate" name="Select" aura:id="SplitOwnerId" label="{!globalId + 'SplitOwnerId' + i}" variant="label-hidden" onfocus="{!c.removeErrors}" value="{#oppSplitWrapper.splitRecord.SplitOwnerId}" onchange="{!c.setOppSplitField}">
+                                            <aura:iteration items="{!v.oppTeamMembers}" var="teamMember">
+                                                <option text="{!teamMember.Name}" value="{!teamMember.Id}"/>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </td>
+                                    <td>
+                                        <lightning:input class="slds-truncate maxSize" type="number" name="percentage" label="{!globalId + 'SplitPercentage' + i}" aura:id="SplitPercentage" variant="label-hidden" step="any" value="{#oppSplitWrapper.splitRecord.SplitPercentage}" onblur="{!c.setTotalAmount}"/>
+                                    </td>
+                                    <td>
+                                        <lightning:input class="slds-truncate maxSize" aura:id="SplitAmount" type="number" name="amount" label="{!globalId + 'SplitAmount' + i}" variant="label-hidden" step="{!v.decimalPlaceStep}" value="{#oppSplitWrapper.splitRecord.SplitAmount}" onblur="{!c.setTotalAmount}"/>
+                                    </td>
+                                    <td>
+                                        <lightning:input class="slds-truncate" type="text" name="note" label="{!globalId + 'SplitNote' + i}" variant="label-hidden" aura:id="SplitNote" maxlength="255" value="{#oppSplitWrapper.splitRecord.SplitNote}" onblur="{!c.setOppSplitField}"/>
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </aura:if>
+                </table>
+            </div>
+            <div class="slds-clearfix slds-m-around_small slds-p-left_small">
+                <div class="slds-float_left">
+                    <a href="javascript:void(0);" class="addMoreRow" aura:id="addMoreRow" title="Add 1 more row" onclick="{!c.addSpiltRecord}">+ Add 1 more row</a>
+                </div>
+                <div class="slds-float_left">
+                    <span class="slds-m-left--small slds-text-title_caps slds-float_left defaultCursor lineHgt">TOTAL PERCENT:</span>
+                    <span class="slds-m-left--small slds-float_left slds-truncate"  aura:id="totalPercent">{!v.totalPercent + '%'}</span>
+                    <span class="slds-m-left--small slds-text-title_caps slds-truncate slds-float_left defaultCursor lineHgt">TOTAL AMOUNT:</span>
+                    <span class="slds-m-left--small slds-truncate slds-float_left" aura:id="totalAmount">{! v.oppRecord.CurrencyIsoCode + ' ' + v.totalAmount}</span>
+                </div>
+            </div>
+            <div class="slds-align_absolute-center">
+                <lightning:button label="Add Opportunity Team Member" onclick="{!c.addOpportunityTeamMember}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+                <lightning:button label="Save" onclick="{!c.saveSplits}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+                <lightning:button label="Save &amp; Close" onclick="{!c.saveClose}" class="slds-button slds-button_neutral" disabled="{!v.errors.length > 0}"/>
+            </div>
+        </div>
+    </article>
+</aura:component>

@@ -1,0 +1,794 @@
+<apex:page id="pg" language="{!language}" extensions="EXT_TPA_CustomLandingPage" standardController="TPA_Request__c" sidebar="false" cache="false" lightningStylesheets="true">
+    <apex:slds />
+    <script type="text/javascript">        
+        if({!isVendorUser}) {
+            window.location.href = '/imshealthPortal/secur/logout.jsp';
+        }
+    </script>
+    <apex:outputPanel rendered="{! !isVendorUser}">
+        <html>
+            <head>
+                <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+                <meta http-equiv="Pragma" content="no-cache" />
+                <meta http-equiv="Expires" content="0" />
+
+                <title>TPA Portal Page</title>
+                <style type="text/css">
+                    a.anchorHoverEffects:hover{text-decoration:underline !important;}
+                    .x-grid3-td-checkbox{display:none; visibility:hidden}
+                    .actionColumn{display:none; visibility:hidden}
+                    .x-grid3-td-ACTION_COLUMN{display:none; visibility:hidden}
+                    a.anchorHoverEffects:hover{text-decoration:underline !important;}
+                    
+                    body, select, tr, td, span, font, li, ui, a, div{
+                        font-family: Arial, Helvetica, sans-serif, 'MS UI Gothic','MS PGothic' !important;
+                    }
+                    
+                    .jqx-fill-state-hover-office{
+                        background-color:#e3f3ff !important;
+                        border-color:#aaccf6 !important;
+                    }
+                    .btnCustom {
+                        padding: 5px;
+                        float:right;
+                    }
+
+                    .controls {
+                        position : inherit !important;
+                    }
+
+                    .langLink {
+                        position: relative;
+                        text-decoration: underline;
+                        top: -8px;
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 12px;
+                    }
+
+                    #columntablejqxgrid, .jqx-widget-header-office{height:40px !important;}
+                    .jqx-grid-header-office{height:71px !important;}
+
+                    /*Added by Babita Dadarwal under ER-2702 Start*/
+                    a[href*="renew"]{
+                        color:red;
+                    }
+                    .x-grid3-hd-row td:nth-of-type(4) {width:200px !important;}
+                    .x-grid3-row-table td:nth-of-type(4) {width:200px !important;}
+
+                    /*Added by Babita Dadarwal under ER-2702 End*/
+
+                    .blockOverlay{top: 54px !important;}
+                    *+html .blockOverlay{ z-index:-1000 !important ;}
+                    *+html .blockMsg{ z-index:-1000 !important ;}
+                </style>
+            
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+                <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+                <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+
+                <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.base.css')}" />
+                <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.office.css')}" />
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}"/>
+                
+                <!-- *** Angular-JS Library reference ** -->
+                <apex:includeScript value="{!$Resource.AngularJS}"/>
+                <!-- *** Angular-JS Library reference ** -->
+
+                <!-- *** Bootstrap Javascript Library reference *** -->
+                <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+                <!-- *** Bootstrap Javascript Library reference *** -->
+
+                <apex:includeScript value="{!$Resource.TpaDateTimeFormatter}"/><!--Issue 8984-->
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcore.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxbuttons.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxscrollbar.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxlistbox.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdropdownlist.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxmenu.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.filter.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.sort.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.selection.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxpanel.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcalendar.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdatetimeinput.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxcheckbox.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/globalization/globalize.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.columnsresize.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxdata.export.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.export.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqxgrid.pager.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/demos.js')}"/>
+                <!--<apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/generatedata.js')}"/>-->
+                
+                <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+                <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            
+                <script>
+                
+                function translateStatusView(){
+                    var ntxt = $('.listViewport').find('div.controls').find('h2').text();
+                    var angularScope = angular.element($('#landingController')).scope();
+                    if(ntxt.trim() != '' && ntxt.trim().length > 0){
+                        var trtxt = angularScope.mlObj.translatedMap[angularScope.mlObj.selectedLanguageField+'~TPA_Request__c~Record~'+ntxt+''][0][angularScope.mlObj.selectedLanguageField];
+                        $('.listViewport').find('div.controls').find('h2').text(trtxt);
+                    }
+                }
+            
+                //*** Code implemented for Advanced Portal Page Start ***//
+                var landingApp = angular.module('landingApp',[]);
+                landingApp.controller('landingController',function($scope,$timeout,$log) {
+
+                    $scope.applyChanges = function()
+                    {
+                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                            $scope.$apply();
+                    }
+
+                    //*** Added by Vikram Singh under ER-1940(picklist) start ***//
+                    $scope.mlObj = {};
+                    $scope.mlObj.languageMap = {!languageMap};
+                    $log.info('##languageMap = ' + JSON.stringify($scope.mlObj.languageMap));
+                    //$log.info('##selectedLanguage = ' + $scope.mlObj.languageMap["{!language}"].split('~')[0]);
+                    $scope.mlObj.selectedLanguageCode = '{!language}';
+                    $scope.mlObj.selectedLanguage = $scope.mlObj.languageMap["{!language}"].split('~')[0];
+                    $scope.mlObj.selectedLanguageField = $scope.mlObj.languageMap["{!language}"].split('~')[1];
+                    $scope.mlObj.translatedMap = {!TranslatedMap};
+                    $scope.mlObj.isLangOverride = ({!lastSelectedLanguage != null} && {!lastSelectedLanguage != 'changeme'})? true: (getParameterByName('isLangOverride') == 'true' ? true : false);
+                    $scope.mlObj.isClientFromUS = {!isClientFromUS};
+                    $log.info('##isLangOverride = ' + JSON.stringify($scope.mlObj.isLangOverride));
+                    $log.info('##isClientFromUS = ' + JSON.stringify($scope.mlObj.isClientFromUS));
+
+                    $scope.mlObj.showView = false;
+
+                    // Status View options
+                    $log.info('Model selectedClientConTerritory is  = ' + JSON.stringify($scope.mlObj.translatedMap[$scope.mlObj.selectedLanguageField+'~TPA_Request__c~Record~Third-Party Access Portal'][0]));
+
+                    /*$scope.mlObj.languageChange = function(langObjValue, langCode){
+                        if(!$scope.mlObj.isLangOverride)
+                            popupConfirm('You have chosen ' + langObjValue.split('~')[0] + ' language. Do you want to continue?',
+                                        function(){setCookie('apex__lang',langCode);},
+                                        function(){}, true, false);
+                    }*/
+                    //*** Added by Vikram Singh under ER-1940 end ***//
+
+                    $scope.showStandardPortalPage = true;
+                    var resultTPAArray = [];
+                    var resultDateArray = {};
+                    //Issue 8984 Start
+                    function isIE(userAgent) {
+                        var ua = window.navigator.userAgent;
+                        return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+                    }
+                    $("#excelExport").jqxButton();
+                    $("#excelExport").click(function () {
+                        var dataview = $("#jqxgrid").jqxGrid('dataview');
+                        var filteredRows = dataview.bounditems;
+                        var arrData = typeof filteredRows != 'object' ? JSON.parse(filteredRows) : filteredRows;
+                        if(arrData == null || arrData.length == 0)
+                            return false;
+                        var CSV = '';
+                        CSV += 'TPA Requests Submitted Via Portal' + '\r\n\n';
+                        var row = "";
+                        var seperatorDelimiterType = isIE() ? '~' : ',';
+                        row += 'Client Request Number' + seperatorDelimiterType + 'Client Project Name' + seperatorDelimiterType + 'Status' + seperatorDelimiterType +'Client' + seperatorDelimiterType +'Vendor Name' + seperatorDelimiterType + 'Vendor Contact Name' + seperatorDelimiterType + 'Agreement Effective Start Date' + seperatorDelimiterType;
+                        row += 'Agreement Effective End Date' + seperatorDelimiterType + 'Created By' + seperatorDelimiterType;
+                        row = row.slice(0, -1);
+                        //append Label row with line break
+                        CSV += row + '\r\n';
+                        for (var i = 0; i < arrData.length; i++) {
+                            var row = "";
+                            row += '"' + (arrData[i]['Name'] == null ? '' : arrData[i]['Name']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['Client_Project_Name__c'] == null ? '' : arrData[i]['Client_Project_Name__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['Request_Status__c'] == null ? '' : arrData[i]['Request_Status__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['Client_Address__c'] == null ? '' : arrData[i]['Client_Address__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['Service_Provider_f__c'] == null ? '' : arrData[i]['Service_Provider_f__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['Service_Provider_Contact_f__c'] == null ? '' : arrData[i]['Service_Provider_Contact_f__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + $.formatDateTime('mm/dd/yy', arrData[i]['Agreement_Effective_Date_f__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + $.formatDateTime('mm/dd/yy', arrData[i]['Data_Access_End_Date__c']) + '"' + seperatorDelimiterType;
+                            row += '"' + (arrData[i]['CreatedBy'] == null ? '' : arrData[i]['CreatedBy']) + '"' + seperatorDelimiterType;
+                            if(row.length == 0)
+                                return false;
+                            row.slice(0, row.length - 1);
+
+                            //add a line break after each row
+                            CSV += row + '\r\n';
+                        }
+                        if (CSV == '') {
+                            //alert("Invalid data");
+                            return;
+                        }
+                        var fileName = 'TPA Requests Submitted Via Portal';
+                        if (isIE()) {
+                            var oWin = window.open("text/html", "replace");
+                            oWin.document.write('sep=~\r\n' + CSV);
+                            oWin.document.close();
+                            fileName = (fileName + ".csv");
+                            oWin.document.execCommand('SaveAs', true, fileName);
+                            oWin.close();
+                        }
+                        else
+                        {
+                            var uri = 'data:text/csv;charset=utf-8,' + escape(CSV).replace(/%u2122/g, ""); //Modified by C.P.Pandey under ER-2687
+
+                            var blobdata = new Blob(["\uFEFF" + CSV],{type : 'data:text/csv;charset=utf-8'});
+                            var link = document.createElement("a");
+                            link.setAttribute("href", window.URL.createObjectURL(blobdata));
+                            link.setAttribute("download", fileName + ".csv");
+
+                            //set the visibility hidden so it will not effect on your web-layout
+                            link.style = "visibility:hidden";
+
+                            //this part will append the anchor tag and remove it after automatic click
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);console.log('code changed:::');
+                        }
+
+                    });
+                    //Issue 8984 End
+                    $("#switchToClassic").jqxButton();//Issue 8984
+                    
+                    // custom comparer.
+                    $scope.compare = function (value1, value2) {
+                        value1 = String(value1).toLowerCase();
+                        value2 = String(value2).toLowerCase();
+        
+                        try {
+                            var tmpvalue1 = parseFloat(value1);
+                            if (isNaN(tmpvalue1)) {
+                                if (value1 < value2) { return -1; }
+                                if (value1 > value2) { return 1; }
+                            }
+                            else {
+                                var tmpvalue2 = parseFloat(value2);
+                                if (tmpvalue1 < tmpvalue2) { return -1; }
+                                if (tmpvalue1 > tmpvalue2) { return 1; }
+                            }
+                        }
+                        catch (error) {
+                            var er = error;
+                        }
+        
+                        return 0;
+                    };
+                    
+                    $scope.customsortfunc = function (column, direction) {
+                        var sortdata = new Array();
+                        if(column == 'Name') {
+                            column = 'TPA_Name_New__c';
+                        }
+        
+                        console.log('In Custom Sort::::'+direction+':::'+column);
+                        
+                        if (direction == 'ascending') direction = true;
+                        if (direction == 'descending') direction = false;
+        
+                        sortdata = $scope.allTPARequestsMerged;
+        
+                        var tmpToString = Object.prototype.toString;
+                        Object.prototype.toString = (typeof column == "function") ? column : function () { return this[column] };
+                        if (direction != null) {
+                            sortdata.sort($scope.compare);
+                            if (!direction) {
+                                sortdata.reverse();
+                            }
+                        }
+                        $scope.source.localdata = sortdata;
+                        $("#jqxgrid").jqxGrid('updatebounddata', 'sort');
+                        Object.prototype.toString = tmpToString;
+                    }
+                    
+                    $scope.loadSearchPortal = function(tpaId) {
+
+                        var allTPARequestsMerged = [];
+
+                        EXT_TPA_CustomLandingPage.getTPARequestsByDate(JSON.stringify(tpaId),function(result,event){
+                            //$log.info('Hello World:::::'+JSON.stringify(result));
+
+                            if(event.type == 'exception')
+                            {
+                                return false;
+                            }
+                            else{
+                                var tpa = [];
+                                if(result != null)
+                                {
+                                    var tempStr = JSON.stringify(result.lstRequest);
+                                    tempStr = tempStr.replace('&lt;','<');
+                                    tempStr = tempStr.replace('&gt;','>');
+                                    tpa = result.lstRequest;
+                                    $.merge(resultTPAArray, tpa);
+                                    //$log.info('request Details:::'+JSON.stringify(tpa));
+                                    $.each(result.createdDateMap,function(key,value){
+                                        resultDateArray[key] = value;
+                                    });
+
+                                }
+                                if(tpa.length == 2000)
+                                {
+                                    $scope.loadSearchPortal(tpa[tpa.length - 1].Id);
+                                    return false;
+                                }
+                                $scope.allTPARequestsMerged = resultTPAArray;
+                                $scope.dateMap = resultDateArray;
+                                $.each($scope.allTPARequestsMerged,function(k,v) {
+                                    v.CreatedBy = v.CreatedBy.Name + ', '+$scope.dateMap[v.Id];
+                                    if(v.Client_Address__r != null){
+                                        v.Client_Address__c = v.Client_Address__r.Name;
+                                    }
+                                });
+                                //var data = generatedata(100);
+                                $scope.source =
+                                    {
+                                        localdata: $scope.allTPARequestsMerged,
+                                        datatype: "array",
+                                        sort: $scope.customsortfunc,
+                                        datafields:
+                                        [
+                                            { name: 'Action__c', type: 'string' },
+                                            { name: 'Name', type: 'string' },
+                                            { name: 'TPA_Name_New__c', type: 'string' },
+                                            { name: 'Client_Project_Name__c', type: 'string' },
+                                            { name: 'Request_Status__c', type: 'string' },
+                                            { name: 'Client_Address__c', type: 'string' },
+                                            { name: 'Service_Provider_f__c', type: 'string' },
+                                            { name: 'Service_Provider_Contact_f__c', type: 'string' },
+                                            { name: 'Agreement_Effective_Date_f__c', type: 'date' },
+                                            { name: 'Data_Access_End_Date__c', type: 'date' },
+                                            { name: 'CreatedBy', type: 'string'}
+                                        ]
+                                    };
+                                var dataAdapter = new $.jqx.dataAdapter($scope.source);
+                                $("#jqxgrid").jqxGrid(
+                                    {
+                                        width: '100%',
+                                        source: dataAdapter,
+                                        altrows: false,
+                                        sortable: true,
+                                        showfilterrow: true,
+                                        filterable: true,
+                                        selectionmode: 'none',
+                                        pageable: true,
+                                        autoheight: false,
+                                        columnsresize: true,
+                                        enabletooltips: false,//Updated by Babita Dadarwal under Issue-08608
+                                        theme: 'office',
+                                        pagesizeoptions: ['10', '20', '50', '100', '200'],
+                                        columns: [
+                                            { text: '{!$Label.TPA_Action}', datafield: 'Action__c', filterable: false, width:'12%',sortable:false,exportable:false},
+                                            { text: '{!$Label.TPA_Client_Request_Number}', datafield: 'Name',width:'10%',cellsrenderer: formatAsLink, columnmenu: false},
+                                            { text: '{!$Label.TPA_Client_Project_Name}', datafield: 'Client_Project_Name__c',width:'10%'},
+                                            { text: '{!$Label.TPA_Status}', datafield: 'Request_Status__c',filtertype: 'checkedlist',width:'12%'},
+                                            { text: '{!$Label.TPA_Client}', datafield: 'Client_Address__c',width:'12%'},
+                                            { text: '{!$Label.TPA_Vendor_Name}', datafield: 'Service_Provider_f__c' ,width:'10%'},
+                                            { text: '{!$Label.TPA_Vendor_Contact_Name}', datafield: 'Service_Provider_Contact_f__c',width:'10%'},
+                                            { text: '{!$Label.TPA_Agreement_Effective_br_Start_Date}', datafield: 'Agreement_Effective_Date_f__c',cellsformat: 'MM/dd/yyyy',filtertype: 'date' ,width:'10%'},
+                                            { text: '{!$Label.TPA_Agreement_Effective_br_End_Date}', datafield: 'Data_Access_End_Date__c',cellsformat: 'MM/dd/yyyy',filtertype: 'date',width:'10%' },
+                                            { text: '{!$Label.TPA_Created_By}', datafield: 'CreatedBy',width:'13%'}
+                                        ]
+                                    });
+
+                                $("#jqxButton").on('click', function () {
+                                    console.log("new button clicked");
+                                    window.location.href = '{!$Setup.TPA_Settings__c.Request_Submission_Form_URL__c}' + '?requestType=new&type=c';
+                                });
+
+                                $('#contentjqxgrid input[type=textarea]').each(function(){
+                                    if(this.id != null && this.id.indexOf('inputjqxWidget') == -1)
+                                        $(this).attr('placeholder', 'Enter Search Text...');
+                                });
+
+                                $("#jqxgrid").on("filter", function (event) {
+
+                                    if(lastFilterClickType == 'calendarGreaterThan' || lastFilterClickType == 'calendarLessThan' || lastFilterClickType == 'manual')
+                                    {
+                                        if(lastFilterClickType == 'calendarGreaterThan')
+                                        {
+                                            $('#jqxgrid').jqxGrid('removefilter', 'Data_Access_End_Date__c', true);
+                                            var filterinfo = $("#jqxgrid").jqxGrid('getfilterinformation');
+                                            var eventData = "Triggered 'filter' event";
+                                            for (i = 0; i < filterinfo.length; i++) {
+                                                var eventData = "Filter Column: " + filterinfo[i].filtercolumntext;
+                                                if(filterinfo[i].filtercolumntext == 'Agreement Effective<br />Start Date')
+                                                {
+                                                    addfilter('Agreement_Effective_Date_f__c', filterinfo[i].filter.getfilters()[0].value, 'GREATER_THAN_OR_EQUAL');
+                                                }
+                                            }
+                                        }
+                                        else if(lastFilterClickType == 'calendarLessThan')
+                                        {
+                                            $('#jqxgrid').jqxGrid('removefilter', 'Agreement_Effective_Date_f__c', true);
+                                            var filterinfo = $("#jqxgrid").jqxGrid('getfilterinformation');
+                                            var eventData = "Triggered 'filter' event";
+                                            for (i = 0; i < filterinfo.length; i++) {
+                                                var eventData = "Filter Column: " + filterinfo[i].filtercolumntext;
+                                                if(filterinfo[i].filtercolumntext == 'Agreement Effective<br />End Date')
+                                                {
+                                                    addfilter('Data_Access_End_Date__c', filterinfo[i].filter.getfilters()[0].value, 'LESS_THAN_OR_EQUAL');
+                                                }
+                                            }
+                                        }
+                                            else if(lastFilterClickType == 'manual' || filterElementSelected == 'textBox')
+                                            {
+                                                var filterinfo = $("#jqxgrid").jqxGrid('getfilterinformation');
+                                                var eventData = "Triggered 'filter' event";
+                                                for (i = 0; i < filterinfo.length; i++) {
+                                                    var eventData = "Filter Column: " + filterinfo[i].filtercolumntext;
+                                                    if(filterinfo[i].filtercolumntext == 'Agreement Effective<br />Start Date')
+                                                    {
+                                                        addfilter('Agreement_Effective_Date_f__c', filterinfo[i].filter.getfilters()[0].value, 'GREATER_THAN_OR_EQUAL');
+                                                        break;
+                                                    }
+                                                    else if(filterinfo[i].filtercolumntext == 'Agreement Effective<br />End Date')
+                                                    {
+                                                        addfilter('Data_Access_End_Date__c', filterinfo[i].filter.getfilters()[0].value, 'LESS_THAN_OR_EQUAL');
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                    }
+                                    else if(lastFilterClickType == 'auto')
+                                    {
+                                        if(filterElementSelected != null)
+                                            filterElementSelected.click();
+                                    }
+                                });
+                                // });
+                                var formatAsLink = function (row, column, value) {
+                                    return '<a href="'+allRequests[row].Id+'">'+value+'</a>'
+                                }
+
+                                var lastFilterClickType = '';
+                                var filterElementSelected = '';
+                                var addfilter = function (columnname, dateValue, filtercondition)
+                                {
+                                    //$("#jqxgrid").jqxGrid('clearfilters');
+                                    if (columnname == '') {
+                                        return;
+                                    }
+                                    var filtergroup = new $.jqx.filter();
+                                    var filter_or_operator = 1;
+                                    var filtervalue = dateValue;
+                                    var filter = filtergroup.createfilter('datefilter', filtervalue, filtercondition);
+                                    filtergroup.addfilter(filter_or_operator, filter);
+                                    $("#jqxgrid").jqxGrid('addfilter', columnname, filtergroup);
+                                    lastFilterClickType = 'auto';
+                                    $("#jqxgrid").jqxGrid('applyfilters');
+                                }
+                                }
+                        }, {escape:false});
+
+                    }
+                    $scope.loadSearchPortal(0);
+                    document.addEventListener("mousedown", (event) => {
+                        if ((event.which == 2 || event.which == 3) && event.target.tagName.toLowerCase() === 'a' && event.target.href != null && event.target.href.includes('renew')) {
+                            setTimeout(function(){
+                                event.target.setAttribute('href','javascript:void(0)');
+                                $(event.target).css('color', 'black');
+                            },1000);            
+                        }
+                    });
+                    document.addEventListener("keydown", (event) => {
+                        if ((event.keyCode == 10 || event.keyCode == 13) && (event.ctrlKey || event.metaKey) && event.target.tagName.toLowerCase() === 'a' && event.target.href != null && event.target.href.includes('renew')) {
+                            setTimeout(function(){
+                                event.target.setAttribute('href','javascript:void(0)');
+                                $(event.target).css('color', 'black');
+                            },1000);            
+                        }
+                    });
+
+
+                    $scope.toggleView = function() {
+                        $scope.showStandardPortalPage = !$scope.showStandardPortalPage;
+                        if(!$scope.showStandardPortalPage) {
+                            $timeout(function(){
+                                $('.jqx-action-button-office').each(function(index) {
+                                    if(index == 0)
+                                        $(this).on('click',function() { lastFilterClickType = 'calendarGreaterThan';});
+                                    else if(index == 2)
+                                        $(this).on('click',function() { lastFilterClickType = 'calendarLessThan';});
+                                    filterElementSelected = $(this);
+                                });
+                                $('.jqx-dropdownlist-content').unbind().on('click', function(){lastFilterClickType = 'manual';filterElementSelected = $(this);});
+                                $('.jqx-icon-arrow-down').unbind().on('click', function(){lastFilterClickType = 'manual';filterElementSelected = $(this);});
+                                $('#contentjqxgrid input[type=textarea]').on('click', function(){lastFilterClickType = 'manual';filterElementSelected = $(this);});
+                                $('#contentjqxgrid input[type=text]').on('click', function(){lastFilterClickType = 'manual';filterElementSelected = $(this);});
+                                $("#jqxgrid").jqxGrid('clearfilters');
+                                $scope.applyChanges();
+                            },500);
+                        }
+                    }
+                    
+                    $scope.goToNewReqPage = function() {
+                        console.log('Search screen new button clicked');
+                        window.location.href = '{!$Setup.TPA_Settings__c.Request_Submission_Form_URL__c}' + '?requestType=new&type=c';
+                    }
+
+                });
+
+                var toggleSearchView = function()
+                {
+                    angular.element($('#landingController')).scope().toggleView();
+                    angular.element($('#landingController')).scope().applyChanges();
+                }
+
+                function applyBootstrapTooltip(pos, cssName)
+                {
+                    $(cssName).tooltip({
+                        placement : pos,
+                        html : true
+                    });
+                }
+
+                var isPermanentDown = {!isTPAPermanentDown};
+                var isRestrictedUser = {!isRestrictedUser};
+                var portalDownMessage = '{!Message}';
+                $(document).ready(function(){
+                    if(isPermanentDown)
+                    {
+                        popupAlert(portalDownMessage);
+                            $('.customPopupFooter .aButtons').css("display","none");
+                            $('#backWhiteOverlay').css("display", "");
+                            $('#pageBody').keydown(function(objEvent) {
+                                if (objEvent.keyCode == 9) {  //tab pressed
+                                    objEvent.preventDefault(); // stops its action
+                                }
+                                if (objEvent.keyCode == 13) {  //enter pressed
+                                    objEvent.preventDefault(); // stops its action
+                                }
+                            });
+                    }
+                    $(".ddViews option[value='']").remove(); //Added by C.P.Pandey under ER-1940
+
+                    //Added by Ajinkya Pande and modified by Supriya Johari under ER-3508 Issue-10511 Start //
+                    var t;
+                    var angularScope = angular.element($('#landingController')).scope();
+
+                    // Added By ajinkya Pande under Issue - 10551 Start //
+                    angularScope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true},
+                            function(r)
+                            {
+                                if(r && truePart != null)
+                                    truePart();
+                            });
+                        $(".aButtons button").html('{!$Label.TPA_OK}');
+                    }
+                    // Added By ajinkya Pande under Issue - 10551 End //
+                    resetTimer();
+                    var popupDisplayed = false;
+                    // DOM Events
+                    document.onmousemove = resetTimer;
+                    document.onkeypress = resetTimer;
+
+                    function alertSessionTimeout(){
+                        angularScope.popupAlert('{!$Label.TPA_Session_Expired}', logout);
+                        clearTimeout(t);
+                        popupDisplayed = true;
+                    }
+
+                    function logout() {
+                        location.href = '{!$Site.Prefix}'+'/secur/logout.jsp';
+                    }
+
+                    function resetTimer() {
+                        clearTimeout(t);
+                        if(popupDisplayed == false)
+                            t = setTimeout(alertSessionTimeout, '{!$Setup.TPA_Settings__c.Time_Out_Value__c}');
+                    }
+
+                    //Added by Ajinkya Pande and modified by Supriya Johari under ER-3508 Issue-10511 END//
+
+                    if(getParameterByName('linkaction') == 'cancelTPA') {
+                        invokeCancel(getParameterByName('url'), getParameterByName('cancelId'));
+                    }
+                    if(getParameterByName('linkaction') == 'closedDraft') {
+                        invokeClosedDraft(getParameterByName('url'), getParameterByName('closedId'));
+                    }
+                    // Added by Babita Dadarwal under CR-12675 Start
+                    if(getParameterByName('linkaction') == 'renewTPA') {
+                        invokeRenewAction(getParameterByName('url'), getParameterByName('parentId'));
+                    }
+                    // Added by Babita Dadarwal under CR-12675 End
+                });
+                //Added by C.P.Pandey under CR-8794 end
+
+
+                //Added by Vikram Singh for Issue-09119 under ER-1940 start
+                $(window).load(function(){
+                    translateStatusView();
+                    translateStandardFieldColumn();
+
+                    //Added by C.P.Pandey under page Back button issue ER-1940 start
+                    var e=document.getElementById("refreshed");
+                    if(e.value=="no"){e.value="yes";$('#pageLoadOverlay').css('display','none');}
+                    else{e.value="no";location.reload();}
+                    //Added by C.P.Pandey under page Back button issue ER-1940 end
+                });
+
+                function translateStandardFieldColumn(){
+                    setTimeout(function(){
+                        $('.listBody').find('div.x-grid3-hd-inner').each(function(index){
+                            if($(this).hasClass('x-grid3-hd-NAME')){
+                                $(this).text('{!JSENCODE($Label.TPA_Client_Request_Number)}');
+                            }
+                        });
+                    }, 100);
+                }
+                //Added by Vikram Singh for Issue-09119 under ER-1940 end
+
+                $(window).unload(function(){
+                    //header("Cache-Control: private, must-revalidate, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
+                }); // Does nothing but break the bfcache
+
+                var invokeClosedDraft = function(url, id){
+                    popupConfirm('{!$Label.TPA_Are_you_sure_you_want_to_close_draft_this_request}',
+                                function(){
+                                    popupAlert('{!$Label.TPA_This_third_party_access_request_is_now_closed}', function(){
+                                    window.location.href = (url + '?Id=' + id + "&name=closedDraft");
+                                });
+                                },
+                                function(){
+                                    window.location.href = '/imshealthPortal/VFP_TPA_CustomLandingPage';
+                                }, true);
+                }
+
+                //Added by C.P.Pandey under CR-8221 start
+                var invokeCancel = function(url, id){
+                    popupConfirm('{!$Label.TPA_Are_you_sure_you_want_to_cancel_this_request}',
+                                function(){
+                                    window.location.href = (url + '?Id=' + id + "&name=cancel");
+                                },
+                                function(){
+                                    window.location.href = '/imshealthPortal/VFP_TPA_CustomLandingPage';
+                                }, true);
+                }
+            
+                // Added by Babita Dadarwal under CR-12675 Start
+                var invokeRenewAction = function(url, id){
+                    popupConfirm('{!$Label.TPA_Renew_Popup}',
+                                function(){
+                                    window.location.href = (url + '?Id=' + id + "&name=renew");
+                                }, 
+                                function(){
+                                    window.location.href = '/imshealthPortal/VFP_TPA_CustomLandingPage';
+                                }, false);
+                }
+                // Added by Babita Dadarwal under CR-12675 End
+
+                //Added by C.P.Pandey under ER-1940 start
+                function getParameterByName(name)
+                {
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                    return results == null ? "" : results[1].replace(/\+/g, " ");
+                }
+                //Added by C.P.Pandey under ER-1940 end
+
+                var popupConfirm = function(msg, truePart, falsePart, isYesNo, isTranslationNeeded)//Modified by C.P.Pandey under ER-1940
+                {
+                    //Modified by C.P.Pandey under ER-1940 start
+                    if(isTranslationNeeded == null)
+                        isTranslationNeeded = true;
+                    if(isYesNo)
+                    {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                                haltScreen = false;
+                            });
+                        $.each($(".aButtons button"), function(k, v){
+                            if($(v).text() == 'Yes' && isTranslationNeeded)
+                                $(v).html('{!$Label.TPA_Yes}');
+                            else if($(v).text() == 'No' && isTranslationNeeded)
+                                $(v).html('{!$Label.TPA_No}');
+                        });
+                    }
+                    else
+                    {
+                        popup(msg, {'confirm':true, 'animate':true}, function(r)
+                            {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                                haltScreen = false;
+                            });
+                        $.each($(".aButtons button"), function(k, v){
+                            if($(v).text() == 'Ok' && isTranslationNeeded)
+                                $(v).html('{!$Label.TPA_OK}');
+                            else if($(v).text() == 'Cancel' && isTranslationNeeded)
+                                $(v).html('{!$Label.TPA_Cancel}');
+                        });
+                    }
+                    //Modified by C.P.Pandey under ER-1940 end
+                }
+
+                //Added by C.P.Pandey under CR-8794 start
+                var popupAlert = function(msg, truePart)
+                {
+                    popup(msg, {'animate':true},
+                        function(r)
+                        {
+                            if(r && truePart != null)
+                                truePart();
+                        });
+                    $(".aButtons button").html('{!$Label.TPA_OK}'); //Added by C.P.Pandey under ER-1940
+                }
+                //*** Added by C.P.Pandey under CR-8794 end
+                //Added by C.P.Pandey under CR-8221 end
+                </script>
+            </head>
+            <body id="pageBody" class='default' style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+                <c:VFC_TPA_LoadingImage />
+                <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+                <!-- Added by C.P.Pandey under Page back button issue ER-1940 start -->
+                <input type="hidden" id="refreshed" value="no" />
+                <div id="pageLoadOverlay" style="width:100%;height:100vh;background-color:#FFF;z-index:1000;" />
+                <!-- Added by C.P.Pandey under Page back button issue ER-1940 end -->
+                <div ng-app="landingApp">
+                    <div id="landingController" ng-controller="landingController">
+                        <!-- Added By Vikram Singh under ER-1940 Start. Modified under ER-3126-->
+                        <div ng-show="!mlObj.isClientFromUS && !mlObj.isLangOverride" style="width:100%; height:550px;">
+                            <c:VFC_TPA_Multilingual_Menu_Component />
+                        </div>
+                        <!-- Added By Vikram Singh under ER-1940 End -->
+                        <div ng-show="showStandardPortalPage && (mlObj.isClientFromUS || mlObj.isLangOverride)">
+                            <apex:outputPanel id="listViewComponent" rendered="{!(Not(isMessageShow) || TPA_Is_Show_TPA_Down_Message) && (Not(isTPAPermanentDown) || Not(isRestrictedUser))}">
+                                <div class="slds-grid slds-wrap slds-gutters slds-align_absolute-center">
+                                    <div class="slds-col">
+                                        <c:VFC_TPA_EnhancedListComponent />
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                            <apex:form >
+                            
+                            <apex:outputPanel layout="block" rendered="{!((isMessageShow && Not(TPA_Is_Show_TPA_Down_Message) && Not(isTPAPermanentDown)) || (isMessageShow && isTPAPermanentDown && Not(isRestrictedUser)))}">                        
+                                <div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                                    <div class="slds-modal__container" style="z-index: 1">
+                                        <header class="slds-modal__header">
+                                            <h2 class="slds-text-heading_medium slds-hyphenate">
+                                            </h2>
+                                        </header>
+                                        <div class="slds-modal__content slds-p-around_small">
+                                            <apex:outputText value="{!msgBoardContent}" escape="false" />
+                                        </div>
+                                        <footer class="slds-modal__footer">
+                                            <div class="slds-text-align_center slds-m-top_x-small slds-m-bottom_x-small">
+                                                <apex:commandButton styleclass="slds-button slds-button_outline-brand slds-float_left" value="{!$Label.TPA_Continue}" action="{!refreshPage}" rendered="{!Not(isTPAPermanentDown)|| Not(isRestrictedUser)}"/>
+                                                <apex:commandButton styleclass="slds-button slds-button_outline-brand" style="float: right; margin-left: 10px; margin-right: 10px;" value="Change Language" action="{!goBackToChangeLanguagePage}" rendered="{! NOT(isClientFromUS) && language != 'en_US'}"/>
+                                                <apex:commandButton styleclass="slds-button slds-button_outline-brand" style="float: right;" value="{!$Label.TPA_Change_Language}" action="{!goBackToChangeLanguagePage}" rendered="{!NOT(isClientFromUS)}" />
+                                            </div>
+                                        </footer>
+                                    </div>
+                                    <div class="slds-backdrop slds-backdrop_open" style="z-index: 0"></div>
+                                </div>
+                            </apex:outputPanel>
+                        </apex:form>
+                        </div>
+                        <div id='jqxWidget' style="font-size: 13px; font-family: Verdana;" ng-show="!showStandardPortalPage">
+                            <div style="width:100%;border:1px solid #f3f3f3">
+                                <label style="margin:5px;font-weight:bold;font-size:22px">{!$Label.TPA_Third_Party_Access_Portal}</label>
+                                <apex:outputlink value="{!$Label.TPA_Privacy_Policy_URL}" target="_blank"><font color="blue" style="text-decoration: underline;float:right">{!$Label.TPA_Privacy_Policy}</font></apex:outputlink> <!-- Added by Rajendra Under ER-12065 -->
+                            </div>
+                            <div style="width:100%;border:1px solid #f3f3f3;margin-top:1%">
+                                <input type="button" value="{!$Label.TPA_New_TPA_Request}" id="jqxButton" style="margin:5px 5px 5px 2px" role="button" class="jqx-rc-all jqx-button jqx-widget jqx-fill-state-normal slds-button slds-button_success" aria-disabled="false" ng-click="goToNewReqPage()" />
+                                <input style="margin:5px 5px 5px 2px" type="button" id="excelExport" value="{!$Label.TPA_Export_to_Excel}" role="button" class="jqx-rc-all jqx-button jqx-widget jqx-fill-state-normal slds-button slds-button_brand" aria-disabled="false"  />
+                                <input style="margin:5px 5px 5px 2px" type="button" id="switchToClassic" value="{!$Label.TPA_TPA_Portal}" role="button" class="jqx-rc-all jqx-button jqx-widget jqx-fill-state-normal slds-button slds-button_neutral" aria-disabled="false" ng-click="toggleView()" />
+                            </div>
+                            <div id="jqxgrid" style="margin-top:0.2%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
+        </html>
+    </apex:outputPanel>
+</apex:page>

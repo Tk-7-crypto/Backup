@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Email aert to be sent if contact is inactive due to invalid email address</description>
+        <name>Email_alert_for_inactive_contact</name>
+        <label>Email alert for inactive contact</label>
+        <locationX>50</locationX>
+        <locationY>242</locationY>
+        <actionName>Contact.CNT_WEA01_CRM_Inactive_contact_notification_due_to_invalid_email</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>ContactRecord.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Contact.CNT_WEA01_CRM_Inactive_contact_notification_due_to_invalid_email</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <decisions>
+        <description>Check for inactive reason - true if it is INVALID email address</description>
+        <name>Check_for_Inactive_reason</name>
+        <label>Check for Inactive reason</label>
+        <locationX>182</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>CheckInactiveReason</name>
+            <conditionLogic>1 AND (2 OR 3)</conditionLogic>
+            <conditions>
+                <leftValueReference>ContactRecord.Inactive_Reason__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Invalid Email Address</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>IsChangedInactiveReason</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>IsNew</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Email_alert_for_inactive_contact</targetReference>
+            </connector>
+            <label>CheckInactiveReason</label>
+        </rules>
+    </decisions>
+    <description>CRM-MC-ESPSFDCQI-390 - Alert to contact owner when contact inactive due to invalid email</description>
+    <environments>Default</environments>
+    <interviewLabel>CRM Subflow Contact Inactive Email Alert {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM Subflow Inactive Contact Invalid Email Alert</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Check_for_Inactive_reason</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <description>It will hold the triggering contact record</description>
+        <name>ContactRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Contact</objectType>
+    </variables>
+    <variables>
+        <description>Return true if inactive reason value is changed</description>
+        <name>IsChangedInactiveReason</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+    <variables>
+        <name>IsNew</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+</Flow>

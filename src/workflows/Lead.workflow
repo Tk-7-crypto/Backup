@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <alerts>
+        <fullName>LED_WEA01_PEP_ACN_Lead_Creation_Owner</fullName>
+        <description>LED_WEA01_PEP_ACN_Lead_Creation_Owner</description>
+        <protected>false</protected>
+        <recipients>
+            <type>owner</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET03_PEP_Lead_Creation_Template_for_Internal_Users</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA02_PEP_ACN_Lead_Creation_Alliance_Mgr</fullName>
+        <description>LED_WEA02_PEP_ACN_Lead_Creation_Alliance_Mgr</description>
+        <protected>false</protected>
+        <recipients>
+            <field>TECH_Alliance_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET03_PEP_Lead_Creation_Template_for_Internal_Users</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA03_PEP_ACN_Lead_Creation_Partner_User</fullName>
+        <description>LED_WEA03_PEP_ACN_Lead_Creation_Partner_User</description>
+        <protected>false</protected>
+        <recipients>
+            <type>creator</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET02_PEP_Lead_Creation_Template_for_Partners</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA04_PEP_ACN_Lead_Conversion_Partner_User</fullName>
+        <description>LED_WEA04_PEP_ACN_Lead_Conversion_Partner_User</description>
+        <protected>false</protected>
+        <recipients>
+            <type>creator</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET04_PEP_Lead_Conversion_Template_for_Partners</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA05_PEP_ACN_Lead_Conversion_Internal_User</fullName>
+        <description>LED_WEA05_PEP_ACN_Lead_Conversion_Internal_User</description>
+        <protected>false</protected>
+        <recipients>
+            <type>owner</type>
+        </recipients>
+        <recipients>
+            <field>TECH_Alliance_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET05_PEP_Lead_Conversion_Template_for_Internal_users</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA06_PEP_ACN_Lead_Rejection_Partner_User</fullName>
+        <description>LED_WEA06_PEP_ACN_Lead_Rejection_Partner_User</description>
+        <protected>false</protected>
+        <recipients>
+            <type>creator</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET06_PEP_Lead_Rejection_Template_for_Partners</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA07_PEP_ACN_Lead_Rejection_Internal_User</fullName>
+        <description>LED_WEA07_PEP_ACN_Lead_Rejection_Internal_User</description>
+        <protected>false</protected>
+        <recipients>
+            <field>TECH_Alliance_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET07_PEP_Lead_Rejection_Template_for_Internal_Users</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA08_PEP_ACN_Lead_Conversion_by_AM</fullName>
+        <description>LED_WEA08_PEP_ACN_Lead Conversion by AM</description>
+        <protected>false</protected>
+        <recipients>
+            <type>creator</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET05_PEP_Lead_Conversion_Template_for_Internal_users</template>
+    </alerts>
+    <alerts>
+        <fullName>LED_WEA09_PEP_ACN_Lead_Rejection_by_AM</fullName>
+        <description>LED_WEA09_PEP_ACN_Lead Rejection by AM</description>
+        <protected>false</protected>
+        <recipients>
+            <type>creator</type>
+        </recipients>
+        <senderAddress>no.reply.techpartners@iqvia.com</senderAddress>
+        <senderType>OrgWideEmailAddress</senderType>
+        <template>PEP_ACN_PEP_Email_Templates/LED_ET07_PEP_Lead_Rejection_Template_for_Internal_Users</template>
+    </alerts>
+    <rules>
+        <fullName>LED_WR01_CRM_LeadScoreTransitions</fullName>
+        <active>false</active>
+        <description>CRM-MC-ESPSFDCQI-392 - This workflow rule will be used to alert sales when lead score transitions occur favorably</description>
+        <formula>OR( AND( PRIORVALUE(Lead_Score__c) = &quot;A2&quot;, Lead_Score__c = &quot;A1&quot; ), AND( PRIORVALUE(Lead_Score__c) = &quot;A3&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;A4&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;B3&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;B4&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;C1&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;C2&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;C3&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;C4&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;D1&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;D2&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;D3&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ), AND( PRIORVALUE(Lead_Score__c) = &quot;D4&quot;, OR( Lead_Score__c = &quot;A1&quot;, Lead_Score__c = &quot;A2&quot;, Lead_Score__c = &quot;B1&quot;, Lead_Score__c = &quot;B2&quot; ) ) )</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR01_PEP_Lead_Registration_Mail</fullName>
+        <actions>
+            <name>LED_WEA03_PEP_ACN_Lead_Creation_Partner_User</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>CreatedBy.Profile.Name = &apos;PRM Community User&apos;&amp;&amp;  RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp; ISPICKVAL( Status ,&apos;Registered&apos;)</formula>
+        <triggerType>onCreateOnly</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR02_PEP_Lead_Conversion_Mail</fullName>
+        <actions>
+            <name>LED_WEA04_PEP_ACN_Lead_Conversion_Partner_User</name>
+            <type>Alert</type>
+        </actions>
+        <actions>
+            <name>LED_WEA05_PEP_ACN_Lead_Conversion_Internal_User</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>CreatedBy.Profile.Name = &apos;PRM Community User&apos;&amp;&amp; RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp;                              ISCHANGED(Status) &amp;&amp;  ISPICKVAL(Status , &apos;Converted&apos;)</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR03_PEP_Lead_Rejection_Mail</fullName>
+        <actions>
+            <name>LED_WEA06_PEP_ACN_Lead_Rejection_Partner_User</name>
+            <type>Alert</type>
+        </actions>
+        <actions>
+            <name>LED_WEA07_PEP_ACN_Lead_Rejection_Internal_User</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>CreatedBy.Profile.Name = &apos;PRM Community User&apos;&amp;&amp; RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp;                                ISCHANGED(Status) &amp;&amp;  ISPICKVAL(Status , &apos;Closed-Rejected&apos;)</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR04_PEP_Lead_Creation_AllianceMgr</fullName>
+        <actions>
+            <name>LED_WEA02_PEP_ACN_Lead_Creation_Alliance_Mgr</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp;  ISPICKVAL( Status ,&apos;Registered&apos;)&amp;&amp; ( ISCHANGED( TECH_Alliance_Manager__c) || (ISNEW() &amp;&amp; NOT ISBLANK( TECH_Alliance_Manager__c)))</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR05_PEP_Lead_Conversion_by_AM</fullName>
+        <actions>
+            <name>LED_WEA08_PEP_ACN_Lead_Conversion_by_AM</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>NOT(CreatedBy.Profile.Name = &apos;PRM Community User&apos;)  &amp;&amp; RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp; ISCHANGED(Status) &amp;&amp;  ISPICKVAL(Status , &apos;Converted&apos;) &amp;&amp; NOT ISBLANK( TECH_Alliance_Manager__c)</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>LED_WR06_PEP_Lead_Rejection_by_AM</fullName>
+        <actions>
+            <name>LED_WEA09_PEP_ACN_Lead_Rejection_by_AM</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>PRM:991 Migrated to flow</description>
+        <formula>NOT(CreatedBy.Profile.Name = &apos;PRM Community User&apos;) &amp;&amp; RecordType.DeveloperName = &apos;PRM_Lead&apos; &amp;&amp;  ISCHANGED(Status) &amp;&amp;  ISPICKVAL(Status , &apos;Closed-Rejected&apos;) &amp;&amp; NOT ISBLANK( TECH_Alliance_Manager__c)</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+</Workflow>

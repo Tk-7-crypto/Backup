@@ -1,0 +1,293 @@
+<template>
+   <div class="c-container slds-is-relative" style="background-color:white">
+        <lwc if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading..." size="medium" variant="brand"></lightning-spinner>
+        </lwc>
+       <lwc if:false={isLoading}>
+      <div>
+         <template if:true={firstTableVisible}>
+                <header class="slds-modal__header">
+                <h2 id="modal-heading-01" class="slds-text-heading_medium
+                slds-hyphenate">'Study Specifications' Applicable to eCOA, Complete Consent, IRT, CD
+                </h2>
+                </header>
+                <template class="slds-m-around_medium" for:each={collectionToolRecForOthers} for:item="tableNumber">
+                <div style="margin: 15px;" key={tableNumber.key}>
+                    <lightning-card key={tableNumber.key} class="slds-modal__content slds-p-around_medium"
+                     id="modal-content-id-1">
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-size_2-of-12" >
+                                <lightning-input style="margin-left: 30px;"  type="date" data-id={tableNumber.key} data-item = "fpi" name="fpi" label="FPI"
+                                     value={tableNumber.FPI} onchange={onDateChange} required></lightning-input>
+                            </div>
+                            <div class="slds-size_2-of-12"  >
+                                <lightning-input style="margin-left: 30px;" type="date" data-id={tableNumber.key} data-item = "lpo" name="lpo" label="LPO" 
+                                     value={tableNumber.LPO} onchange={onDateChange} required></lightning-input>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-size_2-of-12"  >
+                                <lightning-input  style="margin-left: 30px;" type="date" data-id={tableNumber.key} data-item = "lpi" name="lpi" label="LPI" 
+                                     value={tableNumber.LPI} onchange={onDateChange} required></lightning-input>
+                            </div>
+                            <div class="slds-size_2-of-12"  >
+                                <lightning-input  style="margin-left: 30px;" type="date" data-id={tableNumber.key} data-item = "dbl" name="dbl" label="DBL" 
+                                     value={tableNumber.DBL} onchange={onDateChange} required></lightning-input>
+                            </div>
+                            <div class="slds-size_1-of-12">
+                            </div>
+                            <div class="slds-size_2-of-12">
+                                <h2 key={tableNumber.key} class="slds-text-heading_medium slds-modal__header
+                                    slds-hyphenate">Scenario {tableNumber.key}
+                                </h2>
+                            </div>
+                            <div class="slds-size_1-of-12">
+                            </div>
+                            <div style="margin:10px;" class="slds-size_2-of-12">
+                                <template if:false={tableNumber.hideCopyFromPreviousTableButton}>
+                                    <lightning-button key={tableNumber.key} data-id={tableNumber.key}
+                                        label="Clone from previous table" slot="actions" icon-name="utility:add"
+                                        onclick={handleCloneTableActionForOthers}></lightning-button>
+                                </template>
+                            </div>
+                            <div style="float: right; margin:10px;" class="slds-size_1-of-12">
+                                <lightning-button key={tableNumber.key} data-id={tableNumber.key}
+                                    data-item={recordTypeIdApplicableToOthers} label="Add Row" slot="actions"
+                                    icon-name="utility:add" onclick={handleAddRowAction}>
+                                </lightning-button>
+                            </div>
+                        </div>
+                        <table key={tableNumber.key} class="slds-table slds-table_cell-buffer slds-table_bordered "
+                            aria-labelledby="element-with-table-label other-element-with-table-label"
+                            style="table-layout:fixed">
+                            <thead>
+                            <tr class="slds-line-height_reset">
+                                <th style="text-align:center" scope="col" class="slds-size_4-of-12">
+                                    <div class="slds-truncate" style="text-align:center" title="">List the Countries (No
+                                        abbreviations)</div>
+                                </th>
+                                <th class="slds-size_4-of-12" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">Number of Sites</div>
+                                </th>
+                                 <th class="slds-size_3-of-12" scope="col">
+                                    <div class="slds-truncate slds-align_absolute-center" title="Number of Enrolled Patients">Number of Enrolled Patients
+                                        <span style="slds-align_absolute-center">
+                                            <lightning-helptext class="slds-m-left_small" content="Required only for Combined Products"></lightning-helptext>
+                                        </span>
+                                    </div>
+                                </th>                                
+                                <th class="slds-size_3-of-12" scope="col">
+                                    <div class="slds-truncate slds-align_absolute-center" title="Screened Patients">Screened Patients
+                                        <span style="slds-align_absolute-center">
+                                            <lightning-helptext class="slds-m-left_small" content="Required only for Combined Products"></lightning-helptext>
+                                        </span>
+                                    </div>
+                                </th>
+                                <th class="slds-size_1-of-12" scope="col">
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th style="text-align:center" class="slds-size_4-of-12">
+                                    {tableNumber.noOfCountries}
+                                </th>
+                                <th style="text-align:center" class="slds-size_4-of-12">
+                                    {tableNumber.sumOfSites}
+                                </th>
+                                <th style="text-align:center" class="slds-size_3-of-12">
+                                    {tableNumber.sumOfEnrolledPatients}
+                                </th>
+                                <th style="text-align:center" class="slds-size_3-of-12">
+                                    {tableNumber.sumOfScreenedPatients}
+                                </th>
+                                <th class="slds-size_1-of-12">
+                                </th>
+                            </tr>
+                            <template class="datatable" for:each={tableNumber.collectionToolRecords} for:item="obj"
+                                for:index="index">
+                                <tr class="inputRows" key={obj.Id}>
+                                    <td scope="row" class="slds-size_4-of-12">
+                                        <lightning-combobox variant="label-hidden" 
+                                         data-item={tableNumber.key} value={obj.Countries__c}
+                                         data-field="Countries__c" data-id={obj.Id}
+                                         options={countriesPicklistValues} onchange={updateValuesForOthers}>
+                                         </lightning-combobox>
+                                    </td>
+                                    <td class="slds-size_4-of-12">
+                                        <lightning-input class="fields" type="number" 
+                                       data-item={tableNumber.key} variant="label-hidden" label="" max-length="8"
+                                        data-field="Number_of_Sites__c" name="Sites" value={obj.Number_of_Sites__c}
+                                        data-id={obj.Id} onchange={updateValuesForOthers}></lightning-input>
+                                    </td>
+                                    <td class="slds-size_3-of-12">
+                                        <lightning-input type="number" class="fields " 
+                                       data-item={tableNumber.key} variant="label-hidden" label="" max-length="8"
+                                        data-field="Number_of_Enrolled_Patients__c" name="Patients"
+                                        value={obj.Number_of_Enrolled_Patients__c} data-id={obj.Id}
+                                        onchange={updateValuesForOthers}></lightning-input>
+                                    </td>
+                                    <td class="slds-size_3-of-12">
+                                        <lightning-input type="number" class="fields " 
+                                       data-item={tableNumber.key} variant="label-hidden" label="" max-length="8"
+                                        data-field="Screened_Patients__c" name="Screened Patients"
+                                        value={obj.Screened_Patients__c} data-id={obj.Id}
+                                        onchange={updateValuesForOthers}></lightning-input>
+                                    </td>
+                                    <td class="slds-size_1-of-12">
+                                        <lightning-button-icon style="text-align:center" icon-name="action:delete"
+                                        data-field={recordTypeIdApplicableToOthers} data-item={tableNumber.key}
+                                        alternative-text="Delete" title="Delete" data-id={obj.Id}
+                                        onclick={handleDeleteRowAction}></lightning-button-icon>
+                                    </td>
+                                </tr>
+                            </template>
+                            </tbody>
+                        </table>
+                    </lightning-card>
+                </div>
+                </template>
+                <footer class="slds-modal__footer" style="margin: 15px;">
+                    <div class="slds-grid slds-grid_align-center">
+                        <lightning-icon icon-name="utility:info" size="x-small" style="margin-right: 10px; margin-top:2px;" ></lightning-icon>
+                            Please save Countries, Sites, & patients before completing Assessment list
+                    </div>
+                    <br>
+                    <div class="slds-grid slds-grid_align-center">
+                        <button class="slds-button slds-button_brand" onclick={saveCollectionToolRecordsListForOthers}
+                            title="Continue">Save</button>
+                        <button class="slds-button slds-button_outline-brand" onclick={navigateToRecord}
+                            title="Cancel">Cancel</button>
+                    </div>
+                </footer>
+            </template>
+            <br>
+            <template if:true={secondTableVisible}>
+                <header class="slds-modal__header">
+                <h2 id="modal-heading-02" class="slds-text-heading_medium
+                slds-hyphenate">Select required assessments from COA Library Assessments</h2>
+                </header>
+                <template class="slds-m-around_medium" for:each={collectionToolRecForECOAOnly} for:item="tableNumber">
+                <div style="margin: 15px;" key={tableNumber.key}>
+                    <lightning-card key={tableNumber.key} class="slds-modal__content slds-p-around_medium"
+                        id="modal-content-id-2">
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-size_5-of-12">
+                            </div>
+                            <div class="slds-size_2-of-12">
+                            <h2 key={tableNumber.key} class="slds-text-heading_medium slds-modal__header
+                            slds-hyphenate">Scenario {tableNumber.key}</h2>
+                            </div>
+                            <div class="slds-size_1-of-12">
+                            </div>
+                            <div style="margin:10px;" class="slds-size_2-of-12">
+                            <template if:false={tableNumber.hideCopyFromPreviousTableButton}>
+                                <lightning-button key={tableNumber.key} data-id={tableNumber.key}
+                                    label="Clone from previous table" slot="actions" icon-name="utility:add"
+                                    onclick={handleCloneTableActionForECOAOnly}></lightning-button>
+                            </template>
+                            </div>
+
+                            <div style="float: right; margin:10px;" class="slds-size_1-of-12">
+                            <lightning-button key={tableNumber.key} data-id={tableNumber.key}
+                                data-item={recordTypeIdECOAOnly} label="Add Row" slot="actions" icon-name="utility:add"
+                                onclick={handleAddRowAction}></lightning-button>
+
+                            </div>
+                        </div>
+                        <table key={tableNumber.key} class="slds-table slds-table_cell-buffer slds-table_bordered"
+                            aria-labelledby="element-with-table-label other-element-with-table-label"
+                            style="table-layout: fixed;">
+                            <thead>
+                            <tr class="slds-line-height_reset slds-size_4-of-12">
+                                <th style="text-align:center" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">COA Library Assessment
+                                    </div>
+                                </th>
+                                <th class="slds-size_2-of-12" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">Description if not within
+                                        library</div>
+                                </th>
+                                <th class="slds-size_2-of-12" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">Select Device Type</div>
+                                </th>
+                                <th class="slds-size_2-of-12" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">Specific Device Strategy
+                                    </div>
+                                </th>
+                                <th class="slds-size_2-of-12" scope="col">
+                                    <div class="slds-truncate" style="text-align:center" title="">COA Type
+                                    </div>
+                                 </th>
+                                <th class="slds-size_1-of-12" scope="col">
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <template class="datatable" for:each={tableNumber.collectionToolRecords} for:item="obj"
+                                for:index="index">
+                                <tr class="inputRows" key={obj.Id}>
+                                    <td scope="row" class="slds-wrap slds-size_4-of-12">
+                                        <c-lwc_owf_searchablepicklist options={assessmentPicklistValues}
+                                            selected-value ={obj.COA_Library_Assessment__c} 
+                                            data-item={tableNumber.key} 
+                                            data-field="COA_Library_Assessment__c" 
+                                            data-id={obj.Id}
+                                            onselectionofpicklist={updateValuesForECOAOnly}>
+                                       </c-lwc_owf_searchablepicklist>
+                                    </td>
+                                    <td class="slds-size_2-of-12">
+                                        <lightning-input type="text" class="fields" 
+                                       data-item={tableNumber.key} variant="label-hidden" label="" max-length="255"
+                                        data-field="Description_if_not_within_library__c"
+                                        name="Description if not within library"
+                                        value={obj.Description_if_not_within_library__c} data-id={obj.Id}
+                                        onchange={updateValuesForECOAOnly}></lightning-input>
+                                    </td>
+                                    <td data-label="" class="slds-size_2-of-12">
+                                        <lightning-combobox variant="label-hidden" 
+                                        data-item={tableNumber.key} value={obj.Select_Device_Type__c}
+                                        data-field="Select_Device_Type__c" data-id={obj.Id}
+                                        options={deviceTypePicklistValues} onchange={updateValuesForECOAOnly}>
+                                        </lightning-combobox>
+                                    </td>
+                                    <td class="slds-size_2-of-12">
+                                        <lightning-input type="text" class="fields" 
+                                       data-item={tableNumber.key} variant="label-hidden" label="" max-length="255"
+                                        data-field="Specific_Device_Strategy__c" name="Select Device Type"
+                                        value={obj.Specific_Device_Strategy__c} data-id={obj.Id}
+                                        onchange={updateValuesForECOAOnly}></lightning-input>
+                                    </td>
+                                    <td data-label="" class="slds-size_2-of-12">
+                                        <lightning-combobox variant="label-hidden" 
+                                        data-item={tableNumber.key} value={obj.COA_Type__c}
+                                        data-field="COA_Type__c" data-id={obj.Id}
+                                        options={cOATypePicklistValue} onchange={updateValuesForECOAOnly}>
+                                        </lightning-combobox>
+                                    </td>
+                                    <td class="slds-size_1-of-12">
+                                        <lightning-button-icon style="text-align:center" icon-name="action:delete"
+                                        data-field={recordTypeIdECOAOnly} data-item={tableNumber.key}
+                                        alternative-text="Delete" title="Delete" data-id={obj.Id}
+                                        onclick={handleDeleteRowAction}></lightning-button-icon>
+                                    </td>
+                                </tr>
+                            </template>
+                            </tbody>
+                        </table>
+                    </lightning-card>
+                </div>
+                </template>
+                <footer class="slds-modal__footer">
+                <div class="slds-grid slds-grid_align-center">
+                    <button class="slds-button slds-button_brand" onclick={saveCollectionToolRecordsListForECOAOnly}
+                        title="Continue">Save</button>
+                    <button class="slds-button slds-button_outline-brand" onclick={navigateToRecord}
+                        title="Cancel">Cancel</button>
+                </div>
+                </footer>
+            </template>
+        </div>
+       </lwc>
+    </div>
+</template>

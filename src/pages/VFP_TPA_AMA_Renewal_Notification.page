@@ -1,0 +1,882 @@
+<apex:page Controller="CNT_TPA_AMA_RenewalDocGenerator" sideBar="false" showHeader="false" cache="false" action="{!sendEmailForOldReqProcInitiate}" standardStylesheets="false" lightningStylesheets="true"> 
+    <apex:slds />
+    <!-- Added for site to community logic submission Starts-->
+    <script type="text/javascript">
+        console.log('currentLoggedInUserProfile0::::'+'{!currentUserProfileName}');
+        function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+		}
+        console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+        if('{!currentUserProfileName}' == 'tpa Profile') {
+            var qryString = '';
+            var urlParams = getUrlVars();
+            for(var key in urlParams) {
+                if(urlParams.hasOwnProperty(key)) {
+                    var val = urlParams[key];
+                    qryString += key + '=' + val + '&';
+                }
+            }
+            console.log('quryString-1:::'+JSON.stringify(urlParams));
+            console.log('quryString:::'+qryString);
+            qryString = qryString.slice(0, -1);
+            console.log('quryString0:::'+qryString);
+            console.log('quryString1:::'+'{!tpaCommunityUrl}');
+            window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_AMA_Renewal_Notification&' + qryString;
+        }
+    </script>
+    <apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+        <!-- Added for site to community logic submission end-->
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <script src="../static/102010/js/picklist.js"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->
+
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script><!-- Added by C.P.Pandey under CR-7565 -->
+
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+
+            <!-- Added by C.P.Pandey Custom popup start -->
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <!-- Added by C.P.Pandey Custom popup end -->
+
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** -->
+
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+
+    <style>
+        .labelText {
+            color:#4a4a56;
+            font-weight:bold;
+        }
+        .headingText {
+            color: #000;
+            font-size: 1.3em;
+        }
+        /**** Error Message Style Start ****/
+        .message .messageText h4
+        {
+            font-size:13px;
+            margin-left: 30px;
+            margin-top: 0px;
+        }
+
+        .message ul li
+        {
+            list-style:disc;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .message ul
+        {
+            margin-top: 40px;
+        }
+
+       .textbox {
+            background: white;
+            border: 1px solid #DDD;
+            border-radius: 5px;
+            box-shadow: 0 0 5px #DDD inset;
+            color: #666;
+            outline: none;
+            height:25px;
+            width: 275px;
+        }
+
+        .vertical-line {
+            border-left:medium #CC0000 solid;
+            margin-right:1px;
+        }
+
+        #menu {
+            padding:0;
+            margin-Left:0;
+            margin-Top:20px;
+        }
+
+        #menu li {
+            margin-Top:5px;
+            margin-left:100px;
+        }
+
+        div {
+            text-align: justify;
+        }
+        pre{
+                margin:0px;
+                font-family: Arial !important;
+            }
+        /**** Error Message Style End ****/
+    </style>
+    <script type="text/javascript">
+
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMARenewalProcess', ['ui.bootstrap']);
+
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$location', '$filter', '$modal', '$log', '$window', function ($scope, $location, $filter, $modal, $log, $window)
+        {
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.$log.info('Vendor Renewal form');
+            $scope.rootObject = {};
+            $scope.rootObject.viewMode = '';
+            $scope.rootObject.type = '';
+            $scope.rootObject.isProcessOldType = getParameterByName('processType') == 'OldRequest';
+            $scope.rootObject.isAMARenCancAcknowledged = getParameterByName('processType') == 'amaRenAcknowledge';
+            $scope.rootObject.isVendorRenAcknowledged = getParameterByName('processType') == 'isVendorRenAcknowledged'; // added by Neha Bansal under CR-12117
+            $scope.rootObject.isLinkDisabled = {!isLinkDisabled};
+            $scope.rootObject.isVendorRenAcknowledgedCompleted = false; // added by Neha Bansal under CR-12117
+            $scope.$log.info('$scope.rootObject.isLinkDisabled:::'+$scope.rootObject.isLinkDisabled);
+
+            if(getParameterByName('oldReqProcInitiated') == 'true' ){
+                window.location.href = '/' + getParameterByName('id');
+            }
+
+            $scope.rootObject.amaAgreementObj = {};
+            $scope.rootObject.amaAgreementObj.id = '';
+            $scope.rootObject.amaAgreementObj.Agreement_Name__c = '';  // agreement file name
+            $scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = '';  // vendor contact name
+            $scope.rootObject.amaAgreementObj.Client__c = '';  // Client name
+            $scope.rootObject.amaAgreementObj.TPA_Request__c = '';  // tpa Request id
+            $scope.rootObject.amaAgreementObj.Contract_Type__c = '';
+
+            $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = '';   // vendor Legal Name
+            $scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = '';   // Agreement Start Date
+            $scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = '';  // Initial Termination Date
+            $scope.rootObject.amaAgreementObj.Agreement_End_Date__c = '';    // Agreement End Date
+            $scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c ='';   // AMA Variables Requested
+            $scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = '';  // AMA Project USEs
+            $scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = '';   // How long will Vendor have access to Data
+            $scope.rootObject.amaAgreementObj.Vendor_Name_who_Cancelled_Renewal__c = '';
+            $scope.rootObject.amaAgreementObj.Client_Company_Name__c = '';
+            $scope.rootObject.amaAgreementObj.Next_Year__c = '';
+            $scope.rootObject.amaAgreementObj.Current_Year__c = ''; // Added by Neha Bansal under CR-12117
+            $scope.rootObject.currentDate = '{!currentDateString}';
+
+            <!--other values -->
+            $scope.rootObject.Agreement_file_Name = '';
+            $scope.rootObject.TPA_Request_number = ''; 
+            $scope.rootObject.Client_Company_Name = ''; 
+            $scope.rootObject.vendorCompanyName = '';   
+
+
+            $scope.rootObject.MsgShow = 'false';
+            $scope.rootObject.renewalErrorMessage = '' ;
+            $scope.rootObject.renewalSuccessMessage = '';
+            $scope.rootObject.isProcessing = false;
+            $scope.rootObject.vendorselectedRenewalCancelReason = '';
+            $scope.rootObject.acknowledgeSuccessMessage = ''; 
+            $scope.rootObject.acknowledgeErrorMessage = ''; 
+
+
+            $scope.rootObject.amaAgreementObj.Status_of_Renewal_Process__c = '';
+            $scope.rootObject.tpaRequestStatus = ''; 
+
+            <!--Populating TPA AMA Agreement Detail Values for Renewal Form -->
+            $scope.rootObject.amaAgreementDetailObject = JSON.parse('{!JSENCODE(amaAgreementDetailAsString)}');
+
+            $scope.rootObject.onLoadForm = function() {
+
+                if(getParameterByName('viewMode').trim().length > 0 )
+                {
+                    $scope.rootObject.viewMode = getParameterByName('viewMode').trim();
+                }
+
+                if($scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  != 'Vendor Responded Cancel' && $scope.rootObject.isAMARenCancAcknowledged) // Modified By Neha Bansal under CR-12274
+                {
+                    $scope.rootObject.renewalErrorMessage = 'Sorry, the cancellation process has been acknowledged already.';
+                }
+                $scope.$log.info('getParameterByName(isQaTest):::'+getParameterByName('isQaTest'));
+                $scope.$log.info('view Mode'+$scope.rootObject.viewMode +'status of renewal'+ $scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c);
+                if($scope.rootObject.isLinkDisabled && getParameterByName('isQaTest') != 'true' && getParameterByName('processType') != 'amaRenAcknowledge')
+                {
+                    $scope.rootObject.renewalErrorMessage = 'Sorry, This link is disabled now.';
+                      if($scope.rootObject.isVendorRenAcknowledged){
+                      $scope.rootObject.acknowledgeErrorMessage = 'Sorry, This link is disabled now.';
+                      $scope.rootObject.isVendorRenAcknowledgedCompleted = true;
+                    }
+                }
+
+                if($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'Renewal')
+                {
+                    if($scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'Vendor Responded Cancel' || $scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'AMA Acknowledged') // Modified By Neha Bansal under CR-12274
+                    {
+                        $scope.rootObject.acknowledgeErrorMessage = 'Sorry, the request has been submitted already.';
+                        $scope.rootObject.isVendorRenAcknowledgedCompleted = true;
+                    }
+                    else if($scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'Vendor Confirmed Renewal')
+                    {
+                        $scope.rootObject.acknowledgeErrorMessage = 'Sorry, the request has been submitted already.';
+                        $scope.rootObject.isVendorRenAcknowledgedCompleted = true;
+                    }
+                    else if($scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'Awaiting Vendor Response for renewal')
+                    {
+                        if(!$scope.rootObject.isProcessOldType){
+                            $scope.rootObject.amaAgreementObj.id = $scope.rootObject.amaAgreementDetailObject.Id;
+                            $scope.rootObject.amaAgreementObj.Agreement_Name__c = $scope.rootObject.amaAgreementDetailObject.Agreement_Name__c;
+                            $scope.rootObject.Agreement_file_Name = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Related_Agreement_Name__c;
+                            $scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = $scope.rootObject.amaAgreementDetailObject.Vendor_Contact_Name__c;
+                            $scope.rootObject.vendorCompanyName = $scope.rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c;
+                            $scope.rootObject.amaAgreementObj.Client_Company_Name__c = $scope.rootObject.amaAgreementDetailObject.Client_Company_Name__c;
+                            $scope.rootObject.amaAgreementObj.Client__c = $scope.rootObject.amaAgreementDetailObject.Client__c;
+                            $scope.rootObject.amaAgreementObj.TPA_Request__c = $scope.rootObject.amaAgreementDetailObject.TPA_Request__c;
+                            $scope.rootObject.TPA_Request_number = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Name;
+                            $scope.rootObject.Client_Company_Name = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Client_Company_Name__c;
+                            $scope.rootObject.Employee_Accessing_Data_Location__c = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Employee_Accessing_Data_Location__c;
+                            $scope.rootObject.amaAgreementObj.Next_Year__c = $scope.rootObject.amaAgreementDetailObject.Next_Year__c;
+                            $scope.rootObject.amaAgreementObj.Current_Year__c = $scope.rootObject.amaAgreementDetailObject.Current_Year__c;
+
+                            $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c;
+                            $scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_Start_Date__c;
+                            $scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = $scope.rootObject.amaAgreementDetailObject.Initial_Termination_Date__c;
+                            $scope.rootObject.amaAgreementObj.Agreement_End_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_End_Date__c;
+                            $scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c = $scope.rootObject.amaAgreementDetailObject.AMA_TypeOfPrescriberLevelData__c;
+                            $scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = $scope.rootObject.amaAgreementDetailObject.AMA_Services_Provided__c;
+                            $scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = $scope.rootObject.amaAgreementDetailObject.AMA_Howlong_SP_has_Data_Access__c;
+                            $scope.rootObject.tpaRequestStatus = $scope.rootObject.amaAgreementDetailObject.TPA_Request__r.Request_Status__c;
+                            if($scope.rootObject.amaAgreementDetailObject.Contract_Type__c == 'Existing Agreement')
+                                $scope.rootObject.amaAgreementObj.Contract_Type__c = $scope.rootObject.amaAgreementDetailObject.Ex_Contract_Type__c;
+                            else
+                                $scope.rootObject.amaAgreementObj.Contract_Type__c = $scope.rootObject.amaAgreementDetailObject.Contract_Type__c;
+                            $scope.rootObject.amaAgreementObj.Status_of_Renewal_Process__c = $scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c;
+                        }
+                        else{
+                            if($scope.rootObject.amaAgreementDetailObject.Service_Provider__r != null){
+                                $scope.rootObject.vendorCompanyName = $scope.rootObject.amaAgreementDetailObject.Service_Provider__r.Name;
+                                $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementDetailObject.Service_Provider__r.Name;
+                            }
+                            if($scope.rootObject.amaAgreementDetailObject.Client__r != null){
+                                $scope.rootObject.Client_Company_Name = $scope.rootObject.amaAgreementDetailObject.Client__r.Name;
+                                $scope.rootObject.amaAgreementObj.Client_Company_Name__c = $scope.rootObject.amaAgreementDetailObject.Client__r.Name;
+                            }
+                            $scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_Start_Date__c;
+                            $scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = $scope.rootObject.amaAgreementDetailObject.Initial_Termination_Date__c;
+                            $scope.rootObject.amaAgreementObj.Agreement_End_Date__c = $scope.rootObject.amaAgreementDetailObject.Agreement_End_Date__c;
+                            $scope.rootObject.amaAgreementObj.id = $scope.rootObject.amaAgreementDetailObject.Id;
+                            $scope.rootObject.amaAgreementObj.Contract_Type__c = $scope.rootObject.amaAgreementDetailObject.Type_of_AMA_Agreement__c;
+                            $scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = $scope.rootObject.amaAgreementDetailObject.Service_Provider_Contact_f__c;
+                            $scope.rootObject.Agreement_file_Name = $scope.rootObject.amaAgreementDetailObject.Related_Agreement_Name__c;
+                            $scope.rootObject.TPA_Request_number = $scope.rootObject.amaAgreementDetailObject.Name;
+                            $scope.rootObject.tpaRequestStatus = $scope.rootObject.amaAgreementDetailObject.Request_Status__c;
+
+                        }
+                        $scope.$log.info('request status'+$scope.rootObject.tpaRequestStatus);
+                        if(!$scope.rootObject.isLinkDisabled && $scope.rootObject.isVendorRenAcknowledged)
+                        {
+                          $scope.rootObject.isProcessing = true;
+                          window.scrollTo(0,0);
+                          showLoading();
+
+                          CNT_TPA_AMA_RenewalDocGenerator.sendVendorAcknowlwdgeNotification($scope.rootObject.amaAgreementObj.id, function(result, event)
+                          {
+                            if(event.type == 'exception')
+                            {
+                              hideLoading();
+                              $scope.rootObject.acknowledgeErrorMessage = result;
+                              $scope.$log.info('Exception: ' + event.message);
+                              $scope.rootObject.isProcessing = false;
+                              return false;
+                            }
+                            else if(result != null && result == 'Success')
+                            {
+                              $scope.rootObject.acknowledgeSuccessMessage = 'Your acknowledgment has been submitted successfully.';
+                              hideLoading();
+                            }
+                            $scope.rootObject.isVendorRenAcknowledgedCompleted = true;
+                            hideLoading();
+                            $scope.applyChanges();
+                          });
+                        }
+                        if($scope.rootObject.tpaRequestStatus != null && ($scope.rootObject.tpaRequestStatus == 'Cancelled' || $scope.rootObject.tpaRequestStatus == 'Expired'))
+                        {
+                            $scope.rootObject.renewalErrorMessage = 'Sorry, the link is not accessible.';
+                        }
+                    }
+                    else if($scope.rootObject.isProcessOldType && $scope.rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'AMA Acknowledged')
+                    {
+                        $scope.$log.info('Er-3196');
+                        CNT_TPA_AMA_RenewalDocGenerator.sendClientNotification($scope.rootObject.amaAgreementDetailObject.Id,function(result, event)
+                        {
+                            if(event.type == 'exception')
+                            {
+                                hideLoading();
+                                $scope.$log.info('Exception: ' + event.message);
+                                return false;
+                            }
+                            else if(result != null && result == 'success' )
+                            {
+                                window.location.href = '/' + getParameterByName('id');
+                            }
+                            else
+                            {
+                                hideLoading();
+                                $scope.$log.info('Event Type: ' + event.type);
+                                return false;
+                            }
+                            if(!$scope.$$phase) {
+                              $scope.$apply();
+                            }
+                            hideLoading();
+                        },
+                        {escape: false}
+                        );
+                    }
+                    else
+                    {
+                         $scope.rootObject.renewalErrorMessage = 'Sorry, the request has been submitted already.';
+                    }
+                }
+            }
+
+            $scope.rootObject.onLoadForm();
+
+            // $scope.rootObject.saveAmaAcknowledgment = function(){
+            //     $scope.rootObject.amaObj = {};
+            //     $scope.rootObject.amaObj.id = $scope.rootObject.amaAgreementDetailObject.Id;
+            //     $scope.rootObject.amaObj.Status_of_Renewal_Process__c = 'AMA Acknowledged';
+            //     $scope.rootObject.isProcessing = true;
+            //     window.scrollTo(0,0);
+            //     showLoading();
+            //     CNT_TPA_AMA_RenewalDocGenerator.saveAmaAcknowledgment(JSON.stringify($scope.rootObject.amaObj), function(result, event)
+            //     {
+            //         if(event.type == 'exception')
+            //         {
+            //             hideLoading();
+            //             $scope.$log.info('Exception: ' + event.message);
+            //             $scope.rootObject.isProcessing = false;
+            //             return false;
+            //         }
+            //         else if(result != null && result == 'Success')
+            //         {
+            //             $scope.rootObject.renewalSuccessMessage = 'Your acknowledgment has been submitted successfully.';
+            //             hideLoading();
+            //             $scope.applyChanges();
+            //         }
+            //         hideLoading();
+            //     });
+            // }
+
+            $scope.rootObject.saveVendorResponse = function(){
+
+                $scope.$log.info('save Renewal Process'+$scope.rootObject.amaAgreementObj.id);
+
+                if($scope.rootObject.acknowledged == null || $scope.rootObject.acknowledged == '') {
+                    $scope.popupAlert('Please confirm the acknowledgement' , function(){});
+                    return false;
+                }
+
+                if($scope.rootObject.amaAgreementObj.Vendor_Name_who_Cancelled_Renewal__c == null || $scope.rootObject.amaAgreementObj.Vendor_Name_who_Cancelled_Renewal__c == '') {
+                    $scope.popupAlert('Please provide your name for acknowledgement' , function(){});
+                    return false;
+                }
+
+                //validation messages
+                $scope.rootObject.amaObj = {};
+
+                $scope.rootObject.amaObj.id = $scope.rootObject.amaAgreementObj.id;
+                $scope.rootObject.amaObj.Status_of_Renewal_Process__c = 'Vendor Responded Cancel'; // Modified By Neha Bansal under CR-12274
+                $scope.rootObject.amaObj.Vendor_Name_who_Cancelled_Renewal__c = $scope.rootObject.amaAgreementObj.Vendor_Name_who_Cancelled_Renewal__c;
+                $scope.rootObject.isProcessing = true;
+
+                window.scrollTo(0,0);
+                showLoading();
+
+                if(!$scope.rootObject.isProcessOldType && !$scope.rootObject.isVendorRenAcknowledged){
+                    CNT_TPA_AMA_RenewalDocGenerator.saveVendorResponse(JSON.stringify($scope.rootObject.amaObj), function(result, event)
+                    {
+                        if(event.type == 'exception')
+                        {
+                            hideLoading();
+                            $scope.$log.info('Exception: ' + event.message);
+                            $scope.rootObject.isProcessing = false;
+                            return false;
+                        }
+                        else if(result != null && result == 'Success')
+                        {
+                            $scope.rootObject.renewalSuccessMessage = 'Congratulations, Your response has been submitted.';
+
+                            CNT_TPA_AMA_RenewalDocGenerator.generateDocument($scope.rootObject.amaObj.id,$scope.rootObject.Agreement_file_Name, $scope.rootObject.isProcessOldType, function(result, event)
+                            {
+                                if(event.type == 'exception')
+                                {
+                                    hideLoading();
+                                    $scope.$log.info('Exception: ' + event.message);
+                                    $scope.rootObject.isProcessing = false;
+                                    return false;
+                                }
+                                else if(result != null && result == 'Success')
+                                {
+                                    hideLoading();
+                                    angular.element($('#controllerPage')).scope().applyChanges();
+                                }
+                                else
+                                {
+                                    $scope.rootObject.isProcessing = false;
+                                    hideLoading();
+                                    $scope.$log.info('Event Type: ' + event.type);
+                                    return false;
+                                }
+                            }
+                            );
+                            return true;
+                        }
+                        else if(result != null && result == 'alreadySubmittedResponse')
+                        {
+                            $scope.rootObject.renewalErrorMessage = 'Sorry, you have already submitted your response.';
+                            hideLoading();
+                            angular.element($('#controllerPage')).scope().applyChanges();
+                            return true;
+                        }
+                        else
+                        {
+                            $scope.rootObject.isProcessing = false;
+                            hideLoading();
+                            $scope.$log.info('Event Type: ' + event.type);
+                            return false;
+                        }
+
+                        hideLoading();
+                    },
+                    {escape: false}
+                    );
+                }
+                else{
+                    CNT_TPA_AMA_RenewalDocGenerator.saveVendorResponseForOldRequests(JSON.stringify($scope.rootObject.amaObj), function(result, event)
+                    {
+                        if(event.type == 'exception')
+                        {
+                            hideLoading();
+                            $scope.$log.info('Exception: ' + event.message);
+                            $scope.rootObject.isProcessing = false;
+                            return false;
+                        }
+                        else if(result != null && result == 'Success')
+                        {
+                            $scope.rootObject.renewalSuccessMessage = 'Congratulations, Your response has been submitted.';
+
+                            CNT_TPA_AMA_RenewalDocGenerator.generateDocument($scope.rootObject.amaObj.id,$scope.rootObject.Agreement_file_Name, $scope.rootObject.isProcessOldType, function(result, event)
+                            {
+                                if(event.type == 'exception')
+                                {
+                                    hideLoading();
+                                    $scope.$log.info('Exception: ' + event.message);
+                                    $scope.rootObject.isProcessing = false;
+                                    return false;
+                                }
+                                else if(result != null && result == 'Success')
+                                {
+                                    hideLoading();
+                                    angular.element($('#controllerPage')).scope().applyChanges();
+                                }
+                                else
+                                {
+                                    $scope.rootObject.isProcessing = false;
+                                    hideLoading();
+                                    $scope.$log.info('Event Type: ' + event.type);
+                                    return false;
+                                }
+                            }
+                            );
+                            return true;
+                        }
+                        else if(result != null && result == 'alreadySubmittedResponse')
+                        {
+                            $scope.rootObject.renewalErrorMessage = 'Sorry, you have already submitted your response.';
+                            hideLoading();
+                            angular.element($('#controllerPage')).scope().applyChanges();
+                            return true;
+                        }
+                        else
+                        {
+                            $scope.rootObject.isProcessing = false;
+                            hideLoading();
+                            $scope.$log.info('Event Type: ' + event.type);
+                            return false;
+                        }
+
+                        hideLoading();
+                    },
+                    {escape: false}
+                    );
+                }
+            }
+
+            // $scope.rootObject.openChildFileUpload = function()
+            // {
+            //     var left = (screen.width/2)-(235);
+            //     var top = (screen.height/2)-(100);
+            //     childWindow = window.open('/tpa/VFP_TPA_AMA_OffshoreUploadAttachment?id='+$scope.rootObject.amaAgreementObj.id, '', 'toolbar=no,width=470,height=200,left='+left+',top='+top);
+            //     showLoading();
+            //     winClosed = setInterval(childWindowCloseCheck, 150);
+            //     childWindow.focus();
+            // }
+
+            function childWindowCloseCheck()
+            {
+                if (childWindow != null && childWindow.closed) {
+                    clearInterval(winClosed);
+                    hideLoading();
+                }
+            }
+
+            $scope.popupAlert = function(msg, truePart)
+            {
+                popup(msg, {'animate':true},
+                function(r)
+                {
+                    if(r && truePart != null)
+                        truePart();
+                });
+            }
+
+
+            $scope.getFormattedValue = function(label){
+              var addText = label;
+              if(addText!= null && addText!= '')
+                  return addText.split(';').join(', ');
+              else
+                  return addText;
+            };
+
+
+            //****** Angular Apply All Changes Event Start ******//
+            //*** function triggers and applies all angular scope changes explicitly ***//
+            $scope.applyChanges = function()
+            {
+                if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                    $scope.$apply();
+            }
+            //****** Angular Apply All Changes Event End ******//
+
+
+            //*** function to read Query strings Start ***//
+            function getParameterByName(name)
+            {
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            //*** function to read Query strings End ***//
+
+            window.CallParent = function(fileName) {
+                childWindow.close();
+                var scope = angular.element(document.getElementById("uploadedFile")).scope();
+                scope.rootObject.uploadedFileName = fileName;
+                scope.$apply();
+            }
+
+
+    }]);
+
+        $(document).ready(function(){
+            var childWindow;
+            var winClosed;
+            $("h5").click(function(){
+                $("#rulesPanelDivID").removeAttr('style');
+                var currentText = $(this).text();
+                var showText = 'Show Existing AMA Rules:';
+                var hideText = 'Hide Existing AMA Rules:';
+                if(currentText == showText) {
+                    $(this).text(hideText);
+                    $("#rulesPanelDivID").show();
+                } else if(currentText == hideText) {
+                    $(this).text(showText);
+                    $("#rulesPanelDivID").hide();
+                }
+            });
+        });
+
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+
+    </script>
+    </head>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <apex:form id="theForm">
+        <div id="ng-app" ng-app="AMARenewalProcess">
+            <div id="controllerPage" ng-controller="controllerPage">
+              <c:VFC_TPA_LoadingImage />
+                <div style="display:none;" ng-cloak="ng-cloak" ng-show="!rootObject.isVendorRenAcknowledged && !rootObject.isProcessInitiatedForOldRequests && !rootObject.isAMARenCancAcknowledged">
+                    <!-- AMA Renewal process for Vendor starts -->
+                    <div style="margin:40px; background-color: white; border-radius: 5px;" id="block1" ng-if="rootObject.viewMode == 'Renewal' && rootObject.amaAgreementDetailObject.Status_of_Renewal_Process__c  == 'Awaiting Vendor Response for renewal' && rootObject.renewalErrorMessage =='' && rootObject.renewalSuccessMessage== ''">
+                    <apex:outputPanel >
+                        <apex:pageBlock >
+                            <apex:pageblocksection collapsible="false" columns="1" >
+                                <div style="margin:40px;">
+                                    <div >
+                                        <div>
+                                            <div style="text-align:right;">Reference Number {{rootObject.TPA_Request_number}}</div>
+                                            <div>{{rootObject.currentDate | date:'MM/dd/yyyy'}}</div>
+                                        </div>
+                                        <br/><br/>
+                                        <div>{!$Label.TPA_IQVIA_Keyword} </div>
+                                        <div>One IMS Drive <br/>
+                                        Plymouth Meeting, PA 19462</div>
+                                        <br/>
+                                        <div> RE: {{rootObject.TPA_Request_number}} {{rootObject.Agreement_file_Name}}</div><br/>
+                                        <div> Dear {{rootObject.amaAgreementObj.Vendor_Contact_Name__c}},</div><br/>
+                                        <div style="text-align:justify;">
+                                            <p>Pursuant to Article 6 of the AMA&nbsp;<span ng-if="false">Service Bureau II</span>{{rootObject.amaAgreementObj.Contract_Type__c}} Third Party Support User Agreement dated {{rootObject.amaAgreementObj.Agreement_Start_Date__c | date:'MM/dd/yyyy'}} between {!$Label.TPA_IQVIA_Keyword} (Database Licensee) and {{rootObject.vendorCompanyName}} (Third Party Support User) on behalf of {{rootObject.amaAgreementObj.Client_Company_Name__c}}, this letter provides notice that {{rootObject.vendorCompanyName}} is electing to terminate said Agreement and are terminating the Agreement for the following reason:</p> <!-- //Modified by Neha Bansal under Issue-11410, CR-12117 -->
+                                        </div><br/><br/>
+                                        <div style="margin-left:20px;">
+                                            <label>Project will not renew for next calendar year.</label><br/>
+                                            <ul style="margin-left:35px;margin-right:100px;">
+                                                <li>
+                                                    <span>
+                                                        <Strong>
+                                                            <span>ATTENTION: All physician level data is required to be destroyed/returned to client.</span>
+                                                            <span ng-if="!rootObject.isProcessOldType">By signing this notice, you acknowledge you will destroy/return the physician level data to said client on or before December 31,</span>
+                                                            <span ng-if="!rootObject.isProcessOldType">{{rootObject.amaAgreementObj.Current_Year__c}}.</span>
+                                                            <span ng-if="rootObject.isProcessOldType">If checked, by signing this notice you acknowledge you have destroyed/returned the physician level data.</span>
+                                                        </Strong>
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <br/><br/>
+                                        <div>
+                                            <div>{{rootObject.vendorCompanyName}} <Strong>ACKNOWLEDGEMENT </Strong></div><br/>
+                                            <div style="margin-left:20px;">
+                                              	<div class="slds-checkbox">
+										           <input type="checkbox" ng-model="rootObject.acknowledged" id="{{rootObject.vendorCompanyName}}"/> 
+										              <label class="slds-checkbox__label" for="{{rootObject.vendorCompanyName}}">
+										                  <span class="slds-checkbox_faux"></span>
+										                  <span class="slds-form-element__label">
+										                  	{{rootObject.vendorCompanyName}} hereby confirms the above cancelation reason and requests to cancel the associated agreement for 
+										                  	<span ng-if="!rootObject.isProcessOldType">{{rootObject.amaAgreementObj.Next_Year__c}}</span>
+                                               				<span ng-if="rootObject.isProcessOldType">2017</span>
+									                  	  </span>
+										              </label>
+										        </div>
+                                              	<br/>
+                                                <div>Acknowledged and deemed accurate by: <input class="slds-input" type="text"  style="width: 200px; padding: 2px;" ng-model="rootObject.amaAgreementObj.Vendor_Name_who_Cancelled_Renewal__c" placeholder="Please type your name here"/></div>
+                                                <br/>
+                                                <button class="slds-button slds-button_brand" onclick="return false;" ng-click="rootObject.saveVendorResponse();" ng-disabled="rootObject.isProcessing">Submit</button>
+
+                                            </div>
+
+                                        </div>
+                                    </div><br/><br/>
+                                    <div >
+                                        <h5 style="color:#808080;">{!$Label.TPA_IQVIA_Keyword} Third Party Access Program – AMA Reference USE ONLY –</h5>
+                                        <br/><br/>
+                                        <pre><span><b>TPA Request:</b> {{rootObject.TPA_Request_number}}</span></pre>
+                                        <pre><span><b>Vendor Legal Name:</b> {{rootObject.amaAgreementObj.Vendor_Legal_Name__c}}</span></pre>
+                                        <pre><span><b>Client Company Name:</b> {{rootObject.amaAgreementObj.Client_Company_Name__c}}</span></pre>
+                                        <pre><span><b>Agreement Start Date:</b> {{rootObject.amaAgreementObj.Agreement_Start_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre><span><b>Initial Termination Date:</b> {{rootObject.amaAgreementObj.Initial_Termination_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre><span><b>Agreement End Date:</b> {{rootObject.amaAgreementObj.Agreement_End_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre style="overflow-x: hidden;"><span style="white-space: pre-wrap;" ng-if="!rootObject.isProcessOldType" ><b>AMA Variables Requested:</b> {{getFormattedValue(rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c)}}</span></pre>
+                                        <pre><span ng-if="!rootObject.isProcessOldType"><b>AMA Project USEs:</b> {{getFormattedValue(rootObject.amaAgreementObj.AMA_Services_Provided__c)}}</span></pre>
+                                        <pre><span ng-if="!rootObject.isProcessOldType"><b>How long will Vendor have access to Data:</b> {{rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c}}</span></pre>
+                                    </div><br/>
+                                </div>
+                            </apex:pageblocksection>
+                        </apex:pageBlock>
+                    </apex:outputPanel>
+
+                    </div>
+
+
+                </div>
+                <div style="display:none; margin:40px; background-color: white; border-radius: 5px;" class="slds-p-around_large" ng-cloak="ng-cloak" ng-show="!rootObject.isVendorRenAcknowledged && rootObject.isAMARenCancAcknowledged && rootObject.renewalErrorMessage == '' && rootObject.renewalSuccessMessage == ''"> 
+                    <div ng-if="rootObject.renewalErrorMessage == '' && rootObject.renewalSuccessMessage == '' ">
+                        <apex:outputPanel >
+                            <apex:pageBlock >
+                                <apex:pageblocksection collapsible="false" columns="1" >
+                                    <div>
+                                        <b>Good day AMA</b>
+                                    </div>
+                                    <div style="margin-top:15px;">
+                                        <b>YOUR ACTION IS REQUIRED: please click on the Acknowledge button below</b>
+                                    </div>
+                                    <div style="margin-top:15px;width: 95%;">
+                                        {!$Label.TPA_IQVIA_Keyword} has received a cancelation notification from {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} stating they do not wish 
+                                        to renew their AMA Agreement associated with a project {{rootObject.amaAgreementDetailObject.TPA_Request__r.Name}} on behalf of 
+                                        {{rootObject.amaAgreementDetailObject.Client_Company_Name__c}} for the next calendar year.
+                                    </div> 
+                                    <div style="margin-top:25px;">
+                                        Thank you,<br />{!$Label.TPA_IQVIA_Keyword} Third Party Access Program
+                                    </div> 
+                                    <!-- <div style="margin-top:10px;text-align:center;">
+                                        <button class="slds-button slds-button_brand" onclick="return false;" ng-click="rootObject.saveAmaAcknowledgment();" ng-disabled="rootObject.isProcessing">AMA Acknowledgment</button>
+                                    </div> -->
+                                    <div ><br/>
+                                        <h5 style="color:#808080;">{!$Label.TPA_IQVIA_Keyword} Third Party Access Program – AMA Reference USE ONLY –</h5> 
+                                        <br/><br/>
+                                        <pre><span><b>TPA Request: </b> {{rootObject.amaAgreementDetailObject.TPA_Request__r.Name}}</span></pre>
+                                        <pre><span><b>Vendor Legal Name: </b> {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}}</span></pre>
+                                        <pre><span><b>Client Company Name: </b> {{rootObject.amaAgreementDetailObject.Client_Company_Name__c}}</span></pre>
+                                        <pre><span><b>Agreement Start Date: </b> {{rootObject.amaAgreementDetailObject.Agreement_Start_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre><span><b>Initial Termination Date : </b> {{rootObject.amaAgreementDetailObject.Initial_Termination_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre><span><b>Agreement End Date: </b> {{rootObject.amaAgreementDetailObject.Agreement_End_Date__c | date:'MM/dd/yyyy'}}</span></pre>
+                                        <pre style="overflow-x: hidden;"><span style="white-space: pre-wrap;" ><b>AMA Variables Requested: </b> {{getFormattedValue(rootObject.amaAgreementDetailObject.AMA_TypeOfPrescriberLevelData__c)}}</span></pre>
+                                        <pre><span><b>AMA Project USEs: </b> {{getFormattedValue(rootObject.amaAgreementDetailObject.AMA_Services_Provided__c)}}</span></pre>
+                                        <pre><span><b>How long will Vendor have access to Data: </b> {{rootObject.amaAgreementDetailObject.AMA_Howlong_SP_has_Data_Access__c}}</span></pre>
+                                    </div><br/>
+                                </apex:pageblocksection>
+                            </apex:pageBlock>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div>
+					<div style="margin:40px;display:none;" id="block3" ng-show="rootObject.renewalErrorMessage =='' && rootObject.renewalSuccessMessage != '' ">
+                        <apex:outputPanel >
+                            <apex:pageBlock >
+                                <!-- Success Message Box Start -->
+                                <div  class="slds-theme_success slds-p-around_small" ng-if="rootObject.renewalSuccessMessage !='' ">
+                                    <div class="messageText slds-align_absolute-center">
+                                        <h2 id= 'msg' >{{rootObject.renewalSuccessMessage}}</h2>
+                                    </div><br/>
+                                </div>
+                            </apex:pageBlock>
+                        </apex:outputPanel>
+                    </div>
+                    <div class="slds-theme_error" style="margin:20px;display:none;" ng-show="rootObject.renewalErrorMessage !=''">
+                            <apex:outputPanel >
+                                <apex:pageBlock >
+                                    <!-- Error Message Box Start -->
+                                    <div class="message errorM3 slds-notify__content " role="alert">
+			                              <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+			                                  <div class="slds-col">
+			                                      <div class="slds-grid">
+			                                          <div class="slds-col slds-size_1-of-3"></div>
+			                                          <div class="slds-col slds-size_1-of-3">
+			                                              <h2 class="slds-text-heading_small">
+			                                                  <div class="messageText">
+			                                                      <span><h4>Errors</h4></span>
+			                                                  </div>
+			                                              </h2>
+			                                          </div>
+			                                          <div class="slds-col slds-size_1-of-3"></div>
+			                                      </div>
+			                                  </div>
+			                                  <div class="slds-col">
+			                                      <div class="slds-grid">
+			                                          <div class="slds-col slds-size_1-of-5"></div>
+			                                          <div class="slds-col slds-size_1-of-5"></div>
+			                                          <div class="slds-col slds-size_1-of-5">
+			                                              <ul>
+			                                                  <li>{{rootObject.renewalErrorMessage}}</li>
+			                                              </ul>
+			                                          </div>
+			                                          <div class="slds-col slds-size_1-of-5"></div>
+			                                          <div class="slds-col slds-size_1-of-5"></div>
+			                                      </div>
+			                                  </div>
+			                              </div>
+			                          </div>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+                        </div>
+                </div>
+                <div style="margin:40px;display:none;" ng-cloak="ng-cloak" ng-show="rootObject.acknowledgeErrorMessage =='' && rootObject.acknowledgeSuccessMessage != '' ">
+                    <apex:outputPanel >
+                        <apex:pageBlock >
+                            <!-- Success Message Box Start -->
+                            <div  ng-if="rootObject.acknowledgeSuccessMessage !='' " class="slds-theme_success slds-p-around_small">
+                                <div class="messageText slds-align_absolute-center">
+                                    <h2 id= 'msg'>{{rootObject.acknowledgeSuccessMessage}}</h2>
+                                </div><br/>
+                            </div>
+                        </apex:pageBlock>
+                    </apex:outputPanel>
+                </div>
+                <div class="slds-theme_error" ng-cloak="ng-cloak" ng-show="rootObject.acknowledgeErrorMessage !=''" style="margin:20px;display:none;">
+                    <apex:outputPanel >
+                        <apex:pageBlock >
+                            <!-- Error Message Box Start -->
+                            <div class="message errorM3 slds-notify__content " role="alert">
+	                              <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+	                                  <div class="slds-col">
+	                                      <div class="slds-grid">
+	                                          <div class="slds-col slds-size_1-of-3"></div>
+	                                          <div class="slds-col slds-size_1-of-3">
+	                                              <h2 class="slds-text-heading_small">
+	                                                  <div class="messageText">
+	                                                      <span><h4>Errors</h4></span>
+	                                                  </div>
+	                                              </h2>
+	                                          </div>
+	                                          <div class="slds-col slds-size_1-of-3"></div>
+	                                      </div>
+	                                  </div>
+	                                  <div class="slds-col">
+	                                      <div class="slds-grid">
+	                                          <div class="slds-col slds-size_1-of-5"></div>
+	                                          <div class="slds-col slds-size_1-of-5"></div>
+	                                          <div class="slds-col slds-size_1-of-5">
+	                                              <ul>
+	                                                  <li>{{rootObject.acknowledgeErrorMessage}}</li>
+	                                              </ul>
+	                                          </div>
+	                                          <div class="slds-col slds-size_1-of-5"></div>
+	                                          <div class="slds-col slds-size_1-of-5"></div>
+	                                      </div>
+	                                  </div>
+	                              </div>
+	                          </div>
+                        </apex:pageBlock>
+                    </apex:outputPanel>
+                </div>
+            </div>
+        </div>
+    </apex:form>
+    </body>
+    </html>
+</apex:outputPanel>    
+    
+</apex:page>

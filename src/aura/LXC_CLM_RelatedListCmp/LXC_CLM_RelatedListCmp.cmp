@@ -1,0 +1,59 @@
+<aura:component
+    implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction,lightning:isUrlAddressable"
+    access="global" controller="CNT_CLM_RelatedListController">
+    <aura:attribute type="String" name="sobjectApiName" required="true" default="Task" />
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute type="String" name="recordTypeId" />
+    <aura:attribute name="data" type="Object" />
+    <aura:attribute name="columns" type="List" />
+    <aura:attribute name="statusList" type="List" />
+    <aura:attribute type="String" name="sobjectLabel" access="private" default="Task" />
+    <aura:attribute type="String" name="sobjectLabelPlural" default="Tasks" />
+    <aura:attribute type="String" name="numberOfRecordsForTitle" access="private" default="0" />
+    <aura:attribute type="String" name="iconName" default="standard:task" />
+    <aura:attribute type="String" name="parentObjectLabel" />
+    <aura:attribute type="String" name="parentRecord" />
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+    <aura:attribute name="isRelatedList" type="Boolean" default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <!--Events-->
+    <aura:handler name="LXC_CLM_dataTableSaveEvent" event="c:LXC_CLM_dataTableSaveEvent"
+        action="{!c.saveTableRecords}" />
+    <!--Start of Headers-->
+    <lightning:card class="{!if(v.isRelatedList, 'slds-card_boundary relatedList', 'slds-card_boundary relatedList')}"
+        iconName="{!v.iconName}">
+        <aura:set attribute="actions">
+            <lightning:button onclick="{!c.doRefresh}" iconName="action:refresh" />
+        </aura:set>
+        <aura:set attribute="title">
+            <aura:if isTrue="{!!v.isRelatedList}">
+                <b>
+                    <a class="slds-card__header-link" onclick="{!c.handleGotoRelatedList}">
+                        {!v.sobjectLabelPlural}
+                    </a>
+                </b>
+                <aura:set attribute="else">
+                    <b>
+                        <h1>
+                            {!v.sobjectLabelPlural}
+                        </h1>
+                    </b>
+                </aura:set>
+            </aura:if>
+        </aura:set>
+        <aura:if isTrue="{!v.data.length > 0}">
+            <div class="divFileUpload">
+                <c:LXC_CLM_dataTable aura:id="datatableId" auraId="datatableId" columns="{!v.columns}" data="{!v.data}"
+                    showRowNumberColumn="true" />
+            </div>
+        </aura:if>
+        <aura:if isTrue="{!v.isLoading}">
+            <lightning:spinner size="medium" />
+        </aura:if>
+        <aura:set attribute="footer">
+            <aura:if isTrue="{!and(not(empty(v.data)),!v.isRelatedList)}">
+                <a onclick="{!c.handleGotoRelatedList}">View All</a>
+            </aura:if>
+        </aura:set>
+    </lightning:card>
+</aura:component>

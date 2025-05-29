@@ -1,0 +1,83 @@
+<!-- Created By :Ranu, date : 29th Aug, fix Issue_01626
+     Detail : this component is created to display error message on custom VF page with 'OK' button 
+     references - APTPS_Agreementstatuschange 
+-->
+<apex:component allowDML="true"> 
+<script>
+function cancel() {
+    try {
+
+      //Added for issue 3293 and 3603 by Jay
+      //Start Issue 3293  and 3603
+      if(document.location.href.search('retURL') >= 0) {
+
+         //alert(document.location.href.lastIndexOf("/"));
+         //var indexTo= document.location.href.lastIndexOf("/");
+         //var ru = document.location.href.substring(indexTo+1, document.location.href.length-1); 
+         
+          var url = getRetURL('retURL');            
+          redirectBack(url);
+        
+
+       } 
+       else
+       {
+            var indexOfId= document.location.href.lastIndexOf("id");
+            //var ObjId = document.location.href.substring(indexOfId+3, indexOfId+3+14); 
+            window.location.assign('/'+document.location.href.substring(indexOfId+3, indexOfId+3+15))
+       } 
+       //End Issue 3293  and 3603
+    
+    }catch (e) {
+      alert(e);
+ 
+    }
+    
+     function getRetURL( name )
+    { 
+        //this function just grabs HTTP params by name
+
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]"); 
+        var regexS = "[\\?&]"+name+"=([^&#]*)"; 
+        var regex = new RegExp( regexS ); 
+        var results = regex.exec( window.location.href );
+        var retVal = "";
+         if( results != null )  
+         {
+            retVal = results[1];
+            retVal = retVal.replace('%2F','');
+            retVal = retVal.replace('%3F','?');
+            retVal = retVal.replace('%3D','=');
+            retVal = retVal.split("%26rolodex",1); 
+         }        
+        return retVal ;
+    }
+
+    function redirectBack(returnURL)
+    {       
+          var currentPath = window.location.href; 
+          var orgURL = currentPath.split(window.location.pathname,1); 
+          orgURL = orgURL +'/'+ returnURL;
+          window.location.assign(orgURL);           
+    }
+  
+}
+</script>
+<apex:pageBlock >
+<apex:pageBlockSection columns="1">
+<apex:pageBlockSectionItem >
+<center>
+  <button type="button" class="btn" onclick="cancel();" style="width:30px;hieght:400px">OK </button>  
+  </center>
+   </apex:pageBlockSectionItem>
+   <apex:pageBlockSectionItem >
+  <apex:pageMessages escape="false" id="UserMessages"></apex:pageMessages> 
+ </apex:pageBlockSectionItem> 
+  <apex:pageBlockSectionItem > 
+  <center>
+    <button type="button" class="btn" onclick="cancel();" style="width:30px;hieght:400px">OK </button>  
+    </center> 
+    </apex:pageBlockSectionItem> 
+    </apex:pageBlockSection>
+ </apex:pageBlock>   
+</apex:component>

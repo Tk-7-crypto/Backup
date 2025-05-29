@@ -1,0 +1,92 @@
+<aura:component controller="CNT_PEP_SendFeedback">
+    <aura:attribute name="isModalOpen" type="boolean" default="false"/>
+    <aura:attribute name="isModalOpen2" type="boolean" default="false"/>
+    <aura:attribute name="feedbackTitle" type="String"/>    
+    <aura:attribute name="showError" type="boolean" default="false" />
+    <aura:attribute name="itemType" type="String"/>
+    <!--Attributes For Articles feedback-->
+    <aura:attribute name="article" type="Object" />
+    <aura:attribute name="kbArticleId" type="String"/>
+    <aura:attribute name="articleName" type="String"/>
+    <!--Attributes For Sales Collateral feedback-->
+    <aura:attribute name="fileId" type="String"/>
+    <aura:attribute name="fileName" type="String"/>
+    <aura:attribute name="isPRMSalesArticle" type="Boolean"/>
+    <aura:attribute name="likeOrDislike" type="String" default="" />
+    <aura:attribute name="recordId" type="String" default="" />
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:handler event="aura:waiting" action="{!c.waiting}"></aura:handler>
+    <aura:handler event="aura:doneWaiting" action="{!c.doneWaiting}"></aura:handler>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner aura:id="Spinner" alternativeText="Loading" variant="brand" />
+    </aura:if>
+    <aura:if isTrue="{!v.itemType == 'KB Article'}">
+        <div>
+            <h4 class="h4 mb-3">Was this article helpful?</h4>
+            <div class=" mb-3">
+                <div class="btn-group" role="group">
+                    <a href="javascript:void(0);" class="mr-1" data-value="Like" onclick="{!c.saveLikeOrDislike}">
+                        <lightning:buttonIcon class="{!v.likeOrDislike eq 'Like' ? 'fill' : ''}" iconName="utility:like" alternativeText="Like" title="Like" />
+                    </a>
+                    <a href="javascript:void(0);" class="ml-1" data-value="Dislike" onclick="{!c.saveLikeOrDislike}">
+                        <lightning:buttonIcon class="{!v.likeOrDislike eq 'Dislike' ? 'fill' : ''}" iconName="utility:dislike" alternativeText="Dislike" title="Dislike" />
+                    </a>        
+                </div>
+            </div>
+            <lightning:button  iconName="utility:chat" value="{!v.kbArticleId}" name="{!v.articleName}" class="slds-button slds-button--brand  slds-m-top_xx-small feedbackButton" label="Send Feedback" onclick="{!c.feedbackPopup}"/>
+        </div>
+        <aura:set attribute="else">
+            <div>
+                <lightning:button  iconName="utility:chat" value="{!v.fileId}" name="{!v.fileName}" class="slds-button slds-button--brand  slds-m-top_xx-small feedbackButton" label="Send Feedback" onclick="{!c.feedbackPopup}"/>
+            </div>
+        </aura:set>
+    </aura:if>
+    
+    <aura:if isTrue="{!v.isModalOpen}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h3 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Feedback on {!v.feedbackTitle}</h3>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <ui:inputTextArea aura:id="feedback" placeholder="Add feedback" maxlength="2000" rows="15"></ui:inputTextArea>
+                    <aura:if isTrue="{!v.showError}">
+                        <div aura:id="errorMessage" style="color:red">Please enter feedback.</div>
+                    </aura:if>
+                    <div align="center">
+                        <lightning:button  class="slds-button slds-button--brand" label="Send" onclick="{!c.saveDocFeedback}"/>
+                        <lightning:button  class="slds-button slds-button--brand" label="Cancel" onclick="{!c.closeModel}"/>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    <aura:if isTrue="{!v.isModalOpen2}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h3 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Your Feedback has been sent.</h3>
+                </header>
+                <div class="slds-modal__content slds-p-around_small" id="modal-content-id-1">
+                    <div align="center">
+                        <lightning:button  class="slds-button slds-button--brand" label="OK" onclick="{!c.closeModel}"/>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

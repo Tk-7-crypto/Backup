@@ -1,0 +1,950 @@
+<apex:page Controller="CNT_TPA_AMA_Cancellation_Template" cache="false" sideBar="false" showHeader="false" standardStylesheets="false" lightningStylesheets="true">
+    <apex:slds />
+	<!-- Added for site to community logic submission start -->
+<script type="text/javascript">
+    console.log('currentLoggedInUserProfile0::::'+'{!currentUserProfileName}');
+    function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+    console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+    if('{!currentUserProfileName}' == 'tpa Profile') {
+        var qryString = '';
+        var urlParams = getUrlVars();
+        for(var key in urlParams) {
+            if(urlParams.hasOwnProperty(key)) {
+                var val = urlParams[key];
+                qryString += key + '=' + val + '&';
+            }
+        }
+        console.log('quryString-1:::'+JSON.stringify(urlParams));
+        console.log('quryString:::'+qryString);
+        qryString = qryString.slice(0, -1);
+        console.log('quryString0:::'+qryString);
+        console.log('quryString1:::'+'{!tpaCommunityUrl}');
+        window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_AMA_Cancellation_Template&' + qryString;
+    }
+</script>
+<apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+<!-- Added for site to community logic submission end-->
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/> 
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <script src="../static/102010/js/picklist.js"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->  
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script><!-- Added by C.P.Pandey under CR-7565 -->
+            
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- Added by C.P.Pandey Custom popup start -->
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <!-- Added by C.P.Pandey Custom popup end -->
+            
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** --> 
+            
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+    
+    <style>
+        .labelText {
+            color:#4a4a56;
+            font-weight:bold;
+        }
+        .headingText {
+            color: #000;
+            font-size: 1.3em;
+        }
+        .pbSubheader
+        {
+            border-width: 2px 0 0;
+            border-style: solid;
+            border-color: #0084c9;
+            font-size: 12px !important;
+            padding: 4px 16px !important;
+            font-weight: bold;
+            margin-top: 15px;
+            overflow: hidden;
+            margin-bottom: 2px;
+            background-color: #10A6F0!important;
+            color: #222222!important;
+            background-image: none!important;
+        }
+        
+         
+        .vertical-line { 
+            border-left:medium #CC0000 solid;
+            margin-right:1px;
+        }
+        
+        ::-webkit-input-placeholder { /* WebKit browsers */
+            color:    #999;
+        }
+        :-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+            color:    #999;
+        }
+        ::-moz-placeholder { /* Mozilla Firefox 19+ */
+            color:    #999;
+        }
+        :-ms-input-placeholder { /* Internet Explorer 10+ */
+            color:    #999;
+        }
+        
+        /**** Error Message Style Start ****/
+        .message .messageText h4 {
+        
+            font-size:13px;
+            margin-left: 30px;
+            margin-top: 0px;
+        }
+        
+        .message ul li {
+        
+            list-style:disc;
+        }
+        
+        .message ul{ 
+                       
+            margin-left: 40px;
+            margin-top: 20px;
+        }
+        
+        
+        /* disabled checked input */
+        input:disabled:checked {
+        
+            outline-color: black;
+            outline-style: solid;
+            outline-width: 1.5pt;
+            
+        }
+        
+        
+    </style>       
+    <script type="text/javascript">
+        
+
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMACancelationProcess', ['ui.bootstrap']);
+        
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$location', '$filter', '$modal', '$log', '$window', function ($scope, $location, $filter, $modal, $log, $window) {
+        
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.$log.info('Vendor Cancelation form');
+            $scope.rootObject = {};
+            $scope.rootObject.viewMode = '';
+            $scope.rootObject.type = '';
+            
+            $scope.rootObject.amaAgreementObj = {};
+            $scope.rootObject.amaAgreementObj.id = '{!amaAgreementID}';
+            <!-- $scope.rootObject.amaAgreementObj.id =  // date generated -->
+            $scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = '';  // vendor contact name
+            $scope.rootObject.amaAgreementObj.Client__c = '';  // Client name
+            $scope.rootObject.amaAgreementObj.TPA_Request__c = '';  // tpa Request id
+            
+            $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = '';   // vendor Legal Name
+            $scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = '';   // Agreement Start Date
+            $scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = '';  // Initial Termination Date
+            $scope.rootObject.amaAgreementObj.Agreement_End_Date__c = '';    // Agreement End Date
+            $scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c ='';   // AMA Variables Requested
+            $scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = '';  // AMA Project USEs
+            $scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = '';   // How long will Vendor have access to Data
+            $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c = '';
+            $scope.rootObject.amaAgreementObj.Vendor_Name_who_Acknowledged_Cancelation__c = '';// Vendor Name who Acknowledged Cancelation
+            $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c  = '';// REVISED AMA Use and/or Frequency
+            $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c = '';// If vendor cancellation reason is 'Other'
+            $scope.rootObject.amaAgreementObj.Status_of_Cancelation_Request__c = ''; // Status of Cancelation Request
+            $scope.rootObject.amaAgreementObj.Client_Company_Name__c = ''; // Client Company Name
+            $scope.rootObject.amaAgreementObj.Request_Process_Initiated__c = '';
+            
+            
+            
+            <!--other values -->
+            $scope.rootObject.TPA_Request_number = ''; // tpa Request id
+            $scope.rootObject.Agreement_file_Name = ''; // agreement file name
+            $scope.rootObject.vendorCompanyName = '';   // vendor company name
+            $scope.rootObject.cancelationReasonList = {!CancelationReasonList};
+            $scope.rootObject.vendorselectedCancelationReason = '';
+            $scope.rootObject.acknowledged = false;
+            $scope.rootObject.requestStatus = '';
+            $scope.rootObject.Signature_Received__c  = '';
+            
+            $scope.rootObject.MsgShow = 'false';
+            $scope.rootObject.cancelationErrorMessage = '';
+            $scope.rootObject.cancelationSuccessMessage = '';
+            $scope.rootObject.isProcessing = false;
+            
+            <!--  Values for AMA cancelation appproval -->
+            $scope.rootObject.amaAgreementObj.DBL__c = '';
+            $scope.rootObject.amaAgreementObj.Contract_Type__c = '';
+            $scope.rootObject.amaAgreementObj.Current_Year_Fees__c ='';
+            $scope.rootObject.amaAgreementObj.Next_Year_Fees__c = '';
+            $scope.rootObject.AMAResponseforCancelation = '';
+            $scope.rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c = '';
+            $scope.rootObject.amaAgreementObj.Reasons_For_Not_Approval__c = '';
+            
+            <!-- added by Supriya Johari under ER-3888 starts -->
+            $scope.rootObject.amaAgreementObj.Term_requested_to_cancel__c = '';
+            $scope.rootObject.amaAgreementObj.Full_partial_credit__c = '';
+            <!-- added by Supriya Johari under ER-3888 ends -->
+            
+            $scope.$log.info('Vendor Cancelation form'+$scope.rootObject.amaAgreementDetailObjectList);
+            <!-- Populating TPA AMA Agreement Detail Values for Cancelation Form -->
+            $scope.rootObject.amaAgreementDetailObjectList = JSON.parse('{!JSENCODE(amaAgreementDetailAsString)}');
+            $scope.$log.info('Vendor Cancelation form'+$scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Signature_Received__c);
+            $scope.rootObject.onLoadForm = function() {
+			
+				//Shut down popup code start
+				var isPermanentDown = {!isTPAPermanentDown};
+				var isRestrictedUser = {!isRestrictedUser};
+				var portalDownMessage = '{!Message}';
+				$(document).ready(function(){
+					if(isPermanentDown)
+					{
+						popupAlert(portalDownMessage);
+							$('.customPopupFooter .aButtons').css("display","none");
+							$('#backWhiteOverlay').css("display", "");
+							$('#pageBody').keydown(function(objEvent) {
+								if (objEvent.keyCode == 9) {  //tab pressed
+									objEvent.preventDefault(); // stops its action
+								}
+								if (objEvent.keyCode == 13) {  //enter pressed
+									objEvent.preventDefault(); // stops its action
+								}
+							});
+					}
+				});
+				//shut down popup code end
+                
+                if(getParameterByName('viewMode').trim().length > 0 ){
+                
+                    $scope.rootObject.viewMode = getParameterByName('viewMode').trim();
+                }
+                
+                if(getParameterByName('type').trim().length > 0 ){
+                
+                    $scope.rootObject.type = getParameterByName('type').trim();
+                }
+                
+                if($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'cancelation' && $scope.rootObject.type != null && ($scope.rootObject.type == 'VSubmit' || $scope.rootObject.type == 'DBLSubmit')){
+                
+                    $scope.rootObject.Agreement_file_Name = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Agreement_Name__c;
+                    $scope.rootObject.amaAgreementObj.Vendor_Contact_Name__c = $scope.rootObject.amaAgreementDetailObjectList[0].Vendor_Contact_Name__c;
+                    $scope.rootObject.vendorCompanyName = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Vendor_Company_Name__c;
+                    $scope.rootObject.Signature_Received__c = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Signature_Received__c; // added by Soup under ER-3888
+                    $scope.rootObject.amaAgreementObj.Client__c = $scope.rootObject.amaAgreementDetailObjectList[0].Client__c;
+                    $scope.rootObject.amaAgreementObj.TPA_Request__c = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__c;
+                    $scope.rootObject.TPA_Request_number = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Name;
+                    $scope.rootObject.requestStatus = $scope.rootObject.amaAgreementDetailObjectList[0].TPA_Request__r.Request_Status__c; // added by supriya Johari under ER-3248
+                    $scope.rootObject.amaAgreementObj.Client_Company_Name__c = $scope.rootObject.amaAgreementDetailObjectList[0].Client_Company_Name__c;
+                    $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementDetailObjectList[0].Vendor_Legal_Name__c;
+                    $scope.rootObject.amaAgreementObj.Agreement_Start_Date__c = $scope.rootObject.amaAgreementDetailObjectList[0].Agreement_Start_Date__c;
+                    $scope.rootObject.amaAgreementObj.Initial_Termination_Date__c = $scope.rootObject.amaAgreementDetailObjectList[0].Initial_Termination_Date__c;
+                    $scope.rootObject.amaAgreementObj.Agreement_End_Date__c = $scope.rootObject.amaAgreementDetailObjectList[0].Agreement_End_Date__c;
+                    $scope.rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c = $scope.rootObject.amaAgreementDetailObjectList[0].AMA_TypeOfPrescriberLevelData__c;
+                    $scope.rootObject.amaAgreementObj.AMA_Services_Provided__c = $scope.rootObject.amaAgreementDetailObjectList[0].AMA_Services_Provided__c;
+                    $scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = $scope.rootObject.amaAgreementDetailObjectList[0].AMA_Howlong_SP_has_Data_Access__c;
+                    $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c = $scope.rootObject.amaAgreementDetailObjectList[0].Vendor_Reasons_for_Termination__c;
+                    $scope.rootObject.vendorselectedCancelationReason = $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c;
+                    $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c = $scope.rootObject.amaAgreementDetailObjectList[0].REVISED_AMA_Use_and_or_Frequency__c;
+                    $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c = $scope.rootObject.amaAgreementDetailObjectList[0].If_vendor_cancellation_reason_is_Other__c;
+                    $scope.rootObject.amaAgreementObj.Status_of_Cancelation_Request__c = $scope.rootObject.amaAgreementDetailObjectList[0].Status_of_Cancelation_Request__c;
+                    $scope.rootObject.amaAgreementObj.Request_Process_Initiated__c = $scope.rootObject.amaAgreementDetailObjectList[0].Request_Process_Initiated__c;
+                    
+                    $scope.rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c = $scope.rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c;
+                    $scope.rootObject.amaAgreementObj.Reasons_For_Not_Approval__c = $scope.rootObject.amaAgreementObj.Reasons_For_Not_Approval__c;
+                    $scope.rootObject.amaAgreementObj.DBL__c = $scope.rootObject.amaAgreementDetailObjectList[0].DBL__c;
+                    $scope.rootObject.amaAgreementObj.Contract_Type__c = $scope.rootObject.amaAgreementDetailObjectList[0].Contract_Type__c;
+                    $scope.rootObject.amaAgreementObj.Current_Year_Fees__c = $scope.rootObject.amaAgreementDetailObjectList[0].Current_Year_Fees__c;
+                    $scope.rootObject.amaAgreementObj.Next_Year_Fees__c = $scope.rootObject.amaAgreementDetailObjectList[0].Next_Year_Fees__c;
+                    $scope.rootObject.amaAgreementObj.Term_requested_to_cancel__c = $scope.rootObject.amaAgreementDetailObjectList[0].Term_requested_to_cancel__c;
+                    
+                    if($scope.rootObject.requestStatus != null && $scope.rootObject.requestStatus == 'Cancelled'){
+                    
+                        $scope.rootObject.cancelationErrorMessage = 'Sorry, the link is not accessible.';
+                    }
+                    else if($scope.rootObject.type == 'VSubmit' && $scope.rootObject.amaAgreementDetailObjectList[0].Status_of_Cancelation_Request__c != 'Awaiting Vendor Cancelation Acknowledgement'){
+                    
+                        $scope.rootObject.cancelationErrorMessage = 'Sorry, you have already submitted your response.';
+                    }
+                    else if($scope.rootObject.type == 'DBLSubmit'&& $scope.rootObject.amaAgreementDetailObjectList[0].Status_of_Cancelation_Request__c != 'Awaiting AMA Response to Vendor Cancelation Request' ){
+                    
+                        $scope.rootObject.cancelationErrorMessage = 'Sorry, you have already submitted your response.';
+                    }
+                    else{
+                    
+                        $scope.rootObject.cancelationErrorMessage == '';
+                    }
+
+                }
+               
+                
+                else if ($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'cancelation' && $scope.rootObject.type != null && $scope.rootObject.type == 'TPSubmit'){
+                
+                    $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c = $scope.rootObject.amaAgreementDetailObjectList[0].Vendor_Reasons_for_Termination__c;
+                    $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c = $scope.rootObject.amaAgreementDetailObjectList[0].REVISED_AMA_Use_and_or_Frequency__c;
+                    $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c = $scope.rootObject.amaAgreementDetailObjectList[0].If_vendor_cancellation_reason_is_Other__c;
+                    $scope.rootObject.amaAgreementObj.Term_requested_to_cancel__c = $scope.rootObject.amaAgreementDetailObjectList[0].Term_requested_to_cancel__c;
+                    
+                }
+                
+                else if ($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'cancelation' && $scope.rootObject.type != null && $scope.rootObject.type == 'ResendToAMA'){
+                    $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c = $scope.rootObject.amaAgreementDetailObjectList[0].Vendor_Reasons_for_Termination__c;
+                }
+                
+                else if($scope.rootObject.viewMode  != null && $scope.rootObject.viewMode == 'Offshore' && $scope.rootObject.type != null && $scope.rootObject.type == 'VSubmit'){
+                    $scope.rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c = $scope.rootObject.amaAgreementDetailObjectList[0].AMA_Howlong_SP_has_Data_Access__c;
+                }
+                
+                
+            }
+            
+            $scope.rootObject.onLoadForm();
+            $scope.$log.info('Signature_Received__c value'+$scope.rootObject.Signature_Received__c);
+            $scope.rootObject.saveVendorCancelationReason = function(){
+                
+                $scope.$log.info('entered'+$scope.rootObject.acknowledged);
+                //Validate Contract type
+                if($scope.rootObject.vendorselectedCancelationReason == null || $scope.rootObject.vendorselectedCancelationReason == '') {
+                    $scope.popupAlert('Please select vendor cancelation reason first' , function(){});
+                    return false;
+                }
+                
+                if($scope.rootObject.vendorselectedCancelationReason == 'Error in selection of Use and/or Frequency of data delivery' && ($scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c == '' || $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c == null ) ){
+                    $scope.popupAlert('Please provide REVISED AMA Use and/or Frequency' , function(){});
+                    return false;
+                }
+                else if($scope.rootObject.vendorselectedCancelationReason != 'Error in selection of Use and/or Frequency of data delivery'){
+                    $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c = '';
+                }
+                
+                if($scope.rootObject.vendorselectedCancelationReason == 'Other' && ($scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c == '' || $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c == null ) ){
+                    $scope.popupAlert('Please provide vendor cancelation reason for other' , function(){});
+                    return false;
+                }
+                else if($scope.rootObject.vendorselectedCancelationReason != 'Other'){
+                    $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c = '';
+                }
+                
+                
+                if($scope.rootObject.acknowledged == null || $scope.rootObject.acknowledged == 'false' || $scope.rootObject.acknowledged == false ){
+                    $scope.popupAlert('Please check the acknowledgement box' , function(){});
+                    return false;
+                }
+                
+                if($scope.rootObject.amaAgreementObj.Vendor_Name_who_Acknowledged_Cancelation__c == null || $scope.rootObject.amaAgreementObj.Vendor_Name_who_Acknowledged_Cancelation__c == '' ){
+                    $scope.popupAlert('Please provide your name for acknowledgement' , function(){});
+                    return false;
+                }
+                
+                $scope.rootObject.amaObj = {};
+                
+                $scope.rootObject.amaObj.id = $scope.rootObject.amaAgreementObj.id;
+                $scope.rootObject.amaObj.Status_of_Cancelation_Request__c = 'Awaiting AMA Response to Vendor Cancelation Request';
+                $scope.rootObject.amaObj.REVISED_AMA_Use_and_or_Frequency__c = $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c;
+                $scope.rootObject.amaObj.If_vendor_cancellation_reason_is_Other__c = $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c;
+                $scope.rootObject.amaObj.Vendor_Name_who_Acknowledged_Cancelation__c = $scope.rootObject.amaAgreementObj.Vendor_Name_who_Acknowledged_Cancelation__c;
+                $scope.rootObject.amaObj.Vendor_Reasons_for_Termination__c = $scope.rootObject.vendorselectedCancelationReason;
+                $scope.rootObject.amaObj.Vendor_Cancelation_Response_Date__c = ''; <!--added by supriya Johari under ER-3586-->
+                
+                $scope.rootObject.amaObj.Client__c  = $scope.rootObject.amaAgreementObj.Client__c;
+                $scope.rootObject.amaObj.Vendor_Legal_Name__c  = $scope.rootObject.amaAgreementObj.Vendor_Legal_Name__c;
+                
+                $scope.rootObject.isProcessing = true;
+                CNT_TPA_AMA_Cancellation_Template.saveVendorCancelationReason(JSON.stringify($scope.rootObject.amaObj),function(result, event){
+                
+                    if(event.type == 'exception'){
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        $scope.rootObject.isProcessing = false;
+                        return false;                                    
+                    }
+                    else if(result != null && result == 'Success'){
+                        $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c = $scope.rootObject.vendorselectedCancelationReason;
+                        $scope.rootObject.cancelationSuccessMessage = 'Congratulations, Your response has been submitted.';
+                        angular.element($('#controllerPage')).scope().applyChanges();
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return true;
+                    }
+                    else if(result != null && result == 'alreadySubmittedResponse'){
+                        $scope.rootObject.cancelationErrorMessage = 'Sorry, you have already submitted your response.';;
+                        angular.element($('#controllerPage')).scope().applyChanges();
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return true;
+                    }
+                    else {
+                        $scope.rootObject.isProcessing = false;
+                        hideLoading();                                
+                        $scope.$log.info('Event Type: ' + event.type);
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            
+            }
+            
+            $scope.rootObject.saveAMAResponse = function(){
+                
+                if($scope.rootObject.AMAResponseforCancelation == null || $scope.rootObject.AMAResponseforCancelation == '') {
+                    $scope.popupAlert('Please provide your AMA response' , function(){});
+                    return false;
+                }
+                
+                if($scope.rootObject.AMAResponseforCancelation == 'Additional information is required' && ( $scope.rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c == null || $scope.rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c =='')) {
+                    $scope.popupAlert('Please provide Additional Information' , function(){});
+                    return false;
+                }
+                
+                if($scope.rootObject.AMAResponseforCancelation == 'Not approved, reasons why' && ($scope.rootObject.amaAgreementObj.Reasons_For_Not_Approval__c =='' || $scope.rootObject.amaAgreementObj.Reasons_For_Not_Approval__c == null)) {
+                    $scope.popupAlert('Please provide the Reason for not approval' , function(){});
+                    return false;
+                }
+                
+                $scope.rootObject.isProcessing = true;
+                showLoading();
+                
+                CNT_TPA_AMA_Cancellation_Template.saveAMAResponse($scope.rootObject.AMAResponseforCancelation,JSON.stringify($scope.rootObject.amaAgreementObj),function(result, event) {
+                    if(event.type == 'exception'){
+                    
+                        $scope.rootObject.isProcessing = false;
+                        hideLoading();
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    else if(result != null && result == 'Success' ){
+                    
+                        $scope.$log.info('Success');
+                        hideLoading();
+                        $scope.rootObject.cancelationSuccessMessage = 'Congratulations, Your response has been submitted.';
+                        angular.element($('#controllerPage')).scope().applyChanges();
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return true;
+                    }
+                    else if(result != null && result == 'alreadySubmittedResponse'){
+                    
+                        hideLoading();
+                        $scope.rootObject.cancelationErrorMessage = 'Sorry, you have already submitted your response.';;
+                        angular.element($('#controllerPage')).scope().applyChanges();
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return true;
+                    }
+                    else{
+                    
+                        hideLoading();
+                        $scope.$log.info('Event Type: ' + event.type);
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            
+            }
+            
+            $scope.popupAlert = function(msg, truePart){
+            
+                popup(msg, {'animate':true}, 
+                function(r){
+                
+                    if(r && truePart != null)
+                        truePart();
+                });
+            }
+            
+            
+            $scope.getFormattedValue = function(label){
+              var addText = label;
+              return addText.split(';').join(', ');
+            };
+               
+            if($scope.rootObject.viewMode == 'cancelation' && $scope.rootObject.type == 'TPSubmit') {
+            
+                
+                if($scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == '' || $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == null) {
+                    $scope.popupAlert('Please select vendor reasons for termination to proceed further.' , function(){window.location.href = '/' + getParameterByName('id');});
+                }
+                else if($scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == 'Other' && ($scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c == null || $scope.rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c  == '')) {
+                    $scope.popupAlert('Please provide details for If vendor cancellation reason is Other to proceed further.' , function(){window.location.href = '/' + getParameterByName('id');});
+                }
+                else if($scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == 'Error in selection of Use and/or Frequency of data delivery' && ($scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c == '' || $scope.rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c == null )) {
+                    $scope.popupAlert('Please provide details for REVISED AMA Use and/or Frequency to proceed further.' , function(){window.location.href = '/' + getParameterByName('id');});
+                }
+                else if($scope.rootObject.amaAgreementObj.Term_requested_to_cancel__c == '' || $scope.rootObject.amaAgreementObj.Term_requested_to_cancel__c == null) {
+                    $scope.popupAlert('Please select term requested to cancel to proceed further.' , function(){window.location.href = '/' + getParameterByName('id');});
+                }
+                else {
+                
+                    CNT_TPA_AMA_Cancellation_Template.tpUsRequestforCancelation($scope.rootObject.amaAgreementObj.id,function(result, event){
+                    
+                        if(event.type == 'exception'){
+                        
+                            hideLoading();                                
+                            $scope.$log.info('Exception: ' + event.message);
+                            return false;                                    
+                        }
+                        else if(result != null && result == true ){
+                        
+                            window.location.href = '/' + getParameterByName('id');
+                        }
+                        else{
+                        
+                            hideLoading();                                
+                            $scope.$log.info('Event Type: ' + event.type);
+                            return false;
+                        }
+                        if(!$scope.$$phase) {
+                          //$digest or $apply
+                          $scope.$apply();
+                        }
+                        hideLoading();
+                    },
+                    {escape: false}
+                    );
+                }   
+                    
+            }
+            
+            if($scope.rootObject.viewMode == 'cancelation' && $scope.rootObject.type == 'ResendToAMA'){
+                
+                if($scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == '' || $scope.rootObject.amaAgreementObj.Vendor_Reasons_for_Termination__c == null)
+                    $scope.popupAlert('Please select vendor cancelation reason first.' , function(){window.location.href = '/' + getParameterByName('id');});
+                else {
+                    CNT_TPA_AMA_Cancellation_Template.tpUsReqResendTOAMA($scope.rootObject.amaAgreementObj.id,function(result, event){
+                    
+                        if(event.type == 'exception'){
+                        
+                            hideLoading();                                
+                            $scope.$log.info('Exception: ' + event.message);
+                            return false;                                    
+                        }
+                        else if(result != null && result == true ){
+                        
+                            window.location.href = '/' + getParameterByName('id');
+                        }
+                        else{
+                        
+                            hideLoading();                                
+                            $scope.$log.info('Event Type: ' + event.type);
+                            return false;
+                        }
+                        if(!$scope.$$phase) {
+                          $scope.$apply();
+                        }
+                        hideLoading();
+                    },
+                    {escape: false}
+                    );
+                }   
+                    
+            }
+            
+            
+            //****** Angular Apply All Changes Event Start ******//
+            //*** function triggers and applies all angular scope changes explicitly ***//
+            $scope.applyChanges = function(){
+            
+                if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                    $scope.$apply();
+            }
+            //****** Angular Apply All Changes Event End ******//
+            
+            
+            //*** function to read Query strings Start ***//
+            function getParameterByName(name) {
+            
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            //*** function to read Query strings End ***//
+			//Added for site to community logic submission start
+                    function logoutSession() {
+                        console.log('BeforeAjaxCall:::');
+                        $.ajax('{!$Site.Prefix}/secur/logout.jsp',{
+                            type:'POST',
+                            beforeSend: function(xhr) {
+                                // Set the OAuth header from the session ID
+                                xhr.setRequestHeader('Authorization', 'Bearer {!$Api.Session_ID}');            
+                                xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+                                console.log('BeforeSend:::');
+                            },
+                            success: function(response) {
+                                // Sit the result to HTML div          
+                                console.log('Success:::'+JSON.stringify(response));
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                // Error
+                                console.log('Error:::'+jqXHR.status + ': ' + errorThrown);
+                            }
+                        });
+                    }
+            //Added for site to community logic submission end
+            
+    }]);
+    
+        $(document).ready(function(){
+            $("h5").click(function(){
+                $("#rulesPanelDivID").removeAttr('style');
+                var currentText = $(this).text();
+                var showText = 'Show Existing AMA Rules:';
+                var hideText = 'Hide Existing AMA Rules:';
+                if(currentText == showText) {
+                    $(this).text(hideText);
+                    $("#rulesPanelDivID").show();
+                } else if(currentText == hideText) {
+                    $(this).text(showText);
+                    $("#rulesPanelDivID").hide();
+                }
+            });
+        });
+        
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+			
+			//Shut down popup code
+            var popupAlert = function(msg, truePart)
+			{
+            popup(msg, {'animate':true}, 
+            function(r)
+            {
+                if(r && truePart != null)
+                    truePart();                    
+            });
+            //  $(".aButtons button").html('{!$Label.TPA_OK}');
+			}
+        
+    </script>
+    </head>
+    <body id="pageBody" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+	<apex:form id="theForm">
+        <div id="ng-app" ng-app="AMACancelationProcess">
+            <div id="controllerPage" ng-controller="controllerPage">
+                <c:VFC_TPA_LoadingImage />
+            
+                <!-- AMA cancelation process for Client starts -->
+                <div style="margin:40px; background-color: white; border-radius: 5px;" id="block1" ng-if="rootObject.viewMode == 'cancelation' && rootObject.type == 'VSubmit' && rootObject.cancelationErrorMessage =='' && rootObject.cancelationSuccessMessage ==''  ">
+                <apex:outputPanel >
+                    <apex:pageBlock >
+                        
+                        <apex:pageblocksection collapsible="false" columns="1"  >
+                            <div style="cursor:auto" class="slds-p-around_medium" >
+                                <div>
+                                    <div style="text-align:right;">Reference {{rootObject.TPA_Request_number}}</div>
+                                    <div>{{rootObject.amaAgreementObj.Request_Process_Initiated__c | date:'MM-dd-yyyy'}}</div>
+                                </div>
+                                <br/><br/>
+                                <div>{!$Label.TPA_IQVIA_Keyword} </div>
+                                <div>One {!$Label.TPA_IQVIA_Keyword} Drive <br/>
+                                Plymouth Meeting, PA 19462</div>
+                                <br/>
+                                <div> RE: {{rootObject.TPA_Request_number}} {{rootObject.Agreement_file_Name}}</div><br/>
+                                <div> Dear {{rootObject.amaAgreementObj.Vendor_Contact_Name__c}},</div><br/>
+                                <div style="text-align:justify;">
+                                <p>Pursuant to Article 6 of the AMA {{rootObject.amaAgreementObj.Contract_Type__c}} Third Party Support User Agreement dated {{rootObject.amaAgreementObj.Agreement_Start_Date__c| date : "MM/dd/yyyy"}} between {!$Label.TPA_IQVIA_Keyword} Incorporated (Database Licensee) and {{rootObject.vendorCompanyName}} (Third Party Support User) on behalf of {{rootObject.amaAgreementObj.Client_Company_Name__c}}, this letter provides notice that {{rootObject.vendorCompanyName}} is electing to terminate said Agreement and are terminating the Agreement for the following reason(s):</p><!-- modified by Soup under Er-3888--> <!-- //Modified by Neha Bansal under Issue-11410 -->
+                                </div><br/><br/>
+                                <div style="margin-left:20px;">
+                                    <span ng-repeat="x in rootObject.cancelationReasonList">
+                                     <div class="slds-checkbox">
+									      <input type="checkbox" name="options" id="{{ x }}" ng-model="rootObject.vendorselectedCancelationReason" style="border:solid 5px red !important;" ng-true-value="{{ x }}" ng-disabled="true"/>
+									      <label class="slds-checkbox__label" for="{{ x }}">
+									        <span class="slds-checkbox_faux"></span>
+									        <span class="slds-form-element__label">{{ x }}
+									        	<input class="slds-input" type="text" style ="min-width: 150px;"  ng-if = "x == 'Other' && rootObject.vendorselectedCancelationReason == x"  
+									        		   ng-model="rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c" 
+									        		   size="{{rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c.length}}"/>
+						        		   	</span>
+									        <span ng-show = "x == 'Project will not renew for next calendar year' && rootObject.vendorselectedCancelationReason == x"> ATTENTION: All physician level data is required to be destroyed/returned to client. If checked, by signing this notice you acknowledge you have destroyed/returned the physician level data.</span>
+									        <span class="slds-form-element__label" ng-show = "x == 'Error in selection of Use and/or Frequency of data delivery' && rootObject.vendorselectedCancelationReason == x">
+									        	REVISED AMA Use and/or Frequency: 
+									        	<input class="slds-input" type="text" style ="min-width: 150px;" ng-model="rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c" 
+									        		size="{{rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c.length}}"/>
+							        		</span>
+									      </label>
+									    </div>
+	                                 	<br/>
+                                    </span>
+                                </div>
+                                <div>
+                                    <div>{{rootObject.vendorCompanyName}} <Strong>ACKNOWLEDGEMENT </strong></div><br/>
+                                    <div style="margin-left:20px;">
+                                        <div>
+                                        	<div class="slds-checkbox">
+									           <input type="checkbox" name="default" id="{{rootObject.vendorCompanyName}}" ng-model="rootObject.acknowledged"/>
+									              <label class="slds-checkbox__label" for="{{rootObject.vendorCompanyName}}">
+									                  <span class="slds-checkbox_faux"></span>
+									                  <span class="slds-form-element__label">{{rootObject.vendorCompanyName}} hereby confirms the above cancelation reasons and/or revisions to be accurate and requests to cancel the associated agreement Acknowledged and deemed accurate by:</span>
+									              </label>
+									        </div>
+                                         </div><br/>
+                                        <div>
+                                        	<input class="slds-input slds-size_1-of-3" type="text"  style="padding: 2px;" ng-model="rootObject.amaAgreementObj.Vendor_Name_who_Acknowledged_Cancelation__c" placeholder="Please type your name here"/>
+                                       	</div>
+                                        <br/>
+                                        <button class="slds-button slds-button_brand" onclick="return false;" ng-show="true" ng-click="rootObject.saveVendorCancelationReason();" ng-disabled="rootObject.isProcessing">Submit</button>
+                                
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+                </apex:outputPanel>
+                    <div style="cursor:auto;" class="slds-p-around_medium">
+                        <h5 style="color:#808080;"> {!$Label.TPA_IQVIA_Keyword} Third Party Access Program – AMA Reference USE ONLY –</h5><br/>
+                        <pre>TPA Request                              :  {{rootObject.TPA_Request_number}}</pre>
+                        <pre>Vendor Legal Name                        :  {{rootObject.amaAgreementObj.Vendor_Legal_Name__c}}</pre>
+                        <pre>Client Company Name                      :  {{rootObject.amaAgreementObj.Client_Company_Name__c}}</pre>
+                        <pre>Initial Termination Date                 :  {{rootObject.amaAgreementObj.Initial_Termination_Date__c| date : "MM/dd/yyyy"}}</pre>
+                        <pre>Agreement End Date                       :  {{rootObject.amaAgreementObj.Agreement_End_Date__c| date : "MM/dd/yyyy"}}</pre>
+                        <pre>AMA Variables Requested                  :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c)}}</pre>
+                        <pre>AMA Project USEs                         :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_Services_Provided__c)}}</pre>
+                        <pre>How long will Vendor have access to Data :  {{rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c}}</pre>
+                    </div>
+                </div>
+                
+                <!-- AMA cancelation process for Client ends-->
+                 
+                 
+                 <!-- AMA cancelation process for DBL -->
+                 
+                 <div style="margin:40px; background-color: white; border-radius: 5px;" id="block2" ng-if="rootObject.viewMode == 'cancelation' && rootObject.type == 'DBLSubmit' && rootObject.cancelationErrorMessage =='' && rootObject.cancelationSuccessMessage =='' ">
+                     <apex:outputPanel >
+                     <apex:pageBlock >
+                         
+                        <apex:pageblocksection collapsible="false" columns="1"  >
+                            <div class="slds-m-top_large" style="cursor:auto;margin-left:20px;">
+                                <div>
+                                Dear AMA, <br/><br/>
+                                A third party has requested to cancel their AMA Agreement for the following reason(s):
+                                </div>
+                                <br/>
+                                <br/>
+                                <div style="margin-left:20px;">
+                                    <span ng-repeat="x in rootObject.cancelationReasonList">
+                                    	<div class="slds-checkbox">
+									      <input type="checkbox" name="options" id="{{ x }}" ng-model="rootObject.vendorselectedCancelationReason" style="border:solid 5px red !important;" ng-true-value="{{ x }}" ng-disabled="true"/>
+									      <label class="slds-checkbox__label" for="{{ x }}">
+									        <span class="slds-checkbox_faux"></span>
+									        <span class="slds-form-element__label">{{ x }}</span>
+									        <span class="slds-form-element__label" ng-if= "x == 'Other' && rootObject.vendorselectedCancelationReason == x">: {{rootObject.amaAgreementObj.If_vendor_cancellation_reason_is_Other__c}}</span>
+									        <span class="slds-form-element__label" ng-if="x == 'Error in selection of Use and/or Frequency of data delivery' && rootObject.vendorselectedCancelationReason == x">: {{rootObject.amaAgreementObj.REVISED_AMA_Use_and_or_Frequency__c}}</span>
+									      </label>
+									    </div>
+                                  	 	<br/>
+                                    </span>
+                                </div>
+                                <br/>
+                                <div>
+                                    <span style = "margin-right:20px;">Term requested to cancel:</span>
+                                    <label>{{rootObject.amaAgreementObj.Term_requested_to_cancel__c}}</label>
+                                </div>
+                                <br/>
+                                <br/>
+                                <div>Details regarding the original AMA Agreement are noted below for your reference.</div><br/>
+                                <div><strong> Please confirm the existing AMA Agreement can be canceled and fees will be credited: </strong></div><br/><br/>
+                                <div style="margin-left:10%;" >
+                                    <div style="padding:5px;">
+                                   		<div class="slds-checkbox">
+									      <input type="checkbox" name="options" id="Approved cancelation and full/partial credit" ng-model="rootObject.AMAResponseforCancelation" ng-true-value="Approved cancelation and full/partial credit"/>
+									      <label class="slds-checkbox__label" for="Approved cancelation and full/partial credit">
+									        <span class="slds-checkbox_faux"></span>
+									        <span class="slds-form-element__label">Approved cancelation and full/partial credit </span>
+									      </label>
+									    </div>
+                                   		<input type="text" class="slds-input" ng-model="rootObject.amaAgreementObj.Full_partial_credit__c" name="FullParticalCredit" 
+                                   			   ng-if="rootObject.AMAResponseforCancelation == 'Approved cancelation and full/partial credit'"/>
+                                    </div>
+                                    <div style="padding:5px;"> 
+                                   		<div class="slds-checkbox">
+									      <input type="checkbox" name="options" id="Additional information is required:" ng-model="rootObject.AMAResponseforCancelation" ng-true-value="Additional information is required" />
+									      <label class="slds-checkbox__label" for="Additional information is required:">
+									        <span class="slds-checkbox_faux"></span>
+									        <span class="slds-form-element__label">Additional information is required: </span>
+									      </label>
+									    </div>
+                                   		<textarea type="text" class="slds-textarea" ng-model="rootObject.amaAgreementObj.Required_Additional_Info_By_AMA__c" 
+                                   				  style="width: 300px; height: 40px;resize: none;"/>
+                                    </div>
+                                    <div style="padding:5px;">
+                                   		<div class="slds-checkbox">
+									      <input type="checkbox" name="options" id="Not approved, reasons why" ng-model="rootObject.AMAResponseforCancelation" ng-true-value="Not approved, reasons why"  />
+									      <label class="slds-checkbox__label" for="Not approved, reasons why">
+									        <span class="slds-checkbox_faux"></span>
+									        <span class="slds-form-element__label">Not approved, reasons why </span>
+									      </label>
+									    </div>
+                                   		<textarea type="text" class="slds-textarea" ng-model="rootObject.amaAgreementObj.Reasons_For_Not_Approval__c" 
+                                    			  style="width: 300px; height: 40px;resize: none;resize: none;" />
+                                    </div>
+                                    
+                                    <br/>
+                                </div>
+                                <div style="margin-left:10%;">
+                                    <button class="slds-button slds-button_brand" onclick="return false;"  ng-click="rootObject.saveAMAResponse();" ng-if="rootObject.AMAResponseforCancelation"
+                                    		ng-disabled="rootObject.isProcessing"> 
+                                   		Submit
+                                 	</button>
+                                </div>
+                            </div>
+                         </apex:pageBlockSection>
+                    </apex:pageBlock>
+                 </apex:outputPanel>
+                 <div style="cursor:auto;" class="slds-p-around_small">
+                     <h5 style="color:#808080;"> {!$Label.TPA_IQVIA_Keyword} Third Party Access Program – AMA Reference USE ONLY –</h5><br/><br/>
+                     <pre><span>TPA Request                              :  {{rootObject.TPA_Request_number}}</span></pre>
+                     <pre><span>Vendor Legal Name                        :  {{rootObject.amaAgreementObj.Vendor_Legal_Name__c}}</span></pre>
+                     <pre><span>Client Company Name                      :  {{rootObject.amaAgreementObj.Client_Company_Name__c}}</span></pre>
+                     <pre><span>Signature Date                           :  {{rootObject.Signature_Received__c| date : "MM/dd/yyyy"}}</span></pre>
+                     <pre><span>Agreement start Date                     :  {{rootObject.amaAgreementObj.Agreement_Start_Date__c| date : "MM/dd/yyyy"}}</span></pre>
+                     <pre><span>Initial Termination Date                 :  {{rootObject.amaAgreementObj.Initial_Termination_Date__c| date : "MM/dd/yyyy"}}</span></pre>
+                     <pre><span>Agreement End Date                       :  {{rootObject.amaAgreementObj.Agreement_End_Date__c| date : "MM/dd/yyyy"}}</span></pre>
+                     <pre><span>AMA Variables Requested                  :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_TypeOfPrescriberLevelData__c)}}</span></pre>
+                     <pre><span>AMA Project USEs                         :  {{getFormattedValue(rootObject.amaAgreementObj.AMA_Services_Provided__c)}}</span></pre>
+                     <pre><span>How long will Vendor have access to Data :  {{rootObject.amaAgreementObj.AMA_Howlong_SP_has_Data_Access__c}}</span></pre>
+                     <pre><span>DBL                                      :  {{rootObject.amaAgreementObj.DBL__c}}</span></pre>
+                     <pre><span>Contract Type                            :  {{rootObject.amaAgreementObj.Contract_Type__c}}</span></pre>
+                     <pre><span>Current Year Fees                        :  {{rootObject.amaAgreementObj.Current_Year_Fees__c}}</span></pre>
+                     <pre><span>Next Year Fees                           :  {{rootObject.amaAgreementObj.Next_Year_Fees__c}}</span></pre>
+                 </div>
+                  
+             </div>
+             
+              <!-- Success Block for Success Message -->
+              <div style="margin:40px;" id="block3" ng-if="rootObject.viewMode == 'cancelation' && rootObject.cancelationErrorMessage =='' && rootObject.cancelationSuccessMessage != '' ">
+                      
+                     <apex:outputPanel >
+                     <apex:pageBlock >
+                         
+                         <!-- Success Message Box Start -->
+                         <div  ng-if="rootObject.cancelationSuccessMessage !='' " class="slds-theme_success slds-p-around_small">
+                             <div class="messageText slds-align_absolute-center" >
+                                <h2 id= 'msg' >{{rootObject.cancelationSuccessMessage}}</h2>
+                             </div><br/>
+                         </div>
+                     </apex:pageBlock>  
+                     </apex:outputPanel>
+              </div>
+             
+              <!-- Message Block  for Cancelation Process -->
+             <div class="slds-theme_error" ng-if="rootObject.cancelationErrorMessage !=''" style="margin:40px;">
+                  <apex:outputPanel styleclass="slds-notify_container slds-is-relative ">
+                      <apex:pageBlock >
+                          <!-- Error Message Box Start -->
+                          <div class="message errorM3 slds-notify__content " role="alert">
+                              <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                  <div class="slds-col">
+                                      <div class="slds-grid">
+                                          <div class="slds-col slds-size_1-of-3"></div>
+                                          <div class="slds-col slds-size_1-of-3">
+                                              <h2 class="slds-text-heading_small">
+                                                  <div class="messageText">
+                                                      <span><h4>Errors</h4></span>
+                                                  </div>
+                                              </h2>
+                                          </div>
+                                          <div class="slds-col slds-size_1-of-3"></div>
+                                      </div>
+                                  </div>
+                                  <div class="slds-col">
+                                      <div class="slds-grid">
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5">
+                                              <ul>
+                                                  <li>{{rootObject.cancelationErrorMessage}}</li>
+                                              </ul>
+                                          </div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </apex:pageBlock>
+                  </apex:outputPanel>
+              </div>
+             <!-- Message Block  for Cancelation Process -->  
+                 
+            </div>
+            <!-- AMA Cancelation Process --> 
+        </div>
+    </apex:form>
+    </body>
+    </html>
+</apex:outputPanel> <!-- Added for site to community logic submission-->    
+</apex:page>

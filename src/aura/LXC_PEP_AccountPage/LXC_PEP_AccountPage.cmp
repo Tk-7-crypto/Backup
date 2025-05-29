@@ -1,0 +1,64 @@
+<aura:component controller="CNT_PEP_CreateContract"
+                implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId"
+                access="global">
+                
+ <aura:attribute name="showAgencyProgramTab" type="Boolean" default= "true"/>
+ <aura:attribute name="innerScrollOn" type="Boolean" default="false" />
+ <aura:attribute name="agencyProgramList" type="Agency_Program__c[]"/>
+ <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+
+ <div class="slds-p-left_xx-large slds-m-left_xx-large slds-p-right_xx-large slds-m-right_xx-large">    
+     <lightning:tabset selectedTabId="one" >
+         <lightning:tab label="{!$Label.c.PRM_Contracts}" id="one">
+             <div class="slds-box slds-theme_default" style="overflow-x:auto;">
+                 <div class="slds-media">
+                     <div class="slds-media__body slds-align-middle">
+                         <c:LXC_PEP_ContractList/>
+                     </div>
+                 </div>
+             </div>
+         </lightning:tab>
+         <aura:if isTrue="{!v.showAgencyProgramTab}">
+             <lightning:tab label="{!$Label.c.PRM_Partner_Program_Catalog}" id="two" >
+                 <div class="slds-box slds-theme_default">
+                     <div class="slds-media">
+                         <div class="slds-media__body slds-align-middle">
+                             <aura:if isTrue="{!v.empty}">
+                                 <p style="text-align:center;">{!$Label.c.PRM_No_partner_program_found}</p>
+                                 <aura:set attribute="else">
+                                     
+                                     <aura:iteration items="{!v.agencyProgramList}" var="agencyProgram">
+                                         <div class="slds-p-bottom_x-large " >
+                                             <div class="slds-box slds-theme_default">
+                                                 <div class="slds-media__body slds-align-middle">
+                                                     <h3 class="slds-card__header-title"> {!agencyProgram.Name} </h3>
+                                                 </div>
+                                                 <div class="slds-box slds-theme_default">
+                                                     <div class="slds-media">
+                                                         <div class="slds-media__body slds-align-middle">
+                                                             <lightning:formattedRichText value="{!agencyProgram.Description__c}"/>
+                                                             <p> {!$Label.c.PRM_Price}:  <b> {!agencyProgram.Agency_Program_Financials__r[0].CurrencyIsoCode} &nbsp; {!agencyProgram.Agency_Program_Financials__r[0].Price__c} </b><i>({!$Label.c.PRM_Subject_to_tax_in_certain_locations})</i></p>
+                                                         </div>
+                                                     </div>
+                                                 </div> 
+                                                 <div onclick="{!c.createContract}" data-value="{!agencyProgram.Id}" style="margin-top:10px;">
+                                                     <aura:If isTrue="{!agencyProgram.Contracts__r != null}">
+                                                         <lightning:button  class="slds-button slds-button--brand" label="{!$Label.c.PRM_View_Contract_Details}" value="{!agencyProgram.Id}"/>
+                                                         <aura:set attribute="else">
+                                                             <lightning:button  class="slds-button slds-button--brand" label="{!$Label.c.PRM_Add_Program}" value="{!agencyProgram.Id}"/>
+                                                         </aura:set>
+                                                     </aura:If>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </aura:iteration>
+                                 </aura:set>
+                             </aura:if>
+                         </div>
+                     </div>
+                 </div>
+             </lightning:tab>
+         </aura:if>
+     </lightning:tabset>
+    </div>
+</aura:component>

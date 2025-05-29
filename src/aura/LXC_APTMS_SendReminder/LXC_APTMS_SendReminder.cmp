@@ -1,0 +1,118 @@
+<aura:component controller="CNT_APTMS_DocuSignESignature" implements="force:appHostable,lightning:isUrlAddressable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="isModalOpen" type="boolean" default="true"/>
+    <aura:attribute name="recipientList" type="CNT_APTMS_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <lightning:navigation aura:id="navigate" />
+    <div class="slds-m-around_xx-large">
+        <aura:if isTrue="{!v.isModalOpen}">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <!-- Modal/Popup Box Header Starts here-->
+                    <header class="slds-modal__header">
+                        <lightning:buttonIcon iconName="utility:close"
+                                              onclick="{! c.closeModel }"
+                                              alternativeText="close"
+                                              variant="bare-inverse"
+                                              class="slds-modal__close"/>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Send e-Signature Reminder</h2>
+                    </header>
+                    <!--Modal/Popup Box Body Starts here-->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                       <p><strong> Recipients with Completed Status</strong></p>
+                        <table class="slds-table slds-table_cell-buffer" width="100%">
+                            <tbody>
+                                <aura:iteration items="{!v.recipientList}" var="rcpt" indexVar="index">
+                                    <aura:if isTrue="{!rcpt.disabled == 'true'}">
+                                    <tr>
+                                        <td width="5%">
+                                            <div class="slds-col">
+                                                {!index+1}
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.name}" name="input2" label="Name" placeholder="Enter Name" readonly="" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.userType}" name="input1" label="Type" placeholder="Enter User Type" readonly="" style="font-weight: bold;"/>
+                                            
+                                            </div>
+                                        </td>
+                                        <td width="20%">
+                                            <div class="slds-col">
+                                                <lightning:input type="email" value="{!rcpt.email}" name="input3" label="Email" readonly="" placeholder="Enter email address" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <!--<td width="5%" id="{!'tdSo'+(index+1)}" style="{!'display:'+v.displaySO}">-->
+                                        <td width="5%" id="{!'tdSo'+(index+1)}" >
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.signingOrder}" name="{!'inputSigningOrder'+(index+1)}" label="Routing Order" readonly="" style="width:60px; font-weight: bold;" pattern="[0-9]*"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </aura:if>
+                                </aura:iteration>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <p><strong> Pending Recipients</strong></p>
+                            <table class="slds-table slds-table_cell-buffer" width="100%">
+                            <tbody>
+                                
+                                <aura:iteration items="{!v.recipientList}" var="rcpt" indexVar="index">
+                                    <aura:if isTrue="{!rcpt.disabled == 'false'}">
+                                    <tr>
+                                        <td width="5%">
+                                            <div class="slds-col">
+                                                {!index+1}
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.name}" name="input2" label="Name" placeholder="Enter Name" readonly="" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.userType}" name="input1" label="Type" placeholder="Enter User Type" readonly="" style="font-weight: bold;"/>
+                                            
+                                            </div>
+                                        </td>
+                                        <td width="20%">
+                                            <div class="slds-col">
+                                                <lightning:input type="email" value="{!rcpt.email}" name="input3" label="Email" readonly="" placeholder="Enter email address" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <!--<td width="5%" id="{!'tdSo'+(index+1)}" style="{!'display:'+v.displaySO}">-->
+                                        <td width="5%" id="{!'tdSo'+(index+1)}" >
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.signingOrder}" name="{!'inputSigningOrder'+(index+1)}" label="Routing Order" readonly="" style="width:60px; font-weight: bold;" pattern="[0-9]*"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                        </aura:if>
+                                </aura:iteration>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--Modal/Popup Box Footer Starts here-->
+                    <footer class="slds-modal__footer">
+                        <lightning:button variant="neutral"
+                                          label="Cancel"
+                                          title="Cancel"
+                                          onclick="{! c.closeModel }"/>
+                        <lightning:button variant="brand"
+                                          label="Send Reminder"
+                                          title="Send Reminder"
+                                          onclick="{!c.sendReminder}"/>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+            </aura:if>
+    </div>
+</aura:component>

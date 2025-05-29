@@ -1,0 +1,132 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" controller="CNT_CSM_CommunitySearch" access="global">
+    <aura:attribute type="list" name="recordIds" />
+    <aura:attribute type="list" name="caseRecordIds" />
+    <aura:attribute type="list" name="knowledgeRecordIds" />
+    <aura:attribute name="caseDatas" type="Object" />
+    <aura:attribute name="articleDatas" type="Object" />
+    <aura:attribute name="groupDatas" type="Object" />
+    <aura:attribute name="caseColumns" type="List" />
+    <aura:attribute name="articleColumns" type="List" />
+    <aura:attribute name="groupColumns" type="List" />
+    <aura:attribute name="searchText" type="String" />
+    <aura:attribute name="searchForPrd" type="String" />
+    <aura:attribute name="displayAlert" type="Boolean" default="false" />
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:attribute name="limit" type="Integer" default="50" />
+    <aura:attribute name="caseLoadMore" type="Boolean" default="true" />
+    <aura:attribute name="articleLoadMore" type="Boolean" default="true" />
+    <aura:attribute name="groupLoadMore" type="Boolean" default="true" />
+    <aura:attribute name="caseOffSet" type="Integer" default="50" />
+    <aura:attribute name="articleOffSet" type="Integer" default="50" />
+    <aura:attribute name="groupOffSet" type="Integer" default="50" />
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <div class="container-fluid" style="margin-top: 90px">
+        <aura:if isTrue="{! v.articleDatas.length + v.caseDatas.length + v.groupDatas.length > 0}">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <nav>
+                        <div class="nav nav-tabs" id="myTab" role="tablist">
+                            <aura:if isTrue="{!v.articleDatas.length > 0}">
+                                <a class="nav-item nav-link active" id="articles-tab" data-toggle="tab" href="#articles" role="tab" aria-controls="articles" aria-selected="true">{!$Label.c.articles}</a>
+                            </aura:if>
+                            <aura:if isTrue="{!v.caseDatas.length > 0}">
+                                <a class="{! v.articleDatas.length eq 0 ? 'nav-item nav-link active' : 'nav-item nav-link'}" id="cases-tab" data-toggle="tab" href="#cases" role="tab" aria-controls="cases" aria-selected="{! v.articlDatas.length eq 0 ? 'true' : 'false'}">{!$Label.c.Cases}</a>
+                            </aura:if>
+                            <aura:if isTrue="{!v.groupDatas.length > 0}">
+                                <a class="{! and(v.articleDatas.length + v.caseDatas.length eq 0) ? 'nav-item nav-link active' : 'nav-item nav-link'}" id="groups-tab" data-toggle="tab" href="#groups" role="tab" aria-controls="groups" aria-selected="{! and(v.articleDatas.length + v.caseDatas.length eq 0) ? 'true' : 'false'}">{!$Label.c.Forum}</a>
+                            </aura:if>
+                        </div>
+                    </nav>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="{! v.articleDatas.length > 0 ? 'tab-pane fade show active' : 'tab-pane fade'}" id="articles" role="tabpanel" aria-labelledby="articles-tab">
+                            <!--
+                            <lightning:datatable class="slds-table_header-fixed_container slds-scrollable_x slds-border_top" keyField="id" data="{! v.articleDatas }" columns="{! v.articleColumns }" hideCheckboxColumn="true" />
+                            -->
+                            <ul class="slds-has-dividers_bottom">
+                                <aura:iteration items="{!v.articleDatas}" var="article" indexVar="index">
+                                    <li class="slds-p-vertical_small slds-item">
+                                        <a onclick="{!c.openArticle}" class="slds-p-left_none" data-href="{!article.fieldUrl}">
+                                            <lightning:formattedRichText value="{!article.Title}" class="slds-p-left_none slds-p-bottom_none slds-p-right_none slds-truncate" />
+                                        </a>
+                                        <ul class="slds-list_horizontal slds-wrap slds-has-dividers_right slds-has-block-links_space">
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                {!article.ArticleNumber}
+                                            </li>
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                {!article.ProductName__c}
+                                            </li>
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                {!article.SubType1__c}
+                                            </li>
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                {!article.SubType2__c}
+                                            </li>
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                {!article.SubType3__c}
+                                            </li>
+                                            <aura:if isTrue="{!not(empty(article.Device__c))}">
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    {!article.Device__c}
+                                                </li>
+                                            </aura:if>
+                                            <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                Last Published&nbsp;
+                                                <lightning:formattedDateTime value="{!article.LastPublishedDate}" year="numeric" month="numeric" day="numeric" timeZone="{! $Locale.timezone}"></lightning:formattedDateTime>
+                                            </li>
+                                        </ul>
+                                        <aura:if isTrue="{!not(empty(article.Question__c))}">
+                                            <lightning:formattedRichText value="{!article.Question__c}" class="slds-p-left_none slds-p-bottom_none slds-p-right_none" />
+                                        </aura:if>
+                                        <p>
+                                            <lightning:formattedRichText value="{!article.Content}" class="slds-p-left_none slds-p-bottom_none slds-p-right_none" />
+                                        </p>
+                                    </li>
+                                </aura:iteration>
+                            </ul>
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.articleLoadMore , v.articleDatas.length ge v.limit) }">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="Knowledge__kav">{!$Label.c.Load_More_Articles}</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>
+                        </div>
+                        <div class="{! and(v.articleDatas.length eq 0,v.caseDatas.length > 0) ? 'tab-pane fade show active' : 'tab-pane fade'}" id="cases" role="tabpanel" aria-labelledby="cases-tab">
+                            <lightning:datatable keyField="id" data="{! v.caseDatas }" columns="{! v.caseColumns }" hideCheckboxColumn="true" />
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.caseLoadMore , v.caseDatas.length ge v.limit)}">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="Case">{!$Label.c.Load_More_Cases}</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>
+                        </div>
+                        <div class="{! and(v.articleDatas.length + v.caseDatas.length eq 0,v.groupDatas.length > 0) ? 'tab-pane fade show active' : 'tab-pane fade'}" id="groups" role="tabpanel" aria-labelledby="groups-tab">
+                            <lightning:datatable keyField="id" data="{! v.groupDatas }" columns="{! v.groupColumns }" hideCheckboxColumn="true" />
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.groupLoadMore , v.groupDatas.length ge v.limit) }">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="FeedItem">{!$Label.c.Load_More_Forums}</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aura:if>
+        <aura:if isTrue="{! v.displayAlert }">
+            <c:LXC_CSM_CommunityAlert type="info" title="{!$Label.c.No_results}" message="{! $Label.c.We_searched_the_objects_you_use_most_and_didn_t_find_any_matches_for  + '&nbsp;&ldquo;&lt;b&gt;'  + v.searchText + '&lt;/b&gt;&rdquo;' }" />
+        </aura:if>
+    </div>
+
+</aura:component>

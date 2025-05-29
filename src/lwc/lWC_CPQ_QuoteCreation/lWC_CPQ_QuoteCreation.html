@@ -1,0 +1,250 @@
+<template>
+    <div class="slds-card">
+        <lightning-quick-action-panel header={header}>
+            <lightning-spinner lwc:if={spinner} variant="brand"></lightning-spinner>
+            <div if:false={bypassConfiguration}>
+                <div lwc:if={selectGBU}>
+                    <lightning-radio-group name="radioGroup"
+                        label={upsellingOptionType}
+                        options={upsellingOptions}
+                        value={gbu}
+                        class="slds-m-left_x-small"
+                        onchange={getSelectedGBU}
+                        type="radio">
+                    </lightning-radio-group>
+                    <div if:false={selectPricingTools} class="slds-align_absolute-center slds-m-top_small">
+                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton} disabled={isPricingToolSelected}></lightning-button>
+                    </div>
+                </div>
+                <div lwc:if={selectPricingTools}>
+                    <lightning-checkbox-group name="Checkbox Group"
+                        label={optionType}
+                        options={options}
+                        value={pricingTools}
+                        class="slds-m-left_x-small"
+                        onchange={getSelectedPricingTool}>
+                    </lightning-checkbox-group>
+                    <div class="slds-align_absolute-center slds-m-top_small">
+                        <lightning-button  if:false={checkScenario} variant="brand" class="slds-m-left_x-small" onclick={openAccessScreen} label={createButton} disabled={isPricingToolSelected}></lightning-button>
+                        <lightning-button  if:true={checkScenario} variant="brand" class="slds-m-left_x-small" onclick={handleContinue} label= "Next"></lightning-button>
+                    </div>
+                </div>
+                <div lwc:if={rdsNonSF}>
+                    <lightning-input type="text" label="Name" placeholder={oppName} disabled></lightning-input>
+                    <lightning-select
+                        name="pricingTool"
+                        label="Pricing Tool"
+                        value={selectedPricingToolForNonSF}
+                        options={pricingToolForNonSF}
+                        onchange={handleChangeForNonSFPricing}
+                        required ></lightning-select>
+                    <lightning-select
+                        name="QuoteType"
+                        label="Quote Type"
+                        value={selectedQuoteTypeForNonSF}
+                        options={quoteTypeForNonSF}
+                        onchange={handleChangeForNonSFQuoteType}
+                        required ></lightning-select>
+                    <lightning-select
+                        name="requestType"
+                        label="Scenario"
+                        value={selectedRequestTypeForNonSF}
+                        options={requestTypeForNonSF}
+                        onchange={handleChangeForNonSFRequestType}
+                        required ></lightning-select>
+                    <lightning-textarea
+                        value={scenarioDescription}
+                        onchange={handleDescription}
+                        label="Scenario Description"
+                        required >
+                    </lightning-textarea>
+                    <lightning-input onchange={handleScenarioNumber} type="number" name="scenarioNumber" label="Scenario number" value={scenarioNumberForNonSF} required></lightning-input>
+                    <div class="slds-align_absolute-left slds-m-top_small">
+                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={createRDSQuote} label="Save"></lightning-button>
+                    </div>
+                </div>
+                <div lwc:if={selectScenario}>
+                    <lightning-radio-group name="radioGroup2"
+                        label={sectionLabel}
+                        options={options}
+                        value={bidScenarios}
+                        class="slds-m-left_x-small"
+                        onchange={getSelectedScenario}
+                        type="radio">
+                    </lightning-radio-group>
+                    <div class="slds-align_absolute-center slds-m-top_small">
+                        <div>
+                            <lightning-button if:false={bypassConfiguration} variant="neutral" class="slds-m-left_x-small" label="Previous" onclick={handleBack}></lightning-button>
+                        </div>
+                        <lightning-button  variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton} disabled={isScenarioSelected}></lightning-button>
+                    </div>
+                </div>
+                <div lwc:if={confirmScreen}>
+                    <div>
+                        <lightning-layout class="slds-m-bottom_medium">
+                            <lightning-layout-item>
+                                <div class="slds-text-heading_small">Selected Pricing Tools</div>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                        <lightning-layout>
+                            <lightning-layout-item >
+                                <lightning-datatable
+                                    key-field="pricingTool"
+                                    data={confirmedData}
+                                    columns={columns}
+                                    hide-checkbox-column>
+                                </lightning-datatable>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </div>
+                    <div class="slds-text-color_error slds-m-top_small">
+                        <h3>{confirmationText}</h3>
+                    </div>
+                    <div class="slds-align_absolute-center slds-m-top_small">
+                        <lightning-button variant="neutral" class="slds-m-left_x-small" label="Previous" onclick={handleBack}></lightning-button>
+                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton}></lightning-button>
+                    </div>
+                </div>
+            </div>
+            <div if:true={bypassConfiguration}>
+                <div lwc:if={enableRadio}>
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col">
+                            <lightning-radio-group name="radioGroup"
+                                label="Please select below action to proceed:"
+                                options={actionOptions}
+                                value={actionName}
+                                class="slds-m-bottom--small"
+                                onchange={getSelectedActionName}
+                                type="radio">
+                            </lightning-radio-group>
+                        </div>
+                    </div>
+                </div>
+                <div lwc:if={isClone}>
+                    <div if:false={showQuoteList} class="slds-align--absolute-center">
+                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={handleContinueClone} label={continueButton}></lightning-button>
+                    </div>
+                    <div if:true={showQuoteList}>
+                        <div class="slds-m-top_medium"></div>
+                        <div style="height: 170px;">
+                            <lightning-datatable
+                                key-field="id"
+                                data={listOfQuotes}
+                                onrowselection={handleRowSelection}
+                                max-row-selection="1"
+                                columns={columnsForQuoteList}>
+                            </lightning-datatable>
+                        </div>
+                        <div>
+                            <div lwc:if={showFreshDataOption}>
+                                <lightning-input lwc:if={hideUpdatedBidHistoryCheckBox} class="slds-p-top_large" type="checkbox"  checked={isFrehsData} data-id="checkbox" label="Create quote with updated bid history data" onchange={handleCheckboxForQuoteClone}></lightning-input>
+                            </div>
+                            <div lwc:if={showScenarioSelection}>
+                                <lightning-radio-group 
+                                    name="radioGroup2"
+                                    label={sectionLabel}
+                                    options={scenarioOptionsForClone}
+                                    value={bidScenariosForClone}
+                                    class="slds-m-left_xxx-small slds-p-top_small"
+                                    onchange={getSelectedScenarioForClone}
+                                    type="radio">
+                                </lightning-radio-group>
+                            </div>
+                        </div>
+                        <div class="slds-align_absolute-center slds-m-top_small">
+                            <lightning-button variant="brand" class="" onclick={cloneQuote} label={btnName}></lightning-button>
+                        </div>
+                    </div>
+                </div>
+                <div lwc:if={isCreate}>
+                    <div if:true={noConfigReq}>
+                        <div class="slds-align--absolute-center">
+                            <lightning-button if:true={bypassConfiguration} variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton}></lightning-button>
+                        </div>
+                    </div>
+                    <div if:false={noConfigReq}>
+                        <div if:true={continueCreate} class="slds-align--absolute-center">
+                            <lightning-button if:true={bypassConfiguration} variant="brand" class="slds-m-left_x-small" onclick={handleContinueCreate} label={btnName}></lightning-button>
+                        </div>
+                        <div if:false={continueCreate}>
+                            <template if:false={load}>
+                                <div lwc:if={selectGBU}>
+                                    <lightning-radio-group name="radioGroup"
+                                        label={optionType}
+                                        options={options}
+                                        value={gbu}
+                                        class="slds-m-left_x-small"
+                                        onchange={getSelectedGBU}
+                                        type="radio">
+                                    </lightning-radio-group>
+                                    <div class="slds-align_absolute-center slds-m-top_small">
+                                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={handleContinue} label= "Next"></lightning-button>
+                                    </div>
+                                </div>
+                                <div lwc:elseif={selectPricingTools}>
+                                    <lightning-checkbox-group name="Checkbox Group"
+                                        label={optionType}
+                                        options={options}
+                                        value={pricingTools}
+                                        class="slds-m-left_x-small"
+                                        onchange={getSelectedPricingTool}>
+                                    </lightning-checkbox-group>
+                                    <div class="slds-align_absolute-center slds-m-top_small">
+                                        <div lwc:if={isCreateQuote}>
+                                            <lightning-button if:false={bypassConfiguration} variant="neutral" class="slds-m-left_x-small" label="Previous" onclick={handleBack}></lightning-button>
+                                        </div>
+                                        <lightning-button  if:false={checkScenario} variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton} disabled={isPricingToolSelected}></lightning-button>
+                                        <lightning-button  if:true={checkScenario} variant="brand" class="slds-m-left_x-small" onclick={handleContinue} label= "Next"></lightning-button>
+                                    </div>
+                                </div>
+                                <div lwc:if={selectScenario}>
+                                    <lightning-radio-group name="radioGroup2"
+                                        label={sectionLabel}
+                                        options={options}
+                                        value={bidScenarios}
+                                        class="slds-m-left_x-small"
+                                        onchange={getSelectedScenario}
+                                        type="radio">
+                                    </lightning-radio-group>
+                                    <div class="slds-align_absolute-center slds-m-top_small">
+                                        <div>
+                                            <lightning-button if:false={bypassConfiguration} variant="neutral" class="slds-m-left_x-small" label="Previous" onclick={handleBack}></lightning-button>
+                                        </div>
+                                        <lightning-button  variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton} disabled={isScenarioSelected}></lightning-button>
+                                    </div>
+                                </div>
+                                <div lwc:if={confirmScreen}>
+                                    <div>
+                                        <lightning-layout class="slds-m-bottom_medium">
+                                            <lightning-layout-item>
+                                                <div class="slds-text-heading_small">Selected Pricing Tools</div>
+                                            </lightning-layout-item>
+                                        </lightning-layout>
+                                        <lightning-layout>
+                                            <lightning-layout-item >
+                                                <lightning-datatable
+                                                    key-field="pricingTool"
+                                                    data={confirmedData}
+                                                    columns={columns}
+                                                    hide-checkbox-column>
+                                                </lightning-datatable>
+                                            </lightning-layout-item>
+                                        </lightning-layout>
+                                    </div>
+                                    <div class="slds-text-color_error slds-m-top_small">
+                                        <h3>{confirmationText}</h3>
+                                    </div>
+                                    <div class="slds-align_absolute-center slds-m-top_small">
+                                        <lightning-button variant="neutral" class="slds-m-left_x-small" label="Previous" onclick={handleBack}></lightning-button>
+                                        <lightning-button variant="brand" class="slds-m-left_x-small" onclick={createQuoteAccToLicense} label={createButton}></lightning-button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </lightning-quick-action-panel>
+    </div>
+</template>

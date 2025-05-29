@@ -1,0 +1,121 @@
+<template>
+    <article class="slds-card slds-m-bottom_small">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="custom:custom18" size="medium"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <div class="slds-page-header__title slds-truncate" title="name">Assignment Mass Update</div>
+                    </h2>
+                </div>
+                <div class="slds-no-flex">
+                    <lightning-button-group>
+                        <lightning-button name="OPEN_MODIFY_ASSIGNMENTS" label="Modify Selected" onclick={handleClick} disabled={modifyButtonDisabled}></lightning-button>
+                        <lightning-button name="GO_BACK_TO_RECORD_PAGE" label="Go Back" onclick={handleClick}></lightning-button>
+                    </lightning-button-group>
+                </div>
+            </header>
+        </div>
+    </article>
+
+    <article class="slds-card slds-m-bottom_small">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="custom:custom68" size="medium"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <div>Program</div>
+                        <div if:true={hasProgramData} class="slds-page-header__title slds-truncate" title="name">{program.Name}</div>
+                    </h2>
+                </div>
+                <div class="slds-no-flex">
+                    <!--span class="slds-p-right_medium">{filterVisibleCount} items ({filterHiddenCount} filtered)</span-->
+
+                    <lightning-button-group>
+                        <lightning-button-icon-stateful icon-name="utility:filterList" name="FILTER_ASSIGNMENTS" onclick={handleClick} selected={viewFilters}></lightning-button-icon-stateful>
+                    </lightning-button-group>
+                </div>
+            </header>
+        </div>
+        <div if:true={viewFilters} class="slds-section slds-is-open slds-p-around_medium"> 
+            <h3 class="slds-section__title slds-theme_shade">
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Filter Assignments</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small">
+                <div class="slds-col slds-size_1-of-4">
+                    <c-lwc_filter-list
+                        options-list={filterByProjectProjects}
+                        default-selections={selectedProjects}
+                        search-key-name="project"
+                        search-key-name-plural="projects"
+                        onfilterapplied={projectFilterApplied}>
+                    </c-lwc_filter-list>
+                </div>
+                <div class="slds-col slds-size_1-of-4">
+                    <c-lwc_filter-list
+                        options-list={filterByServiceLineServiceLines}
+                        default-selections={selectedServiceLines}
+                        search-key-name="service line"
+                        search-key-name-plural="service lines"
+                        onfilterapplied={serviceLineFilterApplied}>
+                    </c-lwc_filter-list>
+                </div>
+                <div class="slds-col slds-size_1-of-4">
+                    <div class="slds-m-bottom_small">
+                        <lightning-input type="date" name="FIRST_MONTH_DATE" value={filterStartDate} onchange={dateFilterApplied} label="First Month"></lightning-input>
+                        <a style="text-decoration: underline;" name="RESET_START_DATE" onclick={handleClick}>( Reset )</a>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-4">
+                    <div class="slds-m-bottom_small">
+                        <lightning-input type="date" name="LAST_MONTH_DATE" value={filterEndDate} onchange={dateFilterApplied} label="Last Month"></lightning-input>
+                        <a style="text-decoration: underline;" name="RESET_END_DATE" onclick={handleClick}>( Reset )</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <lightning-datatable
+                key-field="id"
+                columns={assignmentColumns}
+                data={assignmentsFiltered}
+                onrowselection={assignmentsSelected}>
+            </lightning-datatable>
+        </div>
+    </article>
+
+    <c-lwc_modal show-modal={showModifyModal} onclose={modifyModalClosed}>
+        <div slot="modal-heading">Modify Assignments</div>
+        <div slot="modal-content" class="slds-modal__content slds-p-around_medium">
+            <div if:false={selectedAssignments.length}>
+                Please select some assignments before making changes. 
+            </div>
+            <div if:true={selectedAssignments.length} class="slds-grid slds-wrap slds-gutters_small">
+                <div class="slds-col slds-form-element_horizontal">
+                    <lightning-input label="Change start date" name="NEW_START_DATE" type="date" value={newStartDate} onchange={newDateApplied}></lightning-input>
+                </div>
+                <div class="slds-col slds-form-element_horizontal"> 
+                    <lightning-input label="Change end date" name="NEW_END_DATE" type="date" value={newEndDate} onchange={newDateApplied}></lightning-input>
+                </div>
+            </div>
+        </div>
+        <div slot="modal-footer">
+            <lightning-button-group>
+                <lightning-button name="MODIFY_ASSIGNMENTS_CANCEL" label="Cancel" onclick={handleClick}></lightning-button>
+                <lightning-button name="MODIFY_ASSIGNMENTS_APPLY" label="Apply" variant="brand" onclick={handleClick}></lightning-button>
+            </lightning-button-group>
+        </div>
+    </c-lwc_modal>
+
+    <div if:true={showPageSpinner} class="slds-spinner_container">
+        <div role="status" class="slds-spinner slds-spinner_medium">
+            <span class="slds-assistive-text">Loading</span>
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+        </div>
+    </div>
+</template>

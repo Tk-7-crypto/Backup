@@ -1,0 +1,397 @@
+<apex:page standardController="MIBNF_Component__c" extensions="MIBNF_BillingScheduleController"  showHeader="true" sidebar="{!ShowBillingScheduleScreen}" tabStyle="Opportunity" id="pg">
+  
+    <c:JQueryBlockUI />     
+    <style type="text/css">
+        body #AppBodyHeader {
+       
+            display: none;
+        }
+     
+    .button-style {
+	display: inline-block; 
+	padding: 5px 10px; 
+	font-size: 10px; 
+	font-weight: bold; 
+	text-align: center;
+	text-decoration: none; 
+	color: #fff; 
+	background-color: #F0F0F0;
+	border: 1px solid #080808; 
+	border-radius: 5px; 
+	}
+
+    .no-hover {
+        text-decoration: none; /* Removes underline */
+        color: inherit; /* Inherits color from parent */
+    }
+    .no-hover:hover {
+        text-decoration: none; /* Ensures underline is removed on hover */
+        color: inherit; /* Ensures color doesn't change on hover */
+        cursor: default; /* Changes cursor to default */
+    }	
+    </style>    
+    <script> 
+    	var uploadButtonClicked = false;
+        function setFocusOnLoad() {}
+        function showWarning(){
+            var response = confirm("Existing Billing schedules will be deleted. Do you wish to continue ?");
+            if(response == true) {
+                calculateSchedules();
+            } else {
+                YUIHideLoading();
+                return;
+            }
+        }             
+        function checkBillingPattern(){           
+            var billPattern = document.getElementById('{!$Component.pg.frm.table.pbs.pbsi.billPattern}');
+            if(billPattern) {
+                if(billPattern.value == '' || billPattern.value == '-'){
+                    alert('Please provide a value for Billing Plan Pattern.' );
+                    YUIHideLoading();                    
+                    return;                    
+                } else {                   
+                    var billLevel = document.getElementById('{!$Component.pg.frm.table.pbs.pbsiBL.BL}' + ':0');
+                    var browserName=navigator.appName;
+                    if (browserName=="Microsoft Internet Explorer")calculateSchedules();
+                    else calculateSchedulesFF();                                        
+                }
+            }            
+        }
+    
+    function handleFile() {
+        var fileInput = document.getElementById('myFile');
+        var file = fileInput.files[0];
+         if(file == null){
+            alert('Please Choose the file');
+            YUIHideLoading();
+            return false;
+        }
+        if(file.name.slice(file.name.lastIndexOf('.') + 1) != 'csv' || file.type != 'text/csv'){
+            alert('Please select CSV file only');
+            YUIHideLoading();
+            return false; 
+        }
+        uploadButtonClicked = true;
+        var reader = new FileReader();
+        reader.onloadend = function (e) {
+            var jsonData = reader.result;
+            sendDataToActionFunction(jsonData);
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    function download(){
+        downloadTemplate();
+    }
+    </script>
+    <apex:form id="frm" > 
+    <apex:pageMessages id="error"></apex:pageMessages>     
+	<apex:pageMessage summary="Billing schedules cannot be edited as BNF is submitted or approved." severity="info" strength="1" rendered="{!PreventEdit}"/> 
+    <apex:pageMessage summary="You can't create billing schedules as opportunity is below stage 4." severity="info" strength="1" rendered="{!isOPPBelowStage3}"/>  	 
+    <!-----------------Opportunity Information --------------------------->   
+    <apex:sectionHeader subtitle="Setup Billing Schedule for MIBNF {!MIBNF_Component__c.name}" />
+    <apex:pageBlock id="pb" title="Select billing pattern or create schedules manually" >
+         <apex:pageBlockSection id="UploadbuttonId"  columns="2" title="Import and Export Billing Schedules" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}">
+            <div > 
+                <form class = "pageBlockSectionstyle">
+                <input type="file" id="myFile" name="filename" />
+                <apex:outputLink value="/apex/VFP_CRM_ExportBillingScheduleItems?dataParam={!oLIID1}" target="_blank" styleClass="button-style no-hover">Download Template</apex:outputLink>																												  
+				<apex:commandButton value="Upload" onClick="YUIShowLoading();handleFile();" onComplete="YUIHideLoading();" disabled="{!uploadButtonClicked}"/>
+                <apex:outputLink value="/servlet/servlet.FileDownload?file={!attachmentId}" target="_blank" rendered="{!hasError}">Download Error File</apex:outputLink>                 
+            	</form>
+                </div>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection title="{!MIBNF_Component__c.opportunity__r.name} Details">
+            <apex:pageBlockSectionItem >
+                <apex:outputLabel >Total Amount</apex:outputLabel>                 
+                <!--<apex:outputtext value="{!zrepAmount }"/>-->
+                <apex:outputField value="{!temp_obj.Billing_Amount__c}"/>                
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem >
+                <apex:outputLabel >Contract Start Date</apex:outputLabel>          
+                <apex:outputField value="{!MIBNF_Component__c.MIBNF__r.Contract_Start_Date__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem >
+                <apex:outputLabel >Contract End Date</apex:outputLabel>          
+                <apex:outputField value="{!MIBNF_Component__c.MIBNF__r.Contract_End_Date__c}"/>
+            </apex:pageBlockSectionItem>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+    
+    <!-------------billing Pattern & Billing Level ------------------------>
+    <apex:pageBlock id="table" >
+       <!--  <apex:pageMessages id="error"></apex:pageMessages>   -->     
+    
+        <apex:pageBlockSection columns="3" title="Apply Billing Plan Pattern" id="pbs">
+            <apex:pageBlockSectionItem id="pbsi">
+                <apex:outputLabel >Select Billing Plan Pattern</apex:outputLabel>  
+                <apex:selectList value="{!billingPattern}" size="1" id="billPattern" required="true" >
+                    <apex:selectOptions value="{!BillingPatterns}"/>
+                </apex:selectList>
+            </apex:pageBlockSectionItem>
+                    
+            <apex:pageBlockSectionItem >                             
+                   <apex:commandButton value="Apply and Calculate Billing Plan "                      
+                        onClick="YUIShowLoading();checkBillingPattern()" onComplete="YUIHideLoading();"
+                        rerender="oliWrapperListId,oppLvlSch,error, table"
+                        id="ApplyBillingScheduleBtn"
+                        disabled="{!OR(PreventEdit,isOPPBelowStage3)}"/>                                                   
+            </apex:pageBlockSectionItem><apex:outputPanel />             
+
+			<!--<apex:pageBlockSectionItem rendered="true" id="pbsiBL">
+                <apex:outputLabel >Select Billing Plan Level</apex:outputLabel>  
+                <apex:selectRadio value="{!billingLevel}" id="BL" >
+                    <apex:selectOptions value="{!billingLevels}"/>
+                </apex:selectRadio>
+            </apex:pageBlockSectionItem><apex:outputPanel /><apex:outputPanel /> -->
+
+        </apex:pageBlockSection>        
+    </apex:pageBlock>    
+    
+    <!-------------------- Show opportunity level billing schedules - Begin-->
+    <apex:outputPanel id="oppLvlSch" rendered="false">
+        <script>
+        function CloseOppWindow(){  
+                YUIHideLoading();       
+                
+                 if('{!isSaveSuccessful}' == 'true'){  
+                    parent.window.close();
+                    // self.close();
+                  }    
+            }
+        function confirmation_ComptoOpplevel(){
+                        
+           
+            if('{!compLevelappliedalready }' == 'true'&& '{!issaved}'== 'false' ){
+            
+                    confirm("Existing Billing Pattern is Component level Do you want to chnage it ?");
+                var response = confirm("If you continue then existing component level schedules will be deleted. Do you wish to continue ?");
+                if(response == true) {
+                    var browserName=navigator.appName;
+                    if (browserName=="Microsoft Internet Explorer")saveOppLevelSchedules();
+                    else saveOppLevelSchedulesFF(); 
+                } else {
+                     YUIHideLoading();
+                     //return;
+                    parent.window.close();
+                   // self.close();
+                    
+                }
+            }
+            else{
+                  var browserName=navigator.appName;
+                  if (browserName=="Microsoft Internet Explorer")saveOppLevelSchedules();
+                  else saveOppLevelSchedulesFF();   
+            }
+            
+        }
+        function confirmation_ComptoOpplevel_savendClose(){
+              
+               if('{!compLevelappliedalready }' == 'true' && '{!issaved}'== 'false'){
+
+                    confirm("Existing Billing Pattern is Component level Do you want to chnage it ?");
+                var response = confirm("If you continue then existing component level schedules will be deleted. Do you wish to continue ?");
+                if(response == true) {
+                    var browserName=navigator.appName;
+                    if (browserName=="Microsoft Internet Explorer")SaveOppLvlScheduleListNClose();
+                    else SaveOppLvlScheduleListNCloseFF(); 
+                } else {
+                        YUIHideLoading();                         
+                         parent.window.close();
+                        //self.close();
+                        return;
+                }
+            }
+            else{
+                  var browserName=navigator.appName;
+                  if (browserName=="Microsoft Internet Explorer")SaveOppLvlScheduleListNClose();
+                  else
+                 {
+                    SaveOppLvlScheduleListNCloseFFBNF_MDM();   
+                }
+            }
+                
+        }
+        </script> 
+        
+        <apex:pageBlock title="Opportunity Level Schedule Details"  rendered="{! ( NOT ((ISNULL(oppLvlSchWrapper))||oppLvlSchWrapper.size < 0 )) && (isSchedulePresent) && CONTAINS(billingLevel,'Opportunity Level') }" id="pbopp">
+            <apex:message />
+            <apex:pageBlockButtons >
+                 <!--<apex:commandButton action="{!saveOppLevelSchedules}" value="Save"
+                   onClick="YUIShowLoading();" onComplete="YUIHideLoading();"
+                   rerender="oppLvlSch,error,table"
+                   title="Save Billing Schedules"/>-->
+                 <apex:commandButton value="Save"
+                   onClick="YUIShowLoading();confirmation_ComptoOpplevel();" onComplete="YUIHideLoading();"
+                   rerender="oppLvlSch,error,table"
+
+                   title="Save Billing Schedules" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}"/>
+                 <!--<apex:commandButton action="{!SaveOppLvlScheduleListNClose}" value="Save & Close"
+                   rerender="oppLvlSch,error"
+                   onClick="YUIShowLoading();" onComplete="CloseOppWindow();"
+                   title="Save Billing Schedules and close pop up"/>--> 
+                 <apex:commandButton value="Save & Close"
+                   rerender="oppLvlSch,error"
+                   onClick="YUIShowLoading();confirmation_ComptoOpplevel_savendClose();" onComplete="CloseOppWindow();"
+                   title="Save Billing Schedules and close pop up" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}"/>                 
+                 <apex:commandButton value="Reset" action="{!crudeReset}" 
+                   onClick="YUIShowLoading();" onComplete="YUIHideLoading();"
+                   title="Reset billing schedules to previously saved values" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}"/>
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockTable value="{!oppLvlSchWrapper}" var="oppLvlSch" id="tableopp">                
+                <apex:column headerValue="Billing Date" width="180" rendered="{!NOT(oppLvlSch.isDeleted)}" >
+                     <apex:inputField value="{!oppLvlSch.scheduleItem.Billing_Date__c}"/>
+                 </apex:column>
+                <apex:column headerValue="Billing Amount ({!opp.CurrencyIsoCode})" width="180" rendered="{!NOT(oppLvlSch.isDeleted)}" id="colopp">                    
+                    <apex:inputField value="{!oppLvlSch.scheduleItem.Billing_Amount__c}"  required="true"   styleclass="billing_amount" id="inputtextopp"  />                    
+                </apex:column>
+                <apex:column headerValue="Invoice Text" width="180" rendered="{!NOT(oppLvlSch.isDeleted)}">                    
+                    <apex:inputField value="{!oppLvlSch.scheduleItem.Invoice_Description__c}"  />                    
+                </apex:column>
+               
+                <apex:column width="30" headerValue="." rendered="{!NOT(oppLvlSch.isDeleted)}"> 
+                    <apex:commandButton value="Delete Row" immediate="true" alt="Delete Schedule" image="{!$Resource.Delete_Button_Image}"
+                      onClick="YUIShowLoading();" onComplete="YUIHideLoading();" title="Delete Billing Schedule"
+                      action="{!deleteScheduleOppLevel}"  rerender="table,error,
+					  1,summary,oppLvlSch" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}">
+					  
+                         <apex:param name="deleterow" value="{!oppLvlSch.OppLevelindex}" assignTo="{!selectedOpLevel}"/>
+                     </apex:commandButton>
+                </apex:column>
+                <apex:facet name="footer" >
+                    <apex:outputPanel layout="inline">
+                       <apex:commandButton value="Add Row" image="{!$Resource.Add_Button_Image}" 
+                             onClick="YUIShowLoading();" onComplete="YUIHideLoading();" 
+                             action="{!addOppLevelSchedule }" rerender="error,summary,oppLvlSch" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}">                   
+                       </apex:commandButton>
+                       
+                   </apex:outputPanel>
+                </apex:facet>
+                
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:outputPanel>
+    <!-------------------- Show opportunity level billing schedules - End -->
+    
+    <!------- Show line item level billing schedules - Begin----------------->
+    <apex:outputPanel id="oliWrapperListId">   
+        <script>
+            function CloseWindow(){        
+                     //alert('{!isSaveSuccessful}');
+                     if('{!isSaveSuccessful}' == 'true'){  
+                          parent.window.close();
+                      }    
+                }                
+        </script>
+        
+        <apex:pageBlock title="Component Level Schedule Details" rendered="{! isSchedulePresent && CONTAINS(billingLevel,'Component Level')}" id="pb1">
+             <apex:pageBlockButtons >
+                 <apex:commandButton action="{!saveSchedules}" value="Save"
+                   onClick="YUIShowLoading();" onComplete="YUIHideLoading();"
+                   rerender="oliWrapperListId,error,table"
+                   title="Save Billing Schedules" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3)) && !ShowBillingScheduleScreen}"/>
+				   
+                  <apex:commandButton action="{!SaveScheduleListNClose}" value="Save & Close"
+                   rerender="oliWrapperListId,error"
+                   onClick="YUIShowLoading();" onComplete="YUIHideLoading();CloseWindow();"
+				   title="Save Billing Schedules" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3)) && !ShowBillingScheduleScreen}"/>
+                   
+                   <apex:commandButton action="{!saveSchedules}" value="Save"
+                   rerender="oliWrapperListId,error"
+                   onClick="YUIShowLoading();"  onComplete="YUIHideLoading();"
+				   title="Save Billing Schedules" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3)) && ShowBillingScheduleScreen}"/> 
+                   
+                  <apex:commandButton value="Reset" action="{!crudeReset}" 
+                     onClick="YUIShowLoading();" onComplete="YUIHideLoading();"
+                     immediate="true"
+                   title="Reset billing schedules to previously saved values" rendered="{!NOT(OR(PreventEdit, isOPPBelowStage3))}"/>  
+                   
+                   <apex:commandButton action="{!Cancel}" value="Cancel"
+                   onClick="return(confirm('The BNF has been saved and you may cancel now but you will need to setup billing schedules before you can submit the BNF.  Click \'OK\' to quit or click \'Cancel\' to return to billing schedule screen'))"                    
+                   title="Cancel" rendered="{!ShowBillingScheduleScreen}"/>
+                                  
+             </apex:pageBlockButtons>
+            
+             <!---------------- Schedule Table for component Level--------------> 
+             <div style="border-style:solid;background: white;
+                        border-color:grey;border-width:1px;padding-left:2px;padding-right:0px;padding-top:0px;padding-bottom:10px" id="Div1">
+                <apex:pageBlockTable var="v" value="{!L}"  style="border-width:0px" >   
+                        <apex:column width="127" headerValue="Billing Date"/>
+                        <apex:column width="127" headerValue="Billing Amount ({!oliWrapperList[0].oli.CurrencyIsoCode})"/>               
+                        <apex:column width="127" headerValue="Invoice Text"/>
+                      <apex:column width="18" headerValue="."/>                                
+                </apex:pageBlockTable><br/>        
+                
+                <apex:repeat value="{!oliWrapperList}" var="oliWrapper">
+                   <apex:dataTable value="{!oliWrapper.schedules}"   var="olis" styleClass="tableClass" style="border-color:gray;width:100%" rowClasses="odd,even">
+                       <apex:facet name="header" > 
+                           <apex:outputPanel style="height:10" styleClass="{ margin: 1em; float: right }">
+                               <table width="100%"  border="0" cellspacing="0" cellpadding="0">
+                            
+                                    <tr height="0"><td border="0">                                       
+                                        {!oliWrapper.oli.PricebookEntry.Product2.Name} ({!IF(oliWrapper.oli.Revised_Price__c!=null,'Revised ','')}Sales Price: {!opp.currencyIsoCode} {!IF(oliWrapper.oli.Revised_Price__c==null,oliWrapper.oli.TotalPrice,oliWrapper.oli.Revised_Price__c)})&nbsp;&nbsp;[Data Period Start:&nbsp;{!oliWrapper.startDateStr}&nbsp;&nbsp;&nbsp;Data Period End:&nbsp;{!oliWrapper.endDateStr}]
+                                        </td> 
+                                        <td align="right" border="0">
+                                            <apex:commandButton value="Add Row" image="{!$Resource.Add_Button_Image}" styleClass="{ margin: 1em; float: right }" 
+                                                 onClick="YUIShowLoading();" onComplete="YUIHideLoading();" 
+                                                 action="{!oliWrapper.addBilingSchedule}" rerender="table,error,summary,oliWrapperListId" rendered="{! NOT(OR(PreventEdit, isOPPBelowStage3))}">                   
+                                            </apex:commandButton>
+                                        </td>
+                                     </tr>
+                                </table>
+                            <hr align="left" width="100%"/>
+                            </apex:outputPanel>
+                       </apex:facet>
+                        
+                       <apex:column width="180" rendered="{!NOT(olis.isDeleted)}">
+                            <apex:inputField value="{!olis.scheduleItem.Billing_Date__c}"/>
+                       </apex:column>
+                       <apex:column width="180" rendered="{!NOT(olis.isDeleted)}">                    
+                            <apex:inputField value="{!olis.scheduleItem.Billing_Amount__c}" />                    
+                       </apex:column>
+                       <apex:column width="180" rendered="{!NOT(olis.isDeleted)}">
+                            <apex:inputField value="{!olis.scheduleItem.Invoice_Description__c}"/>
+					   </apex:column>
+                             
+                       <apex:column width="30" rendered="{!NOT(olis.isDeleted)}">                 
+                                               
+                              <apex:commandButton value="Delete Row" immediate="true" alt="Delete Schedule" image="{!$Resource.Delete_Button_Image}"
+                              onClick="YUIShowLoading();" onComplete="YUIHideLoading();" title="Delete Billing Schedule"
+                              action="{!deleteSchedule}" rerender="table,error,Div1,summary,oliWrapperListId" rendered="{!NOT(OR(PreventEdit, isOPPBelowStage3))}">
+                                  <apex:param name="selectedOli" value="{!oliWrapper.oli.id}" assignTo="{!selectedOLIId}" />                           
+                                  <apex:param name="selectedIdx" value="{!olis.idx}" assignTo="{!selectedIdx}" />                  
+                              </apex:commandButton>
+                        </apex:column>
+                        <hr width="100%"/>
+                        
+                </apex:dataTable><br/>
+                </apex:repeat>
+             </div>
+        </apex:pageBlock>
+    </apex:outputPanel>
+    <!------- Component level billing schedules - End----------------->
+    
+    <apex:actionFunction name="calculateSchedules" action="{!calculateSchedules}" 
+                     onComplete="YUIHideLoading();" 
+                     rerender="oliWrapperListId,oppLvlSch,error, table"/>
+    <apex:actionFunction name="calculateSchedulesFF" action="{!calculateSchedules}" /> 
+    
+    <apex:actionFunction name="saveOppLevelSchedules" action="{!saveOppLevelSchedules}" 
+                     onComplete="YUIHideLoading();" 
+                      rerender="oppLvlSch,error,table"/>
+    <apex:actionFunction name="saveOppLevelSchedulesFF" action="{!saveOppLevelSchedules}" /> 
+    
+    <apex:actionFunction name="SaveOppLvlScheduleListNClose" action="{!SaveOppLvlScheduleListNClose}" 
+                     onComplete="YUIHideLoading();parent.window.close();"
+                      rerender="oppLvlSch,error"/>
+    <apex:actionFunction name="SaveOppLvlScheduleListNCloseFF" action="{!SaveOppLvlScheduleListNClose}" oncomplete="parent.window.close();" /> 
+    <apex:actionFunction name="sendDataToActionFunction" action="{!uploadFile}"  
+                             onComplete="YUIHideLoading();" rerender="oliWrapperListId,oppLvlSch,error, table,pb">
+            <apex:param name="jSONData" assignTo="{!excelJsonData}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction action="{!getExport}" name="downloadTemplate" onComplete="YUIHideLoading();" rerender="oliWrapperListId,oppLvlSch,error, table,pb"/>
+    </apex:form>
+    
+</apex:page>

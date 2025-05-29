@@ -1,0 +1,55 @@
+<template>
+    <div if:true={isLoading} class="text-center">
+        <lightning-spinner alternative-text="Loading" variant="brand"></lightning-spinner>
+    </div>
+    <template if:false={isLoading}>
+        <div class="csm-container">
+            <h1 class="header-text">{labels.Groups}</h1>
+            <h2 class="slds-text-heading_medium">{labels.Join_groups_to_meet_and_collaborate}</h2>
+            <template if:true={hasProducts}>
+                <div
+                    class="slds-grid slds-gutters slds-p-horizontal_small slds-border_top slds-m-top_medium slds-p-top_medium">
+                    <div class="slds-col slds-grow-none">
+                        <lightning-combobox label={labels.Filter_by_product} value={selectedProductName}
+                            options={productOptions} onchange={handleProductFilterChange}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col">
+                        <lightning-input label={labels.Filter_by_Group_Name} type="text" value={selectedGroupName}
+                            onchange={handleGroupNameFilterChange}>
+                        </lightning-input>
+                    </div>
+                </div>
+
+                <template if:true={filteredGroups}>
+                    <div class="slds-card slds-m-bottom_medium slds-m-top_large">
+                        <div class="slds-card__body">
+                            <ul class="slds-has-dividers_bottom-space">
+                                <template for:each={filteredGroups} for:item="group" for:index="index">
+                                    <li class="slds-item" key={group.relatedGroup.Id}>
+                                        <c-lwc_csm_csh_group_about product-name={group.productName}
+                                            group-id={group.relatedGroup.Id}>
+                                        </c-lwc_csm_csh_group_about>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
+            </template>
+            <template if:false={hasProducts}>
+                <div class="csm-container">
+                    <div class="slds-scoped-notification slds-media slds-media_center slds-theme_warning slds-m-top_xx-large"
+                        role="status">
+                        <div class="slds-media__body slds-align_absolute-center">
+                            <div class="slds-media__figure">
+                                <lightning-icon icon-name="utility:warning"></lightning-icon>
+                            </div>
+                            <p class="slds-text-heading_medium">{labels.No_Groups_Available}</p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+</template>

@@ -1,0 +1,182 @@
+<template>
+    <div class="slds-box">
+        <template if:true={reportDrugResult}>
+            <lightning-card  variant="Narrow"  title={listSize} icon-name="custom:custom36" >
+                <lightning-button label="Insert/Update Report Drug" slot="actions" onclick={showModalBox}></lightning-button>
+                <div class="table-container">
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Drugs</th>
+                            </tr>
+                        </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width: 10%;">
+                                        <a href={reportDrugResult.programLink} target="_blank">{reportDrugResult.programName}</a>
+                                    </td>
+                                    <td>
+                                        <template iterator:item={reportDrugResult.reportDrugs}>
+                                            <span key={item.value.drugLink} class="slds-m-left_xxx-small">
+                                                <template if:false={item.last}>
+                                                    <a href={item.value.drugLink} target="_blank">{item.value.drugName}</a>,
+                                                </template>
+                                                <template if:true={item.last}>
+                                                    <a href={item.value.drugLink} target="_blank">{item.value.drugName}</a>
+                                                </template>
+                                            </span>
+                                        </template>
+                                    </td>
+                                </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </lightning-card>
+        </template>
+    </div>
+    
+
+    <!-- modal Start -->
+    <template if:true={isShowModal}>
+        
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={hideModalBox}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <template if:false={isShowModalForDrug}>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Insert/Update Report Drug</h2>
+                    </template>
+                    <template if:true={isShowModalForDrug}>
+                        <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">New Drug</h2>
+                    </template>
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    
+                    <div class="spinner">
+                        <template if:true={isLoading}>
+                             <lightning-spinner alternative-text="Loading" variant="brand" size="large">
+                             </lightning-spinner>
+                        </template>
+                    </div>
+                    <template if:false={isShowModalForDrug}>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_3-of-4">
+                                <lightning-record-view-form object-api-name={objectApiName} record-id={recordId}>
+                                    <lightning-output-field field-name={nameField}> </lightning-output-field>
+                                </lightning-record-view-form>
+                            </div>
+                            <div class="slds-col slds-size_1-of-4">
+                                <button class="slds-button slds-button_brand" onclick={newDrug}>New Drug</button>
+                            </div>
+                        </div>
+                        
+                        <div class="slds-p-top_medium slds-p-left_xx-small slds-p-right_xx-small">
+                            <div class="dropdown">
+                                <div class="dropdown-header" onclick={toggleDropdown}>
+                                    <p>{selectedLabels}</p>
+                                    <lightning-icon icon-name="utility:down" alternative-text="Toggle dropdown" size="xx-small" onclick={getOptions}></lightning-icon>
+                                </div>
+                                <div class="dropdown-body" if:true={isDropdownOpen}>
+                                    <lightning-input
+                                        type="search"
+                                        placeholder="Search..."
+                                        onchange={handleSearch}
+                                        class="search-box"
+                                    ></lightning-input>
+                                    
+                                    <div class="options-container">
+                                        <template for:each={filteredOptions} for:item="option">
+                                        <div key={option.value} class="option">
+                                            <lightning-input
+                                                type="checkbox"
+                                                checked={option.checked}
+                                                label={option.label}
+                                                onchange={handleCheck}
+                                                data-id ={option.value}
+                                            ></lightning-input>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                          </div>
+                    </template>
+                    <template if:true={isShowModalForDrug}>
+                        <lightning-record-edit-form object-api-name="Drug__c" onsuccess={handleSuccess} onsubmit={handleSubmit}>
+                            <lightning-messages>
+                            </lightning-messages>
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Name" onchange={handleChange} data-id="name" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Therapeutic_Area__c"> </lightning-input-field>
+                                </div>
+                            </div>
+        
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field  field-name="Program__c" value={programId} disabled> </lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Indication__c"> </lightning-input-field>
+                                </div>
+                            </div>
+        
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Service_Lines__c" value={serviceLineName} data-id="Service_Lines"> </lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Description__c"> </lightning-input-field>
+
+                                    <div>
+                                        <lightning-output-field field-name="Active__c"> </lightning-output-field>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            
+                            <footer class="slds-modal__footer">
+                                <lightning-button
+                                    variant="brand"
+                                    class="slds-m-top_small"
+                                    onclick={hideDrugModalBox}
+                                    label="Cancel">
+                                </lightning-button>
+                                
+                                <lightning-button
+                                    variant="brand"
+                                    class="slds-m-top_small slds-m-left_x-small"
+                                    type="submit"
+                                    label="Save">
+                            </lightning-button>
+                            
+                            </footer>
+                        </lightning-record-edit-form>
+                    </template>
+                </div>
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <template if:false={isShowModalForDrug}>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={hideModalBox} title="Cancel">Cancel</button>
+                        <button class="slds-button slds-button_brand" onclick={submitDetails} title="submit">Submit</button>
+                    </footer>
+                </template>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+    <!-- modal end -->
+</template>

@@ -1,0 +1,770 @@
+<apex:page standardController="AMA_Fee_Master__c" extensions="CNT_TPA_AMA_Fee_Master_Rules_Config" sideBar="false" standardStylesheets="false" lightningStyleSheets="true" showHeader="true">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/> 
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <script src="../static/102010/js/picklist.js"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->  
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script><!-- Added by C.P.Pandey under CR-7565 -->
+            
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- Added by C.P.Pandey Custom popup start -->
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <!-- Added by C.P.Pandey Custom popup end -->
+            
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <!-- *** Bootstrap Javascript Library reference *** -->
+            
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+    
+            <style>
+                th.labelCol.vfLabelColTextWrap.first {
+                    width: 10%; !important;
+                }
+            </style>   
+    <script type="text/javascript">
+       
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMAFeeMasterRulesConfig', ['ui.bootstrap']);
+        
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$modal', '$log', '$window', function ($scope, $filter, $modal, $log, $window) 
+        {
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.amaFeeObj
+            $scope.amaFeeObj = {};
+            $scope.amaFeeObj.Id = '';
+            $scope.amaFeeObj.Year__c = '';
+            $scope.amaFeeObj.Contract_Type__c = '';
+            //$scope.amaFeeObj.Template__c = '';
+            $scope.amaFeeObj.Vendor_has_Licence__c = '';
+            $scope.amaFeeObj.Fee_Calculated__c = '';
+            $scope.amaFeeObj.Fee__c = '';
+            $scope.amaFeeObj.Proration_Rules_Applied__c = '';
+            
+            //Variables for Pagination
+            $scope.size = 10;
+            $scope.counter = 0;
+            $scope.pageNumber;
+            $scope.totalPages;
+            $scope.hasPrevious;
+            $scope.hasNext;
+            
+            $scope.yearSelected;
+            $scope.showUpdateButton = false;
+            $scope.showSaveButton = true;
+            //Populate Years List
+            $scope.yearsList = {!YearsList};
+            $scope.currentYear = ''+new Date().getFullYear();
+            //Populate Contract List
+            $scope.contractTypeList = {!ContractTypeList};
+            //Populate Vendor Has License List
+            $scope.vendorHasLicenseValuesList = {!VendorHasLicenseValuesList};
+            //Populate Fee Calculated List
+            $scope.feeCalculatedValuesList = {!FeeCalculatedValuesList};
+            
+            $scope.duplicateRuleExists = false;
+            
+            $scope.getContracts = function() {
+                $scope.amaFeeContracts = [];
+                for(var i = $scope.counter; i < $scope.amaFeeContractsList.length && i < $scope.counter+$scope.size; i++ ) {
+                    var tmpObj = {};
+                    tmpObj.id = $scope.amaFeeContractsList[i].Id;
+                    tmpObj.Contract_Type__c = ($scope.amaFeeContractsList[i].Contract_Type__c == null || $scope.amaFeeContractsList[i].Contract_Type__c == '') ? '--None--' : $scope.amaFeeContractsList[i].Contract_Type__c;
+                    tmpObj.Year__c = $scope.amaFeeContractsList[i].Year__c;
+                    //tmpObj.Template__c = ($scope.amaFeeContractsList[i].Template__c != '' && $scope.amaFeeContractsList[i].Template__c != null) ? $scope.amaFeeContractsList[i].Template__r.Name : '';
+                    tmpObj.Vendor_has_Licence__c = ($scope.amaFeeContractsList[i].Vendor_has_Licence__c == null || $scope.amaFeeContractsList[i].Vendor_has_Licence__c == '') ? 'N/A' : $scope.amaFeeContractsList[i].Vendor_has_Licence__c;
+                    tmpObj.Fee_Calculated__c = ($scope.amaFeeContractsList[i].Fee_Calculated__c == null || $scope.amaFeeContractsList[i].Fee_Calculated__c == '') ? '--None--' : $scope.amaFeeContractsList[i].Fee_Calculated__c;
+                    tmpObj.Fee__c = $scope.amaFeeContractsList[i].Fee__c;
+                    tmpObj.Proration_Rules_Applied__c = ($scope.amaFeeContractsList[i].Proration_Rules_Applied__c == null || $scope.amaFeeContractsList[i].Proration_Rules_Applied__c == '') ? false : true;
+                    tmpObj.LastModifiedDate = $scope.amaFeeContractsList[i].LastModifiedDate;
+                    tmpObj.CreatedDate = $scope.amaFeeContractsList[i].CreatedDate;
+                    $scope.amaFeeContracts.push(angular.copy(tmpObj));
+                }
+                $scope.pageNumber = Math.floor($scope.counter / $scope.size) + 1;
+                if ($scope.amaFeeContractsList.length % $scope.size > 0) {
+                  $scope.totalPages = Math.floor($scope.amaFeeContractsList.length / $scope.size) + 1;
+                } else {
+                  $scope.totalPages = Math.floor($scope.amaFeeContractsList.length / $scope.size);
+                }
+                //To find if it has previous elements
+                if($scope.counter > 0) {
+                    $scope.hasPrevious = true;
+                } else {
+                    $scope.hasPrevious = false;
+                }
+                //To find if it has next elements
+                if($scope.counter+$scope.size < $scope.amaFeeContractsList.length) {
+                    $scope.hasNext = true;
+                } else {
+                    $scope.hasNext = false;
+                }
+            }
+            
+            $scope.changeListSize = function() {
+                $scope.counter = 0;
+                $scope.size = parseInt($scope.size);
+                $scope.getContracts();
+            }
+            
+            $scope.first = function() {
+                $scope.counter = 0;
+                $scope.getContracts();
+            }
+            
+            $scope.last = function() {
+                if($scope.amaFeeContractsList.length % $scope.size > 0) { 
+                    $scope.counter = $scope.amaFeeContractsList.length-($scope.amaFeeContractsList.length % $scope.size);
+                } else {
+                    $scope.counter = $scope.amaFeeContractsList.length - $scope.size;
+                }
+                $scope.getContracts();
+            }
+            
+            $scope.next = function() {
+                $scope.counter = $scope.counter+$scope.size;
+                $scope.getContracts();
+            }
+            
+            $scope.previous = function() {
+                $scope.counter = $scope.counter-$scope.size;
+                $scope.getContracts();
+            }
+    
+            $scope.emptyFields = function() {
+                $scope.amaFeeObj.Contract_Type__c = $scope.contractTypeList[0];
+                $scope.amaFeeObj.Vendor_has_Licence__c = $scope.vendorHasLicenseValuesList[0];
+                $scope.amaFeeObj.Fee_Calculated__c = $scope.feeCalculatedValuesList[0];
+                $scope.amaFeeObj.Fee__c = '';
+                $scope.amaFeeObj.Proration_Rules_Applied__c = '';
+                $('.ddTemplate').val('');
+                $scope.duplicateRuleExists = false;
+            }
+            
+            //Populating Existing Rules for current year
+            $scope.amaFeeContractsList = JSON.parse('{!amaFeeMasterRulesLists}');
+            $scope.getContracts();
+                  
+            //Function to make fee zero when selection being changed to 'No fee'
+            $scope.validateCalculateFee = function() {
+                if($scope.amaFeeObj.Fee_Calculated__c == 'No Fee') {
+                    $scope.amaFeeObj.Fee__c = 0;
+                    $scope.amaFeeObj.Proration_Rules_Applied__c = false;
+                }
+                else {
+                    $scope.amaFeeObj.Fee__c = '';
+                }
+            }   
+            
+            $scope.cloneExistingRules = function () {
+                showLoading();
+                CNT_TPA_AMA_Fee_Master_Rules_Config.cloneExistingRules($scope.yearSelected, function(result, event)
+                {
+                    var nextYear = (Number($scope.yearSelected)) + 1;
+                    if(event.type == 'exception')
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    
+                    if(result.length > 0) {
+                        if(result.indexOf('duplicate') > -1) {
+                            result = result.replace('duplicate','');
+                            $scope.popupConfirm('Some of the rules already exists for '+ nextYear + ' with same Contract Type and Vendor Has License values. Please confirm to Proceed to override those rules? ',
+                                                function(){
+                                                    showLoading();
+                                                    CNT_TPA_AMA_Fee_Master_Rules_Config.upsertSameRuleExistsinNextYear(result,function(result, event)
+                                                    {
+                                                        $scope.$log.warn(result);
+                                                        if(result.indexOf('success') > -1){
+                                                            $scope.popupAlert('Rules successfully cloned for '+nextYear+'. ');
+                                                            hideLoading();
+                                                        }
+                                                         else {
+                                                            hideLoading();
+                                                            $scope.$log.info('Error: ' + event.message);
+                                                            $scope.submitStatus = 'error';
+                                                            return false;
+                                                        }
+                                                    });
+                                                },
+                                                function(){},
+                                                true);
+                            hideLoading();
+                        }
+                        else if(result == 'success'){
+                            $scope.popupAlert('Rules successfully cloned for '+nextYear+'. ');
+                        }
+                    }
+                    else
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Error: ' + event.message);
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      //$digest or $apply
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            }
+            
+            //Function to show existing Rules when year get changed
+            $scope.showExistingRules = function () {
+                showLoading();
+                CNT_TPA_AMA_Fee_Master_Rules_Config.showExistingRules($scope.yearSelected, function(result, event)
+                {
+                    if(event.type == 'exception')
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    if(result.length > 0) {
+                        $scope.amaFeeContracts = [];
+                        $scope.amaFeeContractsList = JSON.parse(result);
+                        //Populating Existing Rules for year selected
+                        $scope.getContracts();
+                    }
+                    else
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Error: ' + event.message);
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      //$digest or $apply
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            }
+            
+            //Function to save new rule                 
+            $scope.saveNewRule = function() {
+
+                //Validate Contract type
+                if($scope.amaFeeObj.Contract_Type__c == null || $scope.amaFeeObj.Contract_Type__c == '--None--' || $scope.amaFeeObj.Contract_Type__c == '') {
+                    alert('Please select Contract type');
+                    return false;
+                }
+                
+                //Validate Fee Calculate input
+                if($scope.amaFeeObj.Fee_Calculated__c == null || $scope.amaFeeObj.Fee_Calculated__c == '--None--' || $scope.amaFeeObj.Fee_Calculated__c == '') {
+                    alert('Please select Calculate Fee');
+                    return false;
+                }
+                
+                //Validate Fee value
+                if(($scope.amaFeeObj.Fee_Calculated__c != 'No Fee' && $scope.amaFeeObj.Fee__c < 1)) {
+                    alert('Please insert appropriate fee for this contract type');
+                    return false;
+                }
+                
+                //$scope.amaFeeObj.Template__c = $('.ddTemplate').val();
+                showLoading();
+                CNT_TPA_AMA_Fee_Master_Rules_Config.saveRule(JSON.stringify($scope.amaFeeObj), $scope.yearSelected, function(result, event)
+                {   
+                    if(event.type == 'exception')
+                    {
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    if(result == 'duplicate') {
+                        $scope.$log.info('####duplicate: '+result);
+                        $scope.duplicateRuleExists = true;
+                        $scope.$log.info('$scope.duplicateRuleExists: '+$scope.duplicateRuleExists);
+                        hideLoading();
+                    }
+                    else if(result!='duplicate' && result!='error' && result.length > 0) {
+                        $scope.duplicateRuleExists = false;
+                        $scope.emptyFields();
+                        $scope.amaFeeContracts = [];
+                        $scope.amaFeeContractsList = JSON.parse(result);
+                        $scope.getContracts();
+                    }
+                    else
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Error: ' + event.message);
+                        hideLoading();
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      //$digest or $apply
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            }
+            
+            $scope.editRule = function(index) {
+                $scope.showUpdateButton = true;
+                $scope.showSaveButton = false;
+                $scope.amaFeeObj = angular.copy($scope.amaFeeContracts[index]);
+                //$('.ddTemplate').val($scope.amaFeeObj.Template__c);
+            }
+            
+            $scope.cloneRule = function(index) {
+                $scope.showUpdateButton = false;
+                $scope.showSaveButton = true;
+                $scope.amaFeeObj = angular.copy($scope.amaFeeContracts[index]);
+                //$('.ddTemplate').val($scope.amaFeeObj.Template__c);
+            }
+            
+            //Function to update existing rule
+            $scope.updateThisRule = function() {
+                
+                //Validate Contract type
+                if($scope.amaFeeObj.Contract_Type__c == null || $scope.amaFeeObj.Contract_Type__c == '--None--' || $scope.amaFeeObj.Contract_Type__c == '') {
+                    alert('Please select Contract type');
+                    return false;
+                }
+                
+                //Validate Fee Calculate input
+                if($scope.amaFeeObj.Fee_Calculated__c == null || $scope.amaFeeObj.Fee_Calculated__c == '--None--' || $scope.amaFeeObj.Fee_Calculated__c == '') {
+                    alert('Please select Calculate Fee');
+                    return false;
+                }
+                
+                //Validate Fee value
+                if(($scope.amaFeeObj.Fee_Calculated__c != 'No Fee' && $scope.amaFeeObj.Fee__c < 1)) {
+                    alert('Please insert appropriate fee for this contract type');
+                    return false;
+                }
+                
+                showLoading();
+                //$scope.amaFeeObj.Template__c = $('.ddTemplate').val();
+                CNT_TPA_AMA_Fee_Master_Rules_Config.updateRule(JSON.stringify($scope.amaFeeObj), $scope.yearSelected, function(result, event)
+                {
+                    if(event.type == 'exception')
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    if(result == 'duplicate') {
+                        $scope.$log.info('####duplicate: '+result);
+                        $scope.duplicateRuleExists = true;
+                        $scope.$log.info('$scope.duplicateRuleExists: '+$scope.duplicateRuleExists);
+                        hideLoading();
+                    }
+                    else if(result!='duplicate' && result!='error' && result.length > 0) {
+                        $scope.duplicateRuleExists = false;
+                        $scope.showUpdateButton = false;
+                        $scope.showSaveButton = true;
+                        $scope.emptyFields();
+                        $scope.amaFeeContracts = [];
+                        $scope.amaFeeContractsList = JSON.parse(result);
+                        $scope.getContracts();
+                    }
+                    else
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Error: ' + event.message);
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      //$digest or $apply
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            }
+            
+            $scope.cancel = function() {
+                $scope.showUpdateButton = false;
+                $scope.showSaveButton = true;
+                $scope.emptyFields();
+                $scope.duplicateRuleExists = false;
+            }
+            $scope.deleteRule = function(index) {
+                $scope.amaFeeObject = angular.copy($scope.amaFeeContracts[index]);
+                showLoading();
+                CNT_TPA_AMA_Fee_Master_Rules_Config.deleteRule(JSON.stringify($scope.amaFeeObject),function(result, event)
+                {
+                    if(event.type == 'exception')
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Exception: ' + event.message);
+                        return false;                                    
+                    }
+                    if(result.length > 0) {
+                        $scope.showUpdateButton = false;
+                        $scope.showSaveButton = true;
+                        $scope.emptyFields();
+                        $scope.amaFeeContracts = [];
+                        $scope.amaFeeContractsList = JSON.parse(result);
+                        //Populating Existing Rules for year selected
+                        $scope.getContracts();
+                    }
+                    else
+                    {
+                        hideLoading();                                
+                        $scope.$log.info('Error: ' + event.message);
+                        return false;
+                    }
+                    if(!$scope.$$phase) {
+                      //$digest or $apply
+                      $scope.$apply();
+                    }
+                    hideLoading();
+                },
+                {escape: false}
+                );
+            }
+            
+            $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true}, 
+                        function(r)
+                        {
+                            if(r && truePart != null)
+                                truePart();
+                        });  
+                    }
+            
+            $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                        {
+                            if(isYesNo)
+                                popup(msg, {'verify':true, 'animate':true}, function(r)
+                                {
+                                    if(r)
+                                        truePart();
+                                    else
+                                        falsePart();
+                                    haltScreen = false;
+                                });
+                            else
+                                popup(msg, {'confirm':true, 'animate':true}, function(r)
+                                {
+                                    if(r)
+                                        truePart();
+                                    else
+                                        falsePart();
+                                    haltScreen = false;
+                                });
+                            $('.aButtons button').each(function(){
+                                if($(this).attr('value') == 'cancel')
+                                    $(this).html('Return');
+                                if($(this).attr('value') == 'ok')
+                                    $(this).html('Confirm');
+                            });
+                        }
+            
+            
+    }]);
+    
+        $(document).ready(function(){
+            $("h5").click(function(){
+                $("#rulesPanelDivID").removeAttr('style');
+                var currentText = $(this).text();
+                var showText = 'Show Existing AMA Rules:';
+                var hideText = 'Hide Existing AMA Rules:';
+                if(currentText == showText) {
+                    $(this).text(hideText);
+                    $("#rulesPanelDivID").show();
+                } else if(currentText == hideText) {
+                    $(this).text(showText);
+                    $("#rulesPanelDivID").hide();
+                }
+            });
+        });
+        
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+        
+    </script>
+    <apex:slds />
+    </head>
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <div class="slds-scope">
+                <c:VFC_TPA_LoadingImage />
+                <apex:form id="theForm">
+                    <div id="ng-app" ng-app="AMAFeeMasterRulesConfig">
+                        <div id="controllerPage" ng-controller="controllerPage">
+                            <div style="display:none;" ng-show="true">
+                                <apex:outputPanel id="block1">
+                                    <div class="slds-page-header" role="banner" style="margin-bottom: .5em; margin-top: .5em; margin-left: .5em; border-radius: 4px;">
+                                        <div class="slds-grid">
+                                            <div class="slds-col slds-has-flexi-truncate">
+                                                <div class="slds-media slds-no-space slds-grow">
+                                                    <div class="slds-media__body">
+                                                        <h3 class="slds-page-header__title slds-truncate ">AMA Fee Master Rules Configuration</h3>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <apex:pageBlock html-style="margin-left: .5em;">
+                                        <!-- Error Message Box Start -->
+                                        <div ng-show="duplicateRuleExists" class="message errorM3" role="alert" style="display:none;">
+                                            <img class="msgIcon" title="ERROR" src="/s.gif" style="float:left;" alt="ERROR" />
+                                            <div class="messageText">
+                                                <span style="color:#cc0000"><h4>Errors: &nbsp;</h4></span>
+                                            </div>
+                                            <br/>
+                                            <ul>
+                                                <li> Same rule already exists for {{amaFeeObj.Year__c}} with same Contract Type and Vendor Has License values. </li>
+                                            </ul>
+                                        </div>
+                                        <!-- Error Message Box End -->
+                                        <apex:actionstatus id="status">
+                                            <apex:facet name="start">
+                                                <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+                                                    <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                                                        <div class="slds-spinner__dot-a"></div>
+                                                        <div class="slds-spinner__dot-b"></div>
+                                                    </div>
+                                                </div>
+                                            </apex:facet>
+                                        </apex:actionstatus>
+                                        <apex:pageblocksection title="Year Of Rule" collapsible="false" columns="1" html-style="background-color:white;">
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Year Of Rule" />
+                                                <apex:outputPanel id="opPanel1">
+                                                    <div>
+                                                        <select id="ddYear" ng-model="amaFeeObj.Year__c" ng-options="v for v in yearsList" ng-init="amaFeeObj.Year__c = currentYear">
+                                                        </select>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageblocksection>
+                                        <apex:pageBlockSection title="Rule Configuration" collapsible="false" columns="2" html-style="background-color:white;">
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Contract Type" />
+                                                <apex:outputPanel id="opPanel2">
+                                                    <div>
+                                                        <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                                            <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                            <select id="ddContractType" ng-model="amaFeeObj.Contract_Type__c" ng-options="v for v in contractTypeList" ng-init="amaFeeObj.Contract_Type__c = contractTypeList[0]" />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Vendor has License?" />
+                                                <apex:outputPanel id="opPanel3">
+                                                    <div>
+                                                        <select id="ddVendorHasLicense" ng-model="amaFeeObj.Vendor_has_Licence__c" ng-options="v for v in vendorHasLicenseValuesList" ng-init="amaFeeObj.Vendor_has_Licence__c = vendorHasLicenseValuesList[0]">
+                                                        </select>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Calculate Fee?" />
+                                                <apex:outputPanel >
+                                                    <div>
+                                                        <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                                            <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                            <select id="ddFeeCalculated" ng-model="amaFeeObj.Fee_Calculated__c" ng-change="validateCalculateFee();" ng-options="v for v in feeCalculatedValuesList" ng-init="amaFeeObj.Fee_Calculated__c = feeCalculatedValuesList[0]">
+                                                            </select>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Proration Rules Applied?" />
+                                                <apex:outputPanel >
+                                                    <div>
+                                                        <input type="checkbox" id="ddProrationRules" ng-disabled="amaFeeObj.Fee_Calculated__c == 'No Fee'" ng-model="amaFeeObj.Proration_Rules_Applied__c"/>
+                                                        
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                            <apex:pageBlockSectionItem >
+                                                <apex:outputLabel value="Fee" />
+                                                <apex:outputPanel >
+                                                    <div>
+                                                        <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                                            <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                            <input class="slds-size_1-of-2" ng-disabled="amaFeeObj.Fee_Calculated__c == 'No Fee'" type="number" id="idFee" ng-model="amaFeeObj.Fee__c" />
+                                                            <image src="/s.gif" data-placement="bottom" style="display:inline;position:relative;margin-left: -20px;" title="Fee to be calculated" />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                        </apex:pageBlockSection>
+                                        <apex:pageBlockButtons location="bottom">
+                                            <div >
+                                                <button class="slds-button slds-button_success" onclick="return false;" ng-click="saveNewRule();" ng-show="showSaveButton"><span />Save New Rule</button>
+                                                <button class="btn btn-default" onclick="return false;" ng-click="emptyFields();" ng-show="showSaveButton">Reset</button>
+                                                <button class="slds-button slds-button_success" onclick="return false;" style="display:none;" ng-show="showUpdateButton" ng-click="updateThisRule();">Update This Rule</button>
+                                                <button class="btn btn-default" onclick="return false;" style="display:none;" ng-show="showUpdateButton" ng-click="cancel();">Cancel</button>
+                                            </div>
+                                        </apex:pageBlockButtons>
+                                    </apex:pageBlock>
+                                </apex:outputPanel>
+                                <u><i><h5 style="cursor:pointer;margin-left:20px;">Show Existing AMA Rules:</h5></i></u>
+                                <p></p>
+                                <div id="rulesPanelDivID" style="display:none;">
+                                    <div id="yearDivId" style="margin-left:100px;">
+                                        <apex:outputText value="Year of Rules: " />
+                                        <apex:outputPanel id="yearOfRulePanel">
+                                            <select id="ddYearSelected" ng-model="yearSelected" ng-change="showExistingRules();" ng-options="v for v in yearsList" ng-init="yearSelected = currentYear">
+                                            </select>
+                                        </apex:outputPanel>
+                                    </div>
+                                    <button class="slds-button slds-button_brand" style="margin-left:20px;" 
+                                                        onclick="return false;"
+                                            			ng-model="currentYearSelected" 
+                                            			ng-disabled="yearSelected != currentYear" 
+                                            			ng-init="currentYearSelected = currentYear"
+                                                        ng-if="true"
+                                                        ng-click="cloneExistingRules()">
+                                                        <b>Clone All</b>
+                                                    </button><br/>
+                                    <!-- Error Message Box Start -->
+                                    <div ng-show="amaFeeContracts.length == 0" class="message errorM3 slds-text-longform" role="alert" style="display:none;">
+                                        <table border="0"  class="messageTable" style="">
+                                            <tr valign="top">
+                                                <td><img alt="ERROR" class="msgIcon slds-align_absolute-center" src="/s.gif" style="float:right;" title="ERROR"/></td>
+                                                <td class="messageCell"><div class="messagetext"><span style="color:#cc0000"><h4>Errors</h4></span></div></td></tr><tr><td></td>
+                                            <td> <ul>
+                                                <li> No Records found for {{yearSelected}}  year </li>
+                                                </ul></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <!-- Error Message Box End -->
+                                    <div ng-show="amaFeeContracts.length > 0" style=" margin-left: .5em;">
+                                        <apex:outputPanel id="rulesPanelID">
+                                            <apex:pageBlock title="Existing AMA Fee Master Rules" id="page2">
+                                                <table class="list slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" style="margin-bottom:10px;" ng-show="">
+                                                    <thead class="slds-theme_shade">
+                                                        <tr class="headerRow slds-text-heading slds-line-height_reset">
+                                                            <th>Action</th>
+                                                            <th>Year</th>
+                                                            <th>Contract Type</th>
+                                                            <th>Vendor has Licence?</th>
+                                                            <!-- <th>Template</th> -->
+                                                            <th>Proration Rules Applied?</th>
+                                                            <th>Calculate Fee?</th>
+                                                            <th>Fee($)</th>
+                                                            <th>Created Date</th>
+                                                            <th>Last Modified Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tr class="dataRow" ng-repeat="obj in amaFeeContracts" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                                        <td><a href="javascript:void(0)" style="text-decoration:underline;" ng-click="editRule($index)" >Edit</a>
+                                                            <a href="javascript:void(0)" style="text-decoration:underline;" ng-click="cloneRule($index)" >Clone</a>
+                                                            <a href="javascript:void(0)" style="text-decoration:underline;" ng-confirm-click="Are you sure you want to delete this rule?" confirmed-click="deleteRule($index);">Delete</a> <!-- ng-click="deleteRule($index)" -->
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            {{obj.Year__c}}
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            <span ng-if="obj.Contract_Type__c != '--None--'">{{obj.Contract_Type__c}} </span>
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            {{obj.Vendor_has_Licence__c}}
+                                                        </td>
+                                                        <!-- <td class="dataCell">
+                                                            {{obj.Template__c}} 
+                                                        </td> -->
+                                                        <td class="dataCell" >
+                                                            <span ng-if="obj.Proration_Rules_Applied__c == true"><input type="checkbox" checked="true" disabled="true" style="cursor: auto;"/></span>
+                                                            <span ng-if="obj.Proration_Rules_Applied__c == false"><input type="checkbox" disabled="true" style="cursor: auto;"/></span>
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            <span ng-if="obj.Fee_Calculated__c != '--None--'">{{obj.Fee_Calculated__c}} </span> 
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            {{obj.Fee__c}} 
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            {{obj.CreatedDate | date:'MM/dd/yyyy'}} 
+                                                        </td>
+                                                        <td class="dataCell">
+                                                            {{obj.LastModifiedDate | date:'MM/dd/yyyy'}} 
+                                                        </td>
+                                                    </tr>
+                                                </table><br/>
+                                            </apex:pageBlock>
+                                            <div style="float:left">
+                                                Showing Page # {{pageNumber}} of {{totalPages}}&nbsp;&nbsp;
+                                                Show Records: <select ng-model="size" ng-change="changeListSize();">
+                                                <option value="10">10</option>
+                                                <option value="20">20</option>
+                                                <option value="30">30</option>
+                                                </select> &nbsp;&nbsp;
+                                                Total Rules for {{yearSelected}}: {{amaFeeContractsList.length}}
+                                            </div>
+                                            <div style="float:right">
+                                                <a href="javascript:void(0)" style="margin-left:10px;text-decoration:underline;" ng-show="hasPrevious" ng-click="first();" >First</a>
+                                                <font face="verdana" style="margin-left:10px;" ng-show="!hasPrevious">First</font>
+                                                <a href="javascript:void(0)" style="margin-left:10px;text-decoration:underline;" ng-show="hasPrevious" ng-click="previous();" >Previous</a>
+                                                <font face="verdana" style="margin-left:10px;" ng-show="!hasPrevious">Previous</font>
+                                                <a href="javascript:void(0)" style="margin-left:10px;text-decoration:underline;" ng-show="hasNext" ng-click="next();" >Next</a>
+                                                <font face="verdana" style="margin-left:10px;" ng-show="!hasNext">Next</font>
+                                                <a href="javascript:void(0)" style="margin-left:10px;text-decoration:underline;" ng-show="hasNext" ng-click="last();" >Last</a>
+                                                <font face="verdana" style="margin-left:10px;" ng-show="!hasNext">Last</font>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div> 
+                    </div>
+                </apex:form>
+            </div>
+        </body>
+    </html>
+</apex:page>

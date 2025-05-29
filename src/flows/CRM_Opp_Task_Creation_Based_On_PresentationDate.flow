@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>57.0</apiVersion>
+    <description>This flow wil run for opportunity scheduled path</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>formula_1_myWaitEvent_myWait_myRule_1_event_0_SA1_9548789008</name>
+        <dataType>Date</dataType>
+        <expression>{!$Record.Bid_Defense_Date__c} - 14</expression>
+    </formulas>
+    <formulas>
+        <name>formula_2_myWaitEvent_myWait_myRule_1_event_0_SA1_9429699176</name>
+        <dataType>String</dataType>
+        <expression>&quot;Dear &quot;+{!$Record.Owner.FirstName+BR(})+
+&quot;This opportunity record shows that there is an anticipated bid defense on &quot; + TEXT({!$Record.Bid_Defense_Date__c}) +&quot;.  Please take a moment to review the below presentation fields and update if necessary.&quot;+BR()+BR()+
+&quot;IQVIA Invited to Present?&quot;+BR()+
+&quot;Presentation Date&quot;+BR()+
+&quot;Presentation Country&quot;+BR()+
+&quot;Presentation Date Status&quot;+BR()+BR()+
+&quot;Please note these fields trigger Operational workflows and internal stakeholders rely upon the accuracy of this information to make informed business decisions and to enable current and future workflows designed to support your sales efforts.&quot;+BR()+
+LEFT($Api.Partner_Server_URL_260, FIND( &apos;/services&apos;, $Api.Partner_Server_URL_260))+ {!$Record.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>formula_3_myWaitEvent_myWait_myRule_1_event_0_SA1_5212033992</name>
+        <dataType>DateTime</dataType>
+        <expression>DATETIMEVALUE(TEXT(NOW() +1))</expression>
+    </formulas>
+    <formulas>
+        <name>formula_4_myWaitEvent_myWait_myRule_1_event_0_SA1_2102342952</name>
+        <dataType>String</dataType>
+        <expression>&quot;Confirmation of Presentation Fields for &quot;+{!$Record.Opportunity_Number__c}</expression>
+    </formulas>
+    <formulas>
+        <name>isnew</name>
+        <dataType>Boolean</dataType>
+        <expression>ISNEW()</expression>
+    </formulas>
+    <formulas>
+        <name>priorvalBidDate</name>
+        <dataType>Boolean</dataType>
+        <expression>ISBLANK({!$Record__Prior.Bid_Defense_Date__c})</expression>
+    </formulas>
+    <interviewLabel>CRM_Opp_Task_Creation_Based_On_PresentationDate {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM_Opp_Task_Creation_Based_On_PresentationDate</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>myWaitEvent_myWait_myRule_1_event_0_SA1</name>
+        <label>Task Creation</label>
+        <locationX>308</locationX>
+        <locationY>276</locationY>
+        <inputAssignments>
+            <field>ActivityDate</field>
+            <value>
+                <elementReference>formula_1_myWaitEvent_myWait_myRule_1_event_0_SA1_9548789008</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Description</field>
+            <value>
+                <elementReference>formula_2_myWaitEvent_myWait_myRule_1_event_0_SA1_9429699176</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>IsReminderSet</field>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value>
+                <elementReference>$Record.OwnerId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value>
+                <stringValue>Normal</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>ReminderDateTime</field>
+            <value>
+                <elementReference>formula_3_myWaitEvent_myWait_myRule_1_event_0_SA1_5212033992</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <elementReference>formula_4_myWaitEvent_myWait_myRule_1_event_0_SA1_2102342952</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhatId</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <filterFormula>ISPICKVAL({!$Record.QI_Invited_to_Present__c},&quot;Yes&quot;) &amp;&amp; 
+((ISPICKVAL({!$Record.Line_of_Business__c} ,&quot;Clinical&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Connected Devices&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Data Sciences&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Safety &amp; Med Info&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Early Clinical Development&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Regulatory &amp; Drug Development Solutions&quot;)) ||
+(ISPICKVAL({!$Record.Line_of_Business__c}  ,&quot;Patient &amp; DCT Solutions&quot;))) &amp;&amp;
+NOT ( ISBLANK ({!$Record.Bid_Defense_Date__c})) &amp;&amp;
+( ISNEW()|| (NOT(ISNEW()) &amp;&amp; ISBLANK({!$Record__Prior.Bid_Defense_Date__c} ))) &amp;&amp; TODAY() &lt;= {!$Record.Bid_Defense_Date__c}-14</filterFormula>
+        <object>Opportunity</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>myWaitEvent_myWait_myRule_1_event_0</name>
+            <connector>
+                <targetReference>myWaitEvent_myWait_myRule_1_event_0_SA1</targetReference>
+            </connector>
+            <label>ScheduledPath_1</label>
+            <offsetNumber>-14</offsetNumber>
+            <offsetUnit>Days</offsetUnit>
+            <recordField>Bid_Defense_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

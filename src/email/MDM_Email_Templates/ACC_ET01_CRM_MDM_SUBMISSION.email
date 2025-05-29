@@ -1,0 +1,37 @@
+<messaging:emailTemplate subject="Approval Request for New Account: {!relatedTo.Name}" recipientType="User" relatedToType="Account">
+<messaging:htmlEmailBody >
+<html>
+<body>
+<p style="font-family:Verdana,Arial;font-size: 12px">
+Hi {!recipient.FirstName}
+<br/><br/>
+<apex:outputPanel rendered="{!If(OR($Setup.Descartes_Approval_Setting__c.Account_Enabled__c == false,(AND(relatedTo.DPS_Status__c == 'Cleared',$Setup.Descartes_Approval_Setting__c.Account_Enabled__c))),true,false)}"> MDM Validation </apex:outputpanel>
+<apex:outputPanel rendered="{!If(AND(relatedTo.DPS_Status__c != 'Cleared',$Setup.Descartes_Approval_Setting__c.Account_Enabled__c),true,false)}">Denied Party Screening </apex:outputpanel>
+has been requested for the "{!relatedTo.Name}" account.  Account details are shown below:
+<br/><br/>
+<table style="font-family:Verdana,Arial;font-size:12px;border: 1px solid #666666;">
+<tr valign="top"><td><strong>Account Name:</strong></td><td width="20">&nbsp;</td><td><apex:outputField value="{!relatedTo.Name}"/></td></tr>
+<tr valign="top"><td><strong>Billing Country:</strong></td><td width="20">&nbsp;</td><td><apex:outputField value="{!relatedTo.BillingCountry}"/></td></tr>
+<tr valign="top"><td><strong>Territory:</strong></td><td width="20">&nbsp;</td><td><apex:outputField value="{!relatedTo.Region__c}"/></td></tr>
+<tr valign="top"><td><strong>Customer Segment:</strong></td><td width="20">&nbsp;</td><td><apex:outputField value="{!relatedTo.CustomerSegment__c}"/></td></tr>
+<tr valign="top"><td><strong>Description:</strong></td><td width="20">&nbsp;</td><td><apex:outputField value="{!relatedTo.Description}"/></td></tr>
+<tr valign="top"><td><strong>SFDC Account ID:</strong></td><td width="20">&nbsp;</td><td>{!relatedTo.Id}</td></tr>
+</table>
+<br/><br/>
+<apex:outputPanel rendered="{!If(OR($Setup.Descartes_Approval_Setting__c.Account_Enabled__c == false,(AND(relatedTo.DPS_Status__c == 'Cleared',$Setup.Descartes_Approval_Setting__c.Account_Enabled__c))),true,false)}">
+You need to approve/reject this request.  If approved, this account needs to be created or validated in SAP.  Please ensure that you enter the SFDC Account ID into the "Remarks" field when validating accounts in SAP.
+<br/>
+<br/>
+<a href="{!$Setup.Account_Setting__c.SFDC_Instance_URL__c}/p/process/ProcessInstanceWorkitemWizardStageManager?id={!relatedTo.Id}">Click here to approve/reject the request.</a> 
+<br/>
+<a href="{!$Setup.Account_Setting__c.SFDC_Instance_URL__c}/p/process/ProcessInstanceWorkitemWizardStageManager?id={!relatedTo.Id}&Reassign=1">Click here to reassign the request.</a> 
+</apex:outputpanel>
+<apex:outputPanel rendered="{!If(AND(relatedTo.DPS_Status__c != 'Cleared',$Setup.Descartes_Approval_Setting__c.Account_Enabled__c),true,false)}">
+<b>Note:</b> You do not need to take any manual action. The record will get Approved/Rejected based on Descartes's action automatically.
+</apex:outputpanel>
+
+</p>
+</body>
+</html>
+</messaging:htmlEmailBody>
+</messaging:emailTemplate>

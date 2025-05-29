@@ -1,0 +1,40 @@
+<aura:component controller="CNT_PEP_CaseList" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="listName" type="String" />
+    <aura:attribute name="tableToExport" type="String" />
+    <aura:attribute name="actions" type="List" />
+    <aura:attribute name="buttonMenuListNameLabel" type="String" />
+    <aura:attribute name="showListView" type="Boolean" default="false" />
+    <aura:attribute name="favoriteListView" type="String" default="" />
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <article class="slds-card mb-3" style="min-height: 600px;width:100%;max-width: 1110px;margin-left: 8%">
+        <div class="slds-float_right"><a href="/partner/s/contactsupport" id="fde_button_contactSupport" class="slds-button slds-button--brand communityBtn uiButton selfServiceContactSupport" style="padding: 0px 14px;border-radius: 0.25rem;margin-top: 11px;margin-right: 17px;">Create a Case</a></div>
+        <div class="slds-card__header slds-grid">            
+            <header class="slds-media slds-media_center slds-has-flexi-truncate" style="align-items: baseline !important;">
+                <div class="slds-media__figure">
+                    <lightning:icon iconName="standard:case" alternativeText="Case" />
+                </div>
+                <div class="slds-media__body">
+                    <lightning:buttonMenu class="mr-1" label="{! v.buttonMenuListNameLabel }" onselect="{! c.ListViewSelect }">
+                        <aura:iteration var="action" items="{! v.actions }">
+                            <lightning:menuItem aura:id="actionMenuItems" label="{! action.label }" value="{! action.value }" />
+                        </aura:iteration>
+                    </lightning:buttonMenu>
+                    <aura:if isTrue="{! v.favoriteListView == v.listName}">
+                        <lightning:buttonIconStateful iconName="utility:pinned" alternativeText="{!$Label.c.Remove_from_your_Favorite_List_View}" onclick="{! c.pinListViewClick }" />
+                        <aura:set attribute="else">
+                            <lightning:buttonIcon iconName="utility:pin" alternativeText="{!$Label.c.Add_as_your_favorite_List_View}" onclick="{! c.pinListViewClick }" />
+                        </aura:set>
+                    </aura:if>
+                    <div title="{!$Label.c.Export_the_List_View_result}" style="float: right;" data-caseListFileName="{! v.buttonMenuListNameLabel }" id="exportToXls" >
+                        <lightning:buttonIcon iconName="utility:download" alternativeText="{!$Label.c.Export_the_List_View_result}" />
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner" id="caseListView">
+            <aura:if isTrue="{! v.showListView }">
+                <lightning:listView aura:id="caseListView" objectApiName="Case" listName="{! v.listName }" rows="50" showSearchBar="true" showActionBar="false" enableInlineEdit="false" showRowLevelActions="false" />
+            </aura:if>
+        </div>
+    </article>
+</aura:component>

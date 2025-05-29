@@ -1,0 +1,91 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="flexipage:availableForAllPageTypes,force:hasRecordId">
+    <aura:attribute name="favoriteResultWrapper" type="LIST" />
+    <aura:attribute name="SearchResultWrapper" type="LIST" />
+    <aura:attribute name="resultObjectWrapper" type="Object[]" />
+    <aura:attribute name="isAddProduct" type="boolean" default="true"/>
+    <aura:attribute name="isFavoriteProduct" type="boolean" default="false"/>
+    <aura:attribute name="quantityWrapper" type="Map"/>
+    <aura:attribute name="name" type="String" default="Search Result"/>
+    <aura:attribute name="headerList" type="List" required="true" default=",Quantity,Name,Billing System,Description,Product Code,PSA Project Required,Favorite"/>
+    <aura:attribute name="headerApiList" type="List"  default="Id,Quantity,Name,Billing_System__c,Description,ProductCode,Id"/>
+    <aura:attribute name="selectedValues" type="Object[]"/>
+    <aura:attribute name="timeStamp" type="Integer"/>
+    <aura:attribute name="territory" type="String"/>
+    <aura:attribute name="showResult" type="Boolean" default="false"/>
+    <aura:attribute name="divHeight" type="Integer"  />
+    <aura:attribute name="source" type="String"/>
+    <aura:attribute name="resultObjectWrapperSmall" type="Object[]" />
+    <aura:attribute name="showSpinner" type="boolean" default="false"/>
+    <aura:attribute name="showAllDataShownMessage" type="boolean" default="false"/>
+    <aura:handler event="c:LXE_CRM_SearchResultEvent" action="{!c.callEvent}"/>
+    
+    <!-- added new attribute selectedProduct 07-6-20-->
+    <aura:attribute name="selectedProductId" type="Object"/>
+    <div id="search-result">
+        <article class="slds-card slds-m-vertical_medium">            
+            <div class="slds-card__body slds-card__body_inner"> 
+                
+                <div class="slds-is-sortable slds-is-resizable slds-text-left slds-text-heading_medium" scope="col">
+                    <span> Search Results  </span>
+                </div>        
+                
+                <div class="slds-grid">
+                    <span>&nbsp;</span>
+                </div>
+                
+                <aura:if isTrue="{!and(v.showResult, v.resultObjectWrapper.length > 0) }" >  
+                    <div ontouchstart="{!c.handleTouchStart}" ontouchmove="{!c.loadMoreData}" aura:id = "resultDiv" class="slds-scrollable_y" style="{!'max-height:'+v.divHeight+'vh;min-height:25vh;'}"><!--style="{!'height:'+v.divHeight+'vh;'}"-->
+                        <aura:iteration items="{!v.resultObjectWrapperSmall}" var="productItem" indexVar="i">
+                            <div class = "slds-grid slds-p-top_small slds-box slds-border"  style = "background-color:white;" >
+                                <div class = "slds-col slds-size_1-of-8">
+                                    <div class = "slds-p-top_small slds-p-right_small">
+                                        <lightning:buttonIcon iconName="utility:add" onclick = "{!c.addProduct}" value = "{!productItem.id}"/>
+                                    </div>
+                                </div>
+                                <div  class = "slds-col slds-size_7-of-8 slds-col--padded">
+                                    <lightning:card class="removeWrap">
+                                        <aura:set attribute="title">
+                                            {!productItem.productName}
+                                        </aura:set>
+                                        <aura:set attribute="body">
+                                            <div class="slds-grid slds-p-left_x-small">
+                                                <div class="slds-col">
+                                                    <span class = "slds-text-color_weak">Product Code: </span>
+                                                    <span>{!productItem.productCode}</span>
+                                                </div>
+                                                <div class="slds-col">
+                                                    <span class = "slds-text-color_weak">Billing System: </span>
+                                                    <span>{!productItem.productBillingSystem}</span>
+                                                </div>
+                                            </div>
+                                        </aura:set>
+                                    </lightning:card>
+                                </div> 
+                            </div>
+                        </aura:iteration>
+                        <br/><br/>
+                    </div>
+                    <aura:if isTrue="{!v.showSpinner}">
+                        <div aura:id="spinnerId" style = "height:15vh" class=" slds-is-relative slds-spinner_container">
+                            <div class="slds-spinner--brand  slds-spinner slds-spinner--small slds-is-absolute" role="alert">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </aura:if>
+                    <aura:if isTrue="{!v.showAllDataShownMessage}">
+                        <div style = "height:10vh" class="slds-text slds-text-heading_small line-height-heading slds-align_absolute-center slds-text-color_weak" >For More Data - Reset Filter Value!!</div>    
+                    </aura:if>
+                    <aura:set attribute="else">
+                        <tr class="slds-hint-parent">
+                            <td colspan="{!v.headerList.length}" role="gridcell" class="slds-is-sortable slds-p-top_x-small" scope="row">
+                                <div class="slds-text slds-text-heading_small line-height-heading" >{!$Label.c.CRM_CL0005_SEARCH_PRODUCTS_MSG}</div>    
+                            </td>
+                        </tr>
+                    </aura:set>
+                </aura:if>
+            </div>
+        </article>
+    </div>
+</aura:component>

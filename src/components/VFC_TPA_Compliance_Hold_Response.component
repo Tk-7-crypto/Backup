@@ -1,0 +1,64 @@
+<apex:component access="global">
+    <apex:attribute name="recordObj" description="TPA Agreement Additional Field Object" access="global" type="TPA_Agreement_Additional_Field__c"/>
+    <apex:attribute name="clientVendorName" description="Client Vendor Name" access="global" type="String" />
+    
+    <apex:outputPanel rendered="{!(!ISBLANK(recordObj))}">
+        <div id="header" style="text-align: right;">
+            <apex:image width="" style="width: 172px;height:49px;" value="{!$Resource.IMS_Logo}" alt="{!$Label.TPA_IQVIA_Keyword} logo"/>
+        </div>
+        
+        <div style = "font-size:4.8125rem;">    
+            <div >
+                <apex:outputLabel value="{!recordObj.Related_TPA_Request__r.Name} Request Details: " />
+            </div> 
+            <br/>        
+            <div >
+                <apex:outputLabel value="Client Company Name: {!recordObj.Related_TPA_Request__r.Client_Address__r.Name}" />    
+            </div>
+            <div >
+                <apex:outputLabel value="Status: {!recordObj.Related_TPA_Request__r.Request_Status__c}" />    
+            </div>
+            <div >
+                <apex:outputLabel value="Third Party Company: {!recordObj.Related_TPA_Request__r.Service_Provider_Address__r.Name}" />    
+            </div>
+            <div >
+                <apex:outputLabel value="Client Project Name: {!recordObj.Related_TPA_Request__r.Client_Project_Name__c}" />    
+            </div>
+            <div >
+                <apex:outputLabel value="Project start and end date: {!recordObj.Related_TPA_Request__r.Data_Access_Start_Date__c} {!recordObj.Related_TPA_Request__r.Data_Access_End_Date__c} " />    
+            </div>
+            <div >
+                <apex:outputLabel value="Is Client Account On Hold: {!recordObj.Related_TPA_Request__r.isClientOnComplianceHold__c}" />    
+            </div>
+            <div >
+                <apex:outputLabel value="Is Vendor Account On Hold: {!recordObj.Related_TPA_Request__r.isVendorOnComplianceHold__c}" />    
+            </div>
+            <br/>  
+        </div>
+        <apex:outputLabel value="Please advise which of the following actions should be followed: " /> 
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c == 'TPA can be released'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!$Label.TPA_can_be_released_please_move_forward_with_commercial_reviews_and_process}</p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c != 'TPA can be released'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;{!$Label.TPA_can_be_released_please_move_forward_with_commercial_reviews_and_process}</p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c == 'Company is out of compliance'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;{!clientVendorName} is out of compliance and must remediate before the hold can be lifted. Please provide {!clientVendorName} with the following response:</p>
+            <p style="font-size:.8125rem;">
+                {!recordObj.TPA_Compliance_Response_to_Hold__c}
+            </p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c != 'Company is out of compliance'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;{!clientVendorName} is out of compliance and must remediate before the hold can be lifted. Please provide {!clientVendorName} with the following response:</p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c == 'TPA must be denied'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_checked.gif"/> &nbsp;&nbsp;TPA must be denied. Please provide {!clientVendorName} with the following response:</p>
+            <p style="font-size:.8125rem;">
+                {!recordObj.TPA_Compliance_Response_to_Hold__c}
+            </p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{! recordObj.TPA_Compliance_Hold_Action_Taken__c != 'TPA must be denied'}">
+            <p style="font-size:.8125rem;"><img src="/img/checkbox_unchecked.gif"/> &nbsp;&nbsp;TPA must be denied. Please provide {!clientVendorName} with the following response:</p>
+        </apex:outputPanel>
+    </apex:outputPanel>
+</apex:component>

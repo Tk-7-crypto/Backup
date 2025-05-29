@@ -1,0 +1,341 @@
+<template>
+  <!-- Render audit logs ui (DEFAULT) template-->
+  <template if:true={renderAuditLogsUI}>
+    <lightning-spinner size="medium" if:true={showPageSpinner}></lightning-spinner>
+    <div class="slds-grid slds-box slds-theme_shade flexipageHeader">
+      <div class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__figure">
+          <div class="small forceEntityIcon" style="background-color: #718deb">
+            <span class="uiImage">
+              <img src="/img/icon/t4v35/custom/custom56_120.png" class="icon " alt="" title="">
+            </span>
+          </div>
+        </div>
+        <div class="slds-media__body slds-truncate">
+          <h2><span class="slds-text-heading_small">
+              <h1>
+                <!-- <div class="slds-text-body_small">Audit Logs</div> -->
+                <div if:false={showAuditRecordDetails} title="name" class="slds-text-heading_medium slds-truncate">
+                  <span if:true={auditRecordLabel}>{auditRecordLabel} - Audit Logs</span>
+                </div>
+                <div if:true={showAuditRecordDetails} title="name" class="slds-text-heading_medium slds-truncate">
+                  <span>{auditRecordDetailsName} - Audit Logs</span>
+                </div>
+                <div class="slds-text-body_small" if:true={recordLastModifiedDate}>
+                  Record Last Modified:
+                  <lightning-formatted-date-time
+                    value={recordLastModifiedDate}
+                    year="numeric"
+                    month="short"
+                    day="2-digit"
+                    hour="numeric"
+                    weekday="long">
+                  </lightning-formatted-date-time>
+                </div>
+              </h1>
+            </span></h2>
+        </div>
+      </div>
+      <div class="slds-no-flex">
+        <div class="slds-grid">
+          <div class="slds-button-group">
+            <!-- <a href={recordIdHref} class="slds-button slds-button_neutral">
+              <lightning-icon size="xx-small" icon-name="utility:back"></lightning-icon>&nbsp;{returnAuditLogLabel}
+            </a> -->
+            <lightning-button name="RETURN_TO_AUDIT" label={returnAuditLogLabel} onclick={handleClick} icon-name="utility:back" icon-position="left"></lightning-button>
+            <lightning-button name="EXPORT" label="Export Logs" onclick={handleClick} icon-name="utility:download" icon-position="right"></lightning-button>
+            <!-- replay! -->
+            <lightning-button if:true={isRecordCDCEnabled} name="REPLAY" label="Replay" onclick={renderReplay} icon-name="utility:play" icon-position="right"></lightning-button>
+          </div>
+          <div class="slds-button-group">
+            <!--  refresh -->
+            <button class="slds-button slds-button_icon slds-button_icon-border-filled" onclick={refreshAuditLogs}>
+              <lightning-icon size="xx-small" icon-name="utility:refresh"></lightning-icon>
+            </button>
+            <!-- fields -->
+            <button class={columnPanelButtonClass} onclick={toggleColumnPanel}>
+              <template if:true={renderSideBarColumns}>
+                <lightning-icon size="xx-small" icon-name="utility:settings" variant="inverse"></lightning-icon>
+              </template>
+              <template if:false={renderSideBarColumns}>
+                <lightning-icon size="xx-small" icon-name="utility:settings"></lightning-icon>
+              </template>
+            </button>
+            <!-- <button class="slds-button slds-button_icon slds-button_icon-border-filled" onclick={renderReplay}
+            if:true={isRecordCDCEnabled}>
+              RE<lightning-icon size="xx-small" icon-name="utility:play"></lightning-icon>
+            </button> -->
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slds-m-bottom_small slds-theme_default">
+      <div class="slds-grid listViewContainer safari-workaround">
+        <div class="slds-col slds-no-space forceListViewManagerPrimaryDisplayManager">
+          <div class="datatable-container">
+            <lightning-datatable
+              hide-checkbox-column
+              show-row-number-column
+              data={formattedResults}
+              columns={auditColumns}
+              key-field="key"
+              sorted-by={tableSortedBy}
+              sorted-direction={tableSortedDirection}
+              onsort={tableOnSort}
+              >
+            </lightning-datatable>
+          </div>
+        </div>
+      </div>
+
+      <!-- side bar! -->
+      <div class="slds-grid slds-is-relative slds-no-flex forceListViewManagerSecondaryDisplayManager slds-theme_shade absolute-side-bar">
+        <lightning-spinner size="medium" if:true={showSidbarSpinner}></lightning-spinner>
+        <!-- panel for columns / settings! -->
+        <div
+          class="slds-panel slds-size_medium slds-panel_docked slds-panel_docked-right slds-grid slds-grid_vertical forceFilterPanel"
+          if:true={renderSideBarColumns}
+          style="min-width: 25rem;">
+          <div class="slds-panel__header panelHeader slds-theme_shade">
+            <h2 class="slds-panel__header-title slds-text-heading_small slds-truncate">Fields</h2>
+            <button onclick={toggleColumnPanel} class="slds-button slds-button_icon slds-button_icon-x-small"
+              title=Close>
+              <lightning-icon size="x-small" icon-name="utility:close" alternative-text=Close>
+              </lightning-icon>
+            </button>
+          </div>
+
+          <div class="slds-box" style="padding-bottom:0;">
+            <ul>
+              <li class="slds-box">
+                <lightning-input type="search" placeholder="Type here to filter fields" class="log-item-fields"
+                  value={filterAvailableFieldText}
+                  variant="label-hidden" onchange={handleFilterFieldChange}>
+                </lightning-input>
+              </li>
+              <li class="slds-p-around_xx-small slds-theme_shade slds-border_bottom">
+                <div class="slds-grid">
+                  <div class="slds-col slds-text-align_left slds-m-right_small heading-text-caps">
+                    Check fields to show in page
+                  </div>
+                  <div class="slds-col slds-text-align_right slds-m-right_small heading-text-caps">
+                    <a onclick={checkAllFields} class="slds-m-right_xx-small slds-p-right_xx-small slds-border_right"> Check all </a>
+                    <a onclick={uncheckAllFields}> Uncheck All </a>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="slds-panel__body slds-scrollable">
+            <ol class="xx-slds-drop-zone">
+              <li class="slds-box cursor-move"
+                for:each={auditAvailableFieldsRender} for:item="field" key={field.key}
+                for:index="index"
+                >
+                <!-- ondrop={onColumnFieldDrop}
+                ondragover={onColumnFieldAllowDrop}
+                ondragleave={onColumnFieldDragLeave}
+                ondragend={onColumnFieldDragEnd}
+                draggable="true"
+                ondragstart={onColumnFieldDragStart}
+                data-drag-index={index} -->
+                <div class="slds-grid">
+                  <div class="slds-col">
+                    <div>{field.fieldLabel}</div>
+                    <div><small>({ field.fieldName })</small></div>
+                  </div>
+                  <div class="slds-text-align_right slds-m-right_small">
+                      <!--
+                        check to include!
+                      -->
+                    <lightning-input type="checkbox-button"
+                      name={field.fieldName}
+                      value={field.include}
+                      checked={field.include}
+                      onchange={handleIncludeCheckbox}>
+                    </lightning-input>
+                  </div>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- replay modal -->
+      <c-lwc_modal show-modal={showReplayModal} onclose={closeReplayModal} size="large">
+        <div slot="modal-heading">Replay Data Event</div>
+        <div slot="modal-content">
+          <!--
+            include our render replay event!
+          -->
+          <c-lwc_psa_audit
+            render-replay-events="true"
+            audit-record-obj-api-name={auditRecordObjApiName}>
+          </c-lwc_psa_audit>
+
+        </div>
+        <div slot="modal-footer">
+          <button class="slds-button slds-button_neutral" onclick={closeReplayModal}>Cancel</button>
+        </div>
+      </c-lwc_modal>
+    </div>
+  </template>
+
+  <!-- Render audit logs event replay template!!
+  c:lwc_psa_audit render-replay-events="true" audit-record-obj-api-name={this.auditRecordObjApiName}
+  -->
+  <template if:true={renderReplayEvents}>
+    <div class="slds-is-relative" style="min-height:10rem;">
+      <div class="slds-grid slds-box light-background">
+        <div class="slds-col slds-size_1-of-5">
+          <div class="slds-form-element__label slds-truncate">
+            <div class="slds-media">
+              <div class="slds-media__figure" style="margin-right:.5rem;">
+                <div class="small slds-icon_container slds-icon-custom-custom30 forceEntityIcon"
+                style="width:1rem;height:1rem;">
+                  <span class="uiImage">
+                    <img src="/img/icon/t4v35/custom/custom30_120.png" class="icon " alt="" title=""
+                      style="height:1rem"/>
+                  </span>
+                </div>
+              </div>
+              <div class="slds-media__body">
+                <div>Data Channel</div>
+              </div>
+            </div>
+          </div>
+          <div class="slds-m-left_small"> <span onclick={toggleChangeEventChannel}>{ auditRecordChangeEvent }</span> </div>
+        </div>
+        <div class="slds-col slds-p-right_medium">
+          <div class="slds-form-element__label slds-truncate"> Replay Id </div>
+          <div>
+            <lightning-input type="search" placeholder="Type replay id here" class="replay-id" variant="label-hidden"
+            value={currentInputReplayId} onchange={handleReplayIdChange}>
+            </lightning-input>
+          </div>
+        </div>
+<!--
+  HIDE FROM QUICKACTION???
+-->
+        <div class="slds-col slds-size_1-of-8">
+          <div class="slds-form-element__label slds-truncate slds-grid">
+            <div style="padding-top: .25rem;">Show Past Events </div>
+            <div>
+              <lightning-helptext content="Check to include previous events from the channel.  Note may take a few minutes."></lightning-helptext>
+            </div>
+          </div>
+          <div class="slds-p-left_medium">
+            <lightning-input type="toggle"
+              variant="label-hidden"
+              label="Show Past Events"
+              name="showPastEvents"
+              value="showPastEvents"
+              onchange={handlePastEventsCheckboxChange}>
+            </lightning-input>
+          </div>
+        </div>
+
+        <div class="slds-col slds-size_1-of-8 slds-text_align_center">
+          <div class="slds-p-top_large">
+            <lightning-button disabled={replayEventDisabled} variant="brand" name="replayEvent" label="Replay Event" onclick={replayEvent}></lightning-button>
+          </div>
+        </div>
+      </div>
+      <div class="slds-grid slds-p-around_medium" style="min-height:20rem;">
+        <div class="slds-size_3-of-4 slds-is-relative">
+          <!-- <lightning-spinner size="medium" if:true={showReplaySpinner}></lightning-spinner> -->
+          <!-- subscribed messages! -->
+          <div class="slds-border_top slds-border_right slds-border_left slds-border_bottom slds-p-top_medium slds-p-left_medium slds-p-right_medium"
+            style="min-height:10rem; height:100%;">
+
+            <div class="slds-p-around_medium slds-m-top_xx-large xslds-align_absolute-center"
+              if:true={showReplaySpinner}>
+
+              <div style="position:relative;min-height:3rem;padding:2rem;">
+                <lightning-spinner alternative-text="Please Wait" size="medium" variant="brand" class="slds-spinner_container">
+                </lightning-spinner>
+              </div>
+              <div class="slds-align-middle slds-text-align_center slds-p-around_medium slds-border_top">
+                Attempting to replay the event <span if:true={showPastEvents}> and past events </span> ( <a onclick={unsubscribeEvents}>Click here to stop.</a>)
+              </div>
+              <!-- <div>
+              </div> -->
+              <!-- <div>
+                Attempting to replay the specific event (<a>Cancel</a>)
+              </div> -->
+            </div>
+
+            <div if:false={showReplaySpinner}>
+              <div class="slds-text-heading_small slds-border_bottom slds-p-left_medium">Event Replay Response</div>
+              <div class="tree-grid-container">
+                <template if:true={hasSubscribedMessages}>
+                  <lightning-tree-grid
+                    hide-checkbox-column
+                    class="replay-tree-grid"
+                    columns={subscribeMessageTreeColumns}
+                    data={subscribedMessagesTreeData}
+                    selected-rows={selectedTreeGridRows}
+                    onrowaction={selectedTreeGridOnRowAction}
+                    key-field="key">
+                  </lightning-tree-grid>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slds-size_1-of-4 slds-p-left_medium slds-is-relative">
+          <lightning-spinner size="medium" if:true={showReplayQuerySpinner}></lightning-spinner>
+          <div class="slds-box light-background" style="min-height:10rem; height:20rem;overflow:scroll;">
+
+            <div class="slds-p-left_medium slds-m-top_xx-large slds-align_absolute-center" if:true={showReplayQuerySpinner}>
+              Looking for Audit Log Record by Replay Id
+            </div>
+            <div if:false={showReplayQuerySpinner}>
+              <div class="slds-text-heading_small slds-border_bottom">
+                Audit Log Search by Replay Id
+              </div>
+
+              <!-- when  does not have audit log record by replay id -->
+              <div if:true={hasQueriedAuditLogReplay} class="slds-m-top_small">
+                <div if:true={hasAuditLogsByReplayId}>
+                  <div class="slds-text-color_success">Found Audit Log Records by Replay Id</div>
+                  <ul class="slds-p-left_medium" style="overflow: scroll;">
+                    <li>Replay Id: {firstAuditLogReplayRecord.replayId}</li>
+                    <li>Operation: {firstAuditLogReplayRecord.operation}</li>
+                    <li>Object: {firstAuditLogReplayRecord.objectType}</li>
+                    <li for:each={auditLogReplayRecords} for:item="replay" key={id} for:index="index">
+                      <div class="slds-p-left_medium"><a href={replay.linkToReplayAuditLog}>{replay.idxCt} Audit Log Record</a></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- when  does not have audit log record by replay id -->
+                <div if:false={hasAuditLogsByReplayId} class="">
+                  <div class="slds-text-color_destructive slds-p-left_medium">Audit Log Records Are Missing for the Replay Id</div>
+
+
+                  <div class="slds-media slds-theme_info slds-box slds-m-top_x-large add-missing-event-container" if:true={hasSubscribedMessages}
+                    onclick={addMissingEvents}>
+                    <div  class="slds-media__figure slds-align_absolute-center slds-m-left_small">
+                      <!-- <lightning-icon size="small" icon-name="utility:save"></lightning-icon> -->
+                      <img src="/img/icon/t4v35/custom/custom26_120.png" style="height:2.5rem;"/>
+                    </div>
+                    <div class="slds-media__body slds-border_left slds-p-left_small">
+                      <a>Click Here To Add The Missing Event Audit Log</a>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </template>
+</template>

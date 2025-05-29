@@ -1,0 +1,596 @@
+<template>
+    <div class="fake-related-button">
+        <lightning-button if:true={addRelatedButton} label="Add Deliverable" onclick={showAddRelatedForm} name="ADD_RELATED" class="slds-float_right"></lightning-button>
+    </div>
+    <lightning-record-view-form
+        if:true={recordViewForm}
+        object-api-name={objectName}
+        record-id={recordId}>
+        <lightning-messages>
+        </lightning-messages>
+        <div class="slds-section details-section slds-is-open slds-is-relative">
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small align-with-title">
+                <template for:each={detailsFields} for:item="detailsField">
+                    <div if:false={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName}>
+                        <lightning-output-field class="slds-form-element_edit slds-form-element_readonly slds-hint-parent" field-name={detailsField.fieldName}>
+                            <lightning-button-icon if:false={detailsField.readOnly} icon-name="utility:edit" variant="bare" icon-class="slds-button__icon_hint" data-id-targetfield={detailsField.fieldName} onclick={handlePencilClick}></lightning-button-icon>
+                        </lightning-output-field>
+                    </div>
+                </template>
+            </div>
+            <div if:true={status.loading.details} class="slds-spinner_container modal-spinner">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </div>
+        <div if:true={hasServiceLineSection} class="slds-section service-line-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineTitle}</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={serviceLineFields} for:item="serviceLineField">
+                    <div if:false={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName}>
+                        <lightning-output-field class="slds-form-element_edit slds-form-element_readonly slds-hint-parent" field-name={serviceLineField.fieldName}>
+                            <lightning-button-icon if:false={serviceLineField.readOnly} icon-name="utility:edit" variant="bare" icon-class="slds-button__icon_hint" data-id-targetfield={serviceLineField.fieldName} onclick={handlePencilClick}></lightning-button-icon>
+                        </lightning-output-field>
+                    </div>
+                </template>
+                <div if:true={status.loading.details} class="slds-spinner_container modal-spinner">
+                    <div role="status" class="slds-spinner slds-spinner_medium">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div if:true={hasBillingSection} class="slds-section billing-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={billingFields} for:item="billingField">
+                    <div if:false={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName}>
+                        <lightning-output-field class="slds-form-element_edit slds-form-element_readonly slds-hint-parent" field-name={billingField.fieldName}>
+                            <lightning-button-icon if:false={billingField.readOnly} icon-name="utility:edit" variant="bare" icon-class="slds-button__icon_hint" data-id-targetfield={billingField.fieldName} onclick={handlePencilClick}></lightning-button-icon>
+                        </lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="slds-section system-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="system-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">System Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={systemFields} for:item="systemField">
+                    <div if:false={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName}>
+                        <lightning-output-field class="slds-form-element_edit slds-form-element_readonly slds-hint-parent" field-name={systemField.fieldName}>
+                            <lightning-button-icon if:false={systemField.readOnly} icon-name="utility:edit" variant="bare" icon-class="slds-button__icon_hint" onclick={handlePencilClick} data-id-targetfield={systemField.fieldName}></lightning-button-icon>
+                        </lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-record-view-form>
+    <lightning-record-edit-form
+        if:true={status.visible.recordEditForm}
+        class="record-edit-form"
+        onsuccess={saveSuccess}
+        onerror={saveError}
+        onload={editRecordLoaded}
+        onfocus={editRecordLoaded}
+        onsubmit={interruptSubmit}
+        object-api-name={objectName}
+        record-id={recordId}
+        record-type-id={recordTypeId}
+        layout-type="Full" >
+        <lightning-messages>
+        </lightning-messages>
+        <!--input type="submit" class="submit-dummy slds-button slds-button_brand" /-->
+        <!--lightning-button class="submit-dummy" variant="brand" type="submit" name="submit-dummy" label="submit dummy"></lightning-button-->
+        <div class="slds-section details-section slds-is-open">
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={detailsFields} for:item="detailsField">
+
+                    <div if:false={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName}>
+
+                        <template if:false={detailsField.readOnly}>
+                            <!-- when not a custom dependent combobox field (default) -->
+                            <template if:false={detailsField.isCustomComboField}>
+                                <lightning-input-field if:true={detailsField.editableAndNotRequired} field-name={detailsField.fieldName}
+                                    data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                </lightning-input-field>
+                                <lightning-input-field if:true={detailsField.required} field-name={detailsField.fieldName}
+                                    data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue} required>
+                                </lightning-input-field>
+                            </template>
+
+                            <!--
+                                When Is a custom dependent field; inject comboboxes to workaround unsupported dependent lookups in input-fields
+                            -->
+                            <template if:true={detailsField.isCustomComboField}>
+                                <!-- hidden input field, updated when combobox is changed! -->
+                                <span class="slds-hide">
+                                    <lightning-input-field class={detailsField.fieldName} field-name={detailsField.fieldName}
+                                        data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                    </lightning-input-field>
+                                </span>
+                                <template if:true={detailsField.is_Trade_Name__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Trade_Name__c.selected}
+                                        options={dependentLookupItems.Trade_Name__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                                <template if:true={detailsField.is_Formulation__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Formulation__c.selected}
+                                        options={dependentLookupItems.Formulation__c.options}>
+                                    </lightning-combobox>
+                                </template>
+
+                                <template if:true={detailsField.is_Resource__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Resource__c.selected}
+                                        options={dependentLookupItems.Resource__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                            </template>
+                        </template>
+
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName} style="display:none">
+                        <lightning-input-field if:false={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasServiceLineSection} class="slds-section service-line-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineTitle}</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={serviceLineFields} for:item="serviceLineField">
+                    <div if:false={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName}>
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName} style="display: none">
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasBillingSection} class="slds-section billing-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={billingFields} for:item="billingField">
+                    <div if:false={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName}>
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName} style="display:none">
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="slds-section system-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="system-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">System Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={systemFields} for:item="systemField">
+                    <div if:false={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName}>
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName} style="display:none">
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div if:false={openInModal} class="slds-align_absolute-center slds-text-align-center slds-theme_shade sticky-button-container">
+            <lightning-button class="slds-m-horizontal_xx-small" onclick={cancelEdit} label="Cancel" variant="neutral"></lightning-button>
+            <lightning-button type="submit" class="slds-m-horizontal_xx-small" label="Save" variant="brand"></lightning-button>
+        </div>
+        <div if:true={openInModal} style="display:none">
+            <lightning-button type="submit" class="CLICK-ME slds-m-horizontal_xx-small" label="CLICK ME" variant="brand"></lightning-button>
+        </div>
+    </lightning-record-edit-form>
+
+    <!-- RECORD CLONE FORM -->
+    <lightning-record-edit-form
+        if:true={status.visible.recordCloneForm}
+        class="record-clone-form"
+        onsuccess={saveSuccess}
+        onerror={saveError}
+        onload={editRecordLoaded}
+        onfocus={editRecordLoaded}
+        onsubmit={interruptSubmit}
+        object-api-name={objectName}
+        record-type-id={recordTypeId}
+        record-id={recordId}
+        layout-type="Full" >
+        <lightning-messages>
+        </lightning-messages>
+        <div class="slds-section details-section slds-is-open">
+            <h3 if:true={addRelatedMode} class="slds-section__title slds-theme_shade slds-p-left_small">
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Clone Deliverable</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={detailsFields} for:item="detailsField">
+
+                    <div if:false={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName}>
+
+                        <template if:false={detailsField.readOnly}>
+                            <!-- when not a custom dependent combobox field (default) -->
+                            <template if:false={detailsField.isCustomComboField}>
+                                <lightning-input-field if:false={detailsField.readOnly} field-name={detailsField.fieldName}
+                                    data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                </lightning-input-field>
+                            </template>
+
+                            <!--
+                                When Is a custom dependent field; inject comboboxes to workaround unsupported dependent lookups in input-fields
+                            -->
+                            <template if:true={detailsField.isCustomComboField}>
+                                <!-- hidden input field, updated when combobox is changed! -->
+                                <span class="slds-hide">
+                                    <lightning-input-field class={detailsField.fieldName} field-name={detailsField.fieldName}
+                                        data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                    </lightning-input-field>
+                                </span>
+                                <template if:true={detailsField.is_Trade_Name__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Trade_Name__c.selected}
+                                        options={dependentLookupItems.Trade_Name__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                                <template if:true={detailsField.is_Formulation__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Formulation__c.selected}
+                                        options={dependentLookupItems.Formulation__c.options}>
+                                    </lightning-combobox>
+                                </template>
+
+                                <template if:true={detailsField.is_Resource__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Resource__c.selected}
+                                        options={dependentLookupItems.Resource__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                            </template>
+                        </template>
+
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName} style="display:none">
+                        <lightning-input-field if:false={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasServiceLineSection} class="slds-section service-line-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineTitle}</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={serviceLineFields} for:item="serviceLineField">
+                    <div if:false={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName}>
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName} style="display: none">
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasBillingSection} class="slds-section billing-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={billingFields} for:item="billingField">
+                    <div if:false={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName}>
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName} style="display:none">
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="slds-section system-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="system-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">System Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={systemFields} for:item="systemField">
+                    <div if:false={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName}>
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName} style="display:none">
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div if:false={openInModal} class="slds-align_absolute-center slds-text-align-center slds-theme_shade sticky-button-container-add">
+            <lightning-button class="slds-m-horizontal_xx-small" onclick={cancelAdd} label="Cancel" variant="neutral"></lightning-button>
+            <lightning-button type="submit" class="slds-m-horizontal_xx-small" label="Save" variant="brand"></lightning-button>
+        </div>
+        <div if:true={openInModal} style="display:none">
+            <lightning-button type="submit" class="CLICK-ME slds-m-horizontal_xx-small" label="CLICK ME" variant="brand"></lightning-button>
+        </div>
+    </lightning-record-edit-form>
+    <!-- END CLONE FORM -->
+    
+    <!-- RECORD ADD FORM -->
+    <lightning-record-edit-form
+        if:true={status.visible.recordAddForm}
+        class="record-add-form"
+        onsuccess={saveSuccess}
+        onerror={saveError}
+        onload={editRecordLoaded}
+        onfocus={editRecordLoaded}
+        onsubmit={interruptSubmit}
+        object-api-name={objectName}
+        record-type-id={recordTypeId}
+        layout-type="Full" >
+        <lightning-messages>
+        </lightning-messages>
+        <div class="slds-section details-section slds-is-open">
+            <h3 if:true={addRelatedMode} class="slds-section__title slds-theme_shade slds-p-left_small">
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Add Deliverable</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={detailsFields} for:item="detailsField">
+
+                    <div if:false={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName}>
+
+                        <template if:false={detailsField.readOnly}>
+                            <!-- when not a custom dependent combobox field (default) -->
+                            <template if:false={detailsField.isCustomComboField}>
+                                <lightning-input-field if:false={detailsField.isCustomLookup} field-name={detailsField.fieldName}
+                                    data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                </lightning-input-field>
+                                <c-lwc_lookup if:true={detailsField.isCustomLookup} onsearch={handleSearch} label="Drug" 
+                                    placeholder="Select a drug..." errors={drugErrors} data-id-fieldname={detailsField.fieldName}
+                                    onselectionchange={handleLookupChange}>
+                                </c-lwc_lookup>
+                                <span if:true={detailsField.isCustomLookup} style="display:none">
+                                    <lightning-input-field class={detailsField.fieldName} field-name={detailsField.fieldName}></lightning-input-field>
+                                </span>
+                            </template>
+
+                            <!--
+                                When Is a custom dependent field; inject comboboxes to workaround unsupported dependent lookups in input-fields
+                            -->
+                            <template if:true={detailsField.isCustomComboField}>
+                                <!-- hidden input field, updated when combobox is changed! -->
+                                <span class="slds-hide">
+                                    <lightning-input-field class={detailsField.fieldName} field-name={detailsField.fieldName}
+                                        data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}>
+                                    </lightning-input-field>
+                                </span>
+                                <template if:true={detailsField.is_Trade_Name__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Trade_Name__c.selected}
+                                        options={dependentLookupItems.Trade_Name__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                                <template if:true={detailsField.is_Formulation__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Formulation__c.selected}
+                                        options={dependentLookupItems.Formulation__c.options}>
+                                    </lightning-combobox>
+                                </template>
+
+                                <template if:true={detailsField.is_Resource__c}>
+                                    <lightning-combobox
+                                        class={detailsField.fieldName}
+                                        name={detailsField.fieldName}
+                                        label={detailsField.fieldLabel}
+                                        placeholder={detailsField.placeholder}
+                                        onchange={handleCustomComboboxChange}
+
+                                        value={dependentLookupItems.Resource__c.selected}
+                                        options={dependentLookupItems.Resource__c.options}>
+                                    </lightning-combobox>
+                                </template>
+                            </template>
+                        </template>
+
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={detailsField.hidden} class="slds-col slds-size_1-of-2" key={detailsField.fieldName} style="display:none">
+                        <lightning-input-field if:false={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName} onchange={fieldChanged} value={detailsField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={detailsField.readOnly} field-name={detailsField.fieldName} data-id-fieldname={detailsField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasServiceLineSection} class="slds-section service-line-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="service-line-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">{serviceLineTitle}</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={serviceLineFields} for:item="serviceLineField">
+                    <div if:false={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName}>
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={serviceLineField.hidden} class="slds-col slds-size_1-of-2" key={serviceLineField.fieldName} style="display: none">
+                        <lightning-input-field if:false={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName} onchange={fieldChanged} value={serviceLineField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={serviceLineField.readOnly} field-name={serviceLineField.fieldName} data-id-fieldname={serviceLineField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div if:true={hasBillingSection} class="slds-section billing-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="billing-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">Billing Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={billingFields} for:item="billingField">
+                    <div if:false={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName}>
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={billingField.hidden} class="slds-col slds-size_1-of-2" key={billingField.fieldName} style="display:none">
+                        <lightning-input-field if:false={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName} onchange={fieldChanged} value={billingField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={billingField.readOnly} field-name={billingField.fieldName} data-id-fieldname={billingField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="slds-section system-section slds-is-open">
+            <h3 class="slds-section__title slds-theme_shade slds-p-left_small">
+                <lightning-button-icon name="system-section" class="expando-button" variant="bare" icon-name="utility:switch" onclick={expandSection}></lightning-button-icon>
+                <span class="slds-truncate slds-p-horizontal_small" title="Information">System Information</span>
+            </h3>
+            <div aria-hidden="false" class="slds-section__content slds-grid slds-wrap slds-gutters_small slds-is-relative align-with-title">
+                <template for:each={systemFields} for:item="systemField">
+                    <div if:false={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName}>
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                    <div if:true={systemField.hidden} class="slds-col slds-size_1-of-2" key={systemField.fieldName} style="display:none">
+                        <lightning-input-field if:false={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName} onchange={fieldChanged} value={systemField.fieldValue}></lightning-input-field>
+                        <lightning-output-field if:true={systemField.readOnly} field-name={systemField.fieldName} data-id-fieldname={systemField.fieldName}></lightning-output-field>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div if:false={openInModal} class="slds-align_absolute-center slds-text-align-center slds-theme_shade sticky-button-container-add">
+            <lightning-button class="slds-m-horizontal_xx-small" onclick={cancelAdd} label="Cancel" variant="neutral"></lightning-button>
+            <lightning-button type="submit" class="slds-m-horizontal_xx-small" label="Save" variant="brand"></lightning-button>
+        </div>
+        <div if:true={openInModal} style="display:none">
+            <lightning-button type="submit" class="CLICK-ME slds-m-horizontal_xx-small" label="CLICK ME" variant="brand"></lightning-button>
+        </div>
+    </lightning-record-edit-form>
+    <!-- END RECORD ADD FORM -->
+
+    <div if:true={openInModal} class="in-modal">
+        <div if:true={status.modal.busy} class="slds-spinner_container modal-spinner saving-record">
+            <div role="status" class="slds-spinner slds-spinner_medium">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </div>
+    <div if:false={openInModal}>
+        <div if:true={status.modal.busy} class="slds-spinner_container modal-spinner saving-record">
+            <div role="status" class="slds-spinner slds-spinner_medium">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </div>
+    <c-lwc_modal
+        show-modal={showMetricsModal}
+        modal-heading="Performance Miss Detected">
+        <div slot="modal-content" class="slds-p-around_small slds-is-relative">
+            <div>A performance miss had been identified. Click Cancel to amend the deliverable record, or Save to proceed to the generated performance miss.</div>
+            <ul class="slds-list_dotted">
+                <li for:each={failedMetrics} for:item="metric" key={metric.Id}>{metric.Metric_Name__c}</li>
+            </ul>
+            <div if:true={status.modal.saving} class="slds-spinner_container modal-spinner saving-record">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Saving</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </div>
+        <div slot="modal-footer">
+            <lightning-button if:false={status.modal.saving} label="Cancel" variant="neutral" onclick={cancelSave}></lightning-button>
+            <lightning-button if:false={status.modal.saving} label="Save" variant="brand" onclick={confirmSave}></lightning-button>
+            <lightning-button if:true={status.modal.saving} label="Saving" variant="brand" disabled></lightning-button>
+        </div>
+    </c-lwc_modal>
+</template>

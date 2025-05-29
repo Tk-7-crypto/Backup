@@ -1,0 +1,1821 @@
+<apex:page id="pageId" controller="EXT_CRM_OpportunityRenewal_Dashboard" title="My Renewals Dashboard" sidebar="false"  docType="html-5.0">
+
+<apex:stylesheet value="{!URLFOR($Resource.Ext,'Ext/resources/css/ext-all.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.AppResources,'AppResources/css/RadioColumn.css')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Ext,'Ext/adapter/ext/ext-base.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Ext,'Ext/ext-all.js')}"/>
+
+<apex:includeScript value="{!$Resource.LocaleJs}"/>
+<apex:includeScript value="{!URLFOR($Resource.AppResources,'AppResources/js/PagingStore.js')}"/>
+
+<apex:includeScript value="{!URLFOR($Resource.AppResources,'AppResources/js/rowExpander2.js')}"/>
+<apex:pageMessages escape="false" />
+<apex:outputPanel layout="block" id="gridDiv">
+<style>
+<!-- In date picker 'Ok', 'Cancel' buttons text not appeared -->
+.x-date-mp-btns button{
+    color: black;
+}
+<!-- To fix date field img alignment issue on IE8 -->
+.ext-strict .ext-ie8 .x-form-field-trigger-wrap .x-form-trigger {
+    right: 0;
+}
+<!-- To fix date picker calendar cut off issue on IE7 -->
+.x-date-menu > ul{
+    display: inline;
+}
+
+.x-date-menu > ul li{
+    display: inline;
+}
+<!-- To fix unnecessary white space in date picker calendar -->
+li.x-menu-date-item {
+ margin-left : 0px;
+}
+
+<!--To fix innergrid header and data misalignment-->
+.rowexpander_innergrid .x-grid3-row td {
+    padding-left:0px;
+    padding-right:0px;
+    text-align : center;
+}
+
+.ext.grid.EditorGridPanel th,td {
+    text-align : center;
+}
+
+.cloned_row {
+    background-color:#DBEBE1;
+}
+
+.queued_row {
+    background-color:#E1DFD3;
+}
+
+.editable_img {
+    background-image:url('/img/func_icons/util/pencil12.gif');
+    background-repeat:no-repeat;
+}
+
+.locked_img {
+    background-image:url('/img/func_icons/util/lock12.gif');
+    background-repeat:no-repeat;
+}
+
+.geared_img {
+    background-image:url("{!$Resource.wait_img}");
+    background-repeat:no-repeat;
+}
+    td.x-grid3-hd.x-grid3-cell{
+    padding: 0px 0px 0px 0x;
+    }
+    
+    td.x-grid3-col.x-grid3-cell {
+    padding: 0px 1px 0px 1px;
+    }
+    
+    .x-grid3-row.x-grid3-row-collapsed{
+    width:100% !important
+    }
+    
+    .x-grid3-body{
+    width:100% !important
+    }
+    .x-panel-header{ margin-left:5px; margin-right:5px; }
+    .x-panel-body{ margin-left:5px; margin-right:5px; overflow: auto !important;}
+    .x-grid3-scroller{ overflow-x: hidden !important; }
+    .x-table-layout{ width:100% !important; }
+    .x-grid3 table{ width:100% !important; }
+    .x-grid3-header-inner{ width:100% !important; }
+    .x-grid3-header-offset{ width:100% !important; }
+    .x-grid3{ width:100% !important; }
+    .x-grid3-scroller{ width:100% !important; }
+    .x-grid3-body{ width:100% !important; }
+    .x-grid3-row{ width:100% !important; }
+    .x-grid3-row-table{ width:100% !important; }
+    .x-panel-bbar{ width:100% !important; margin-left:5px; margin-right:5px; }
+    .x-toolbar{ width:100% !important; }
+    .x-toolbar-left-row{ display: block; }
+    .x-toolbar-left {Padding-left: 10px;}
+    .x-toolbar-right {Padding-right: 10px;}
+
+</style>
+    <apex:form id="frm5" style="display: none;">
+        <apex:pageBlock title="Search Opportunity" id="pb5">
+            <apex:pageBlockSection columns="4" id="pbs5">
+                
+                <apex:outputLabel value="Opportunity Number" for="sOppNumber"/>
+                <apex:input value="{!sOppNumber}" type="text" id="sOppNumber"/>
+                
+                <apex:outputLabel value="Opportunity Name" for="sOppName"/>
+                <apex:input value="{!sOppName}" type="text" id="sOppName"/>
+                
+                <apex:outputLabel value="Account Name" for="sAccName"/>
+                <apex:input value="{!sAccName}" type="text"/>
+                
+                <apex:outputLabel value="Parent Opportunity Name" for="sPOppName"/>
+                <apex:input value="{!sPOppName}" type="text" id="sPOppName"/>
+                
+                <apex:outputLabel value="Parent Opportunity Number" for="sPOppNumber"/>
+                <apex:input value="{!sPOppNumber}" type="text" id="sPOppNumber"/>
+                
+                <apex:commandButton action="{!searchRenwalTasks}" value="Search"/>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+    
+<script>
+        Ext.BLANK_IMAGE_URL = "{!URLFOR($Resource.Ext,'Ext/resources/images/default/s.gif')}";
+        var POP_PAGE_NAME = 'VFP_CRM_OpportunityRenewal_PDetail';
+        var pageData = {!RenewalTaskJson}; //contain the whole page data 
+        var DASHBOARD_PAGE_NAME = 'VFP_CRM_OpportunityRenewal_Dashboard';
+
+        //var selProducts = []; //contain ids of selected products
+        var droppedProducts = [];
+        var selOpportunities = []; //contain ids of selected opportunities
+        var outerGridPageSize = 10;
+        var MAX_PRODS_FOR_CLONE = 1000;
+        
+        var usrDateFormat;
+        var now =  new Date();
+        var currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var maxAllowedDate = new Date(now.getFullYear() + 5, now.getMonth(), now.getDate());;
+        var minPriceIncrValue = -999;
+        var maxPriceIncrValue = 999;
+        var selRenewalsArr;
+
+        var permissionForDetailClone = false;
+        var permissionForDropProduct = false;
+        var PRICING_USER_STR_MATCH = 'pricing';
+        var roundColumnIndex = 15;
+        var profileName = "{!$Profile.Name}";
+        if(profileName != null  && profileName.length > 0) {
+            var pos = profileName.toLowerCase().indexOf(PRICING_USER_STR_MATCH);
+            if(pos <= 0){
+                permissionForDetailClone = true;
+                permissionForDropProduct = true;
+            }
+        }
+        
+        Ext.override(Ext.Shadow, {
+            realign : function(l, t, w, h){
+                if(!this.el){
+                    return;
+                }
+                var a = this.adjusts, d = this.el.dom, s = d.style;
+                var iea = 0;
+                s.left = (l+a.l)+"px";
+                s.top = (t+a.t)+"px";
+                var sw = (w+a.w), sh = (h+a.h), sws = sw +"px", shs = sh + "px";
+                if(s.width != sws || s.height != shs){
+                    if(Ext.isIE8){
+                        s.offsetwidth = sws;
+                        s.offsetheight = shs;
+                    } else{
+                        s.width = sws;
+                        s.height = shs;
+                    }  
+                    
+                    if(!Ext.isIE){
+                        var cn = d.childNodes;
+                        var sww = Math.max(0, (sw-12))+"px";
+                        cn[0].childNodes[1].style.width = sww;
+                        cn[1].childNodes[1].style.width = sww;
+                        cn[2].childNodes[1].style.width = sww;
+                        cn[1].style.height = Math.max(0, (sh-12))+"px";
+                    }
+                }
+            }
+        });
+            
+
+        function invalidForClone(record){
+            var cloningStatus = record.get('cloning_status');
+            if(cloningStatus == "queued" || cloningStatus == "cloned" || cloningStatus == "Awaiting Details" || cloningStatus == "No Renew" || cloningStatus == "errored" || cloningStatus =="Needs No Renew Reason"){
+                return true;
+            }
+            return false;
+        }
+
+        //Add Useful methods to Javascript Array object 
+        Array.prototype.getIndex = function(eleVal){
+            for(var i = 0 ; i < this.length ; i++) {
+                if(this[i]==eleVal) {
+                    return i;
+                }
+            }
+            return -1;
+        };
+
+        Array.prototype.addUnique = function(eleVal){
+            if(this.getIndex(eleVal) == -1) {
+                this.push(eleVal);
+            }
+        };
+
+
+        Array.prototype.removeValue = function(eleVal){
+            var index = this.getIndex(eleVal);
+            if (index != -1) {
+                this.splice(index, 1);
+            }
+            return this;
+        };
+
+        usrDateFormat = localeDateFormat.getDateFormat("{!UserLocale}");
+       
+        Ext.QuickTips.init();
+
+
+        function reassignAction(){
+                Ext.getBody().unmask();
+                var reasnUsr = document.getElementById('pageId:frm:vField_lkid');
+                 
+                 var rUsr = '';
+                 if(reasnUsr != null ){
+                     rUsr = reasnUsr.value;
+                 }
+                if(!rUsr  || rUsr == '') {            
+                    //alert('Please select a user for reassignment.'); 
+                    if(Ext.isIE)
+                        window.detachEvent('onfocus',reassignAction);
+                    else
+                        window.removeEventListener('focus', reassignAction, true);
+                    
+                    return;
+                }
+                
+                var recIdListElem = document.getElementById('pageId:frm:recIdListId');         
+                recIdListElem.value = selOpportunities;
+                    
+                reassign();
+             }
+
+        function showLookup(ctrlID) {         
+               Ext.getBody().mask();
+                openLookup("/_ui/common/data/LookupPage?lkfm=editPage&lknm="+ ctrlID +"&lktp=StandardUserLookup", 1000);
+                if(Ext.isIE)
+                    window.attachEvent('onfocus',reassignAction);
+                else
+                    window.addEvent(window,'focus',reassignAction,true);        
+             } 
+
+        /*
+        Fix for : Innergrid rows checkboxs are checked if outergrid record is selected
+        */
+        var RenewalGridView = Ext.extend(Ext.grid.GridView, {
+            onRowSelect : function(row){
+                this.addMainRowClass(row, "x-grid3-row-selected");
+            },
+
+            onRowDeselect : function(row){
+                this.removeMainRowClass(row, "x-grid3-row-selected");
+            },
+            
+            addMainRowClass : function(row, cls){
+                var r = this.getRow(row);
+                if(r){
+                    var rtr = r.getElementsByTagName('tr')[0];
+                    this.fly(rtr).addClass(cls);
+                }
+            },
+
+            removeMainRowClass : function(row, cls){
+                var r = this.getRow(row);
+                if(r){
+                    var rtr = r.getElementsByTagName('tr')[0];
+                    this.fly(rtr).removeClass(cls);
+                }
+            }   
+        });
+
+        //function to set property of product
+        function setProdProperty(recId, propName, propValue){
+            var prodRecord = getInnerGridRecord(recId);
+            prodRecord[propName] = propValue;
+        }
+
+        //function to get product record from record id
+        function getInnerGridRecord(recId, parentRecId){
+            var innerGridRecords = null;
+            if(parentRecId){
+                innerGridRecords = getInnerGridData(parentRecId).list;
+            } else {
+                innerGridRecords = getParentRecord(recId).innerGridRecords.list;
+            }
+            for(var j = 0 ; j < innerGridRecords.length ; j++){
+                var rec = innerGridRecords[j];
+                if(rec.id == recId){
+                    return rec;
+                }
+            }
+            return null;
+        }
+
+        //function to get Parent record json for a child record
+        function getParentRecord(recId){
+            var outerGridRecords = pageData.outerGridRecords.outerRecArr;
+
+            for(var i = 0; i < outerGridRecords.length ; i++){
+                var parentRecord = outerGridRecords[i];
+                var innerGridRecords = parentRecord.innerGridRecords.list;
+                for(var j = 0 ; j < innerGridRecords.length ; j++){
+                    var rec = innerGridRecords[j];
+                    if(rec.id == recId){
+                        return parentRecord;
+                    }
+                }
+           }
+           return null;
+        }
+
+        //Function to copy an object
+        function copy_obj(o) {
+            var c = new Object();
+            for (var e in o) {
+              c[e] = o[e];
+            }
+            return c;
+        }
+
+
+        //Function to get inner grid records json for a specific parent record from  global page data variable
+        function getInnerGridData(recId){
+            var outerGridRecords = pageData.outerGridRecords.outerRecArr;
+
+            for(var i = 0; i < outerGridRecords.length ; i++){
+                var rec = outerGridRecords[i];
+                if(rec.id == recId){
+                    return rec.innerGridRecords;
+                }
+           }
+        }
+
+        //Function to set products for opportunities
+        function setProdsForOpportunity(oppId, products){
+            var oppRecords = pageData.outerGridRecords.outerRecArr;
+
+            for(var i = 0; i < oppRecords.length ; i++){
+                var rec = oppRecords[i];
+                if(rec.id == oppId){
+                    rec.innerGridRecords.list = products;
+                }
+           }
+        }
+
+        function getToolTipDiv(value, reducedSize){
+            return "<span ext:qtip=\"" + value + "\">" + value + "</span>";
+            //return "<span>" + value + "</span>";
+        }
+
+        var productNameRenderer = function(value, p, record){
+            if (typeof value == "undefined")
+                return "";
+            return getToolTipDiv(value, 18);
+        }
+
+        var productCommentRenderer = function(value, p, record){
+            if (typeof value == "undefined")
+                return "";
+            return getToolTipDiv(value, 14);
+        }
+        
+        function handleFocusOnPage()
+        {
+            Ext.getBody().unmask();
+            if(Ext.isIE){
+                window.detachEvent('onfocus',handleFocusOnPage);
+                window.detachEvent('onclick',handleFocusOnPage);
+            } else {
+                window.removeEventListener('focus', handleFocusOnPage, true);
+                window.removeEventListener('click', handleFocusOnPage, true);
+            }
+        }
+
+        function openEditProductsPopup(recId){
+            var outerGrid = Ext.getCmp('outerGrid');
+            
+            Ext.getBody().mask();
+            if(Ext.isIE){
+                window.attachEvent('onfocus',handleFocusOnPage);
+                window.attachEvent('onclick',handleFocusOnPage);
+            }else {
+                window.addEvent(window,'focus',handleFocusOnPage,true);
+                window.addEvent(window,'click',handleFocusOnPage,true);
+            }
+            
+            var dashBoardCurrentPage = outerGrid.getBottomToolbar().getPageData().activePage;
+            
+            var sortDir = "undefined";
+            var sortField = "undefined";
+            var sortInfo = outerGrid.getStore().getSortState();
+            if(sortInfo != null && sortInfo != "undefined"){
+                sortDir = sortInfo.direction;
+                sortField = sortInfo.field;
+            }
+            
+            var attrs = {
+                parWindow : window,
+                dashboardStatus : {
+                    currentPage : dashBoardCurrentPage,
+                    sortingField : sortField,
+                    sortingDir : sortDir
+                }
+            };
+                
+            //window.showModalDialog('{!$Page.VFP_CRM_OpportunityRenewal_PDetail}' + "?id=" + recId, attrs, "dialogHeight: 500px; dialogWidth: 1000px;");
+            var isChromium = window.chrome,
+            vendorName = window.navigator.vendor;
+            if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc.") {
+            window.open('{!$Page.VFP_CRM_OpportunityRenewal_PDetail}' + "?id=" + recId + '&currentPage='+ dashBoardCurrentPage + '&sortingField='+ sortField + '&sortingDir='+ sortDir,'Edit Products','height=500,width=1000,status=0,toolbar=0&location=0');
+            
+            } else { 
+               window.showModalDialog('{!$Page.VFP_CRM_OpportunityRenewal_PDetail}' + "?id=" + recId, attrs, "dialogHeight: 500px; dialogWidth: 1000px;");
+            
+            }
+        }
+        
+        //cloning status renderer
+        var cloningStatusRenderer = function (value, p, record){
+            if (typeof value == "undefined")
+                return " ";
+            
+            var totalProducts = getInnerGridData(record.get('id')).list.length;
+
+            var cls = " ";
+            var spantag = " ";
+            var cloningStatus = record.get('cloning_status');
+            if(cloningStatus == "Awaiting Details")
+                cls = "editable_img";
+            else if(cloningStatus == "cloned")
+                cls = "locked_img";
+            else if(cloningStatus == "queued")
+                cls = "geared_img";
+
+            if(cls != " "){
+                spantag = "<span class=\"" + cls +"\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>";
+            }
+            
+            if(cloningStatus != "Awaiting Details"){
+                var str = "<div>"+ spantag + getToolTipDiv(value, 11) +"</div>";
+                return str;
+            }
+                    
+            //open native popup
+            var str = "<div style=\"cursor:"+ (Ext.isIE ? "hand" : "pointer") +";\" onclick=\"openEditProductsPopup('" + record.get('id') + "');\">"+ spantag +"<a href=\"#\">"+ getToolTipDiv(value, 11) +"</a></div>";
+            return str;
+        }
+        
+        //price Inc tooltip renderer
+        var priceIncTooltipRenderer = function(value, metadata, record, rowIndex, colIndex, store) {
+            metadata.attr = 'ext:qtip="' + record.get('priceIncTooltip') + '"';
+            return value;
+        };
+
+        var prodSaleTypeRenderer = function(value, metadata, record, rowIndex, colIndex, store) {
+            metadata.attr = 'ext:qtip="' + record.get('prodSaleTypeTooltip') + '"';
+            return value;
+        };
+
+        //renderer for comment column in product inner grid
+        var nonSelProdCommentRenderer = function (value, p, record){
+            if (typeof value == "undefined")
+                value = "No Comment";
+            
+            var Options = [" ", "Lost to Competition", "Lost not to Competition", "Merger Impact", "Product switch out", "IMS no longer Delivery service", "Cost", "Loss of Exclusivity", "Other"];        
+            var recordId = record.get('id');
+            //var visibility = (selProducts.indexOf(recordId) == -1) ? "visible" : "hidden";
+            var visibility = (droppedProducts.indexOf(recordId) != -1) ? "visible" : "hidden";
+            
+            var tooltip = "";
+            
+            if(value != "undefined" && value != " ")
+                tooltip = 'ext:qtip=\"'+ value + '\"';
+                        
+            var str = "<div id=\""+ recordId +"CommentCombo\" style=\"border-left: 3px solid red;padding-left: 2px;visibility:"+ visibility +";\">";
+            
+            if(Ext.isIE){
+                str += "<select "+ tooltip +" style=\"width: 110px;\" onmousedown=\"this.style.width='auto'\" onblur=\"this.style.width='110px';\" onchange=\"this.style.width='110px'; nonSelProdCommentHandler(this, '" + recordId + "');\">";
+            } else
+                str += "<select "+ tooltip +" style=\"width: 110px;\"  onchange=\"nonSelProdCommentHandler(this, '" + recordId + "');\">";
+            
+            for(var i = 0 ; i < Options.length ; i++){
+                str += "<option value=\"" + Options[i] + "\"";
+                if(Options[i] == value)
+                    str += " selected=\"selected\"";
+                str += ">" + Options[i] + "</option>";
+            }
+            str += "</select></div>";
+            return str;
+        }
+
+        var nonSelProdCommentHandler = function(sel, recordId){
+            var comments = sel.options[sel.selectedIndex].value;
+            setProdProperty(recordId, 'comment', comments);
+            
+            var parentRecId = getParentRecord(recordId).id;
+            var gridId = "remData_" + parentRecId + "_rec_detailinnerGrid";
+            var gridStore = Ext.getCmp(gridId).getStore();
+            var record = gridStore.getById(recordId);
+            record.set('comment', sel.options[sel.selectedIndex].value);
+        } 
+
+        //renderer for No Renew column values
+        var noRenewCommentRenderer = function (value, metadata, record, rowIndex, colIndex, store){
+            if (typeof value == "undefined")
+                value = " ";
+
+            if(invalidForClone(record) && record.get('cloning_status') !="Needs No Renew Reason"){
+                return getToolTipDiv(value, 19);
+            }
+                
+            var Options = [" "].concat({!noRenewReasons});            
+            var recordId = record.get('id');
+            var tooltip = "";
+            metadata.attr = 'style="padding-top: 0px;"';
+            var noRenewComment = record.get('noRenewComment');
+            if(noRenewComment != "undefined" && noRenewComment != " ")
+                tooltip = 'ext:qtip=\"'+ record.get('noRenewComment') + '\"';
+            var str;
+            if(Ext.isIE){
+                str = "<div><select "+ tooltip +" style=\"width: 105px;\" onmousedown=\"this.style.width='auto'\" onblur=\"this.style.width='105px';\" onchange=\"this.style.width='105px';noRenewCommentHandler(this, '" + recordId + "', '" + rowIndex + "');\">";
+            } else
+                str = "<div><select "+ tooltip +" style=\"width: 110px;\"  onchange=\"noRenewCommentHandler(this, '" + recordId + "', '" + rowIndex + "');\">";
+                
+
+            for(var i = 0 ; i < Options.length ; i++){
+                str += "<option value=\"" + Options[i] + "\"";
+                if(Options[i] == value)
+                    str += " selected=\"selected\"";
+                str += ">" + Options[i] + "</option>";
+            }
+            str += "</select></div>";
+            return str;
+        }
+
+        //renderer for Data Period Shift Column
+        var dataPeriodShiftRenderer = function (value, metadata, record, rowIndex, colIndex, store){
+            if (typeof value == "undefined" || value == '')
+                value = "12";
+            if(invalidForClone(record)){
+                return "<span ext:qtip=\"" + value + " months\">" + value + "</span>"        
+            }
+            
+            metadata.attr = 'style="padding-top: 0px;"';    
+            var Options = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12","24","36","48","60","72"];
+            var recordId = record.get('id');
+            var str = "<div><select style=\"width: 40px;\" onchange=\"dataPeriodShiftHandler(this, '" + recordId + "', '" + rowIndex + "');\">";
+            for(var i = 0 ; i < Options.length ; i++){
+                str += "<option value=\"" + Options[i] + "\"";
+                if(Options[i] === value)
+                    str += " selected=\"selected\"";
+                str += ">" + Options[i] + "</option>";
+            }
+            str += "</select></div>";
+            return str;
+        }
+
+        var dataPeriodShiftHandler = function(sel, recId, rowIndex){
+            var gridStore = Ext.getCmp('outerGrid').getStore();
+            var record = gridStore.getById(recId);  
+            var dataPeriodShiftValue = sel.options[sel.selectedIndex].value;
+            record.set('dataPeriodShift', dataPeriodShiftValue);
+            roundupManageHandler(record, rowIndex);
+        }
+
+
+        var noRenewCommentHandler = function(sel, recId, rowIndex){
+            var gridStore = Ext.getCmp('outerGrid').getStore();
+            var record = gridStore.getById(recId);  
+            var noRenewComment = sel.options[sel.selectedIndex].value;
+            record.set('noRenewComment', sel.options[sel.selectedIndex].value);
+            if(noRenewComment != " "){
+                record.set('cloning_action', 1);
+                Ext.getCmp('outerGrid').getSelectionModel().selectRecords([record], true);
+            } else {
+                Ext.getCmp('outerGrid').getSelectionModel().deselectRow(Ext.getCmp('outerGrid').store.indexOf(record));
+            }
+            roundupManageHandler(record, rowIndex);   
+        }
+
+        //renderer for targeted close date
+        var renderCloseDate = function (value, p, record){
+            if (typeof value == "undefined")
+                value = "";
+            else
+                value = GridDateRenderer(value);
+                    
+            if(invalidForClone(record)){
+                    return value;
+            }
+            var str = "<div style=\"border-left: 3px solid red;padding-left: 2px;\">" + value + "</div>";
+            return str;
+        }
+
+        //clonned opportunity renderer
+        var renderClonnedOpp = function (value, p, record){
+            if (typeof value == "undefined") {
+                return '';
+            }
+            var str = "<a href=\"/"+record.get('clonned_opportunity_id')+"\"><span ext:qtip=\"" + value + "\">" + record.get('clonned_opportunity_num') + "</span></a>";
+            return str;
+        }
+
+        //Account name renderer
+        var renderAccName = function (value, p, record){
+            if (typeof value == "undefined") {
+                return '';
+            }
+            var str = "<a href=\"/"+record.get('acc_Id')+"\">" + getToolTipDiv(value, 16) + "</a>";
+            return str;
+        }
+        
+        //Opportunity number renderer
+        var oppRenderer = function (value, p, record){
+            if (typeof value == "undefined") {
+                return '';
+            }   
+
+            var str = "<a href=\"/"+record.get('oppId')+"\"><span ext:qtip=\"Opp Name : "+ record.get('oppName') +",<br/>Task Name : "+ record.get('name') +"\">" + value + "</span></a>";
+
+            return str;         
+        }
+        
+        //Original/Prior opp renderer
+        var renderOrgOpp = function (value, p, record){
+            if (typeof value == "undefined") {
+                return '';
+            }
+            var str = "<a href=\"/"+record.get('org_pri_opp_id')+"\">" + getToolTipDiv(value, 18) + "</a>";
+            return str;
+        }
+
+        //Date renderer
+        var GridDateRenderer = function(date) {
+            if (! date) {
+                return '';
+            }
+            return date.dateFormat(usrDateFormat);
+        };
+
+        //currency renderer
+        var priceRenderer = function(v, p, record){
+            if(v === undefined || v == -1) {
+                return '';
+            }
+            
+            v = (Math.round((v-0)*100))/100;
+
+            v = (v == Math.floor(v)) ? v + ".00" : ((v*10 == Math.floor(v*10)) ? v + "0" : v);
+
+            v = String(v);
+
+            var ps = v.split('.');
+
+            var whole = ps[0];
+
+            var sub = ps[1] ? '.'+ ps[1] : '.00';
+
+            var r = /(\d+)(\d{3})/;
+
+            while (r.test(whole)) {
+
+                whole = whole.replace(r, '$1' + ',' + '$2');
+
+            }
+
+            v = whole + sub;
+
+            if(v.charAt(0) == '-'){
+
+                return '-' + v.substr(1);
+
+            }
+            
+            var currencyCode = record.get('currencyCode');
+            if(!currencyCode){
+                var parentRecord = getParentRecord( record.get('id'));
+                if(parentRecord){
+                    currencyCode = parentRecord.currencyCode;
+                }
+            }
+            if(currencyCode){
+                currencyCode += " ";
+            }
+            return currencyCode + v;
+        };
+
+        var rowExpanderMethod = function(record, index, parentExpanderId) {
+            
+            //var spacerWidth = getAppViewPortWidth()-610;
+            var stopSelection = invalidForClone(record);
+            var innerCbSelModel = new Ext.grid.CheckboxSelectionModel({
+                handleMouseDown : Ext.emptyFn,
+                listeners: {
+                    'selectionchange': function() {
+                        //Sync header's class with selected record count
+                        var hd = Ext.fly(this.grid.getView().innerHd).child('div.x-grid3-hd-checker');
+                        if(hd){
+                            if (this.getCount() < this.grid.getStore().getCount()) {
+                                hd.removeClass('x-grid3-hd-checker-on');
+                            } else {
+                                hd.addClass('x-grid3-hd-checker-on');
+                            }
+                        }
+                    },
+                    'rowselect': function(sm, rowIndex, rec){
+                       var recId = rec.get('id');
+                       droppedProducts.removeValue(recId);
+                       var commentCombo = document.getElementById(recId+'CommentCombo');
+                       if(commentCombo)
+                         commentCombo.style.visibility = "hidden";                 
+                    },
+                    'rowdeselect': function(sm, rowIndex, rec){
+                       var recId = rec.get('id');
+                       droppedProducts.addUnique(recId);
+                       var commentCombo = document.getElementById(recId+'CommentCombo');
+                       if(commentCombo)
+                         commentCombo.style.visibility = "visible";                 
+                    },
+                    'beforerowselect': function(sm, rowIndex, rec){
+                       // Don't allow selection for certain records
+                        if(stopSelection){
+                            return false;
+                        }
+                    }
+                }
+            });
+                
+            //inner grid fields
+            var innerFields = [{
+                name: 'id'
+            }, {
+                name: 'sapCode'
+            }, {
+                name: 'productName'
+            }, {
+                name: 'businessType'
+            }, {
+                name: 'dataPeriodStart',
+                type: 'date',
+                dateFormat: 'n-j-Y'
+            }, {
+                name: 'dataPeriodEnd',
+                type: 'date',
+                dateFormat: 'n-j-Y'
+            }, {
+                name: 'saleType'
+            }, {
+                name: 'prodSaleTypeTooltip',
+                mapping: 'saleType'
+            }, {
+                name: 'revenueType'
+            }, {
+                name: 'delivery_cnty'
+            }, {
+                name: 'value'
+            }, {
+                name: 'status'
+            }, {
+                name: 'comment'
+            }, {
+                name: 'rpt_freq'
+            }, {
+                name: 'prodInvText'
+            }, {
+                name: 'winback'
+            }, {
+                name: 'del_media'
+            }, {
+                name: 'outputFormat'
+            }, {
+                name: 'bill_freq'
+            }];
+
+            //Constructor for inner grid Record
+            var innerGridRecord = Ext.data.Record.create(innerFields);
+            
+            //JSON reader for inner grid
+            var innerGridReader = new Ext.data.JsonReader({
+                totalProperty: "resultList.count",
+                root: "resultList.list"
+            }, innerGridRecord);
+            
+              
+            //JSON store for inner grid
+            var innerGridStore = new Ext.data.JsonStore({
+                root: "list",
+                fields: innerFields,
+                proxy: new Ext.data.MemoryProxy(null),
+                reader: innerGridReader
+            });
+
+            //load inner grid store
+            var data = getInnerGridData(record.get('id'));
+            innerGridStore.loadData(data);
+            
+            //inner grid columns
+            var innerGridCols = [];
+            if(!stopSelection && permissionForDropProduct){
+                innerGridCols = innerGridCols.concat([innerCbSelModel]);
+            }
+            innerGridCols = innerGridCols.concat([
+                {
+                    header: "SAP Code",
+                    tooltip: "SAP Code",
+                    width: 110,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'sapCode'
+                }, {
+                    header: "Product Name",
+                    tooltip: "Product Name",
+                    width: 140,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'productName',
+                    renderer: productNameRenderer
+                }, {
+                    header: "Business Type",
+                    tooltip: "Business Type",
+                    width: 90,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'businessType'
+                }, {
+                    header: "Data Period Start",
+                    tooltip: "Data Period Start",
+                    width: 100,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'dataPeriodStart',
+                    renderer: GridDateRenderer
+                }, {
+                    header: "Data Period End",
+                    tooltip: "Data Period End",
+                    width: 100,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'dataPeriodEnd',
+                    renderer: GridDateRenderer
+                }, {
+                    header: "Sale Type",
+                    tooltip: "Sale Type",
+                    width: 90,
+                    menuDisabled: true,
+                    //sortable: true,
+                    dataIndex: 'saleType'
+                }, {
+                    header: "Revenue Type",
+                    tooltip: "Revenue Type",
+                    width: 90,
+                    menuDisabled: true,
+                    dataIndex: 'revenueType'
+                }, {
+                    header: "Delivery Country",
+                    tooltip: "Delivery Country",
+                    width: 90,
+                    menuDisabled: true,
+                    dataIndex: 'delivery_cnty'
+                }, {
+                    header: "Total Price",
+                    tooltip: "Total Price",
+                    width: 110,
+                    menuDisabled: true,
+                    dataIndex: 'value',
+                    renderer: priceRenderer
+                }, {
+                    header: "Status",
+                    tooltip: "Status",
+                    width: 80,
+                    hidden: (!stopSelection),
+                    menuDisabled: true,
+                    dataIndex: 'status'
+                }, {
+                    header: "column 1",
+                    hidden: true,
+                    dataIndex: 'status'
+                }, {
+                    header: "column 2",
+                    hidden: true,
+                    dataIndex: 'status'
+                }, {
+                    header: "column 3",
+                    hidden: true,
+                    dataIndex: 'status'
+                }, {
+                    header: "column 4",
+                    hidden: true,
+                    dataIndex: 'status'
+                }, {
+                    header: "Comments",
+                    tooltip: "Comments",
+                    width:130,
+                    menuDisabled: true,
+                    dataIndex: 'comment',
+                    renderer: ((!stopSelection && permissionForDropProduct) ? nonSelProdCommentRenderer : productCommentRenderer)
+                }]);
+            
+            var innerGrid = new Ext.grid.EditorGridPanel({
+                id: parentExpanderId + 'innerGrid',
+                title: "Product Details",
+                store: innerGridStore,
+                sm: innerCbSelModel,
+                columns: innerGridCols,
+                height: 150,
+                width: '100% !important',
+                enableColumnMove: false,
+                enableColumnResize: false,
+                viewConfig: {
+                   emptyText: "No Data",
+                   deferEmptyText: false
+                },
+                listeners : {
+                    'viewready' : function(){
+                            //select records of inner grid whose id's are in global array of selected records 
+                            (function(){
+                                    var gridPanel = Ext.getCmp(parentExpanderId + 'innerGrid');
+                                    var gridStore = gridPanel.getStore();
+                                    var recArr = [];
+                                    for(var i = 0 ; i < gridStore.getCount() ; i++){
+                                        var rec = gridStore.getAt(i);
+                                        if(droppedProducts.indexOf(rec.get('id')) == -1){
+                                            recArr.addUnique(rec);
+                                        }
+                                    }
+                                    var sm = gridPanel.getSelectionModel();
+                                    if(sm)
+                                        sm.selectRecords(recArr, false);
+                                    
+                            }).defer(0);
+                            this.getEl().swallowEvent(['headerclick','columnmove','mousedown', 'mouseup', 'click', 'contextmenu', 'mouseout']);
+                    }
+                }
+            });
+            
+           //render inner grid in parent grid's row
+            innerGrid.render(parentExpanderId);
+        }
+
+        var rowExpander = new Ext.grid.RowExpander({
+            suffix : "rec_detail",
+            remoteDataMethod: rowExpanderMethod,
+            id: 'rowExpander',
+            getRowClass: function(record, rowIndex, p, ds){
+                p.cols = p.cols - 1;
+                var content = this.bodyContent[record.id];
+                if (!content && !this.lazyRender) {
+                    content = this.getBodyContent(record, rowIndex);
+                }
+
+                if (content) {
+                    p.body = content;
+                }
+                var cloned_queued_css = "";
+                if(record.get('cloning_status') == "queued"){
+                    cloned_queued_css = " queued_row ";
+                } else if(record.get('cloning_status') == "cloned"){
+                    cloned_queued_css = " cloned_row ";
+                }
+                return this.collapsedCss + cloned_queued_css;
+            }
+        });
+
+        //Checkbox selection model for outer grid
+        var cbSelModel = new Ext.grid.CheckboxSelectionModel({
+            handleMouseDown : Ext.emptyFn,
+            //Fix to hide checkbox for records whose 'cloning_status' is equal to 'queued'
+            renderer: function(value, metaData, record){
+                // Hide checkbox for certain records
+               if(invalidForClone(record) && record.get('cloning_status') !="Needs No Renew Reason"){
+                    return;
+                }
+                return Ext.grid.CheckboxSelectionModel.prototype.renderer.apply(this, arguments);
+            },
+            listeners: {
+                'selectionchange': function() {
+                    var hd = Ext.fly(this.grid.getView().innerHd).child('div.x-grid3-hd-checker');
+                    //get selectable record count
+                    var selectableRecCount = 0;
+                    var gridStore = this.grid.getStore();
+                    for(var i = 0 ; i < gridStore.getCount() ; i++){
+                        var rec = gridStore.getAt(i);
+                        if(!invalidForClone(rec) || rec.get('cloning_status') =="Needs No Renew Reason")
+                             selectableRecCount++;
+                    }
+                    //Sync header's class with selected record count
+                    if (this.getCount() < selectableRecCount) {
+                        hd.removeClass('x-grid3-hd-checker-on');
+                    } else {
+                        hd.addClass('x-grid3-hd-checker-on');
+                    }
+                },
+                'beforerowselect': function(selModel, rowIndex, keepExisting, record){
+                    // Don't allow selection for certain records
+                    if(invalidForClone(record) && record.get('cloning_status') !="Needs No Renew Reason"){
+                        return false;
+                    }
+                 },
+                 //Fix to make records unselectable whose 'cloning_status' is equal to 'queued'
+                'rowselect': function(sm, rowIndex, rec){
+                   selOpportunities.addUnique(rec.get('id'));// add record's id to global array for selected id's on record select
+                },
+                'rowdeselect': function(sm, rowIndex, rec){
+                   selOpportunities.removeValue(rec.get('id'));// remove record's id from global array for selected id's on record deselect
+                }   
+            }
+        });
+
+
+        var outerGridFields = [{
+            name: 'id'
+        }, {
+            name: 'name'
+        }, {
+            name: 'oppName'
+        }, {
+            name: 'oppId'
+        }, {
+            name: 'oppNum',
+            type: 'int',
+            sortType : Ext.data.SortTypes.asInt
+        }, {
+            name: 'accName'
+        }, {
+            name: 'acc_Id'
+        }, {
+            name: 'contractValue',
+            type: 'float',
+            sortType : Ext.data.SortTypes.asFloat
+        }, {
+            name: 'contractEndDate',
+            type: 'date',
+            dateFormat: 'n-j-Y',
+            sortType : Ext.data.SortTypes.asDate
+        }, {
+            name: 'contractType'
+        }, {
+            name: 'org_pri_opp'
+        }, {
+            name: 'org_pri_opp_id'
+        }, {
+            name: 'cloning_action'
+        }, {
+            name: 'closeDate',
+            type: 'date',
+            dateFormat: 'n-j-Y',
+            sortType : Ext.data.SortTypes.asDate
+        }, {
+            name: 'price_inc',
+            type: 'float'   
+        }, {
+            name: 'priceIncTooltip',
+            mapping: 'price_inc',
+            type: 'float'   
+        }, {
+            name: 'cloning_status'
+        }, {
+            name: 'clonned_opportunity'
+        }, {
+            name: 'clonned_opportunity_id'
+        }, {
+            name: 'clonned_opportunity_num'
+        }, {
+            name: 'noRenewComment'
+        }, {
+            name: 'currencyCode'
+        }, {
+            name: 'dataPeriodShift'
+        }, {
+            name: 'roundup_action'
+        }];
+
+        //Constructor for outer grid record
+        var outerRecord = Ext.data.Record.create(outerGridFields);
+
+        var outerGridReader = new Ext.data.JsonReader(outerRecord);
+
+        //Store for local pagination
+        var outerGridStore = new Ext.ux.data.JsonPagingStore({
+            root: "outerGridRecords.outerRecArr",
+            totalProperty: 'outerGridRecords.count',
+            id:'id',
+            fields: outerGridFields,
+            reader: outerGridReader,
+            lastOptions: {params: {start: 0 , limit:outerGridPageSize}},
+            listeners: {
+                'load' : function(){
+                    Ext.getCmp('outerGrid').getView().refresh();
+                }
+            }
+        });        
+    
+        //RadioColumn definition for cloning action columns
+    	Ext.grid.RadioColumn = function(config){
+            Ext.apply(this, config);
+            if(!this.id){
+                this.id = Ext.id();
+            }
+        };
+      Ext.grid.RadioColumn.prototype = {
+            init : function(grid){},
+      };
+    
+        //CheckColumn definition
+        Ext.grid.CheckColumn = function(config){
+            Ext.apply(this, config);
+            if(!this.id){
+                this.id = Ext.id();
+            }
+        };
+        
+       Ext.grid.CheckColumn.prototype ={
+            init : function(grid){},
+		};
+
+       var roundUpColumn = [new Ext.grid.CheckColumn({
+           header: 'Round Up',
+           id: 'roundup',
+           tooltip: "{!$Label.CRM_CL0040_Round_Up_Help_Text}",
+           align: 'center',
+           menuDisabled: true,
+           dataIndex: 'roundup_action',
+           width: 50,
+           renderer : function(v, p, record){
+                    p.css += ' x-grid3-check-col-td';
+                   if(!invalidForClone(record)){
+                       return '<div  class="x-grid3-check-col x-grid3-cc-'+this.id+' chkRound"> </div>';
+                   }
+                   else{
+                       return '<div>'+((v == 'true' || v == true)?'Yes':'No')+'</div>';
+                   }
+           }
+        })];
+
+        //Cloning action columns
+    var cloningActionColumns = [
+               new Ext.grid.RadioColumn({
+                    header: "Basic Clone",
+                    id: 'noChange',
+                    tooltip: "Basic Clone",
+                    align: 'center',
+                    menuDisabled: true,
+                    inputValue: 2,
+                    width: 70,
+                    dataIndex: 'cloning_action',
+                    renderer: radioRenderer,
+                })];
+                
+                if(permissionForDetailClone){
+                    cloningActionColumns.push(
+                        new Ext.grid.RadioColumn({
+                            header: "Detail Clone",
+                            id: 'changeDetail',
+                            tooltip: "Detail Clone",
+                            align: 'center',
+                            menuDisabled: true,
+                            inputValue: 3,
+                            width: 85,
+                            dataIndex: 'cloning_action',
+                   			renderer: radioRenderer,
+                        })
+                    );
+                }
+
+        //validation method for cloning action
+        function validateCloningAction(record){
+            var cloningActionValue = record.cloning_action;
+            var noRenewComment =  record.noRenewComment;
+            if(cloningActionValue != 2 && cloningActionValue != 3)//if cloning action is not equal to 'Basic Clone' or 'Detail Clone'
+            {
+                if(noRenewComment == null || noRenewComment.trim() == ""){
+                    return false;
+                }
+                    
+            }
+            return true;
+        }
+
+    	function radioRenderer(v, p, record){
+            if(!permissionForDetailClone && this.inputValue == 3)
+                return ' ';
+            if(invalidForClone(record)){
+                if(v == this.inputValue)
+                    return this.tooltip;
+                else
+                    return ' ';
+            }
+            p.css += ' x-grid3-radio-col-td'; 
+            return '<div class="x-grid3-radio-col'+(v == this.inputValue?'-on':'')+' x-grid3-cc-'+this.id+'"> </div>';
+        }
+    
+    	function roundupManageHandler(record, rowIndex){
+            var data = record.get("roundup_action");
+            var roundData = (data == "false" || data == false)? false : true;
+            var roundCell = Ext.getCmp('outerGrid').getView().getRow(rowIndex).getElementsByTagName('tr')[0].cells[roundColumnIndex];
+            roundStyle(data, roundCell); 
+        }
+    
+        //validation method for Targeted close date
+        function validateCloseDate(record){
+            var cloningActionValue = record.cloning_action;
+            var closeDate =  record.closeDate;
+            if(cloningActionValue == 2 || cloningActionValue == 3)//if cloning action is equal to 'Basic Clone' or 'Detail Clone'
+            {
+                if(closeDate==null || closeDate==""){
+                     return { success : false, invalidMsg : "<br/> * Targeted Close Date must be specified"}
+                } else if(closeDate < currentDate){
+                    return { success : false, invalidMsg : "<br/> * Targeted close date should not be less then current date."}
+                } else if(closeDate >= maxAllowedDate){
+                    return { success : false, invalidMsg : "<br/> * Target close date can not be more than 5 years in the future."}
+                }
+            }
+            return { success : true };
+        }
+        
+        function validatePriceIncrement(record){
+            var cloningActionValue = record.cloning_action;
+            var priceIncrValue =  record.price_inc; 
+            if(priceIncrValue < minPriceIncrValue)
+                return { success : false, invalidMsg : "<br/> * % Price Incremant can not be less than " + minPriceIncrValue + "." }
+            else if(priceIncrValue > maxPriceIncrValue)
+                return { success : false, invalidMsg : "<br/> * % Price Incremant can not be more than " + maxPriceIncrValue + "." }
+            return { success : true };
+        }
+
+        //validation method for Targeted close date
+        function validateProductComment(record){
+            if(droppedProducts.indexOf(record.id) == -1){
+                return true;
+            }
+            if(record.comment != null && record.comment.trim() != ""){
+                return true;
+            }
+            return false;
+        }
+
+        var outerGridColumns = [rowExpander, cbSelModel, {
+            header: "Opportunity#",
+            tooltip: "Opportunity#",
+            width: 70,
+            dataIndex: 'oppNum',
+            sortable: true,
+            renderer: oppRenderer
+        }, {
+            header: "Cloning Status",
+            tooltip: "Cloning Status",
+            width: 90,
+            sortable: true,
+            dataIndex: 'cloning_status',
+            renderer: cloningStatusRenderer
+        }, {
+            header: "Account Name",
+            tooltip: "Account Name",
+            width: 90,
+            sortable: true,
+            dataIndex: 'accName',
+            renderer: renderAccName 
+        }, {
+            header: "Contract Value",
+            tooltip: "Contract Value",
+            width: 90,
+            dataIndex: 'contractValue',
+            renderer: priceRenderer,
+            sortable: true
+        }, {
+            header: "Contract End Date",
+            tooltip: "Contract End Date",
+            width: 100,
+            sortable: true,
+            dataIndex: 'contractEndDate',
+            renderer: GridDateRenderer
+        }, {
+            header: "Contract Type",
+            tooltip: "Contract Type",
+            align: 'center',
+            width: 93,
+            dataIndex: 'contractType',
+            sortable: true
+        }, {
+            header: "No Renew Comment",
+            tooltip: "No Renew Comment",
+            align: 'center',
+            width: 115,
+            dataIndex: 'noRenewComment',
+            sortable: false,
+            renderer: noRenewCommentRenderer
+        }].concat(cloningActionColumns).concat([{
+            header: "Original/Prior Opp",
+            tooltip: "Original/Prior Opp",
+            width: 110,
+            sortable: true,
+            dataIndex: 'org_pri_opp',
+            renderer: renderOrgOpp 
+        }, {
+            header: "Expected Close Date",
+            tooltip: "Expected Close Date",
+            width: 90,
+            sortable: true,
+            dataIndex: 'closeDate',
+            editor: new Ext.form.DateField({
+                format: usrDateFormat,
+                altFormats: "",
+                editable: false
+            }),
+            renderer: renderCloseDate
+        }, {
+            header: "Data Period Shift",
+            tooltip: "Data Period Shift (In months)",
+            width: 50,
+            dataIndex: 'dataPeriodShift',
+            renderer: dataPeriodShiftRenderer
+        }, {
+            header: "%Price Increment",
+            tooltip: "%Price Increment",
+            width: 50,
+            dataIndex: 'price_inc',
+            editable: (permissionForDetailClone),
+            editor: new Ext.form.NumberField({
+               allowBlank: false,
+               allowNegative: true
+           }),
+           renderer: priceIncTooltipRenderer
+        }]).concat(roundUpColumn).concat([{
+            header: "Cloned Opportunity",
+            tooltip: "Cloned Opportunity",
+            width: 120,
+            align: 'left',
+            sortable: true,
+            dataIndex: 'clonned_opportunity',
+            renderer: renderClonnedOpp
+        }]);
+    
+    function handleSubmit(){
+        var gridStore = Ext.getCmp('outerGrid').getStore();
+        var allOuterRecords = gridStore.allData.items;
+        var invalidMsgForSubmit = "";
+        selRenewalsArr = [];
+        for(var i = 0 ; i < allOuterRecords.length ; i++){
+            var rec = allOuterRecords[i];
+            if(selOpportunities.indexOf(rec.id) != -1){
+                 var invalidRecMsg = "";
+                 if(rec.data.cloning_status =="Needs No Renew Reason" &&  (rec.data.noRenewComment == null || rec.data.noRenewComment.trim() == "")){
+                    invalidRecMsg = "<br/> * No Renew Comment must be specified";
+                 } else {
+                    //validate cloning action
+                     if(!validateCloningAction(rec.data)){
+                        invalidRecMsg = "<br/> * No Renew Comment must be specified or choose some other cloning action";
+                     }  
+                     //validate close date
+                     var verifyObj = validateCloseDate(rec.data);
+                     if(verifyObj.success != true){
+                        invalidRecMsg += verifyObj.invalidMsg;; 
+                     }
+                     
+                     verifyObj = validatePriceIncrement(rec.data);
+                     if(verifyObj.success != true){
+                        invalidRecMsg += verifyObj.invalidMsg;; 
+                     }  
+
+                     var innerSelRecArr = [];
+                     var allInnerRecords = getInnerGridData(rec.id).list;
+                     var invalidProducts = [];
+                     for(var j = 0 ; j < allInnerRecords.length ; j++){
+                        var innerRec = allInnerRecords[j];
+                        //validate products for comments
+                         if(droppedProducts.indexOf(innerRec.id) != -1){    
+                            if(!validateProductComment(innerRec)){
+                               invalidProducts.push(innerRec.productName);
+                            }
+                        } else {
+                            innerRec.comment = "";
+                        }
+                        var obj = {
+                            id : innerRec.id
+                        };
+                        if(droppedProducts.indexOf(innerRec.id) != -1){
+                            obj.comment = innerRec.comment;
+                        }
+                        innerSelRecArr.push(obj);                             
+                     }
+                     if(invalidProducts.length != 0){
+                         invalidRecMsg += "<br/> * Under Comment, reason for not renewing must be specified for products: " +  invalidProducts.join(); 
+
+                     }
+                     
+                     rec.data.innerRecords = innerSelRecArr;   
+                     if(rec.data.dataPeriodShift == '')
+                        rec.data.dataPeriodShift = "12";
+                 }
+                 
+                 var outerObj = {
+                    id : rec.data.id,
+                    dataPeriodShift : rec.data.dataPeriodShift, 
+                    cloning_action : rec.data.cloning_action,
+                    closeDate : rec.data.closeDate,
+                    price_inc : rec.data.price_inc,
+                    roundup_action : rec.data.roundup_action,
+                    innerRecords : []
+                 };
+                 if(rec.data.cloning_action == 1)//if cloning action is no renew
+                    outerObj.noRenewComment = rec.data.noRenewComment;
+                 else
+                    outerObj.innerRecords = rec.data.innerRecords;
+                    
+                 selRenewalsArr.push(outerObj);
+                 if(invalidRecMsg != ""){
+                    if(invalidMsgForSubmit != "")
+                        invalidMsgForSubmit += "<br/><br/>";
+                    invalidMsgForSubmit += "For Opportunity Number " + rec.data.oppNum + " : " + invalidRecMsg;
+                 }
+            }
+        }
+        if(invalidMsgForSubmit != ""){
+            Ext.Msg.alert('Error Message', invalidMsgForSubmit);
+            return;
+        }
+        Ext.getBody().mask();
+        document.getElementById('pageId:frm2:firstJsonToParse').value = true;
+        submitJsonForCloning();
+    }
+    
+    function toggleSearchSection(){
+        var frm5 = document.getElementById('pageId:frm5');
+        if(frm5.style.display === 'block'){
+            frm5.style.display= 'none';
+        }else{
+            frm5.style.display= 'block';
+            var oppNumberTag = document.getElementById('pageId:frm5:pb5:pbs5:sOppNumber');
+            var pOppNumberTag = document.getElementById('pageId:frm5:pb5:pbs5:sPOppNumber')
+            if(oppNumberTag.value == 0)
+                oppNumberTag.value = null;
+            if(pOppNumberTag.value == 0)
+                pOppNumberTag.value = null;
+        }
+    }
+    
+    function removeOpp(){
+        var jsonString = "{ outerRec: ";
+        jsonString += Ext.encode(selOpportunities) + "}";
+        
+        document.getElementById('pageId:frm6:renewalTaskToDeactivate').value =  Ext.encode(selOpportunities);
+        deactiveRenewalTaskAF();
+    }
+
+    function submitJsonForCloning(){
+        var renewalTasksArr = [];
+        var totalProdForSubmission = 0;
+        while(selRenewalsArr.length != 0){
+            var prodCountForRenTask = selRenewalsArr[0].innerRecords.length;
+            if(totalProdForSubmission + prodCountForRenTask <= MAX_PRODS_FOR_CLONE){
+                totalProdForSubmission += prodCountForRenTask;
+                renewalTasksArr.addUnique(selRenewalsArr[0]);
+                selRenewalsArr = selRenewalsArr.removeValue(selRenewalsArr[0]);
+            } else
+                break;
+        }
+        
+        var jsonString = "{ outerRec: ";
+        jsonString += Ext.encode(renewalTasksArr) + "}";
+        
+        var jsonForCloning = document.getElementById('pageId:frm2:jsonForCloning');         
+        jsonForCloning.value = jsonString;
+        
+        cloneRenwalTasks();
+    }
+
+    function hdCloningAjaxReq(){
+        if(selRenewalsArr.length != 0){
+            document.getElementById('pageId:frm2:firstJsonToParse').value = false;
+            submitJsonForCloning();
+        } else{
+            if(selRenewalsArr.length == 0){
+                var gridStore = Ext.getCmp('outerGrid').getStore();
+
+                var sortDir = "undefined";
+                var sortField = "undefined";
+                var sortInfo = gridStore.getSortState();
+                if(sortInfo != null && sortInfo != "undefined"){
+                    sortDir = sortInfo.direction;
+                    sortField = sortInfo.field;
+                }
+                document.getElementById('pageId:frm3:sortDir').value = sortDir;
+                document.getElementById('pageId:frm3:sortField').value = sortField;
+                document.getElementById('pageId:frm3:currentPage').value = Ext.getCmp('outerGrid').getBottomToolbar().getPageData().activePage;
+            }
+            //Ext.getBody().unmask();
+            processCloning();       
+        }
+    }
+    
+    function openAddOppPopup(){
+            var outerGrid = Ext.getCmp('outerGrid');
+            
+            Ext.getBody().mask();
+            if(Ext.isIE){
+                window.attachEvent('onfocus',handleFocusOnPage);
+                window.attachEvent('onclick',handleFocusOnPage);
+            }else {
+                window.addEvent(window,'focus',handleFocusOnPage,true);
+                window.addEvent(window,'click',handleFocusOnPage,true);
+            }
+            
+            var dashBoardCurrentPage = outerGrid.getBottomToolbar().getPageData().activePage;
+            
+            var sortDir = "undefined";
+            var sortField = "undefined";
+            var sortInfo = outerGrid.getStore().getSortState();
+            if(sortInfo != null && sortInfo != "undefined"){
+                sortDir = sortInfo.direction;
+                sortField = sortInfo.field;
+            }
+            
+            var attrs = {
+                parWindow : window,
+                dashboardStatus : {
+                    currentPage : dashBoardCurrentPage,
+                    sortingField : sortField,
+                    sortingDir : sortDir
+                }
+            };
+            
+            var isChromium = window.chrome,
+            vendorName = window.navigator.vendor;
+            if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc.") {
+                window.open('{!$Page.VFP_CRM_OpportunityRenewals_AddDBOpp}?' + 'currentPage='+ dashBoardCurrentPage + '&sortingField='+ sortField + '&sortingDir='+ sortDir,'Add Opportunity','height=500,width=1000,status=0,toolbar=0&location=0');
+            
+            
+            } else { 
+                 window.showModalDialog('{!$Page.VFP_CRM_OpportunityRenewals_AddDBOpp}', attrs, "dialogHeight: 500px; dialogWidth: 1000px;");
+            }
+    } 
+
+    function init() 
+    {
+       //Main parent panel which render in the outer most div
+        var mainParentPanel = new Ext.Panel({
+            autoWidth: true,
+            autoHeight: true,
+            layout: 'table',
+            layoutConfig: {
+                columns: 1
+            },
+            renderTo: "pageId:gridDiv",
+            items: [{
+                border: false,
+                buttonAlign: 'center',
+                buttons: [
+                    {
+                        text: 'Reassign',
+                        handler: function() {
+                            if(selOpportunities.length == 0){
+                                Ext.Msg.alert('Error Message', 'Please select at least one task for reassignment.');
+                                return;
+                            }
+                            var gridStore = Ext.getCmp('outerGrid').getStore();
+                            var allOuterRecords = gridStore.allData.items;
+                            
+                            var outerSelRecArr = [];
+                            var jsonString = "{ outerRec: ";
+                            for(var i = 0 ; i < allOuterRecords.length ; i++){
+                                var rec = allOuterRecords[i];
+                                if(selOpportunities.indexOf(rec.id) != -1){
+                                     outerSelRecArr.push(rec.id); 
+                                }
+                                
+                            }
+                    
+                            jsonString += Ext.encode(outerSelRecArr) + "}";
+                            var sortDir = "undefined";
+                            var sortField = "undefined";
+                            var sortInfo = gridStore.getSortState();
+                            if(sortInfo != null && sortInfo != "undefined"){
+                                sortDir = sortInfo.direction;
+                                sortField = sortInfo.field;
+                            }
+                            document.getElementById('pageId:frm:sortDir').value = sortDir;
+                            document.getElementById('pageId:frm:sortField').value = sortField;
+                            document.getElementById('pageId:frm:currentPage').value = Ext.getCmp('outerGrid').getBottomToolbar().getPageData().activePage;
+                            showLookup('pageId:frm:vField');
+                        }
+                    },{
+                        text: 'Submit',
+                        handler: function() {
+                            if(selOpportunities.length == 0){
+                                Ext.Msg.alert('Error Message', 'Please select at least one task for cloning.');
+                                return;
+                            }
+                            if(Ext.isIE)
+                                setTimeout("handleSubmit()",500);
+                            else
+                                handleSubmit();                               
+                        }
+                    },{
+                        text: 'Add Opp',
+                        handler: function() {
+                               openAddOppPopup();                            
+                        }
+                    },{
+                        text: 'Remove Opp',
+                        handler: function() {
+                            if(selOpportunities.length == 0){
+                                Ext.Msg.alert('Error Message', 'Please select at least one task to remove.');
+                                return;
+                            }else{
+                                Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+                                    if(btn === 'yes'){
+                                        if(Ext.isIE)
+                                            setTimeout("removeOpp()",500);
+                                        else
+                                            removeOpp();
+                                        return true;
+                                    }
+                                    else{
+                                        return false;
+                                    }
+                                });
+                            }
+                        }
+                    },{
+                        text: 'Search Opp',
+                        handler: function() {
+                               toggleSearchSection();
+                        }
+                    }
+                ]
+            },{
+                //region: 'center',
+                xtype: 'editorgrid',
+                id: 'outerGrid',
+                width: '100% !important',
+                height: 500,
+                //autoHeight: true,
+                clicksToEdit: 1,
+                title: "My Renewals",
+                store: outerGridStore,
+                plugins: cloningActionColumns.concat(rowExpander),
+                view: new RenewalGridView(),
+                enableColumnMove: false,
+                bbar: new Ext.PagingToolbar({
+                    pageSize: outerGridPageSize,
+                    store: outerGridStore,
+                    displayInfo: true,
+                    prependButtons: true,
+                    displayMsg: 'Displaying Renewal Tasks {0} - {1} of {2}',
+                    emptyMsg: "No Renewal Tasks to display.",
+                    listeners: {
+                        'change': function(){
+                            var grid = Ext.getCmp('outerGrid');
+                            var recArr = [];
+                            for(var i = 0 ; i < this.store.getCount() ; i++){
+                                var rec = this.store.getAt(i);
+                                if(selOpportunities.indexOf(rec.get('id')) != -1){
+                                    recArr.addUnique(rec);
+                                }                           
+                            }
+                            grid.getSelectionModel().selectRecords(recArr, false);
+                        }
+                    },
+                    doRefresh : function(){
+                        var grid = Ext.getCmp('outerGrid');
+                        
+                        var dashBoardCurrentPage = grid.getBottomToolbar().getPageData().activePage;
+                        var dashboardSortDir = "undefined";
+                        var dashboardSortField = "undefined";
+                        var sortInfo = grid.getStore().getSortState();
+                        if(sortInfo != null && sortInfo != "undefined"){
+                            dashboardSortDir = sortInfo.direction;
+                            dashboardSortField = sortInfo.field;
+                        }
+
+                       window.location = '/apex/' + DASHBOARD_PAGE_NAME + '?dashBoardCurrentPage='+dashBoardCurrentPage+'&sortDir='+dashboardSortDir+'&sortField='+dashboardSortField;
+                    }
+                }),
+                sm: cbSelModel,
+                columns: outerGridColumns,
+                listeners: {
+                    //To make specific outer grid records uneditable
+                    'beforeedit': function(e){
+                        var rec = e.record;
+                        if(invalidForClone(rec))
+                            e.cancel = true;
+                    },
+                    'afteredit': function(e){
+                         roundupManageHandler(e.record, e.row);
+                    },
+                    cellclick:function(self, t, cellIndex, record, tr, rowIndex, e, eOpts){	
+                        var record = self.getStore().getAt(t); 
+                        if(!invalidForClone(record)) {
+                            if(cellIndex == 9 || cellIndex == 10) {
+                                var fieldName = self.getColumnModel().getDataIndex(cellIndex);    
+                                var data = record.get(fieldName);
+                                var inputValue = (cellIndex == 9) ? 2 : 3;
+                                //To make radio column fields in records uneditable where 'cloning_status' is equal to 'queued'
+                                 if(!permissionForDetailClone && inputValue == 3)
+                                    return;
+                                var isToUpdate = (record.get(fieldName) !=  inputValue) && (!invalidForClone(record));
+                                if(isToUpdate){
+                                    record.set(fieldName, inputValue);
+                                    record.set('noRenewComment', " ");
+                                    var data = record.get("roundup_action");
+                                    var roundData = (data == "false" || data == false)? false : true;
+                                    var roundCell = this.getView().getRow(t).getElementsByTagName('tr')[0].cells[roundColumnIndex];
+                                    if(roundCell){
+                                        roundStyle(roundData, roundCell);
+                                  	}
+                                    record.set("roundup_action", roundData);
+                                    Ext.getCmp('outerGrid').getSelectionModel().selectRecords([record], true);
+                                }
+                             }
+                             else if(cellIndex == roundColumnIndex) {
+                                var fieldName = self.getColumnModel().getDataIndex(cellIndex);    
+                                var data = record.get(fieldName);
+                                var roundData = (data == "false" || data == false)? false : true;
+                                record.set(fieldName, !roundData);
+                                var roundCell = this.getView().getRow(t).getElementsByTagName('tr')[0].cells[cellIndex];
+                                if(roundCell){
+                                    roundStyle(!roundData, roundCell);
+                               }
+                            }
+                        }
+               	   },  
+                }
+            }]
+        });
+
+        mainParentPanel.render();
+        //Ext.getBody().mask("Loading...");
+        outerGridStore.loadData(pageData);
+        var totalRenewalTasks = outerGridStore.allData.items.length;
+        var startForLoad = 0;
+
+        var dashBoardCurrentPage = {!pageNumber};
+
+        if(totalRenewalTasks > ( (dashBoardCurrentPage-1)*outerGridPageSize) )
+            startForLoad = ( (dashBoardCurrentPage-1)*outerGridPageSize);
+
+        Ext.getCmp('outerGrid').getBottomToolbar().doLoad(startForLoad);
+        var sortDir = "{!sortDir}";
+        var sortField = "{!sortField}";
+        if(sortDir != "undefined" && sortField != "undefined")
+            outerGridStore.sort(sortField, sortDir);
+        
+    }
+    
+    function roundStyle(data, cell){
+        var clsExist = cell.getElementsByClassName('x-grid3-check-col-on');
+        if(data){
+        //Add class
+        if(clsExist.length == 0)
+            cell.innerHTML = cell.innerHTML.replace("x-grid3-check-col", "x-grid3-check-col-on");
+        }
+        else{
+            if(clsExist.length > 0)
+            cell.innerHTML = cell.innerHTML.replace("x-grid3-check-col-on", "x-grid3-check-col");
+        }
+    }
+    
+    var previousOnload = window.onload;
+    
+
+    window.onload = function() 
+    {
+        if (previousOnload) 
+        {
+            previousOnload();
+        }
+        
+        init();
+    }
+</script>
+</apex:outputPanel>
+<!-- Reassign Records -->
+
+<apex:form id="frm" >  
+      <apex:actionFunction name="reassign" action="{!reassign}">
+         <apex:param name="recIdList" value="" assignTo="{!reassignRecIdList}"/>
+      </apex:actionFunction>  
+      <apex:inputHidden id="recIdListId" value="{!reassignRecIdList}"/>                
+      <apex:inputHidden id="vField" /> 
+      <apex:inputHidden id="vField_lkid" value="{!reassignUserId}"/> 
+      <apex:inputHidden id="vField_lkold"/>
+      <apex:inputHidden id="currentPage" value="{!pageNumber}"/>
+      <apex:inputHidden id="sortDir" value="{!sortDir}"/>
+      <apex:inputHidden id="sortField" value="{!sortField}"/>
+</apex:form>  
+<apex:form id="frm2">
+            <apex:actionFunction name="cloneRenwalTasks" action="{!cloneRenwalTasks}" immediate="false" oncomplete="hdCloningAjaxReq();"/>
+                <apex:inputHidden id="jsonForCloning" value="{!jsonForCloning}"/>
+                <apex:inputHidden id="firstJsonToParse" value="{!firstJsonToParse}"/>
+</apex:form>
+<apex:form id="frm3">
+            <apex:actionFunction name="processCloning" action="{!processCloning}" immediate="false" />
+                <apex:inputHidden id="currentPage" value="{!pageNumber}"/> 
+                <apex:inputHidden id="sortDir" value="{!sortDir}"/>
+                <apex:inputHidden id="sortField" value="{!sortField}"/>
+</apex:form>
+    <apex:form id="frm6">
+        <apex:actionFunction name="deactiveRenewalTaskAF" action="{!deactiveRenewalTask}"/>
+        <apex:inputHidden id="renewalTaskToDeactivate" value="{!renewalTaskToDeactivate}"/>
+    </apex:form>
+</apex:page>

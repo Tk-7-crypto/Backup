@@ -1,0 +1,183 @@
+<apex:page standardController="Master_BNF__c" extensions="Master_BNF_Extension">
+<apex:form id="theform">
+<script> 
+var BillTo = document.getElementById('{!$Component.BillTo}'); 
+var CarbonCopy = document.getElementById('{!$Component.CarbonCopy}'); 
+var SecondCopy = document.getElementById('{!$Component.SecondCopy}'); 
+var CoverSheet = document.getElementById('{!$Component.CoverSheet}'); 
+</script>
+
+<apex:inputHidden value="{!Master_BNF__c.Bill_To__c}" id="BillTo" />
+<apex:inputHidden value="{!Master_BNF__c.Carbon_Copy__c}" id="CarbonCopy" />
+<apex:inputHidden value="{!Master_BNF__c.Second_Copy__c}" id="SecondCopy" />
+<apex:inputHidden value="{!Master_BNF__c.Cover_Sheet__c}" id="CoverSheet" />
+<apex:inputHidden value="{!Master_BNF__c.Ship_To__c}" id="ShipTo" />
+
+<!-------------------------------------------------------------------->
+<!-------------  BEGIN STEP 1 ERROR SCREEN  -------------------------->
+<!-------------------------------------------------------------------->
+<apex:outputPanel id="Step1ErrorPanel">
+<apex:sectionHeader title="{!BnfType} Master BNF Wizard : Step 1 : Error" rendered="{!InitiatingError}"/>
+<apex:pageBlock title="Select Opportunity and Add to Master BNF" rendered="{!InitiatingError}">
+    <apex:pageBlockButtons location="top">
+        <apex:commandButton value="Back" action="{!CancelWizard}" rerender="error,EditOppsMessages" />
+    </apex:pageBlockButtons>
+    <apex:pageMessages id="InitiatingErrorMessages"/> 
+</apex:pageBlock>
+</apex:outputPanel>
+
+<!-------------------------------------------------------------------->
+<!-------------  END STEP 1 ERROR SCREEN  ---------------------------->
+<!-------------------------------------------------------------------->
+
+<!-------------------------------------------------------------------->
+<!-------------  BEGIN NEW BNF WIZARD STEP 1  ------------------------>
+<!-------------------------------------------------------------------->
+<apex:outputPanel id="WizardStep1Panel">
+<apex:sectionHeader title="{!BnfType} Master BNF Wizard : Step 1 : Select Opportunities" rendered="{!NewBnfWizardStep1Rendered}"/>
+
+<apex:pageBlock title="Select Opportunity and Add to Master BNF" rendered="{!NewBnfWizardStep1Rendered}">
+
+    <apex:pageBlockButtons location="top">
+        <apex:commandButton value="Next" action="{!InvoiceNext2}" rerender="error,EditOppsMessages,WizardStep1Panel,WizardStep2BPanel,Debug" />
+        <apex:commandButton value="Cancel" action="{!CancelWizard}" rerender="error,EditOppsMessages" />
+    </apex:pageBlockButtons>
+    <apex:pageMessages id="EditOppsMessages"/> 
+    <table width="350"><tr>
+    <td width="300">
+     <apex:inputField value="{!ProxyOcr.OpportunityId}" />
+    </td><td width="50">
+     <apex:commandButton value="Add Opportunity" action="{!AddOpportunityRow}" rerender="OppListPanel,error,EditOppsMessages,Debug">
+     </apex:commandButton>
+     </td></tr>
+    </table><br/>
+    <apex:outputPanel id="OppListPanel">
+    <apex:pageBlockSection collapsible="false" title="Opportunity List" columns="1" rendered="{!OpportunityContainer_Array.size>0}">
+    <apex:pageBlockTable value="{!OpportunityContainer_Array}" var="OC" id="table">
+        <apex:column >
+        <apex:commandButton action="{!DeleteOpportunityRow}" rerender="OppListPanel,error,EditOppsMessages" value="Remove">
+             <apex:param name="DelOppId" value="{!OC.OCR.OpportunityId}"/>
+        </apex:commandButton>
+        </apex:column>   
+        <apex:column headerValue="Opportunity">
+            <apex:outputField value="{!OC.OCR.OpportunityId}"/>
+        </apex:column>  
+        <apex:column headerValue="Opportunity Number">
+            <apex:outputField value="{!OC.Opportunity.Opportunity_Number__c}"/>
+        </apex:column> 
+        <apex:column headerValue="Stage">
+            <apex:outputField value="{!OC.Opportunity.StageName}"/>
+        </apex:column>
+        <apex:column headerValue="Amount">
+            <apex:outputField value="{!OC.Opportunity.Amount}"/>
+        </apex:column>                                             
+       <!-- <apex:column headerValue="Actual Close Date">
+            <apex:outputField value="{!OC.Opportunity.Actual_Close_Date__c}"/>
+        </apex:column>   -->
+
+                    
+    </apex:pageBlockTable>
+    </apex:pageBlockSection>
+    </apex:outputPanel>
+    
+</apex:pageBlock>  
+</apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-------------  END NEW BNF WIZARD STEP 1  -------------------------->
+<!-------------------------------------------------------------------->
+
+<!-------------------------------------------------------------------->
+<!-------------  BEGIN NEW BNF WIZARD STEP 2  ------------------------>
+<!-------------------------------------------------------------------->
+<apex:outputPanel id="WizardStep2Panel">
+<apex:sectionHeader title="{!BnfType} Master BNF Wizard : Step 2 : Ship To Contact for Master BNF Header" rendered="{!NewBnfWizardStep2Rendered}"/>
+
+<apex:pageBlock title="Select Ship To Contacts" rendered="{!NewBnfWizardStep2Rendered}">
+
+    <apex:pageBlockButtons >
+        <apex:commandButton value="Previous" action="{!Back2}" rerender="error,EditOppsMessages,WizardStep1Panel,WizardStep2Panel,Debug"/>
+        <apex:commandButton value="Next" action="{!InvoiceNext3}" />        
+    </apex:pageBlockButtons>
+    <apex:pageMessages id="EditOppsMessages"/> 
+   
+    <apex:outputPanel id="ContactPanel"> 
+    <apex:pageBlockTable value="{!BillingContacts}" var="C">
+    <apex:column headerValue="Account">
+    <apex:outputField value="{!C.AccountId}"/>
+    </apex:column>
+    <apex:column headerValue="Contact">
+    <apex:outputField value="{!C.Name}"/>
+    </apex:column>
+    <apex:column headerValue="Ship To">                                      
+        <input type="radio" name="ShipTo"  onclick="document.getElementById('{!$Component.ShipTo}').value='{!C.Id}'"  />
+    </apex:column>   
+    </apex:pageBlockTable>  
+    </apex:outputPanel>
+</apex:pageBlock>  
+</apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-------------  END NEW BNF WIZARD STEP 2  -------------------------->
+<!-------------------------------------------------------------------->
+
+<!-------------------------------------------------------------------->
+<!-------------  BEGIN NEW BNF WIZARD STEP 2B  ----------------------->
+<!--  DISPLAY OF CONTACT ROLES - USERS CANNOT EDIT  ------------------>
+<!-------------------------------------------------------------------->
+
+<apex:outputPanel id="WizardStep2BPanel">
+<apex:actionFunction name="GoToStep3" action="{!InvoiceNext3}"/>
+<apex:outputPanel rendered="{!NewBnfWizardStep2BRendered}">
+<script language="JavaScript">
+GoToStep3();
+</script>
+</apex:outputPanel>
+
+</apex:outputPanel>
+
+<!-------------------------------------------------------------------->
+<!-------------  END NEW BNF WIZARD STEP 2B  ------------------------->
+<!-------------------------------------------------------------------->
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN DEBUG DISPLAY  ---------------------------------->
+<!-------------------------------------------------------------------->
+<apex:outputPanel id="Debug" rendered="{!DebugPanelRendered}">
+<apex:pageBlock title="Debug">
+<apex:pageMessages id="EditOppsMessages"/> 
+<apex:pageBlockButtons >
+<apex:commandButton value="Edit Header" action="{!ShowEditHeader}"></apex:commandButton>
+<apex:commandButton value="Hide Header" action="{!HideEditHeader}"></apex:commandButton>
+<apex:commandButton value="Debug" action="{!SaveHeader}" reRender="EditHeaderPanel,HeaderDetailsPanel,Debug" />
+<apex:commandButton value="Alert" onclick="alert(BillTo.value +'{!Master_BNF__c.Bill_To__c} {!Master_BNF__c.Carbon_Copy__c} {!Master_BNF__c.Second_Copy__c} {!Master_BNF__c.Cover_Sheet__c}')" reRender="Debug" /> 
+<apex:commandButton value="Debug1" action="{!Debug1}" reRender="Debug" /> 
+</apex:pageBlockButtons>
+Test: {!Test}<br/><br/><br/>Rendered: {!EditOppsRendered}<br/><br/><br/><br/>
+Sold To Id: {!Master_BNF__c.Sold_To__c}<br/><br/>
+MBNF ID: {!Master_BNF__c.Id} <br/>
+Debug: {!Debug}
+<br/>
+<apex:pageBlockSection >
+<apex:outputField value="{!Master_BNF__c.Debug__c}"/>
+BNF Type: {!BnfType}<br/>
+<!-- <apex:inputField value="{!Master_BNF__c.Debug__c}"/> -->
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="BillTo" value="Bill To Contact"/>
+<apex:outputField id="BillTo" value="{!Master_BNF__c.Bill_To__c}"/> 
+</apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="ShipTo" value="Sold To Contact"/>
+<apex:outputField id="SoldTo" value="{!Master_BNF__c.Sold_To__c}"/>
+</apex:pageBlockSectionItem>
+Step2 Rendered: {!NewBnfWizardStep2Rendered}<br/>
+Step2B Rendered: {!NewBnfWizardStep2BRendered}<br/>
+</apex:pageBlockSection>
+ 
+</apex:pageBlock>
+</apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-------------  END DEBUG DISPLAY  ---------------------------------->
+<!-------------------------------------------------------------------->
+
+
+</apex:form>
+</apex:page>

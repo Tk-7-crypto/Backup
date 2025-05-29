@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Mail_For_30_Days_Case_1</name>
+        <label>Send Mail For 30 Days Case</label>
+        <locationX>50</locationX>
+        <locationY>278</locationY>
+        <actionName>Apttus__APTS_Agreement__c.AGR_WEA14_CLM_MC_SendMailNotificationForAnticipatedDate30</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>varR_NewAgreement.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Apttus__APTS_Agreement__c.AGR_WEA14_CLM_MC_SendMailNotificationForAnticipatedDate30</nameSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <name>Required_Conditions_Meeting</name>
+        <label>Required Conditions Meeting?</label>
+        <locationX>182</locationX>
+        <locationY>158</locationY>
+        <defaultConnectorLabel>Not Meeting</defaultConnectorLabel>
+        <rules>
+            <name>Conditions_Meeting</name>
+            <conditionLogic>(1 OR 2) AND (3 OR 4 OR 5) AND 6 AND 7 AND 8 AND 9 AND 10 AND 11</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Subtype__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>General Services Agreement</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Subtype__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Work Order</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Request</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Budgeting</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Authoring</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>On Hold</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Apttus__Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Cancelled Request</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>forN_DateDifference</leftValueReference>
+                <operator>GreaterThanOrEqualTo</operator>
+                <rightValue>
+                    <numberValue>0.0</numberValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>forN_DateDifference</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue>
+                    <numberValue>30.0</numberValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Anticipated_Date_For_1st_SIV__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.Anticipated_Date_For_1st_SIV__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldAgreement.Anticipated_Date_For_1st_SIV__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Mail_For_30_Days_Case_1</targetReference>
+            </connector>
+            <label>Conditions Meeting</label>
+        </rules>
+    </decisions>
+    <description>CLM-MC-CLMCMA-13291 - This flow is used to send email notification when the difference between anticipated date and today is between 0 to 31 days.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>forN_DateDifference</name>
+        <dataType>Number</dataType>
+        <expression>{!varR_NewAgreement.Anticipated_Date_For_1st_SIV__c} - TODAY()</expression>
+        <scale>0</scale>
+    </formulas>
+    <interviewLabel>CLM Subflow : Send Mail For Anticipated Date 30 {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : Send Mail For Anticipated Date 30</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Required_Conditions_Meeting</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>varR_NewAgreement</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldAgreement</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+</Flow>

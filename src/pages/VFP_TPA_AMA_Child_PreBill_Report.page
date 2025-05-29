@@ -1,0 +1,44 @@
+<apex:page controller="CNT_TPA_AMA_Child_PreBill_Report" lightningStylesheets="true">
+    <apex:slds />
+    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    <script type="text/javascript">
+         function showPopup(msg, truePart){
+            popup(msg, {'animate':true}, function(r)
+                  {
+                      if(r)
+                          truePart();
+                  });
+        } 
+        function onCompleteJSFunction() { 
+            showPopup('Report is Sent Successfully',function(){
+                var agrId = getParameterByName('id').trim();
+                window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+            hideLoading();
+        }
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+    </script>
+    <body> 
+        <div id="content" >
+            <apex:form >
+                <c:VFC_TPA_LoadingImage />
+                <apex:actionFunction name="sendEmail" action="{!sendMails}" rerender="rr" oncomplete="onCompleteJSFunction();" />
+            </apex:form> 
+        </div>
+    </body>
+    <script>
+        showLoading();
+        if({!AMAAgrCaptured}){
+            console.log({!AMAAgrCaptured});
+            sendEmail();
+        }else {
+            hideLoading();
+            window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;
+        }
+    </script>
+</apex:page>

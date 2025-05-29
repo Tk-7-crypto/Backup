@@ -1,0 +1,1635 @@
+<aura:component controller="CNT_PSA_CreateSignals" implements="lightning:isUrlAddressable,force:lightningQuickActionWithoutHeader,force:hasRecordId,flexipage:availableForAllPageTypes,force:appHostable,lightning:actionOverride" access="global">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="RecId" type="String"/>
+    <aura:attribute name="account" type="String"/>
+    <aura:attribute name="projectCode" type="String"/>
+    <aura:attribute name="serviceLineLead" type="String"/>
+    <aura:attribute name="signalid" type="String"/>
+    <aura:attribute name="hasEditPermission" type="boolean" default="false"/>
+    <aura:attribute name="targetList" type="Target__c[]" />
+    <aura:attribute name="targetIdList" type="String[]" />
+    <aura:attribute name="targetId" type="String" />
+    <aura:attribute name="targetName" type="String" />
+    <aura:attribute name="isTargetModelOpen" type="Boolean" default="false"/>
+    <aura:attribute name="dateDetectedNew" type="Date" access="GLOBAL"/>
+    <aura:attribute name="validationDueDateNew" type="Date" access="GLOBAL"/>
+    <aura:attribute name="rltdSDRunId" type="String" />
+    <aura:attribute name="rltdSDRunProduct" type="String" />
+    <aura:attribute name="isProdFieldDisabled" type="String" />
+    <aura:attribute name="isEditFormProdFieldDisabled" type="String" />
+    <aura:attribute name="signalObject" type="Object" /> 
+    <aura:attribute name="hasDeletePermission" type="boolean" default="false"/>
+    <aura:attribute name="validationOutcome" type="String"/>
+    <aura:attribute name="dateClosedEvaluation" type="Date"/>
+    <aura:attribute name="signalStatus" type="String"/>
+    <aura:attribute name="evaluationDueDate" type="boolean" default="false"/>
+    <aura:attribute name="pageReference" type="Object" />
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.handlePageChange}" />
+    
+    <aura:attribute name="modalWindow" type="boolean" default ="true"/>
+    <aura:attribute name="hasPermission" type="boolean" default ="false"/>
+    
+    <aura:attribute name="NoSignalManagementRecord" type="String"/>
+    
+    <aura:attribute name="url" type="String" />
+    <aura:attribute name="isDirectedFromSDRun" type="boolean" default="false"/>
+    <aura:attribute name="Spinner" type="boolean" default="true"/>
+    <lightning:navigation aura:id="navService"/>
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+    <aura:attribute name="options" type="List" default="[
+    {'label': 'Yes', 'value': 'Yes'},
+    {'label': 'No', 'value': 'No'}
+    ]"/>
+    <aura:attribute name="value" type="String" default="true"/>
+    <aura:attribute name="selectedValue" type="String" default="true"/>
+    <aura:attribute name="signalPrioritizationCategory" type="String"/>
+    <aura:attribute name="evalDueDate" type="Date"/>
+    <aura:attribute name="validationDate" type="Date"/>
+    <aura:handler event="aura:locationChange" action="{!c.update}"/>
+    <aura:attribute name="uniqueName" type="String" />
+    
+    <aura:if isTrue="{!v.isOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container modalwidth">
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <div > 
+                        <td align = "left">
+                            <lightning:radioGroup
+                                aura:id="mygroup"
+                                label="Is this Signal linked with any SD Run ?"
+                                options="{! v.options }"
+                                value="{! v.selectedValue }"
+                                onchange="{! c.handleChange }"
+                                class="custom-radio-class modal-class-custom"/>
+                         </td>
+                     </div>                                
+                </div>                
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+    </aura:if>
+
+    <aura:if isTrue="{!v.hasPermission}">
+        <aura:if isTrue="{! (v.recordId == null ? true : false)}">
+            <aura:html tag="style">.toastMessage.forceActionsText{white-space : pre-line !important;}</aura:html>
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large " role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <lightning:card>
+                <lightning:recordEditForm objectApiName="Signal__c"
+                                          aura:id="signalForm"
+                                          onsubmit="{!c.handleOnSubmit}"
+                                          onload="{!c.handleOnLoad}"
+                                          onsuccess="{!c.handleOnSuccess}"
+                                          density="Compact">
+                    
+                    <lightning:messages />
+                    <div class="slds-media__body leftmargin rightmargin">
+                        <lightning:messages />
+                        <lightning:layout multipleRows="true" class="slds-grid_vertical-align-center">
+                            <lightning:layoutItem size="5">
+                            <div class="display-none">
+                                 <lightning:inputField fieldName="SD_RUN_ID__c" value = "{!v.rltdSDRunId}" disabled="true"/>   
+                            </div>    
+                            <lightning:inputField fieldName="SD_Run_Unique_ID__c" value = "{!v.uniqueName}"/>   
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <aura:if isTrue="{!v.isProdFieldDisabled}">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Product__c" value="{!v.rltdSDRunProduct}" disabled="true"/>
+                                    </lightning:layout>
+                                <aura:set attribute="else">
+                                    <lightning:layout horizontalAlign="space" class="button-float-left">
+                                    <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:button variant="neutral" label="{!v.targetName}" onclick="{!c.openProductModel}"/>
+                                    </lightning:layout>
+                                </aura:set>
+                                </aura:if>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:outputField fieldName="Signal_ID__c" disabled="true"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="Date_Detected__c" value="{!v.dateDetectedNew}" onchange="{!c.dateDetectedChanged}"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Detected_By_New__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="Signal_Term__c"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Status__c" value="{!v.signalStatus}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                           
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Internal_Communication_Signal_Overview__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                          
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_for_Evaluation__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="SM_Service_Line_Lead_New__c" value="{!v.serviceLineLead}" disabled="true"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Notes__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Source_or_Trigger_of_Signal__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_Trigger_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Routine_Signal_Detection_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Partner_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5" class="section">
+                                Signal Documents
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>                            
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Document_Name__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Document_Link__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                                Signal Validation
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="Incl_Signal_Val_in_Metrics_Invoices__c"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_Signal_Val_not_in_Metric_Invoices__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Validation_Due_Date__c"  value="{!v.validationDueDateNew}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Validation_Date__c" value="{!v.validationDate}" onchange="{!c.handleOnChangeCategory}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Prioritization_Category__c" value="{!v.signalPrioritizationCategory}"  onchange="{!c.handleOnChangeCategory}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Prioritization_Custom_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SVF_SM_Specialist__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="Signal_Validation_Complexity__c"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SVF_Draft_sent_for_Medical_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SVF_Medical_Safety_Advisor__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Medical_Review_Completed_SVF__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SVF_Draft_Sent_for_QC__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SVF_SM_QC_Reviewer__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_QC_Completed_SVF__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SVF_Final_DraftReady_for_SMT_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SVF_BRM_Analyst__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_BRM_Review_Completed_SVF__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Validation_Outcome__c" value="{!v.validationOutcome}" onchange="{!c.handleValidationOutcomeChange}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_Signal_Not_Validated__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Does_this_SVF_require_Medical_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Does_this_SVF_require_QC__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5" class="section">
+                                Signal Evaluation
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                               <lightning:inputField fieldName="Evaluation_Due_Date__c" value="{!v.evalDueDate}" disabled="{!v.evaluationDueDate}"/> 
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SER_Complexity__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:layout horizontalAlign="space">
+                                <abbr class="slds-required asterisk-padding-top">*</abbr>
+                                <lightning:inputField fieldName="Incl_Signal_Eval_in_Metrics_Invoices__c"/>
+                                </lightning:layout>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_Signal_Evl_not_in_Metric_Invoice__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SER_SM_Specialist__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Closed_Evaluation_Completed__c" value="{!v.dateClosedEvaluation}" onchange="{!c.handleValidationOutcomeChange}"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SER_Draft_sent_for_Medical_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SER_Medical_Safety_Advisor__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_Medical_Review_Completed_SER__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SER_Draft_Sent_for_QC__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SER_SM_QC_Reviewer__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_QC_Completed_SER__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_SER_Final_DraftReady_for_SMT_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="SER_BRM_Analyst__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Date_BRM_Review_Completed_SER__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Methods_of_Signal_Evaluation__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_Methods_of_Signal_Eval_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem><lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Signal_Evaluation_Outcome__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Does_this_SER_require_Medical_Review__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Does_this_SER_require_QC__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+							</lightning:layoutItem>
+
+							<lightning:layoutItem size="5" class="section">
+                                Action(s) Taken or Planned
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5" class="section">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Action_s_Taken_or_Planned__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Other_Action_s_Taken_Planned_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem><lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Additional_RMM_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Dt_Transfer_of_Resp_for_Impl_of_Actions__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem><lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Reason_for_urgent_RMM_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+							<lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Further_Actions_to_be_Implemented__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Further_Actions_Implemented_Specify__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Describe_Func_Resp_for_Impl_of_Action__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Further_Tracked_as_a_Topic__c"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="1">
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="5">
+                                <lightning:inputField fieldName="Legacy_ID__c" disabled="true"/>
+                            </lightning:layoutItem> 
+                            
+                        </lightning:layout>
+                    </div>
+                    
+                    <lightning:layout horizontalAlign="center" class="slds-m-top_large marginbottom">
+                        <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleOnCancel}"/>
+                        <lightning:button variant="brand" label="Save" title="Save" type="submit"/>
+                    </lightning:layout>
+                    
+                </lightning:recordEditForm>
+            </lightning:card>
+            <aura:set attribute="else">
+                <force:recordData aura:id="recordHandler"
+                    recordId="{!v.recordId}"
+                    fields="Id,Project__c"
+                    targetFields="{!v.signalObject}"              
+                    targetError="{!v.recordError}"
+                    recordUpdated="{!c.handleRecordUpdated}" />
+                <lightning:recordViewForm aura:id="viewForm" 
+                                          recordId="{!v.recordId}"
+                                          objectApiName="Signal__c"
+                                          >
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <aura:if isTrue="{!v.hasEditPermission}">
+                                <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                    <lightning:button  variant="neutral" class="slds-col_bump-left" label="Edit" title="Edit Record" onclick="{!c.editRecord}"/>
+                                    <aura:if isTrue="{!v.hasDeletePermission}">
+                                    	<lightning:button label="Delete" variant="neutral" onclick="{!c.confirmDeletion}"/>
+                                    </aura:if>
+                                    <lightning:button  variant="neutral" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                    <lightning:button variant="neutral" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                </lightning:layout>
+                                <aura:set attribute="else">
+                                    <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                        <lightning:button variant="neutral" class="slds-col_bump-left" label="Back To Project" title="Back To Project" onclick="{!c.backToProject}"/>
+                                        <lightning:button variant="neutral" label="Audit Logs" title="Audit Logs" type="button" onclick="{!c.showAuditLogs}"/>
+                                    </lightning:layout>
+                                </aura:set>
+                            </aura:if>                            
+                            <lightning:layout multipleRows="true" >                              
+                                    <lightning:layoutItem size="5">
+                                        <!--<lightning:outputField fieldName="SD_RUN_ID__c" disabled="true"/>-->
+                                        <lightning:outputField fieldName="Sd_Run__c" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                    <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Product__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_ID__c" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_Detected__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Detected_By_New__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Term__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Status__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                           
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Internal_Communication_Signal_Overview__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Reason_for_Evaluation__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SM_Service_Line_Lead_New__c" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Notes__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Source_or_Trigger_of_Signal__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Other_Trigger_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Routine_Signal_Detection_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Partner_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Documents
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Document_Name__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Document_Link__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Validation
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Incl_Signal_Val_in_Metrics_Invoices__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Reason_Signal_Val_not_in_Metric_Invoices__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Validation_Due_Date__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Validation_Date__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Prioritization_Category__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Prioritization_Custom_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SVF_SM_Specialist__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Validation_Complexity__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SVF_Draft_sent_for_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SVF_Medical_Safety_Advisor__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_Medical_Review_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SVF_Draft_Sent_for_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SVF_SM_QC_Reviewer__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_QC_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SVF_Final_DraftReady_for_SMT_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SVF_BRM_Analyst__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_BRM_Review_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Validation_Outcome__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Reason_Signal_Not_Validated__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Does_this_SVF_require_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Does_this_SVF_require_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Evaluation
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Evaluation_Due_Date__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SER_Complexity__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Incl_Signal_Eval_in_Metrics_Invoices__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Reason_Signal_Evl_not_in_Metric_Invoice__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SER_SM_Specialist__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_Closed_Evaluation_Completed__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SER_Draft_sent_for_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SER_Medical_Safety_Advisor__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_Medical_Review_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SER_Draft_Sent_for_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SER_SM_QC_Reviewer__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_QC_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_SER_Final_DraftReady_for_SMT_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="SER_BRM_Analyst__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Date_BRM_Review_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Methods_of_Signal_Evaluation__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Other_Methods_of_Signal_Eval_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_Evaluation_Outcome__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Does_this_SER_require_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Does_this_SER_require_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="5" class="section">
+                                    Action(s) Taken or Planned
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Action_s_Taken_or_Planned__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Other_Action_s_Taken_Planned_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Additional_RMM_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Dt_Transfer_of_Resp_for_Impl_of_Actions__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Reason_for_urgent_RMM_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Further_Actions_to_be_Implemented__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Further_Actions_Implemented_Specify__c"/>
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Describe_Func_Resp_for_Impl_of_Action__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Further_Tracked_as_a_Topic__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Legacy_ID__c" disabled="true"/>
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Created By</p>
+                                    <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Last Modified By</p>
+                                    <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Owner</p>
+                                    <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                                </lightning:layoutItem>
+                                
+                            </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordViewForm>
+                <lightning:recordEditForm aura:id="editForm" recordId="{!v.recordId}" objectApiName="Signal__c" class="slds-hide" onload="{!c.handleOnEditLoad}" onsubmit="{!c.handleEditSubmit}" onsuccess="{!c.handleSuccess}">        
+                    
+                    <lightning:card>
+                        <div class="slds-media__body leftmargin rightmargin">
+                            <lightning:messages />
+                            <lightning:layout multipleRows="true" >                                
+                                <lightning:layoutItem class="display-none">
+                                	<lightning:inputField aura:id="editProjectId" fieldName="Project__c"/>
+                                </lightning:layoutItem>
+                                    <lightning:layoutItem size="5">
+                                    <!--<lightning:inputField aura:id="editSdRunId" fieldName="SD_RUN_ID__c" disabled="true"/>-->
+                                        <lightning:inputField aura:id="editSdRunId" fieldName="SD_Run_Unique_ID__c" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                    <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Account__c" value="{!v.account}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Project_Code__c" value="{!v.projectCode}" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                             
+                            	<lightning:layoutItem size="5">
+                                    
+                                    <aura:if isTrue="{!v.isEditFormProdFieldDisabled}">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Product__c" disabled="true"/>
+                                    </lightning:layout>
+                                <aura:set attribute="else">
+                                    <lightning:layout horizontalAlign="space" class="button-float-left">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                	<lightning:button variant="neutral" label="{!v.targetName}" title="Product" onclick="{!c.openProductModelInEditMode}"/>
+                                    </lightning:layout>
+                                </aura:set>
+                                </aura:if>                                                                        
+                            	</lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:outputField fieldName="Signal_ID__c" disabled="true"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <label>Product Name</label>
+                                    <lightning:outputField variant="label-hidden" fieldName="Product__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField aura:id="editDtDetected" fieldName="Date_Detected__c" onchange="{!c.editDateDetectedChanged}"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Detected_By_New__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Signal_Term__c"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField aura:id="editSignalStatus" fieldName="Signal_Status__c" value="{!v.signalStatus}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                           
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Internal_Communication_Signal_Overview__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Reason_for_Evaluation__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="SM_Service_Line_Lead_New__c" value="{!v.serviceLineLead}" disabled="true"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Notes__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Source_or_Trigger_of_Signal__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Other_Trigger_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Routine_Signal_Detection_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Partner_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Documents
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                            
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Signal_Document_Name__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Signal_Document_Link__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Validation
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Incl_Signal_Val_in_Metrics_Invoices__c"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Reason_Signal_Val_not_in_Metric_Invoices__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField aura:id="editValidnDueDt" fieldName="Validation_Due_Date__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Validation_Date__c" value="{!v.validationDate}" onchange="{!c.handleOnChangeCategory}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Signal_Prioritization_Category__c" value="{!v.signalPrioritizationCategory}"  onchange="{!c.handleOnChangeCategory}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Signal_Prioritization_Custom_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SVF_SM_Specialist__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Signal_Validation_Complexity__c"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SVF_Draft_sent_for_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SVF_Medical_Safety_Advisor__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Medical_Review_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SVF_Draft_Sent_for_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SVF_SM_QC_Reviewer__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_QC_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SVF_Final_DraftReady_for_SMT_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SVF_BRM_Analyst__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_BRM_Review_Completed_SVF__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Validation_Outcome__c" value="{!v.validationOutcome}" onchange="{!c.handleValidationOutcomeChange}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Reason_Signal_Not_Validated__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Does_this_SVF_require_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Does_this_SVF_require_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                    Signal Evaluation
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Evaluation_Due_Date__c" value="{!v.evalDueDate}" disabled="{!v.evaluationDueDate}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SER_Complexity__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:layout horizontalAlign="space">
+                                	<abbr class="slds-required asterisk-padding-top">*</abbr>
+                                    <lightning:inputField fieldName="Incl_Signal_Eval_in_Metrics_Invoices__c"/>
+                                    </lightning:layout>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Reason_Signal_Evl_not_in_Metric_Invoice__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SER_SM_Specialist__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Closed_Evaluation_Completed__c" value="{!v.dateClosedEvaluation}" onchange="{!c.handleValidationOutcomeChange}"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SER_Draft_sent_for_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SER_Medical_Safety_Advisor__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_Medical_Review_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SER_Draft_Sent_for_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SER_SM_QC_Reviewer__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_QC_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_SER_Final_DraftReady_for_SMT_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="SER_BRM_Analyst__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Date_BRM_Review_Completed_SER__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Methods_of_Signal_Evaluation__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Other_Methods_of_Signal_Eval_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Signal_Evaluation_Outcome__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Does_this_SER_require_Medical_Review__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Does_this_SER_require_QC__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="5" class="section">
+                                    Action(s) Taken or Planned
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5" class="section">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Action_s_Taken_or_Planned__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Other_Action_s_Taken_Planned_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Additional_RMM_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Dt_Transfer_of_Resp_for_Impl_of_Actions__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem><lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Reason_for_urgent_RMM_Specify__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Further_Actions_to_be_Implemented__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Further_Actions_Implemented_Specify__c"/>
+                                </lightning:layoutItem>
+    
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Describe_Func_Resp_for_Impl_of_Action__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Further_Tracked_as_a_Topic__c"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <lightning:inputField fieldName="Legacy_ID__c" disabled="true"/>
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>                          
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Created By</p>
+                                    <lightning:outputField fieldName="CreatedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="CreatedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Last Modified By</p>
+                                    <lightning:outputField fieldName="LastModifiedById" variant="label-hidden"/>
+                                    <lightning:outputField fieldName="LastModifiedDate" variant="label-hidden"/>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="1">
+                                </lightning:layoutItem> 
+                                <lightning:layoutItem size="5">
+                                    <p class="slds-form-element__label slds-no-flex">Owner</p>
+                                    <lightning:outputField fieldName="OwnerId" variant="label-hidden" />
+                                </lightning:layoutItem>
+                            
+                            </lightning:layout>
+                            <lightning:layout horizontalAlign="center" class="slds-m-top_large">
+                                <lightning:button variant="neutral" label="Cancel" title="Cancel" type="button" onclick="{!c.handleCancel}" />
+                                <lightning:button variant="brand" label="Save" title="Save" type="submit" />
+                            </lightning:layout>
+                        </div>
+                    </lightning:card>
+                </lightning:recordEditForm>
+            </aura:set>
+        </aura:if>
+        <aura:set attribute="else">
+            <lightning:card>
+                <p style="color:red;padding-left: 25%;font-weight: bold;">
+                    {!v.NoSignalManagementRecord}
+                </p>
+            </lightning:card>
+        </aura:set>
+    </aura:if>
+    
+    <aura:if isTrue="{!v.isTargetModelOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container modalwidth">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeProductModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Products</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium scrollbar" id="modal-content-id-1">
+                    <table class="slds-table slds-table--bordered slds-table--cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title--caps">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Target Name">Target Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug">Drug</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Drug Trade Name">Drug Trade Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Formulation">Formulation</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Country">Country</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <aura:iteration items="{!v.targetList}" var="ct">
+                                <tr>
+                                    <td data-label="Name">
+                                        <lightning:button variant="base" label="{!ct.Name}" onclick="{!c.addProduct}" value="{!ct.Id}">
+                                        </lightning:button>
+                                    </td>
+                                    <td data-label="Drug Name">
+                                        {! ct.Drug__r.Name }
+                                    </td>
+                                    <td data-label="Drug Trade Name">
+                                        {! ct.Drug_Trade_Name__r.Name }
+                                    </td>
+                                    <td data-label="Formulation">
+                                        {! ct.Formulation__r.Name }
+                                    </td>
+                                    <td data-label="Country">
+                                        {! ct.Single_Country__c }
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+    </aura:if>
+    <!-- Dialog box to confirm deletion of SD Run-->
+    <aura:attribute name="isDeletionConfirmationOpen" type="boolean" default="false"/>
+    <aura:if isTrue="{!v.isDeletionConfirmationOpen}">
+        <!--###### MODAL BOX Start######--> 
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2>Delete Signal</h2>
+                </header>
+                <!--###### MODAL BOX BODY Part Start######-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    Are you sure you want to delete this Signal?
+                </div>
+                <!--###### MODAL BOX FOOTER Part Start ######-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" 
+                                      label="Delete"
+                                      title="Delete"
+                                      onclick="{! c.handleDeleteRecord }"/>
+                    <lightning:button variant="neutral" 
+                                      label="Cancel"
+                                      title="Cancel"
+                                      onclick="{! c.closeModel }"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        <!--###### MODAL BOX Part END Here ######-->
+        
+    </aura:if>
+</aura:component>

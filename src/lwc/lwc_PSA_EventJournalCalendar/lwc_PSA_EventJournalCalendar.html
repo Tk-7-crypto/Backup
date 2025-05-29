@@ -1,0 +1,344 @@
+<template>
+    <template if:true={isLoaded}>
+        <div class="exampleHolder">
+            <lightning-spinner alternative-text="Loading" size="large" style="z-index: 9999;"></lightning-spinner>
+        </div>
+    </template>
+    
+    <div class="c-container" style="background-color:#d4cece">
+        <lightning-card  variant="Narrow"  title="Event Journal Calendar" icon-name="standard:service_appointment">
+            <template if:true={isbackToProject}>
+                <lightning-button label="Back" slot="actions" icon-name="utility:back"  onclick={backToProject}></lightning-button>
+            </template>
+            <lightning-button label="Export Journals" slot="actions" icon-name="utility:download" class="slds-m-left_x-small"  onclick={ExportJournals}></lightning-button>
+            <lightning-button label="Previous 10 Week" slot="actions" icon-name="utility:jump_to_left" class="slds-m-left_x-small" onclick={previous}></lightning-button>
+            <lightning-button label="Next 10 Week" slot="actions" icon-name="utility:breadcrumbs" class="slds-m-left_x-small" onclick={next}></lightning-button>
+            <lightning-button label="" slot="actions" icon-name="utility:filterList" class="slds-m-left_x-small" onclick={openFilter}  variant="label-hidden"></lightning-button>
+        </lightning-card>
+    </div>
+    <div class="c-container slds-box " style="background-color:White">
+        <div class="slds-table_edit_container slds-is-relative c-container slds-scrollable_x">
+               <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered" >
+                    <thead>
+                        <!-- Start  Review Date  -->
+                        <tr class="">
+                            <th class="firstCol" scope="col" >
+                                <div class="slds-truncate slds-text-align_left " title="Review Date">Review Date</div>
+                            </th>
+                            <template for:each={reviewDate} for:item="currentItem">
+                                <th class="dates" scope="col" key={currentItem}>
+                                    <div class="slds-truncate slds-text-align_left" title={currentItem} ><b>{currentItem}</b></div>
+                                </th>
+                            </template>
+                            <template if:true={error}>
+                                {error}
+                            </template>
+                        </tr>
+                        <!-- End  Review Date  -->
+                        
+                    </thead>
+                    <tbody>
+                        <!-- Start Total  -->
+                        <tr class="slds-hint-parent">
+                            <th class="firstCol" scope="col" >
+                                <div class="slds-truncate slds-text-align_left " title="Total"><b>Total</b></div>
+                            </th>
+                            <template for:each={total} for:item="totalData" for:index="index">
+                                <th class="firstSecond" scope="col" key={totalData}>
+                                    <lightning-button variant="base" label={totalData} title="Total" onclick={onClickTotalButton} class="slds-m-left_x-small" value={index}></lightning-button>
+                                </th>
+                            </template>
+                        </tr>
+                        <!-- End Total  -->
+                        <!-- Start Data  -->
+                        <template for:each={journaldata} for:item="mapKey" for:index="keyIndex">
+                            <tr key={mapKey.key}>
+                                <th class="firstCol" scope="col" >
+                                    <div class="slds-truncate slds-text-align_left " title={mapKey.key}><b>{mapKey.key}</b></div>
+                                </th>
+                                <template for:each={mapKey.value} for:item="dataItem" for:index="index">
+                                    <th class="firstSecond" scope="col" key={dataItem}>
+                                        <lightning-button variant="base" label={dataItem} title={mapKey.key} onclick={onClickButton} class="slds-m-left_x-small" value={index} name={mapKey.key}></lightning-button>
+                                    </th>
+                                </template>
+                            </tr>
+                        </template>
+                        <!-- End Data  -->
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    <!--Use template if:true to display/hide popup based on isModalOpen value--> 
+    <template if:true={isModalOpen}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header" style="height:fit-content">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{popUpHeading}</h2>
+                    <template if:true={isEditable}>
+                        <div class=" slds-float_right">
+                            <lightning-button variant="brand" label="Apply Filter" title="Change all Date Next Journal Search is Due" icon-name="utility:date_input" class="slds-m-left_x-small" onclick={openDateFilter}></lightning-button>
+                        </div>
+                    </template>
+                    
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <template if:true={isDateFilter}>
+                        <div class="slds-size_1-of-3">
+                            <lightning-input type="date"  class="inputCmp1" label="Choose Date" onchange={getDate}></lightning-input>
+                        </div>
+                    </template>
+                    <template if:false={isModalOpenError}>
+                        <div class="slds-table_edit_container slds-is-relative c-container slds-scrollable_x slds-m-top_small">
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered" >
+                                 <thead>
+                                     <!-- Start  Review Date  -->
+                                     <tr class="">
+                                        
+                                         <th class="firstCol" scope="col" >
+                                             <div class="slds-truncate slds-text-align_left " title="Name">Name</div>
+                                         </th>
+                                         <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Frequency of Journal">Frequency of Journal</div>
+                                        </th>
+                                        <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Date Initial Search Started">Date Initial Search Started</div>
+                                        </th>
+                                        <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Date Last Journal Search was Performed">Date Last Journal Search was Performed</div>
+                                        </th>
+                                        <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Event Journal Review due date">Event Journal Review due date</div>
+                                        </th>
+                                     </tr>
+                                     <!-- End  Review Date  -->
+                                     
+                                 </thead>
+                                 <tbody>
+                                    <template for:each={journalsInPopUp} for:item="journal" for:index="keyIndex">
+                                        <tr key={journal.Id}>
+                                            <th class="" scope="col" key={journal.Name} >
+                                                <div class="slds-truncate slds-text-align_left" title={journal.Name}>
+
+                                                    <lightning-button  variant="base" label={journal.Name} title={journal.Name} onclick={redirect} class="slds-m-left_x-small" value={journal.Id} ></lightning-button>
+                                                  </div>
+                                            </th>
+                                            <th class="" scope="col" key={journal.Frequency_of_Journal__c} >
+                                                <div class="slds-truncate slds-text-align_left " title={journal.Frequency_of_Journal__c}>{journal.Frequency_of_Journal__c}</div>
+                                            </th>
+                                            <th class="" scope="col" key={journal.Date_Initial_Search_Started__c} >
+                                                <div class="slds-truncate slds-text-align_left " title={journal.Date_Initial_Search_Started__c}>{journal.Date_Initial_Search_Started__c}</div>
+                                            </th>
+                                            <th class="" scope="col" key={journal.Date_Initial_Search_Started__c} >
+                                                <div class="slds-truncate slds-text-align_left " title={journal.Date_Last_Journal_Search_was_Performed__c}>{journal.Date_Last_Journal_Search_was_Performed__c}</div>
+                                            </th>
+                                            <template if:true={isAllFilter}>
+                                                <th class="" scope="col" key={showReviewDate} >
+                                                    <lightning-input type="date" value={showReviewDate} title={showReviewDate} variant="label-hidden" name={journal.Id} disabled="true"></lightning-input>
+                                                </th>
+                                            </template>
+                                            <template if:false={isAllFilter}>
+                                                <template if:true={isEditable}>
+                                                    <th class="" scope="col" key={showReviewDate} >
+                                                        <lightning-input type="date" value={showReviewDate} title={showReviewDate} variant="label-hidden" onchange={onChangeDate} name={journal.Id}></lightning-input>
+                                                    </th>
+                                                </template>
+                                                <template if:false={isEditable}>
+                                                <th class="" scope="col" key={showReviewDate} >
+                                                    <div class="slds-truncate slds-text-align_left " title={showReviewDate}>{showReviewDate}</div>
+                                                </th>
+                                                </template>
+                                            </template>
+                                            
+                                        </tr>
+                                    </template>
+                                 </tbody>
+                             </table>
+                         </div>
+                    </template>
+                    <template if:true={isModalOpenError}>
+                        <p><b>No Journal Available related this Review Date.</b></p>
+                    </template>
+                </div>
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                    <template if:true={isbuttonShow}>
+                        <template if:true={isEditable}>
+                            <button class="slds-button slds-button_brand" onclick={submitDetails} title={buttonLabel}>{buttonLabel}</button>
+                        </template>
+                    </template>
+                 </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <template if:true={isFilterModel}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeFilterModal}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Filter</h2>
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                <template if:true={startfilterValueError}>
+                    <div class="slds-text-title_caps slds-text-align_center slds-text-color_error" style="background-color: #ffffff;">
+                        <b>Please Select Start Date</b>
+                    </div>
+                </template>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                    <lightning-input type="date"  title="Start Date" label="Start Date" onchange={getFilterStartDate}></lightning-input>
+                </div>
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_brand" onclick={filterOk} title="Submit">Submit</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <template if:true={isExportJournals}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={ExportToCancel}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-03" class="slds-text-heading_medium slds-hyphenate">Export Event Journals </h2>
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                <div class="slds-scrollable_y" style="height:80%; background-color: #ffffff;">
+                    <template if:true={isLoadedExport}>
+                        <div class="exampleHolder">
+                            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+                    <template if:false={isCompleteExportFilter}>
+                        <lightning-card>
+                            <div class="slds-m-left_small slds-p-around_x-small slds-col slds-size_2-of-3">
+                                <lightning-input type="date" name="input1" label="Enter Start date" onchange={getExportStartDate}>></lightning-input>
+                            </div>
+                            <div class="slds-m-left_small slds-p-around_x-small slds-col slds-size_2-of-3">
+                                <lightning-input type="date" name="input1" label="Enter End date" onchange={getExportEndDate}>></lightning-input>
+                            </div>
+                            <div class="slds-m-left_small slds-p-around_x-small slds-col slds-size_2-of-3">
+                                <lightning-input type="toggle" label="All Frequency" name="forAllFrequency" onchange={getAllFrequency} checked={visible}></lightning-input>
+                            </div>
+                            <template if:true={isShowFrequency}>
+                                <div class="slds-m-left_small slds-p-around_x-small slds-col slds-size_2-of-3">
+                                    <lightning-dual-listbox name="Frequencies"
+                                            label="Select Frequency"
+                                            source-label="Available"
+                                            selected-label="Selected"
+                                            field-level-help="Select your preferred Frequency"
+                                            options={options}
+                                            onchange={getFrequencies}>
+                                    </lightning-dual-listbox>
+                                </div>
+                            </template>
+                            
+                        </lightning-card>
+                            
+                    </template>
+                    <template if:true={isCompleteExportFilter}>
+                        
+                        <lightning-card>
+                            <div class="slds-text-heading_medium slds-p-around_medium"><b>Total Event Review Journals : </b> {ExportToJournals.length}</div>
+                            <table id="tbl_exporttable_to_xls" class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered" >
+                                <thead>
+                                    <!-- Start  Review Date  -->
+                                    <tr class="">
+                                       
+                                        <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Name">Name</div>
+                                        </th>
+                                        <th class="firstCol" scope="col" >
+                                           <div class="slds-truncate slds-text-align_left " title="Frequency of Journal">Frequency of Journal</div>
+                                       </th>
+                                       <th class="firstCol" scope="col" >
+                                           <div class="slds-truncate slds-text-align_left " title="Date Initial Search Started">Date Initial Search Started</div>
+                                       </th>
+                                       <th class="firstCol" scope="col" >
+                                            <div class="slds-truncate slds-text-align_left " title="Date Last Journal Search was Performed">Date Last Journal Search was Performed</div>
+                                        </th>
+                                       <th class="firstCol" scope="col" >
+                                           <div class="slds-truncate slds-text-align_left " title="Event Journal Review due date">Event Journal Review due date</div>
+                                       </th>
+                                    </tr>
+                                    <!-- End  Review Date  -->
+                                    
+                                </thead>
+                                <tbody>
+                                   <template for:each={ExportToJournals} for:item="journal" for:index="keyIndex">
+                                       <tr key={journal.Name}>
+                                           <th class="" scope="col" key={journal.Name} >
+                                               <div class="slds-truncate slds-text-align_left" title={journal.Name}>
+            
+                                                   <lightning-button  variant="base" label={journal.Name} title={journal.Name} onclick={redirect} class="slds-m-left_x-small" value={journal.Id} ></lightning-button>
+                                                 </div>
+                                           </th>
+                                           <th class="" scope="col" key={journal.Frequency_of_Journal__c} >
+                                               <div class="slds-truncate slds-text-align_left " title={journal.Frequency_of_Journal__c}>{journal.Frequency_of_Journal__c}</div>
+                                           </th>
+                                           <th class="" scope="col" key={journal.Date_Initial_Search_Started__c} >
+                                               <div class="slds-truncate slds-text-align_left " title={journal.Date_Initial_Search_Started__c}>{journal.Date_Initial_Search_Started__c}</div>
+                                           </th>
+                                           <th class="" scope="col" key={journal.Date_Last_Journal_Search_was_Performed__c} >
+                                                <div class="slds-truncate slds-text-align_left " title={journal.Date_Last_Journal_Search_was_Performed__c}>{journal.Date_Last_Journal_Search_was_Performed__c}</div>
+                                            </th>
+                                           <th class="" scope="col" key={journal.Review_Dates__c} >
+                                            <div class="slds-truncate slds-text-align_left " title={journal.Review_Dates__c}>{journal.Review_Dates__c}</div>
+                                        </th>
+                                       </tr>
+                                   </template>
+                                </tbody>
+                            </table>
+                        </lightning-card>
+                    </template>
+                    
+                </div>
+                
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_brand" onclick={ExportToCancel} title="Cancel">Cancel</button>
+                    <template if:false={isCompleteExportFilter}>
+                        <button class="slds-button slds-button_brand" onclick={ExportToNext} title=Next>Next</button>
+                    </template>
+                    <template if:true={isCompleteExportFilter}>
+                        <button class="slds-button slds-button_brand" onclick={ExportToExcel} title=Export>Export</button>
+                    </template>
+                    
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  
+</template> 

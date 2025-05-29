@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>57.0</apiVersion>
+    <decisions>
+        <name>Check_SAP_Pending</name>
+        <label>Check SAP Pending</label>
+        <locationX>446</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Check_SAP_Pending_status</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.BNF_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>SAP Pending</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>CRM_SubFlow_MIBNF_is_stuck_in_SAP_PENDING_Status_Flow</targetReference>
+            </connector>
+            <label>Check SAP Pending status</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>CRM_MIBNF_RecordTriggered_ After_Insert_Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRM_MIBNF_RecordTriggered_ After_Insert_Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>122</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CRM_Subflow_MIBNF_WR01_Send_Mail_To_RA</targetReference>
+        </connector>
+        <filterFormula>TEXT({!$Record__Prior.BNF_Status__c})&lt;&gt;TEXT({!$Record.BNF_Status__c})</filterFormula>
+        <object>MIBNF_Component__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <scheduledPaths>
+            <name>Status_in_SAP_Pending_more_than_one_Hour</name>
+            <connector>
+                <targetReference>Check_SAP_Pending</targetReference>
+            </connector>
+            <label>SAP Pending more than one Hour</label>
+            <offsetNumber>1</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>LastModifiedDate</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>CRM_SubFlow_MIBNF_is_stuck_in_SAP_PENDING_Status_Flow</name>
+        <label>CRM SubFlow : MIBNF is stuck in SAP PENDING Status Flow</label>
+        <locationX>314</locationX>
+        <locationY>384</locationY>
+        <flowName>CRM_SubFlow_MIBNF_is_stuck_in_SAP_PENDING_Status</flowName>
+        <inputAssignments>
+            <name>Newrecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <subflows>
+        <name>CRM_Subflow_MIBNF_WR01_Send_Mail_To_RA</name>
+        <label>CRM_Subflow : MIBNF_WR01_Send_Mail_To_RA</label>
+        <locationX>50</locationX>
+        <locationY>276</locationY>
+        <flowName>CRM_Subflow_MIBNF_WR01_Send_Mail_To_RA</flowName>
+        <inputAssignments>
+            <name>var_NewRecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>var_OldRecord</name>
+            <value>
+                <elementReference>$Record__Prior</elementReference>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+</Flow>

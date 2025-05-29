@@ -1,0 +1,62 @@
+<aura:component
+    implements="force:hasRecordId,flexipage:availableForAllPageTypes,force:hasSObjectName,force:lightningQuickActionWithoutHeader,flexipage:availableForRecordHome"
+    access="global"
+    description="For use as a button that triggers clone mode in pages with a custom filtered record edit page">
+    <aura:html tag="style">
+    .slds-modal__container {
+        width: 70%;
+        max-width: 950px;
+        min-width: 480px;
+    }
+    .modal-body{
+        height: 100%!important;
+        max-height: unset!important;
+    }
+    .slds-p-around--medium {
+        padding: 0rem !important;
+    }       
+    .slds-modal__content {
+        overflow-y: scroll !important;
+        height:100% !important;
+        max-height:100% !important;
+    }
+    .nested.slds-modal__content {
+        overflow-y:hidden !important;
+        margin-top: 48px;
+        margin-bottom: 48px;
+    }
+    .slds-modal__header {
+    }
+    .nested.slds-modal__header {
+       position: absolute;
+        z-index: 1000;
+        left: 0;
+        top: 48px; 
+    }
+    .nested.slds-modal__footer {
+        position: absolute;
+        left: 0;
+        bottom: 48px;
+        width: 100%;
+        z-index: 1000;
+    }
+    </aura:html>
+    
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute name="deliverable" type="pse__Project_Task__c" />
+    <force:recordData aura:id="deliverableRecord"
+                    recordId="{!v.recordId}"
+                    targetFields="{!v.deliverable}"
+                    layoutType="FULL"/>
+    
+    <header class="nested slds-modal__header slds-size_1-of-1">
+        <h2 class="title slds-text-heading--medium slds-hyphenate" >New Project Task: RDS Deliverable</h2>
+    </header>
+    <div class="nested slds-modal__content">
+        <c:lwc_psa_filteredDetailsTab aura:id="lwc_psa_filteredDetailsTab" recordId="{!v.recordId}" objectApiName="{!v.sObjectName}" openInModal="true" cloneMode="true" onrecordsaved="{!c.handleCancel}"/>
+    </div>
+    <footer class="nested slds-modal__footer">
+        <lightning:button variant="Neutral" class="slds-button" label="Cancel" onclick="{!c.handleCancel}"/>
+        <lightning:button variant="Brand" class="slds-button" label="Save" onclick="{!c.handleSave}"/>
+    </footer>
+</aura:component>

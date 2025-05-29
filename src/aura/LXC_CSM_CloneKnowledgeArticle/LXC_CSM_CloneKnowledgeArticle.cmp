@@ -1,0 +1,51 @@
+<aura:component controller="CSM_CloneKnowledgeArticleController" implements="flexipage:availableForRecordHome,force:hasRecordId" access="global" >
+    <aura:attribute name="readyToDisplay" type="Boolean" default="false"/>
+    <aura:attribute name="showSpinner" type="Boolean" default="false"/>
+    <aura:attribute name="isCompatible" type="Boolean" default="false"/>
+    <aura:attribute name="articleInfo" type="Object"/>
+    <aura:attribute name="newTitle" type="String"/>
+    <aura:attribute name="newUrlName" type="String"/>
+    
+    <aura:dependency resource="force:showToast" type="EVENT" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    
+    <div class="slds slds-card">
+        <div class="slds-align_absolute-center spinnerContainer">
+            <lightning:spinner aura:id="spinner" variant="brand" size="medium" class="{!if(and(v.readyToDisplay,!v.showSpinner),'slds-hide','')}" alternativeText="Loading..."/>
+        </div>
+        <aura:if isTrue="{!v.readyToDisplay}">
+            <aura:if isTrue="{!v.isCompatible}">
+                <div class="slds-m-around--medium">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-media__figure">
+                            <lightning:icon size="small" iconName="standard:work_capacity_limit" />
+                        </div>
+                        <div class="slds-media__body">
+                            <h2>
+                                <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Clone Article">
+                                    <span class="slds-text-heading_small">Clone Article</span>
+                                </a>
+                            </h2>
+                        </div>
+                    </header>                   
+                    <br></br>                    
+                    <lightning:input aura:id="newTitle" name="Title" label="Title" value="{!v.newTitle}" required="true" onblur="{!c.handleTitleOnBlur}"/>
+                    <!--<lightning:input aura:id="newUrlName" name="UrlName" label="UrlName" value="{!v.newUrlName}" required="true" />-->
+                </div>
+                <span class="slds-align_absolute-center">
+                    <lightning:button variant="brand" label="Clone" title="Base action" onclick="{! c.handleCloneClick }"
+                                      class="slds-m-vertical--small"/> 
+                </span>
+                <aura:set attribute="else">
+                    <div class="slds-m-around--medium">
+                        This record is not compatible with this component. 
+                        Please use this component only with knowledge article record pages.
+                    </div>
+                </aura:set>
+                
+            </aura:if>
+        </aura:if>
+    </div>
+    
+</aura:component>

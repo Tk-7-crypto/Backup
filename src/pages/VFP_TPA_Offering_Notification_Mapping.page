@@ -1,0 +1,832 @@
+<apex:page controller="CNT_TPA_OfferingNotificationMapping" standardStylesheets="false" lightningStyleSheets="true" showHeader="true" sidebar="false" cache="false" id="Page" docType="html-5.0">
+    <apex:slds />
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <style>
+                td {
+                border: none !important;
+                }
+            </style>
+            <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" type="text/css" /> <!-- *** Multi Select Control CSS reference *** -->
+
+            <style>
+                .detailList table  {
+                    table-layout: auto !important;
+                }
+                .lookupIcon , .lookupIconOn{
+                    position: unset !important;
+                    transform: translate(-20px, calc(0% + 0px));
+                }
+                .lookupIconNew {
+                    background-image: url(/img/setup/search-icon.png) !important;
+                    height: 1rem;
+                    display: inline-block;
+                    padding: 1rem 1rem 0 0;
+                    overflow: hidden;
+                    vertical-align: middle;
+                    background-image: url(/apexpages/slds/latest/assets/icons/utility/search_60.png);
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    position: inherit;
+                    right: 10px;
+                    top: .5rem;
+                    left: 18rem;
+                    color: rgb(112, 110, 107);
+                    cursor: pointer;
+                }
+
+                img {
+                    border:0pt none;
+                }
+
+                .headerRow  {
+                    background-color: #F0F8FF !important;
+                    border-left: 1px solid #D8DDE6;
+                    border-right: 1px solid #D8DDE6;
+                }
+
+                #useValue , #primaryOffValue , #secondaryOffValue , #AdditionalTermsValue , #OffNotificationTerm{
+                    margin-right: -10.25rem;
+                }
+                .bPageBlock .detailList tr td , .select2-container-multi .select2-choices {
+                    border: none !important;
+                }
+                .slds-scope .slds-table thead th{
+                    background-color: rgb(249, 249, 250);;
+                }
+                .slds-scope .slds-select.select2-container-multi {
+                    height: inherit;
+                }
+                .select2-search__field {
+                    width: 200px !important;
+                }
+            </style>
+            <script src="{!$Resource.TPAJquery}" type="text/javascript" />
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript" /> <!-- *** Multi Select Control Javascript Library reference *** -->
+
+
+            <script>
+            $j = jQuery.noConflict();
+            $ = $j;
+                var selectedAccountMapOnParent = {};
+                var oneKeyCountriestemp ;
+                var oneKeyCountryList = [];
+            $j(document).ready(function(){
+                disableFields();
+                $j('[id$=secOff]').prop("disabled",true);
+                $j('[id$=country]').prop("disabled",false);
+                $j('[id$=secOff_lkwgt]').children().removeClass('lookupIcon');
+                $j('[id$=isAllOneKeyContries]').prop("disabled", true);
+
+                oneKeyCountriestemp = '{!oneKeyCountries}';
+                oneKeyCountryList = oneKeyCountriestemp.toString().slice(1,-1).split(',');
+                setupOneKeyCountryField();
+            });
+            
+            function setupOneKeyCountryField() { 
+               for(var k = 0; k < oneKeyCountryList.length; k++){
+                    if(onekeySelectedCountries.includes(oneKeyCountryList[k].trim())){
+                        $('#OneKeyCountry').append("<option value='"+oneKeyCountryList[k].trim()+"' selected>"+oneKeyCountryList[k].trim()+"</option>");
+                    }
+                    else if(!countryOfOffering.includes(oneKeyCountryList[k].trim())){
+                        $('#OneKeyCountry').append("<option value='"+oneKeyCountryList[k].trim()+"'>"+oneKeyCountryList[k].trim()+"</option>");
+                    }
+                    
+                }
+                $('#OneKeyCountry').select2({width:"320px", closeOnSelect:false,sortResults: function(data) {
+                    /* Sort data using lowercase comparison */
+                    return data.sort(function (a, b) {
+                        a = a.text.toLowerCase();
+                        b = b.text.toLowerCase();
+                        if (a > b) {
+                            return 1;
+                        } else if (a < b) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                }});
+
+                if($j('#primaryOffValue').text().includes('OneKey Data - '))  {
+                    if(($j('[id$=isAllOneKeyContries]')).is(":checked")){
+                        $("#OneKeyCountry").select2('enable',false);
+                        $("#OneKeyCountry").select2("val", "");
+                    }
+                    else{
+                        $("#OneKeyCountry").select2('enable',true);
+                    }
+                }  
+                else{
+                    $("#OneKeyCountry").select2('enable',false);
+                    $j('[id$=isAllOneKeyContries]').prop("disabled", true);
+                }              
+                
+            }
+
+            function resetFields(){
+                resetId();
+            }
+            
+            function reloadoncomplete(){
+                var errorexist = $j('#iserror').val();
+                if(!errorexist){
+                    resetId();
+                }
+            }
+            
+            function popupConfirm(msg, truePart, falsePart, isYesNo) {
+                if(isYesNo) {
+                    popup(msg, {'verify':true, 'animate':true}, function(r)
+                          {
+                              if(r)
+                                  truePart();
+                              else
+                                  falsePart();
+                              haltScreen = false;
+                          });
+                }
+                else {
+                    popup(msg, {'confirm':true, 'animate':true}, function(r) {
+                        if(r)
+                            truePart();
+                        else
+                            falsePart();
+                        haltScreen = false;
+                    });
+                }
+            }
+
+            function disableFields(){
+                
+                setLabels();
+                var theSelect = $j("[id$=country]")[ 0 ];
+                var options = theSelect.getElementsByTagName('OPTION');
+                for(var i=0; i<options.length; i++) {
+                    if(options[i].innerHTML == '--None--') {
+                        theSelect.removeChild(options[i]);
+                    }
+                }
+                
+                var offcountry = $j("[id$=country]").val() ;
+                var primaryOffNAme = $j("[id$=priOff]").val() ;
+                var secOffNAme = $j("[id$=secOff]").val() ;
+                var useName = $j("[id$=Use]").val() ;
+                var offNotification = $j("[id$=OffNotificationTerm]").val() ;
+                var addendumTerm = $j("[id$=AdditionalTerms]").val();
+                $j('[id$=country]').prop("disabled",false);
+                
+                if(primaryOffNAme == '')
+                {
+                    $j('[id$=secOff]').prop("disabled",true);
+                    $j('[id$=secOff_lkwgt]').children().removeClass('lookupIcon');
+                }
+                if(secOffNAme == '')
+                {
+                    $j('#secondaryOffValue').text('');
+                }
+                if(useName == '')
+                {
+                    $j('#useValue').text('');
+                }
+                if(offNotification == ''){
+                    $j('#OffNotificationTermValue').text('');
+                }
+                if(addendumTerm == ''){
+                    $j('#AdditionalTermsValue').text('');
+                }
+
+                $j('[id$=country]').change(function(){
+                    if(this.value=="ALL"){
+                        $j('[id$=priOff]').val("");
+                        $j('input[id$=priOff]').prop("disabled",true);
+                        $j('[id$=priOff_lkwgt]').children().removeClass('lookupIcon');
+                        $j('[id$=secOff]').val("");
+                        $j('input[id$=secOff]').prop("disabled",true);
+                        $j('[id$=secOff_lkwgt]').children().removeClass('lookupIcon');
+                        $j('#secondaryOffValue').text('');
+                        $j('#primaryOffValue').text('');
+                        
+                    }
+                    else{
+                        $j('[id$=priOff]').prop("disabled",false);
+                        $j('[id$=priOff_lkwgt]').children().addClass('lookupIcon');
+                    }
+                });
+                $j('[id$=country]').change(function(){
+                    $j('[id$=priOff]').val("");
+                    $j('[id$=secOff]').val("");
+                    $j('input[id$=secOff]').prop("disabled",true);
+                    $j('[id$=secOff_lkwgt]').children().removeClass('lookupIcon');
+                    $j('#secondaryOffValue').text('');
+                    $j('#primaryOffValue').text('');
+                    $("#OneKeyCountry").select2('enable',false);
+                    $j('[id$=isAllOneKeyContries]').prop("checked", false);
+                    $j('[id$=isAllOneKeyContries]').prop("disabled", true);
+                    $("#OneKeyCountry").select2("val", "");
+                    $j("#OneKeyCountry option[value='"+this.value+"']").remove();
+                    
+                });
+                $j('[id$=priOff]').on('keyup change', function(e){
+                    if(this.value==""){
+                        $j('[id$=secOff]').val("");
+                        $j('input[id$=secOff]').prop("disabled",true);
+                        $j('[id$=secOff_lkwgt]').children().removeClass('lookupIcon');
+                        $j('#secondaryOffValue').text('');
+                        $j('#primaryOffValue').text('');
+                        $("#OneKeyCountry").select2("val", "");
+                        $("#OneKeyCountry").select2('enable',false);
+                        $j('[id$=isAllOneKeyContries]').prop("checked", false);
+                        $j('[id$=isAllOneKeyContries]').prop("disabled", true);
+                    }
+                    else{
+                        $j('[id$=secOff]').prop("disabled",false);
+                        $j('[id$=secOff_lkwgt]').children().addClass('lookupIcon');
+                        $j('#secondaryOffValue').text('');
+                        $("#OneKeyCountry").select2("val", "");
+                        if($j('#primaryOffValue').text().includes('OneKey Data - '))  {
+                            $("#OneKeyCountry").select2('enable',true);
+                            $j('[id$=isAllOneKeyContries]').prop("disabled", false);
+                        }  
+                    }
+                });
+                $j('[id$=priOff]').on('keyup change', function(e){
+                    if(this.value!=primaryOffNAme){
+                        $j('[id$=secOff]').val("");
+                        $j('#secondaryOffValue').text('');
+                    }
+                });
+                $j('[id$=isAllOneKeyContries]').change(function(){
+                        if(($j('[id$=isAllOneKeyContries]')).is(":checked")){
+                            $("#OneKeyCountry").select2('enable',false);
+                            $("#OneKeyCountry").select2("val", "");
+                        }
+                        else{
+                            $("#OneKeyCountry").select2('enable',true);
+                        }
+                        
+                    });
+                $j('[id$=secOff]').on('keyup change', function(e){
+                    
+                    if(this.value==""){
+                        $j('#secondaryOffValue').text('');
+                    }
+                });
+                
+                $j('[id$=Use]').on('keyup change', function(e){
+                    
+                    if(this.value==""){
+                        $j('#useValue').text('');
+                    }
+                    
+                });
+                $j('[id$=VendorAccountName]').keypress(function(event){
+                    if(event.keyCode == 13){
+                        return false;
+                    }
+                });
+                $j('[id$=uses]').keypress(function(event){
+                    if(event.keyCode == 13){
+                        return false;
+                    }
+                });
+                $j('[id$=primaryOfferingName]').keypress(function(event){
+                    if(event.keyCode == 13){
+                        return false;
+                    }
+                });
+                $j('[id$=secondryOfferingName]').keypress(function(event){
+                    if(event.keyCode == 13){
+                        return false;
+                    }
+                });
+                if($j('[id$=MapOfAccIdWithName]').val() != null && $j('[id$=MapOfAccIdWithName]').val() != ''){
+                    selectedAccountMapOnParent = JSON.parse($j('[id$=MapOfAccIdWithName]').val());
+                }
+            }
+            </script>
+            <script type="text/javascript">
+
+            var useOffLabelValue = '';
+            function setLabels(){
+                addendumOffNotiValue = $j("[id$=addendumAndOffNotiValues]").val();
+                if(addendumOffNotiValue.length > 0){
+                    addendumOffNotiValue = addendumOffNotiValue.split(':::');
+                    if(addendumOffNotiValue.length > 0){
+                        if($j('#AdditionalTermsValue').length == 0)
+                        {
+                            $j('[id$=AdditionalTerms_lkwgt]').after('<label id="AdditionalTermsValue"></label>');
+                        }
+                        if($j('#OffNotificationTermValue').length == 0)
+                        {
+                            $j('[id$=OffNotificationTerm_lkwgt]').after('<label id="OffNotificationTermValue"></label>');
+                        }
+
+                        if(addendumOffNotiValue[1] != null && addendumOffNotiValue[1].length > 0 )
+                        {
+                            $j('#OffNotificationTermValue').text(addendumOffNotiValue[1]);
+                        }
+                        if(addendumOffNotiValue[0] != null && addendumOffNotiValue[0].length > 0 )
+                        {
+                            $j('#AdditionalTermsValue').text(addendumOffNotiValue[0]);
+                        }
+                    }
+                }
+                useOffLabelValue = $j("[id$=objToEdit]").val();
+                if(useOffLabelValue.length > 0)
+                {
+                    useOffLabelValue = useOffLabelValue.split(':::');
+                    if(useOffLabelValue.length > 0)
+                    {
+                        if($j('#useValue').length == 0)
+                        {
+                            $j('[id$=Use_lkwgt]').after('<label id="useValue"></label>');
+                        }
+                        if($j('#primaryOffValue').length == 0)
+                        {
+                            $j('[id$=priOff_lkwgt]').after('<label id="primaryOffValue"></label>');
+                        }
+                        if($j('#secondaryOffValue').length == 0)
+                        {
+                            $j('[id$=secOff_lkwgt]').after('<label id="secondaryOffValue"></label>');
+                        }
+
+                        if($j("[id$=objToEdit]").val() == '' && $j('#vendorValue').length == 0){
+                            $j('[id$=acc3_lkwgt]').after('<label id="vendorValue"></label>');
+                            $j('#vendorValue').text('ALL');
+                        }
+
+                        if(useOffLabelValue[0] != null && useOffLabelValue[0].length > 0 )
+                        {
+                            $j('#useValue').text(useOffLabelValue[0]);
+                        }
+                        if(useOffLabelValue[1] != null && useOffLabelValue[1].length > 0 )
+                        {
+                            $j('#primaryOffValue').text(useOffLabelValue[1]);
+                        }
+                        if(useOffLabelValue[2] != null && useOffLabelValue[2].length > 0 )
+                        {
+                            $j('#secondaryOffValue').text(useOffLabelValue[2]);
+                        }
+                    }
+                }
+            }
+
+            function setLookupLabelValue(fieldValue, fieldAddAfter, labelFieldId){
+
+                if($j('#'+labelFieldId).length == 0)
+                {
+                    $j(fieldAddAfter).after('<label id="'+labelFieldId+'">'+fieldValue+'</label>');
+                }
+                else
+                {
+                    $j('#'+labelFieldId).text(fieldValue);
+                }
+
+                if(labelFieldId == 'primaryOffValue' && $j('#secondaryOffValue').length != 0)
+                    $j('#secondaryOffValue').text('');
+   
+                if(labelFieldId == 'primaryOffValue' && $j('#primaryOffValue').text().includes('OneKey Data - ')){
+                    $("#OneKeyCountry").select2('enable',true);
+                    $j('[id$=isAllOneKeyContries]').prop("disabled", false);
+                }
+                else if(labelFieldId == 'primaryOffValue'){
+                    $j('[id$=isAllOneKeyContries]').prop("checked", false);
+                    $j('[id$=isAllOneKeyContries]').prop("disabled", true);
+                    $("#OneKeyCountry").select2('enable',false);
+                    $("#OneKeyCountry").select2("val", "");
+                }
+            }
+            function setVendorAccValBlnk(){
+                $j('[id$=MapOfAccIdWithName]').val("");
+                $j('[id$=AccountIdMap]').val("");
+                $j('[id$=accountSearchBox]').val("");
+            }
+            function openLookup(baseURL, width, modified, searchParam){
+
+                console.log('baseURL: ' + unescape(baseURL) + '-  modified:' + modified);
+                console.log('width: ' + width + '-  searchParam:' + searchParam);
+                var originalbaseURL = baseURL;
+                var originalwidth = width;
+                var originalmodified = modified;
+                var originalsearchParam = searchParam;
+                var msgVal = '';
+
+                var lookupType = baseURL.substr(baseURL.length-3, 3);
+                if (modified == '1') baseURL = baseURL + searchParam;
+
+                var isCustomLookup = false;
+                var urlArr = baseURL.split("&");
+
+                var txtId = '';
+                if(urlArr.length > 2) {
+                    urlArr = urlArr[1].split('=');
+                    txtId = urlArr[1];
+                }
+
+                var offcountry = $j("[id$=country]").val() ;
+                var primaryOffNAme = $j("[id$=priOff]").val() ;
+
+                if(offcountry.includes("&"))
+                    offcountry = offcountry.replace("&", "%26");
+
+                if(baseURL.indexOf('priOff') > -1)
+                {
+                    baseURL = "/apex/VFP_TPA_CustomPrimaryOffLookup?txt=" + txtId;
+                    baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.myForm}");
+                    if (modified == '1') {
+                        baseURL = baseURL + "&lksearch=" + searchParam;
+                    }
+                    baseURL = baseURL + "&country=" + offcountry;
+                    isCustomLookup = true;
+                    msgVal = 'Primary Offerings';
+                }
+                // for seconday off lookup
+                else if(baseURL.indexOf('secOff') > -1)
+                {
+                    baseURL = "/apex/VFP_TPA_CustomSeconadyOffLookup?txt=" + txtId;
+                    baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.myForm}");
+                    if (modified == '1') {
+                        baseURL = baseURL + "&lksearch=" + searchParam;
+                    }
+                    baseURL = baseURL + "&primaryOff=" + primaryOffNAme;
+                    isCustomLookup = true;
+                    msgVal = 'Secondary Offerings';
+                }
+                    else if(baseURL.indexOf('Use') > -1)
+                    {
+                        baseURL = "/apex/VFP_TPA_CustomUseLookup?txt=" + txtId;
+                        baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.myForm}");
+                        if (modified == '1') {
+                            baseURL = baseURL + "&lksearch=" + searchParam;
+                        }
+                        isCustomLookup = true;
+                        msgVal = 'Uses';
+                    }
+
+                if(isCustomLookup == true){
+                    popupConfirm( 'Click YES to select ALL '+ msgVal+', NO to select one or more ' + msgVal +'.',function(){
+                        if(baseURL.indexOf('priOff') > -1){
+                            setLookupLabelValue('ALL','[id$=priOff_lkwgt]','primaryOffValue');
+                            $j('[id$=priOff]').val("");
+                        }
+                        else if(baseURL.indexOf('secOff') > -1){
+                            setLookupLabelValue('ALL','[id$=secOff_lkwgt]','secondaryOffValue');
+                            $j('[id$=secOff]').val("");
+                        }
+                            else if(baseURL.indexOf('Use') > -1){
+                                setLookupLabelValue('ALL','[id$=Use_lkwgt]','useValue');
+                                $j('[id$=Use]').val("");
+                            }
+
+                    },
+                                 function (){openPopup(baseURL, "lookup", 350, 480, "width="+width+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true)},true);
+                }
+                else {
+                    if (modified == '1') originalbaseURL = originalbaseURL + originalsearchParam;
+                    openPopup(originalbaseURL, "lookup", 350, 480, "width="+originalwidth+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+                }
+            }
+
+            function launchAccoutSearchWindow(){
+                $j('#vendorValue').text('');
+                var url="/apex/VFP_TPA_OffNotificationAccountSearch";
+                var AccountIdList = $j("[id$=AccountIdMap]").val();
+
+                url = url + "?AccountIdList=" + AccountIdList;
+                newWin=window.open(url, 'Popup','height=700,width=1200,left=100,top=100,resizable=no,scrollbars=yes,toolbar=no,status=no');
+                if (window.focus){
+                    newWin.focus();
+                }
+            }
+
+            function launchAccoutViewWindow(objId){
+                var url="/apex/VFP_TPA_OffNotificationAccountSearch";
+                url = url + "?OfferingNotificationObjId=" + objId;
+                newWin=window.open(url, 'Popup','height=600,width=1000,left=100,top=100,resizable=no,scrollbars=yes,toolbar=no,status=no');
+                if (window.focus){
+                    newWin.focus();
+                }
+            }
+
+
+            function saveOffNotiData(){
+               var selectedCountry = $('#OneKeyCountry').select2('data');
+               var finalData = '';
+
+               $j.each(selectedCountry,function(value,index) {
+                   finalData+= ((index.text) + ';');
+               });
+
+               console.log('finalData:' + finalData);
+
+               saveData(finalData);
+
+            }
+            </script>
+
+        </head>
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <div class="slds-scope">
+                <div class="slds-page-header slds-p-top_large slds-p-bottom_large" role="banner" style="margin-bottom: .5em; margin-left: .5em; border-radius: 4px;">
+                    <div class="slds-grid">
+                        <div class="slds-col slds-has-flexi-truncate">
+                            <div class="slds-media slds-no-space slds-grow">
+                                <div class="slds-media__body">
+                                    <h3 class="slds-page-header__title slds-truncate ">{!$ObjectType.TPA_Offering_Notification_Mapping__c.label}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <apex:form id="myForm" html-class="slds-p-left_x-small slds-p-right_x-small;">
+                    <apex:pageBlock id="OfferingNotificationMapping" html-Class="slds-panel slds-grid slds-grid--vertical slds-nowrap slds-form--compound">
+                        <apex:pageMessages />
+                        <apex:actionFunction name="refreshPageSize" action="{!refreshPageSize}" status="fetchStatus" reRender="pbId,ErrorBlock"/>
+                        <apex:actionFunction name="saveData" action="{!saveNotificationMapping}" status="fetchStatus" reRender="ErrorBlock,OfferingNotificationMapping" oncomplete="disableFields();reloadoncomplete();">
+                            <apex:param name="firstParam" assignTo="{!selectedOneKeyCountries}" value="" />
+                        </apex:actionFunction>
+                        <apex:pageBlock rendered="{!isError}" id="ErrorBlock">
+                            <div class="message errorM3 slds-text-longform" style="background-color:#ffffb3;" >
+                                <table border="0"  class="messageTable" style="">
+                                    <tr valign="top">
+                                        <td><img alt="ERROR" class="msgIcon slds-align_absolute-center" src="/s.gif" style="float:right;" title="ERROR"/></td>
+                                        <td class="messageCell"><div class="messagetext"><span style="color:#cc0000"><h4>Errors</h4></span></div></td></tr><tr><td></td>
+
+                                    <td> <ul>
+                                        <apex:outputText escape="false" value="{!errorText}">
+                                        </apex:outputText>
+                                        </ul></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <input id="iserror" value="{!isError}" style="display:none;"/>
+                        </apex:pageBlock>
+
+                        <table width="100%" border="0" >
+                            <tr>
+                                <td width="200" valign="top">
+                                    <apex:pageBlock title="Notification Mapping Search" mode="edit" id="criteria"  html-style="margin-right: 0.5rem;">
+                                        <script type="text/javascript">
+                                        function doSearch() {
+                                            searchServer(
+                                                document.getElementById("VendorAccountName").value,
+                                                document.getElementById("uses").value,
+                                                document.getElementById("primaryOfferingName").value,
+                                                document.getElementById("secondryOfferingName").value,
+                                                document.getElementById("countryName").value
+                                            );
+                                        }
+                                        </script>
+                                        <apex:actionFunction status="fetchStatus" name="searchServer" action="{!runSearch}" rerender="pbId,ErrorBlock">
+
+                                            <apex:param name="VendorAccountName" value="" />
+                                            <apex:param name="uses" value="" />
+                                            <apex:param name="primaryOfferingName" value="" />
+                                            <apex:param name="secondryOfferingName" value="" />
+                                            <apex:param name="countryName" value=""/>
+                                        </apex:actionFunction>
+                                        
+                                        <apex:actionFunction name="resetId" action="{!resetOffId}" >
+                                        </apex:actionFunction>
+
+                                        <table cellpadding="2" cellspacing="2"  >
+                                            <tr>
+                                                <td style="font-weight:bold;">Country<br/>
+                                                    <input type="text" id="countryName" onkeyup="doSearch();"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:bold;">Vendor Account Name<br/>
+                                                    <input type="text" id="VendorAccountName" onkeyup="doSearch();"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:bold;">Uses<br/>
+                                                    <input status="fetchStatus" type="text" id="uses" onkeyup="doSearch();"/>
+                                                </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight:bold;">Primary Offering<br/>
+                                                <input type="text" id="primaryOfferingName" onkeyup="doSearch();"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight:bold;">Secondary Offering<br/>
+                                                <input type="text" id="secondryOfferingName" onkeyup="doSearch();"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                </apex:pageBlock>
+
+                            </td>
+                            <td valign="top">
+                                <apex:pageBlockSection columns="1" collapsible="false"   id="pbId" html-class="slds-table--bordered  slds-border_left slds-border_right" html-style="width: 159%;">
+                                    <apex:pageBlockTable value="{!TPAOffNotificationMappings}" var="obj"  html-class="slds-table--bordered  slds-border_left slds-border_right">
+                                        <apex:column headerValue="Action" >
+                                            <apex:commandLink status="fetchStatus" value="Edit" action="{!ShowDataToEdit}" oncomplete="setLabels();setupOneKeyCountryField();disableFields();" rerender="toEdit">
+                                                <apex:param name="idToUpdate" value="{!obj.id}" assignTo="{!idToUpdate}"/>
+                                            </apex:commandLink>
+
+                                            <apex:commandLink status="fetchStatus" value="Clone" action="{!CreteClonedCopy}" rerender="toEdit" style="margin-left:10px;" oncomplete="disableFields();setLabels();setupOneKeyCountryField();">
+                                                <apex:param name="idToClone" value="{!obj.id}" assignTo="{!idToClone}"/>
+                                            </apex:commandLink>
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Name">
+                                                    <apex:param name="sortField" value="Name" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            {!obj.Name}
+                                        </apex:column>
+                                        <!-- Modified By Neha Under CR-11682 Starts-->
+                                        <apex:column styleClass="vAccountViewCol">
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Vendor Account">
+                                                    <apex:param name="sortField" value="Vendor_Account_Name__c" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            <label class="vAccountNameVal">{!obj.Vendor_Accounts_Name__c}</label>
+                                            <label class="vAccountNameAll" style="display:none;">ALL</label>
+                                             <!-- Modifeid By Neha Bansal under ER-3793 Starts -->
+                                             <apex:commandLink status="fetchStatus" value="view" style="margin-left:10px;" styleClass="vAccountCommLink" onclick="launchAccoutViewWindow('{!obj.id}')" rerender="pbId,ErrorBlock">
+                                              <apex:param name="idToViewAccount" value="{!obj.id}" assignTo="{!idToViewAccount}"/>
+                                            </apex:commandLink>
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Uses">
+                                                    <apex:param name="sortField" value="Purpose_Name__c" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            {!obj.Purpose_Name__c}
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Country of offering ">
+                                                    <apex:param name="sortField" value="Country__c" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            {!IF((obj.Is_Applicable_for_All_OneKey_Countries__c) == true, 'ALL', obj.Offering_Country_Name__c)} 
+                                            <span style="{!IF((obj.OneKey_Countries__c != null && obj.OneKey_Countries__c != ''), 'display:inline', 'display:none')}" >;</span>
+                                            {!IF(obj.OneKey_Countries__c != null && obj.OneKey_Countries__c != '', obj.OneKey_Countries__c , '')} 
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Primary Offering">
+                                                    <apex:param name="sortField" value="Primary_Data_Asset_Name__c" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            {!obj.Primary_Data_Asset_Name__c}
+                                        </apex:column>
+
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:commandLink status="fetchStatus" action="{!toggleSort}" rerender="pbId,ErrorBlock" value="Secondry Offering">
+                                                    <apex:param name="sortField" value="Secondary_Data_Asset_Name__c" assignTo="{!sortField}"/>
+                                                </apex:commandLink>
+                                            </apex:facet>
+                                            {!obj.Secondary_Data_Asset_Name__c}
+                                        </apex:column>
+                                        <apex:column headerValue="Offering Notification">
+                                            {!obj.Offering_Notifications__r.Page_Name__c}
+                                        </apex:column>
+                                        <apex:column headerValue="Addendum Terms">
+                                            {!obj.TLLA_Additional_Terms__r.Page_Name__c}
+                                        </apex:column>
+                                        <apex:column headerValue="Is Active">
+                                            <apex:inputCheckbox value="{!obj.IsActive__c}" disabled="true"/>
+                                        </apex:column>
+                                        <apex:column headerValue="Process_Execution_Mode__c">
+                                            {!obj.Process_Execution_Mode__c}
+                                        </apex:column>
+                                        <apex:column headerValue="Last Modified By">
+                                            {!obj.LastModifiedBy.name}
+                                        </apex:column>
+                                        <apex:column headerValue="Last Modified Date">
+                                            <apex:outputText value="{0,date,MM'/'dd'/'yyyy HH:MM a}">
+                                                <apex:param value="{!obj.lastmodifieddate}" />
+                                            </apex:outputText>
+                                        </apex:column>
+                                    </apex:pageBlockTable>
+
+                                    <apex:pageBlock >
+                                        <div align="left" style="float:left;">
+                                            <apex:selectList value="{!size}" multiselect="false" size="1" onchange="refreshPageSize();">
+                                                <apex:selectOptions value="{!paginationSizeOptions}"/>
+                                            </apex:selectList>
+                                            <apex:commandbutton value="Export To Excel" action="{!exportAll}"/>
+                                        </div>
+                                        <div align="center">
+                                            <apex:commandButton status="fetchStatus" reRender="pbId" value="First" action="{!setCon.first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>
+                                            <apex:commandButton status="fetchStatus" reRender="pbId" value="Previous" action="{!setCon.previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+                                            <apex:commandButton status="fetchStatus" reRender="pbId" value="Next" action="{!setCon.next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+                                            <apex:commandButton status="fetchStatus" reRender="pbId" value="Last" action="{!setCon.last}" disabled="{!!setCon.hasNext}" title="Last Page"/>
+                                        </div>
+                                        <div align="right" >
+                                            <apex:outputText >{!(setCon.pageNumber * size)+1-size}-{!IF((setCon.pageNumber * size)>noOfRecords, noOfRecords,
+                                                (setCon.pageNumber * size))} of {!noOfRecords}
+                                            </apex:outputText>
+                                        </div>
+
+                                    </apex:pageBlock>
+                                    <apex:outputPanel >
+                                        <apex:actionStatus id="fetchStatus" >
+                                            <apex:facet name="start" >
+                                                <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+                                                    <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                                                        <div class="slds-spinner__dot-a"></div>
+                                                        <div class="slds-spinner__dot-b"></div>
+                                                    </div>
+                                                </div>
+                                            </apex:facet>
+                                        </apex:actionStatus>
+                                    </apex:outputPanel>
+                                    <script type="text/javascript">
+                                    (function showAllInVendorAccountName() {
+                                        $j(".vAccountViewCol").each( function() {
+                                            thisCell = $j( this );
+                                            accountNameValObj = $j($j(".vAccountNameVal", thisCell)[0]);
+                                            if(accountNameValObj.text() == null || accountNameValObj.text().length == 0) {
+                                                vAccountCommLinkObj = $j($j(".vAccountCommLink", thisCell)[0]);
+                                                vAccountCommLinkObj.css("display", "none");
+                                                vAccountNameAllObj = $j($j(".vAccountNameAll", thisCell)[0]);
+                                                vAccountNameAllObj.css("display", "");
+                                            }
+                                        });
+                                    }());
+                                    </script>
+                                </apex:pageBlockSection>
+                                </td>
+                            </tr>
+                        </table>
+                    </apex:pageBlock> <!-- new -->
+                    <apex:pageBlock id="toEdit" >
+                        
+                        <apex:outputPanel layout="block" id="EditPanel">
+                            <apex:pageBlockSection title="Edit TPA Offering Notification Mapping Details" columns="2" id="EditSection">
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.Name}" rendered="{!IF((ISNULL(idToUpdate)),false,true)}" label="Name" id="name"/>
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.Country__c}" label="Country of offering" id="country"/>
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.IMS_Primary_Data_Asset__c}"  label="Primary Offering" id="priOff" />
+                                
+                                
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.IMS_Secondary_Data_Asset__c}" label="Secondary Offering" id="secOff" />
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.Is_Applicable_for_All_OneKey_Countries__c}" label="Is Applicable for All OneKey Countries" id="isAllOneKeyContries"/>
+                                
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputPanel >
+                                        <label>One Key Country</label>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel >
+                                        <select id="OneKeyCountry" class="slds-select" multiple="multiple"></select>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>                             
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.IMS_TPA_Purpose__c}" label="Uses" id="Use"/>
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.Offering_Notifications__c}"  label="Offering Notification" id="OffNotificationTerm" >
+                                    <apex:actionSupport event="onchange" action="{!PopulateAddendumValue}" oncomplete="setLabels();disableFields();" reRender="AdditionalTerms,addendumAndOffNotiValues"/>
+                                </apex:inputField>
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.Process_Execution_Mode__c}"  label="Process Execution Mode" id="processExecutionMode"/>
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.TLLA_Additional_Terms__c}" label="Addendum Terms" id="AdditionalTerms" >
+                                    <apex:actionSupport event="onchange" action="{!setAddendumPageName}" oncomplete="setLabels();disableFields();" reRender="addendumAndOffNotiValues"/>
+                                </apex:inputField>    
+                                <apex:inputField value="{!TPAOffNotificationMappingtoUpdate.IsActive__c}" label="Is Active" id="isActive"/>
+                                
+                                <apex:pageBlockSectionItem id="accountSearchSection">
+                                    <apex:outputLabel value="Vendor Account" for="account__name"/>
+                                    <apex:panelGrid columns="2" id="accountSearchPanel">
+                                        <apex:inputTextarea value="{!lookUp}" label="Account" id="accountSearchBox" disabled="true" styleClass="slds-lookup__search-input slds-input"/>
+                                        <a href="#" id="acc3_lkwgt" onclick="popupConfirm( 'Click YES to select ALL vendors, NO to select one or more vendors',function(){
+                                                                             setLookupLabelValue('ALL','[id$=acc3_lkwgt]','vendorValue'); setVendorAccValBlnk();},
+                                                                             function (){launchAccoutSearchWindow();},true);" tabindex="2" title="Parent Account Lookup (New Window)" style="text-decoration: none;">
+                                            <img src="/s.gif" alt="Parent Account Lookup (New Window)" class="lookupIconNew" onblur="this.className = 'lookupIconNew';" onfocus="this.className = 'lookupIconNew';" onmouseout="this.className = 'lookupIconNew';" title="Parent Account Lookup (New Window)"/>
+                                        </a>
+                                    </apex:panelGrid>
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                            <apex:inputHidden id="AccountIdMap" value="{!AccountIdMap}"/>
+                            <apex:inputHidden id="MapOfAccIdWithName" value="{!serializedMapOfAccIdWithName}"/>
+                            <apex:inputHidden id="objToEdit" value="{!editCloneUseOffLabels}" />
+                            <apex:inputHidden id="addendumAndOffNotiValues" value="{!addendumAndOffNotificationValues}" />
+
+                        </apex:outputPanel>
+                        <script type = "text/javascript">
+
+                        var onekeySelectedCountries = '{!TPAOffNotificationMappingtoUpdate.OneKey_Countries__c}';
+                        var countryOfOffering = '{!TPAOffNotificationMappingtoUpdate.Country__c}';
+                        
+
+                        
+                        </script>
+                        <apex:pageBlockButtons location="bottom">
+                            <apex:commandButton value="Reset" rerender="ErrorBlock,OfferingNotificationMapping,toEdit"  id="resetButton" onclick="resetFields()" oncomplete="disableFields();"/>
+                            <input type='Button' onclick="saveOffNotiData()" value="{!IF((ISNULL(idToUpdate)),'Add System Notification','Update System Notification')}"  id="saveButton" />
+                        </apex:pageBlockButtons>
+                    </apex:pageBlock>
+                </apex:form>
+            </div>
+        </body>
+    </html>
+</apex:page>

@@ -1,0 +1,39 @@
+<apex:page standardController="pse__Resource_Request__c" recordSetVar="resourceRequests" extensions="CNT_OWF_MassUpdate">
+    <apex:includeLightning />
+    <div class="slds-scope" id="divSpinner">
+        <apex:form id="form" style="height: 200px;padding:20%">
+            <!-- SPINNER -->
+            <div id="spinner" class="slds-spinner_container slds-is-relative" >
+                <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+            <!-- / SPINNER -->
+        </apex:form>
+    </div>
+    <div id="lightningCompDivId" />
+    <apex:form >
+        <apex:actionFunction name="CallApexMethod" action="{!navigationtoPreviouspage}"/>        
+    </apex:form>
+    <script>
+    let columns=['pse__Status__c','Cancellation_Reason__c','Cancellation_Comments__c'];
+    $Lightning.use("c:LXA_OWF_CreateAssignmentFromResRequest", function() {
+        $Lightning.createComponent("c:lWC_OWF_RecordsMassUpdation", {
+            "selectedrecords": '{!obj}',
+            columns: columns,
+            currentobject: "pse__Resource_Request__c",
+            recordtypename: "OWF_Resource_Request",
+            "navigateToList": navigateToList
+            
+        },
+                                   "lightningCompDivId",
+                                   function(cmp) {
+                                       document.getElementById("divSpinner").style.display = "none";
+                                   });
+    });
+    function navigateToList() { 
+        CallApexMethod();
+    }
+    </script>
+</apex:page>

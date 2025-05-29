@@ -1,0 +1,50 @@
+<messaging:emailTemplate subject="{!IF(relatedTo.Pricing_Tools__c == 'Complete Consent', 'Quote Approval: ' & relatedTo.Related_Account__r.Name, 'Approval Request Notification ' & relatedTo.Opportunity_Number__c & ' ' & relatedTo.Related_Opportunity__r.Name & ' ' & relatedTo.Name)}" recipientType="User" relatedToType="Quote__c">
+<messaging:htmlEmailBody>
+<html>
+<body>
+Hello {!recipient.name},<br/>
+<br/>
+<apex:outputText rendered="{!(relatedTo.Pricing_Tools__c == 'EMEA')}"> 
+A quote ({!relatedTo.Name}) has been submitted for approval and requires your decision.<br/>
+To approve the quote within CRM, please reply Approve/Approved/Yes, or click on this link: {!LEFT($Api.Partner_Server_URL_280, FIND(".com/",$Api.Partner_Server_URL_280)+3)}/{!relatedTo.Id} to reject with your comments.<br/>
+</apex:outputText>
+<apex:outputText rendered="{!(relatedTo.Pricing_Tools__c != 'EMEA')}"> 
+A quote ({!relatedTo.Name}) has been submitted for approval and requires your decision.<br/>
+To approve/reject the quote within CRM, please either reply Approve/Approved/Yes or Reject/Rejected/No with your comments, or click on this link: {!LEFT($Api.Partner_Server_URL_280, FIND(".com/",$Api.Partner_Server_URL_280)+3)}/{!relatedTo.Id}
+<br/></apex:outputText>
+<br/>
+<br/>
+Quote Summary:<br/>
+* Account Name: {!relatedTo.Related_Account__r.name}<br/>
+* Opportunity Name: {!relatedTo.Related_Opportunity__r.name}<br/>
+* Opportunity Number: {!relatedTo.Opportunity_Number__c}<br/>
+* Opportunity Owner: {!relatedTo.Opportunity_Owner__c}<br/>
+* Pricing Tool: {!relatedTo.Pricing_Tools__c}<br/>
+* Quote Includes Account-specific Rate Card Pricing: <apex:outputText value="{!IF(NOT(!relatedto.Special_Pricing__c)," Yes"," No")}"/><br/>
+
+* Total Amount: {!relatedTo.CurrencyIsoCode} <apex:outputText value="{0, number, 0.00}">
+                    <apex:param value="{!IF(relatedTo.TotalAmount__c == null, 0.00, relatedTo.TotalAmount__c)}" />
+                </apex:outputText><br/>
+* Aggregate Discount Amount: {!relatedTo.CurrencyIsoCode} <apex:outputText value="{0, number, 0.00}">
+                    <apex:param value="{!IF(relatedTo.Aggregate_Discount_Amount__c == null, 0.00, relatedTo.Aggregate_Discount_Amount__c)}"/>
+                </apex:outputText> <br/>
+* Aggregate Discount Percent:<apex:outputText value="{0, number, 0.00}">
+                    <apex:param value="{!IF(relatedTo.Aggregate_Discount_Percent__c == null, 0.00, relatedTo.Aggregate_Discount_Percent__c)}"/>
+                </apex:outputText> %<br/>
+* Total Net Amount: {!relatedTo.CurrencyIsoCode} <apex:outputText value="{0, number, 0.00}">
+                    <apex:param value="{!IF(relatedTo.TotalNetAmount__c == null, 0.00, relatedTo.TotalNetAmount__c)}" />
+                </apex:outputText><br/>
+<apex:outputText rendered="{!OR (relatedTo.Pricing_Tools__c == 'Complete Consent', relatedTo.Pricing_Tools__c == 'EMEA')}"> 
+<div style ="white-space:pre-line"> * Discount Reason: {!relatedTo.Discount_Reason__c}</div>
+</apex:outputText>
+<apex:outputText rendered="{!NOT(IsBlank(relatedTo.File_URL_Link__c))}">
+<p> Click
+<a href = "{!relatedTo.File_URL_Link__c}" style = "max-width:600px;"> here </a> to view attached documents under File section of the quote.</p>
+</apex:outputText>
+<br/>
+<br/>
+Thank you
+</body>
+</html>
+</messaging:htmlEmailBody>
+</messaging:emailTemplate>

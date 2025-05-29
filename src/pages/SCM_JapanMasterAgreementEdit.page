@@ -1,0 +1,102 @@
+<apex:page standardController="Agreement__c" id="pg" extensions="SCM_MasterAgreementEditController" lightningStylesheets="true">
+    <apex:slds />
+    <script>
+        $( document ).ready(function() {
+            if($("[id$='AgreementName']")[0].value == '{!Agreement__c.Id}'.substring(0,'{!Agreement__c.Id}'.length -3))
+                $("[id$='AgreementName']")[0].value = '';
+        }); 
+
+        function cancelAgg()
+        {
+            if (getUrlVars()["cancelURL"] != null && getUrlVars()["cancelURL"].indexOf("cancelactioninterceptor") != -1)
+            {
+                var r = confirm("You want to delete the agreement!");
+                if (r == true) {
+                    cancleAgg_AF();
+                    return false;
+                } else {
+                    YUIHideLoading();
+                    return false;
+                }
+            } else
+            {
+                cancleAgg_AF();
+                return false;
+            }
+            
+        }
+        
+        function getUrlVars() {
+            var vars = [], hash;
+            var hashes = window.location.href.slice(
+                    window.location.href.indexOf('?') + 1).split('&');
+            for (var i = 0; i < hashes.length; i++) {
+                hash = hashes[i].split('=');
+                vars.push(hash[0]);
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+        }
+        
+        function getError() {
+            console.log($("[id$='messages']")[0].childElementCount);
+            if($("[id$='messages']")[0].childElementCount == 0) {
+                window.parent.location='/{!Agreement__c.Id}';
+            }
+        }
+    </script>
+    <c:JQueryBlockUI />
+    
+    <apex:form id="frm">
+         <apex:actionFunction name="cancleAgg_AF" immediate="true" action="{!cancelAgreement}" rerender="messages, frm" oncomplete="YUIHideLoading();"/>
+        <apex:sectionHeader title="Agreement Edit" subtitle="{!Agreement__c.Name}" id="section"/>
+         <apex:pageBlock mode="edit" title="Agreement Edit" id="editBlock">
+              <apex:pageBlockButtons id="ButtonsBlock">
+                  <apex:commandButton action="{!saveAgreement}" value="Save" id="saveButton" rerender="messages, frm" onclick="YUIShowLoading();" oncomplete="YUIHideLoading();getError();"/>
+                  <apex:commandButton value="Cancel" onclick="YUIShowLoading(); return cancelAgg();"/>
+              </apex:pageBlockButtons>     
+              <apex:outputPanel >
+                  <div style="margin-bottom:10px; margin-top:10px;">
+                      <apex:pagemessages id="messages"/>  
+                  </div> 
+              </apex:outputPanel> 
+              <apex:pageBlockSection title="Information" id="InformationBlock">
+                  <apex:inputField value="{!Agreement__c.Agreement_Number__c}" rendered="{!$ObjectType.Agreement__c.fields.Agreement_Number__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Quality_Validation_Status__c}" rendered="{!$ObjectType.Agreement__c.fields.Quality_Validation_Status__c.Accessible}"/>
+                  <apex:inputField id="AgreementName" value="{!Agreement__c.Name}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Name.Accessible}"/>
+                  <apex:outputField value="{!Agreement__c.RecordTypeId}" rendered="{!$ObjectType.Agreement__c.fields.RecordTypeId.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Account__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Account__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Contract_Type__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Contract_Type__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.APTPS_Existing_Active_Agreement_Id__c}" rendered="{!$ObjectType.Agreement__c.fields.APTPS_Existing_Active_Agreement_Id__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Agreement_Category__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Agreement_Category__c.Accessible}"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:inputField value="{!Agreement__c.Active__c}"  rendered="{!$ObjectType.Agreement__c.fields.Active__c.Accessible}"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:inputField value="{!Agreement__c.Cancel_Reason__c}" rendered="{!$ObjectType.Agreement__c.fields.Cancel_Reason__c.Accessible}"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:inputField value="{!Agreement__c.Requestor__c}" rendered="{!$ObjectType.Agreement__c.fields.Requestor__c.Accessible}"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:outputField value="{!Agreement__c.OwnerId}"  rendered="{!$ObjectType.Agreement__c.fields.OwnerId.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Special_Terms__c}"  rendered="{!$ObjectType.Agreement__c.fields.Special_Terms__c.Accessible}" Style="width:300px;"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:inputField value="{!Agreement__c.Description__c}"  rendered="{!$ObjectType.Agreement__c.fields.Description__c.Accessible}" Style="width:300px;"/>
+              </apex:pageBlockSection>
+              <apex:pageBlockSection title="Term & Renewals" id="Term_Renewals">
+                  <apex:inputField value="{!Agreement__c.Contract_Start_Date__c}" required="true"  rendered="{!$ObjectType.Agreement__c.fields.Contract_Start_Date__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Agreement_Term__c}" required="true"  rendered="{!$ObjectType.Agreement__c.fields.Agreement_Term__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Contract_End_Date__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Contract_End_Date__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Termination_Date__c}" rendered="{!$ObjectType.Agreement__c.fields.Termination_Date__c.Accessible}"/>
+                  <apex:outputLabel ></apex:outputLabel>
+                  <apex:inputField value="{!Agreement__c.Renewal_Notice_Days__c}" rendered="{!$ObjectType.Agreement__c.fields.Renewal_Notice_Days__c.Accessible}"/>
+              </apex:pageBlockSection>
+              <apex:pageBlockSection title="Miscellaneous" id="Miscellaneous">
+                  <apex:inputField value="{!Agreement__c.Company_Signed_By_Unlisted__c}" rendered="{!$ObjectType.Agreement__c.fields.Company_Signed_By_Unlisted__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Other_Party_Signed_By_Unlisted__c}" rendered="{!$ObjectType.Agreement__c.fields.Other_Party_Signed_By_Unlisted__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Company_Signed_Date__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Company_Signed_Date__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Other_Party_Signed_Date__c}" required="true" rendered="{!$ObjectType.Agreement__c.fields.Other_Party_Signed_Date__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Company_Signed_Title__c}" rendered="{!$ObjectType.Agreement__c.fields.Company_Signed_Title__c.Accessible}"/>
+                  <apex:inputField value="{!Agreement__c.Other_Party_Signed_Title__c}" rendered="{!$ObjectType.Agreement__c.fields.Other_Party_Signed_Title__c.Accessible}"/>
+              </apex:pageBlockSection>
+          </apex:pageBlock>
+    </apex:form>
+</apex:page>

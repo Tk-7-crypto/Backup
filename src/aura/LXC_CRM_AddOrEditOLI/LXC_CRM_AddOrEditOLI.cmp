@@ -1,0 +1,269 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="flexipage:availableForAllPageTypes,force:hasRecordId">
+    <aura:attribute name="operationType" type="String" default="create"/>
+    <aura:attribute name="fieldsToShow" type="String" default=""/>
+    <aura:attribute name="fieldsToDisable" type="String" default=""/>
+    <aura:attribute name="fieldsToShowWrapper" type="Object[]" />
+    <aura:attribute name="selectedList" type="List"/>
+    <aura:attribute name="oliWrapperList" type="List"/>
+    <aura:attribute name="title" type="String" default="Add Products"/>
+    <aura:attribute name="objectName" type="String" default="OpportunityLineItem"/>
+    <aura:attribute name="isFadeIn" type="Boolean"/>
+    <aura:attribute name="errors" type="List" />
+    <aura:attribute name="totalsum" type="Decimal" default="0.0"/>
+    <aura:attribute name="oppRecord" type="Opportunity"/>
+    <aura:attribute name="resolveLineItem" type="OpportunityLineItem"/>
+    <aura:attribute name="actionType" type="String"/>
+    <aura:attribute name="resolveScreen" type="String"/>
+    <aura:attribute name="territory" type="String"/>
+    <aura:attribute name="defaultUserCountry" type="String"/>
+    <aura:attribute name="decimalPlace" type="Decimal"/>
+    <aura:attribute name="decimalPlaceStep" type="Decimal"/>
+    <aura:attribute name="minLicenses" type="Integer" default="0"/>
+    <aura:attribute name="maxLicenses" type="Integer" default="0"/>
+    <aura:attribute name="recordTypeIdStr" type="String" default=""/>
+    <aura:attribute name="projectManagerFilterCriteria" type="String" default="pse__Is_Resource__c = true and pse__Is_Resource_Active__c = true AND (pse__Salesforce_User__r.PeopleSoft_Level__c >=130 OR pse__External_Resource__c = true)"/>
+    <aura:attribute name="createFromLDS" type="Boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.onInit}"/>
+    <aura:handler event="c:LXE_CRM_AddOrEditProductEvent" action="{!c.showModel}"/>
+    <aura:handler event="c:LXE_CRM_ResolveProductEvent" action="{!c.getResolveLineItem}"/>
+    <aura:handler event="c:LXE_CRM_SetScheduleEvent" action="{!c.setSchedule}"/>
+    <aura:attribute name="selectedLookUpRecord" type="sObject" default="{}"/>
+    <!--addProduct model --> 
+    <div id="addProduct-model" aura:id="addProduct-model">
+        <section aura:id="addProduct" role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-modal_large">
+            <ui:scrollerWrapper class="slds-scrollable_y scroll_y_only">
+            <div class="slds-modal__container">
+                <c:LXC_CRM_Spinner />
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon class="slds-modal__close slds-button_icon-inverse" iconName="utility:close" variant="bare" alternativeText="Close" iconClass="dark" onclick="{!c.onCancel}"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                            <div class="slds-media__figure">
+                                <span class="slds-icon_container slds-icon-standard-product" title="description of icon when needed">
+                                </span>
+                            </div>
+                            <div class="slds-media__body">
+                                <h2><span class="slds-page-header__title">
+                                    {!v.title}</span>
+                                </h2>
+                            </div>
+                        </header>
+                    </h2>
+                </header>
+                <div class="slds-modal__content slds-scrollable slds-p-around_medium" aura:id = "modalDiv" style="max-height: 300px;" id="modal-content-id-1">
+                    <div class="slds-card__body slds-card__body_inner" aura:id="innerBody">
+                        <aura:if isTrue="{!v.errors.length > 0}">
+                            <button class="slds-button errorClose" title="Close" onclick="{!c.hideErrors}">
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+                            <div class="slds-box slds-theme_error">
+                                <ul>
+                                    <aura:iteration items="{!v.errors}" var="error">
+                                        <li>{!error}</li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </aura:if>
+                        <div>
+                            <table class="slds-table slds-table_bordered slds-table_resizable-cols slds-table--header-fixed  slds-max-medium-table_stacked" role="grid">
+                                <thead  class = "slds-max-small-hide">
+                                    <tr class="slds-line-height_reset">
+                                        <th scope="col" class="slds-text-align_right" style="width: 3.25rem;">
+                                            <div class="slds-th__action slds-th__action_form">
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="slds-text-align_right" style="width: 3.25rem;">
+                                            <div class="slds-th__action slds-th__action_form">
+                                            </div>
+                                        </th>
+                                        <aura:if isTrue="{!v.objectName == 'OpportunityLineItem'}">
+                                            <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link_reset" tabindex="0">
+                                                    <span class="slds-assistive-text">Sort</span>
+                                                    <span class="slds-truncate" title="Product Name">Product Name</span>
+                                                    <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                                </a>
+                                            </th>
+                                        </aura:if>
+                                        <aura:iteration items="{!v.fieldsToShowWrapper}" var="headerItem">
+                                            <th class="slds-is-sortable slds-is-resizable slds-text-title_caps" scope="col">
+                                                <a href="javascript:void(0);" class="slds-th__action slds-text-link_reset" tabindex="0">
+                                                    <span class="slds-assistive-text">Sort</span>
+                                                    <aura:if isTrue="{! and(headerItem.fieldLabel != 'Line Item ID', headerItem.fieldLabel != 'Opportunity Product Name')}">
+                                                        <aura:if isTrue="{! and(and(headerItem.fieldLabel == 'Sales Price', v.objectName == 'OpportunityLineItem'), v.operationType == 'edit')}">
+                                                            <span class="slds-truncate" title="{!headerItem.fieldLabel}"><span class="slds-required requiredHeader">*</span>Sales Price ({!v.oliWrapperList[0].oliRecord.CurrencyIsoCode})</span>
+                                                            <aura:set attribute="else">
+                                                                <aura:if isTrue="{! and(headerItem.fieldLabel == 'Sales Price' || headerItem.fieldLabel == 'Revenue Type' || headerItem.fieldLabel == 'Sale Type', v.objectName == 'OpportunityLineItem')}">
+                                                                    <span class="slds-truncate" title="{!headerItem.fieldLabel}"><span class="slds-required requiredHeader">*</span>{!headerItem.fieldLabel}</span>
+                                                                    <aura:set attribute="else">
+                                                                        <aura:if isTrue="{! and(headerItem.fieldLabel == 'Product Start Date', v.objectName == 'OpportunityLineItem')}">
+                                                                            <span class="slds-truncate" title="For Information products this refers to the data period start. For consulting/services delivered by a PSA project this refers to the project start date.">
+                                                                                {!headerItem.fieldLabel}
+                                                                            </span>
+                                                                            <aura:set attribute="else">
+                                                                                <aura:if isTrue="{! and(headerItem.fieldLabel == 'Product End Date', v.objectName == 'OpportunityLineItem')}">
+                                                                                    <span class="slds-truncate" title="For Information products this refers to the data period end. For consulting/services delivered by a PSA project this refers to the project end date.">
+                                                                                        {!headerItem.fieldLabel}
+                                                                                    </span>
+                                                                                    <aura:set attribute="else">
+                                                                                        <aura:if isTrue="{! and(headerItem.fieldLabel == 'Delivery Country', v.objectName == 'OpportunityLineItem')}">
+                                                                                            <span class="slds-truncate" title="{!headerItem.fieldLabel}">
+                                                                                                <span class="slds-required requiredHeader">*</span>
+                                                                                                Delivery Country
+                                                                                            </span>
+                                                                                            <aura:set attribute="else">
+                                                                                                <span class="slds-truncate" title="{!headerItem.fieldLabel}">{!headerItem.fieldLabel}</span>
+                                                                                            </aura:set>
+                                                                                        </aura:if>
+                                                                                    </aura:set>
+                                                                                </aura:if>
+                                                                            </aura:set>
+                                                                        </aura:if>
+                                                                    </aura:set>
+                                                                </aura:if>
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </aura:if>
+                                                    <span class="slds-assistive-text" aria-live="assertive" aria-atomic="true"></span>
+                                                </a>
+                                            </th>
+                                        </aura:iteration>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <aura:iteration indexVar="j" items="{!v.oliWrapperList}" var="selectedItem">
+                                        <tr class="slds-hint-parent">
+                                            <td role="gridcell" class="slds-text-align_right" style="width: 3.25rem;">
+                                                <aura:if isTrue="{! and(v.operationType == 'clone', j > 0)}">
+                                                    <lightning:buttonIcon iconName="utility:dash" name="{!j}" alternativeText="Remove" onclick="{!c.removeRecord}" /> 
+                                                </aura:if>
+                                            </td>
+                                            <aura:if isTrue="{!!$Browser.isPhone}">
+                                            <td role="gridcell" class="slds-text-align_right" style="width: 3.25rem;">
+                                                <span>{!j+1}</span>
+                                            </td>
+                                            </aura:if>
+                                            <aura:if isTrue="{!$Browser.isPhone}">
+                                                <td role="gridcell" class="slds-text-body_small slds-p-bottom_none slds-text-color_weak slds-p-top_none">
+                                                    <span>Product Name :</span>
+                                                </td>
+                                            </aura:if>
+                                            <td role="gridcell" class="slds-text-align_left slds-truncate setMaxWith" aura:id = "oliWrapperName">
+                                                <span title="{!selectedItem.oliRecord.Product2.Name}">{!selectedItem.oliRecord.Product2.Name}</span>
+                                            </td>
+                                            <aura:iteration indexVar="i" items="{!v.fieldsToShowWrapper}" var="objectWrapper">
+                                                <aura:if isTrue="{!$Browser.isPhone}">
+                                                    <td role="gridcell" class="slds-text-body_small slds-p-bottom_none slds-p-top_small slds-text-color_weak" >
+                                                        <span>{!objectWrapper.fieldLabel} :</span>
+                                                    </td>
+                                                </aura:if>
+                                                <td aura:id = "oliWrapperValue">
+                                                    
+                                                    <aura:if isTrue="{!and(objectWrapper.fieldDataType == 'PICKLIST',objectWrapper.fieldApiName == 'therapy_area__c')}">
+                                                        <lightning:select name="Select" aura:id="picklist" label="{!objectWrapper.fieldApiName}" variant="label-hidden">
+                                                            <aura:iteration items="{!selectedItem.therapyAreaOptions}" var="options">
+                                                                <option text="{!options}" value="{!options}"/>
+                                                            </aura:iteration>
+                                                        </lightning:select>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!and(objectWrapper.fieldDataType == 'PICKLIST', objectWrapper.fieldApiName != 'therapy_area__c')}">
+                                                        <lightning:select name="Select" aura:id="picklist" label="{!objectWrapper.fieldApiName}" variant="label-hidden">
+                                                            <aura:iteration items="{!objectWrapper.fieldValues}" var="options">
+                                                                <option text="{!options}" value="{!options}"/>
+                                                            </aura:iteration>
+                                                        </lightning:select>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{! and(objectWrapper.fieldDataType == 'STRING', objectWrapper.fieldApiName != 'name')}">
+                                                        <lightning:input type="text" aura:id="string" name="Text" label="{!objectWrapper.fieldApiName}" variant="label-hidden" maxlength="255"/>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!and(objectWrapper.fieldDataType == 'CURRENCY')}">
+                                                        <aura:if isTrue="{!or (v.operationType == 'create', v.operationType == 'clone')}">
+                                                            <aura:if isTrue="{!selectedItem.oliRecord.Product2.CanUseRevenueSchedule}">
+                                                                <lightning:input type="number" aura:id="currency" name="USD" step="{!v.decimalPlaceStep}" label="{!objectWrapper.fieldApiName}" variant="label-hidden" messageWhenBadInput="You must enter positive value" onblur="{!c.checkValidity}" disabled="true" value="0"/>
+                                                                <a href="javascript:void(0);" id="{!j}" onclick="{!c.openRevenueSchedule}">Schedules</a>
+                                                                <aura:set attribute="else">
+                                                                    <lightning:input type="number" aura:id="currency" name="USD" step="{!v.decimalPlaceStep}" label="{!objectWrapper.fieldApiName}" variant="label-hidden" messageWhenBadInput="You must enter positive value" onblur="{!c.checkValidity}" value="0"/>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                            <aura:set attribute="else">
+                                                                <aura:if isTrue="{!selectedItem.oliRecord.Product2.CanUseRevenueSchedule}">
+                                                                    <lightning:input type="number" aura:id="currency" name="USD" step="{!v.decimalPlaceStep}" label="{!objectWrapper.fieldApiName}" variant="label-hidden" messageWhenBadInput="You must enter positive value" onblur="{!c.checkValidity}" disabled="true" value="0"/>
+                                                                    <aura:set attribute="else">
+                                                                        <lightning:input type="number" aura:id="currency" name="USD" step="{!v.decimalPlaceStep}" label="{!objectWrapper.fieldApiName}" variant="label-hidden" messageWhenBadInput="You must enter positive value" onblur="{!c.checkValidity}" value="0"/>
+                                                                    </aura:set>
+                                                                </aura:if>
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!objectWrapper.fieldDataType == 'DOUBLE'}">
+                                                        <lightning:input type="number" aura:id="double" name="double" min="1" label="{!objectWrapper.fieldApiName}" variant="label-hidden" messageWhenBadInput="You must enter positive value"/>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!objectWrapper.fieldDataType == 'DATE'}">
+                                                        <!--<ui:inputDate class="slds-input" aura:id="date" label="{!objectWrapper.fieldApiName}" displayDatePicker="true" labelClass="labelStyle" format="dd/MM/yyyy"/>-->
+                                                        <lightning:input type="date" aura:id="date"  dateStyle = "short" label="{!objectWrapper.fieldApiName}" labelClass="labelStyle" />
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!objectWrapper.fieldDataType == 'REFERENCE'}">
+                                                        <div style="opacity: 100%;">
+                                                            <aura:if isTrue="{!$Browser.isPhone}">
+                                                                <c:LXC_CRM_LookupMobile label="{!objectWrapper.fieldApiName}" objectAPIName="Contact" filter="{!(objectWrapper.fieldApiName =='product_saleslead__c'? v.recordTypeIdStr : v.projectManagerFilterCriteria)}" IconName="standard:contact" selectedRecord="{!v.selectedLookUpRecord}" aura:id="lookup"/>
+                                                                <br/><br/><br/><br/><br/>
+                                                                <aura:set attribute="else">
+                                                                    <c:LXC_CRM_lookup label="{!objectWrapper.fieldApiName}" object="Contact" filter="{!(objectWrapper.fieldApiName =='product_saleslead__c'? v.recordTypeIdStr : v.projectManagerFilterCriteria)}" searchField="Name" placeholder="Select Contact" iconName="standard:contact" subtitleField="Name" order="Name" limit="5" loadingMessage="Loading..." errorMessage="Invalid input" aura:id="lookup"/>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                        </div>
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!objectWrapper.fieldDataType == 'ID'}"></aura:if>
+                                                </td>
+                                            </aura:iteration>
+                                        </tr>
+                                    </aura:iteration>
+                                    <aura:if isTrue="{! v.operationType == 'clone'}">
+                                        <tr class="slds-hint-parent">
+                                            <td role="gridcell" >
+                                                <lightning:buttonIcon iconName="utility:add" alternativeText="Add" onclick="{!c.cloneRecord}" /> 
+                                            </td>
+                                        </tr>
+                                    </aura:if>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <div class="slds-clearfix slds-max-x-small-hide">
+                        <aura:if isTrue="{!or(v.operationType == 'create', v.operationType == 'clone')}">
+                            <div class="slds-float_left slds-show_block">
+                                Total Sum : {!v.oppRecord.CurrencyIsoCode + ' ' + v.totalsum}
+                            </div>
+                        </aura:if>
+                        <button id="addProduct-save" class="slds-button slds-button_brand" onclick="{!c.onSave}">Save</button>
+                        <button id="addProduct-cancel" class="slds-button slds-button_neutral" onclick="{!c.onCancel}">Cancel</button>
+                    </div>
+                    
+                    <div class="slds-x-small-show-only">
+                        <table>
+                            <tr>
+                                <aura:if isTrue="{!or(v.operationType == 'create', v.operationType == 'clone')}">
+                                    <div class="slds-align_absolute-center slds-show_block">
+                                        Total Sum : {!v.oppRecord.CurrencyIsoCode + ' ' + v.totalsum}
+                                    </div>
+                                </aura:if>
+                            </tr>
+                            <tr>
+                                <div class ="slds-p-top_small slds-align_absolute-center">
+                                    <button id="addProduct-save" class="slds-button slds-button_brand" onclick="{!c.onSave}">Save</button>
+                                	<button id="addProduct-cancel" class="slds-button slds-button_neutral" onclick="{!c.onCancel}">Cancel</button>
+                                </div>
+                            </tr>
+                        </table>
+                        
+                    </div>
+                    
+                </footer>
+            </div>
+            </ui:scrollerWrapper>
+        </section>
+        <div class="slds-backdrop"  aura:id="backdrop-addProduct"></div>
+    </div>
+</aura:component>

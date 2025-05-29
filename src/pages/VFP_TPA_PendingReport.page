@@ -1,0 +1,624 @@
+<apex:page controller="CNT_TPA_PendingReport" id="pageId" tabStyle="TPA_Request__c" title="Pending TPA Report" lightningStylesheets="true">
+    <apex:slds />
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/jquery.jqGrid.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JqGrid, 'JqGrid/js/grid.locale-en.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.JqGrid, 'JqGrid/css/ui.jqgrid.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.office.css')}" />
+
+    
+    <!-- *** JQuery UI Library reference *** -->
+    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+    <!-- *** JQuery UI Library reference *** -->
+    
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" />
+    <!-- *** JQuery UI Stylesheet reference *** -->
+    <!-- *** Multi Select Control CSS reference *** -->
+    <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+    <!-- *** Multi Select Control CSS reference *** -->
+
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+    <!-- *** Multi Select Control Javascript Library reference *** -->
+    
+    <script type="text/javascript">
+        $(document).ready(function(){
+        		$(".datepicker").datepicker({showOn: "button", maxDate: '0',yearRange: "2013:c", buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAALdQTFRFMzMyAAAAMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMy////j2KaIAAAADt0Uk5TAAAEgzuRhtCH6aaF09KLFnt66xoGAwLsBw8Mfnj3GDiBNGyCNW19d/YOHw118hlDmj8UAfAuEBuv9eqZZ685AAAAAWJLR0Q8p2phzwAAAAlwSFlzAAAASAAAAEgARslrPgAAALxJREFUGNM9jIcOgkAQBUcseLZDVzwrKtgL9nr//18qqC+ZvGSy+8Ahm+WHA7l8wXWLxZRCPocqlSvVWq36oVIuKZTGq0P9g4dWNISm33J832n5TaSB0bQ7bbrdpLTBCD3bZzCgb3vIWwQMR2PCkPFoSJCKaMJ0yiRKhTCzcxYL5naWvGiWqzUirFfL76hnN2y3bKyXXMTs9geiiMN+R2xQR06Zb04cFefLNb4FWkQHt/h6OXN/PM0/z8f9BT8gFJGascv+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE0LTA4LTA1VDA1OjMwOjQ2LTA0OjAwb0yWxAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNC0wOC0wNVQwNTozMDo0Ni0wNDowMB4RLngAAAAASUVORK5CYII=", buttonImageOnly: true});                    
+                $(".datepicker").datepicker( "option", "dateFormat", 'mm/dd/yy' );
+                $(".datepicker").datepicker("option","changeYear", true);
+                $(".datepicker").datepicker("option","changeMonth", true);
+                $(".datepicker").datepicker("option","buttonText","click here to open calendar");
+                var tempCategory = '{!submittingCountry}';
+                var submittingCountries = tempCategory.toString().slice(1,-1).split(',');
+
+                $('#RequestingCountry').select2({placeholder: "Select Country", width: '50%', closeOnSelect:false});
+                
+                
+
+                $.each(submittingCountries,function(k,v){
+                    if(k != null )
+                        $('#RequestingCountry').append($("<option></option>").attr("value",v.trim()).text(v.trim()));
+                    
+                });
+            });
+    
+    	function popupAlert(msg, truePart) {
+                        popup(msg, {'animate':true}, 
+                           function(r) {
+                               if(r && truePart != null)
+                                   truePart();
+                           });
+                    }
+        function reloadGrid(data){
+        	if( data.length == 0 )
+        	{
+        		showPopup('There are no offering available for selected Country.',function (){});
+            	hideLoading();
+            	return;
+        	}
+        	var grid = $('#jqGrid');
+    		grid.jqGrid("clearGridData", true); 
+        	grid.jqGrid('setGridParam',{data:data}).trigger("reloadGrid", [{current: true}] ); 
+        	hideLoading();
+    	}
+        function showGrid(jsonData) {
+            
+            if( jsonData.length == 0 )
+            {
+                showPopup('There are no request for the matching criteria.',function(){});
+                return;
+            }
+            $("#jqGrid").jqGrid(
+            {
+                data: jsonData,
+                datatype: 'local',
+                colModel: [
+                    {
+                        label: 'TPA #',
+                        name: 'tpaName',
+                        key: true,
+                        autowidth: true,
+                        summaryTpl: "Total # of TPA's: {0}",
+                        summaryType: "count"
+                    },
+                    { label: 'TPA Status', name: 'tStatus', autowidth: true },
+                    { label: 'Client Name', name: 'clientName', autowidth: true },
+                    { label: 'Use Category(ies)', name: 'purposesCategory', autowidth: true },
+                    { label: 'Use(s) selected', name: 'purposesName', autowidth: true },
+                    { label: 'Offering Category(ies)', name: 'offeringCategory', key: true, autowidth: true },
+                    { label: 'Vendor Name', name: 'vendorName', key: true, autowidth: true },
+                    { label: 'Vendor Country', name: 'vendorCountry', key: true, autowidth: true },
+                    { label: 'Prescriber Level Data', name: 'prescriberData', key: true, autowidth: true,
+                        formatter:'select', stype:'select', edittype:'select', editoptions: { value: "false:N;true:Y" }, searchoptions: { value: 'true:Y;false:N' }
+                    },
+                    {
+                        label: 'Number of Days',
+                        name: 'numberOfDays',
+                        key: true,
+                        autowidth: true,
+                        summaryTpl: "Total Number of Days: {0}",
+                        summaryType: "sum"
+                    },
+                    { label: 'Days Range', name: 'daysRange', key: true, width: 0 },
+                    { label: 'Required Manual Approval', name: 'manualApproval', key: true, autowidth: true,
+                        formatter:'select', stype:'select', edittype:'select', editoptions: { value: "false:N;true:Y"}, searchoptions: { value: 'true:Y;false:N' }
+                    },
+                    { label: 'Reason for Manual Trigger', name: 'manualTriggerReason', autowidth: true },
+                    { label: 'Last Modified By', name: 'lastModified', key: true, width: 0 }
+                ],
+                loadonce: false,
+                viewrecords: true,
+                height: 420,
+                autowidth: true,
+                rowNum: 20,
+                gridView: true,
+                rowList : [20,30,50],
+                sortname: 'tpaName',
+                pager: "#jqGridPager",
+                footerrow: true,
+                userDataOnFooter: true,
+                grouping: false,
+                groupingView: {
+                    groupField: ["vendorName"],
+                    groupColumnShow: [true],
+                    groupText: ["Vendor Name: <b>{0}</b>"],
+                    groupOrder: ["asc"],
+                    groupSummary: [true],
+                    groupCollapse: false
+                }
+            });
+            $("#jqGrid").jqGrid(
+                "navGrid","#jqGridPager",{add:false, edit:false, del:false}
+            ).navButtonAdd('#jqGridPager', { caption: "Export to Excel", buttonicon: "ui-icon-disk",
+                onClickButton: function () {
+                    exportGrid('jqGrid');
+                },
+                position: "last"
+            });
+            
+            var radioButtonsSection = document.getElementById('pageId:formId:tableBlock:tablePg');
+            if( radioButtonsSection != null )
+            {
+                var inputRadio = radioButtonsSection.getElementsByTagName("input");
+                
+                for( var i = 0; i < inputRadio.length; i++ )
+                {            
+                    if( inputRadio[i].type == 'radio' )
+                    {
+                        inputRadio[i].checked = false;
+                    }
+                }
+            }
+            $(".ui-icon-seek-first").click(
+                function()
+                {
+                    setTimeout(summaryTotal, 1000);
+                }
+            );
+            
+            $(".ui-icon-seek-prev").click(
+                function()
+                {
+                    setTimeout(summaryTotal, 1000);
+                }
+            );
+            
+            $(".ui-icon-seek-next").click(
+                function()
+                {
+                    setTimeout(summaryTotal, 1000);
+                }
+            );
+            
+            $(".ui-icon-seek-end").click(
+                function()
+                {
+                    setTimeout(summaryTotal, 1000);
+                }
+            );
+            
+            $(".ui-pg-selbox").change(
+                function()
+                {
+                    setTimeout(summaryTotal, 1000);
+                }
+            );
+            
+            $(".ui-pg-input").keypress(
+                function(e)
+                {
+                    if( e.which == 13 )
+                    {
+                        setTimeout(summaryTotal, 1000);
+                    }
+                }
+            );
+        }
+        
+        function vendorChange()
+        {
+            var vendor = document.getElementById('pageId:formId:blockId:pbSection:vendorText').value;
+            var client = document.getElementById('pageId:formId:blockId:pbSection:clientText');
+            if( vendor.length > 0 && vendor.length < 5 )
+            {
+                client.disabled = true;
+                showPopup('Please enter at least 5 characters for searching',function(){});
+            }
+        }
+        
+        function clientChange()
+        {
+            var client = document.getElementById('pageId:formId:blockId:pbSection:clientText').value;
+            var vendor = document.getElementById('pageId:formId:blockId:pbSection:vendorText');
+            if( client.length > 0 && client.length < 5 )
+            {
+                vendor.disabled = true;
+                showPopup('Please enter at least 5 characters for searching',function(){});
+            }
+        }
+        
+        function vendorDisable()
+        {
+            var client = document.getElementById('pageId:formId:blockId:pbSection:clientText').value;
+            var vendor = document.getElementById('pageId:formId:blockId:pbSection:vendorText');
+            if( client == '' )
+            {
+                vendor.disabled = false;
+            }
+            else
+            {
+                vendor.disabled = true;
+            }
+        }
+        
+        function clientDisable() 
+        {
+            var vendor = document.getElementById('pageId:formId:blockId:pbSection:vendorText').value;
+            var client = document.getElementById('pageId:formId:blockId:pbSection:clientText');
+            if( vendor == '' )
+            {
+                client.disabled = false;
+            }
+            else
+            {
+                client.disabled = true;
+            }
+        }
+        
+        function removeGrid()
+        {
+            removeGrid();
+            return;
+        }
+        var showGridFirstTime = true;
+        function validate()
+        {
+            
+            var selectedCountry = $('#RequestingCountry').select2('data');
+            var submittingCountry = '';
+                      
+			if(selectedCountry != null && selectedCountry.length > 0){
+            	$.each(selectedCountry,function(value,index) {
+                	submittingCountry+= ((index.text) + ';');
+                });
+            }
+            var vendorName = document.getElementById('pageId:formId:blockId:pbSection:vendorText').value;
+            var clientName = document.getElementById('pageId:formId:blockId:pbSection:clientText').value;
+            if($('#fromDatePicker').datepicker('getDate') == null) {
+                popupAlert('Please select the From Date');
+                return;
+            }
+            else if($('#toDatePicker').datepicker('getDate') == null) {
+                popupAlert('Please select the To Date');
+                return;
+            }
+            else if($('#fromDatePicker').datepicker('getDate') > $('#toDatePicker').datepicker('getDate')) {
+                popupAlert('From Date cannot be greater than To Date');
+                return;
+            }
+            else if( submittingCountry == null || submittingCountry == '' )
+            {
+                showPopup('Please select Submitted Country',function(){});
+                removeGrid();
+                return;
+            }
+            else if( vendorName.length > 0 && vendorName.length < 5 )
+            {
+                showPopup('Please enter at least 5 characters for searching Vendor Name',function(){});
+                removeGrid();
+                return;
+            }
+            else if( clientName.length > 0 && clientName.length < 5 )
+            {
+                showPopup('Please enter at least 5 characters for searching Client Name',function(){});
+                removeGrid();
+                return;
+            }
+            else
+            {
+                //findRequests();
+                document.getElementById("tableSection").style.display="none";
+                var filConditions = getFilterConditions();
+                console.log(JSON.stringify(filConditions));
+                showLoading();
+                fetchRequests(null,JSON.stringify(filConditions));
+            }
+        }
+    
+    	function getFilterConditions(){
+            var filConditions = {};
+        	filConditions.vendorName = document.getElementById('pageId:formId:blockId:pbSection:vendorText').value;
+            filConditions.clientName = document.getElementById('pageId:formId:blockId:pbSection:clientText').value;
+            var selectedCountry = $('#RequestingCountry').select2('data');
+            var finalRequestingCountry = '';
+                      
+			if(selectedCountry != null && selectedCountry.length > 0){
+            	$.each(selectedCountry,function(value,index) {
+                	finalRequestingCountry+= ((index.text) + ';');
+                });
+            }
+            filConditions.countries = finalRequestingCountry;
+            filConditions.status = document.getElementById('pageId:formId:blockId:pbSection:prevStatus:fromSt').value;
+            filConditions.fromDate = document.getElementById('fromDatePicker').value;
+            filConditions.toDate = document.getElementById('toDatePicker').value;
+            return filConditions;    
+        }
+    
+    	function fetchRequests(lastRecId,filterConditions){
+            var remoteAction = '{!$RemoteAction.CNT_TPA_PendingReport.fetchRequests}';
+            var resultList = [];
+            Visualforce.remoting.Manager.invokeAction(
+            	remoteAction,
+                lastRecId,
+                filterConditions,
+                function(result, event){
+                    if(event.type == 'exception')
+                	{
+                        hideLoading();
+                        showPopup('<b>Report Timed Out</b> - Please adjust Filters',function (){});
+                    	return false;                                    
+                	}
+                	else
+                	{	if(result != null)
+                    		resultList = resultList.concat(result);
+                    	if(result != null && result.length == 1000)
+                    	{
+                    		remoteCallCounter++;
+							fetchData(result[result.length - 1].Id,filterConditions);
+                        	return false;
+                  		}
+                     	else if(result == null || result.length == 0){
+                            hideLoading();
+                        	showPopup('No Data To Display',function (){});
+                        }
+                 		else{
+                            hideLoading();
+                            document.getElementById("tableSection").style.display="block";
+                            if(showGridFirstTime){
+                            	showGrid(resultList);
+                                showGridFirstTime = false;
+                            }
+							else{
+                            	reloadGrid(resultList);
+                            }
+                    	}
+               		}
+                },
+                {escape: true}
+            );
+        }
+    
+    	function showPopup(msg, truePart){
+        	popup(msg, {'animate':true}, function(r)
+            {
+            	if(r)
+                	truePart();
+            });
+        }
+        
+        function groupByClick()
+        {
+            var radioButtonsSection = document.getElementById('pageId:formId:tableBlock:tablePg');
+            var inputRadio = radioButtonsSection.getElementsByTagName("input");
+            
+            for( var i = 0; i < inputRadio.length; i++ )
+            {            
+                if( inputRadio[i].type == 'radio' && inputRadio[i].checked )
+                {
+                    var groupByText = inputRadio[i].value;
+                    var groupVal = '';
+                    switch( groupByText ) {
+                        case 'daysRange':
+                            groupVal = "Number of Days";
+                            break;
+                        case 'tStatus':
+                            groupVal = "TPA Status";
+                            break;
+                        case 'vendorName':
+                            groupVal = "Vendor Name";
+                            break;
+                        case 'clientName':
+                            groupVal = "Client Name";
+                            break;
+                        case 'vendorCountry':
+                            groupVal = "Vendor Country";
+                            break;
+                    }
+ 
+                    // show loading message
+                    $("#jqGrid")[0].grid.beginReq();
+                    
+                    $("#jqGrid").jqGrid('groupingRemove', true);
+                    $("#jqGrid").jqGrid(
+                        'groupingGroupBy',
+                        [groupByText],
+                        {   
+                            groupText: [groupVal+": <b>{0}</b>"],
+                            groupOrder: ["asc"],
+                            groupSummary: [true],
+                            groupCollapse: false 
+                        }
+                    );
+                    
+                    // hide the show message
+                    $("#jqGrid")[0].grid.endReq();
+                    // refresh the grid
+                    $("#jqGrid").trigger('reloadGrid');
+                    break;
+                }
+            }
+            
+            summaryTotal();
+        }
+        
+        function summaryTotal()
+        {
+            var summaryRow = document.getElementsByClassName("ui-widget-content jqfoot ui-row-ltr");
+            
+            if( summaryRow != null )
+            {
+                for( var i = 0; i < summaryRow.length; i++ )
+                {
+                    var summaryColumns = summaryRow[i].getElementsByTagName("td");
+                    var totalTPA = summaryColumns[0].innerHTML;
+                    var statusDurations = summaryColumns[10].innerHTML;
+                    
+                    var totalArr = totalTPA.split(" ");
+                    totalTPA = totalTPA.substr( totalTPA.indexOf(":")+2, totalTPA.length );
+                    
+                    totalArr = statusDurations.split(" ");
+                    statusDurations = statusDurations.substr( statusDurations.indexOf(":")+2, statusDurations.length );
+                    
+                    var TAT = Math.round( statusDurations/totalTPA * 100) / 100;
+                    
+                    summaryColumns[11].innerHTML = 'Average Pending: ' + TAT;
+                }
+            }  
+            
+            $(".ui-pg-input").keypress(
+                function(e)
+                {
+                    if( e.which == 13 )
+                    {
+                        setTimeout(summaryTotal, 1000);
+                    }
+                }
+            );       
+        }
+        
+        function exportGrid(table)
+        {
+            var filConditions = getFilterConditions();
+            exportReport(JSON.stringify(filConditions));
+        }
+    </script>
+    
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+	    <c:VFC_TPA_LoadingImage />
+        <apex:form id="formId" styleclass="slds-m-around_small">
+	        
+	        <apex:actionFunction name="exportReport" action="{!saveReport}" reRender="rrr" >
+            	<apex:param name="allConditions" value=""/>
+            </apex:actionFunction>
+            <div id='rrr'></div>
+	        <apex:outputpanel >
+	            <apex:actionstatus id="status">
+	                <apex:facet name="start">
+	                    <div id="ldsSpinner" class="slds-spinner_container slds-is-fixed " >
+					        <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+					            <div class="slds-spinner__dot-a"></div>
+					            <div class="slds-spinner__dot-b"></div>
+					        </div>
+					    </div>
+	                </apex:facet>
+	            </apex:actionstatus>
+	        </apex:outputpanel>
+	        
+	        <apex:sectionHeader title="TPA Request" subtitle="Pending TPA Report"/>
+	        <apex:pageMessages id="message" />
+	        
+	        <apex:pageBlock id="blockId" title="Search Criteria" >
+	            <apex:pageBlockSection columns="2" id="pbSection" >
+                    <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="From Date:" />
+                            <apex:outputPanel id="opPanel">
+                                <div class="requiredInput">
+                                    <div class="requiredBlock"></div>
+                                    <input type="text" ng-click="popupAlert('Click on the calendar icon next to the text box and select the Date.');" placeholder="Select From Date" readonly="readonly" class="datepicker" id="fromDatePicker"/> 
+                                </div>
+                            </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="To Date:" />
+                            <apex:outputPanel id="opPanel">
+                                <div class="requiredInput">
+                                    <div class="requiredBlock"></div>
+                                    <input type="text" ng-click="popupAlert('Click on the calendar icon next to the text box and select the Date.');" placeholder="Select To Date" readonly="readonly" class="datepicker" id="toDatePicker"/> 
+                                </div>
+                            </apex:outputPanel>
+                     </apex:pageBlockSectionItem>
+	               
+	                <apex:pageBlockSectionItem id="prevStatus" >
+	                    <apex:outputText value="Status: " />
+	                    <apex:outputPanel layout="block" >
+	                        <apex:outputPanel layout="block"/>
+	                        <apex:selectList size="1" id="fromSt" >
+	                            <apex:selectOptions value="{!tpaStatus}"/>
+	                        </apex:selectList>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="Requesting Country:" />
+                            <apex:outputPanel >
+                                <div class = 'requiredInput'>
+                                    <div class="requiredBlock"></div>
+                                    <select id="RequestingCountry" multiple="multiple"></select>
+                                </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputText label="Vendor Name: " id="vendorText" onChange="vendorChange();" onKeyUp="clientDisable();" />
+	                <apex:inputText label="Client Name: " id="clientText" onChange="clientChange();" onKeyUp="vendorDisable();"/>
+	            </apex:pageBlockSection>
+	            <apex:commandButton styleclass="slds-align_absolute-center" value="Run Report" onClick="validate(); return false;" reRender="tableSection" />
+	        </apex:pageBlock>
+	        
+            <div id="tableSection" style="display:none;">
+	        <apex:outputPanel >
+	            <apex:pageBlock title="TPA Requests" id="tableBlock" >
+	                <apex:pageBlockSection title="Grouping" columns="1" id="tablePg" >
+	                    <apex:selectRadio onClick="groupByClick();" >
+	                        <apex:selectOptions value="{!groupingOptions}" />
+	                    </apex:selectRadio>
+	                </apex:pageBlockSection>
+	                <apex:pageBlockSection columns="1" >
+	                    <apex:outputPanel >
+	                        <table id="jqGrid"></table>
+	                        <div id="jqGridPager"></div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSection>
+	            </apex:pageBlock>
+	        </apex:outputPanel>
+            </div>
+	    </apex:form>
+    </body>
+    <script>
+        function setFocus()
+        {
+            document.getElementById('pageId:formId:blockId:pbSection:prevStatus:fromSt').focus();
+        }
+        
+        window.onload = setFocus();
+    </script>
+    <style>
+        .ui-jqgrid tr.jqgrow td
+        {
+            white-space: normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        
+        .ui-jqgrid .ui-jqgrid-htable th div
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+            position:relative;
+            overflow:hidden;
+        }
+        
+        .ui-jqgrid tr.jqfoot td
+        {
+            white-space:normal !important;
+            height:auto;
+            vertical-align:text-top;
+        }
+        .ui-jqgrid .ui-jqgrid-hbox {
+		    float: none;
+		    padding-right: 0 !;
+		}
+		body .list, body .list table, body .detailList, body .detailList table, body .listViewport table, body .listViewport table table, .slds-vf-scope .list, .slds-vf-scope .list table, .slds-vf-scope .detailList, .slds-vf-scope .detailList table, .slds-vf-scope .listViewport table, .slds-vf-scope .listViewport table table {
+		    min-width: auto;
+		}
+		body .list thead tr, body .detailList thead tr, body .listViewport table thead tr, .slds-vf-scope .list thead tr, .slds-vf-scope .detailList thead tr, .slds-vf-scope .listViewport table thead tr {
+		    letter-spacing: 0;
+		}
+		.fm-button {
+    		height: auto;
+    		display: initial;
+    		margin: auto;
+    	}
+    	.ui-pg-selbox{
+    		color: black !important;
+    	}
+    	.ui-jqdialog .ui-jqdialog-titlebar {
+		    padding: inherit;
+		    height: auto;
+		}
+        
+    </style>
+</apex:page>

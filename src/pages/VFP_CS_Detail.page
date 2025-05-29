@@ -1,0 +1,210 @@
+<apex:page standardController="Client_Sat_Survey__c" extensions="EXT_Qualtrics_CS_DetailExt" id="pg" cache="false">
+   <apex:includeScript value="{!URLFOR($Resource.JQueryUI, 'jqueryUI/js/jquery-1.4.2.min.js')}"/>
+   <script>
+   $(document).ready(function() {
+        $("input[value='Submit for Approval']").hide();
+        });
+</script>
+    <apex:outputPanel rendered="{!(canReadOnly && Client_Sat_Survey__c.Send_Survey__c == 'No')}">
+        <apex:pageMessage severity="INFO">
+            This survey has been declined and is pending for approval. It can not be edited.
+        </apex:pageMessage>
+        <apex:detail />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!(canReadOnly && Client_Sat_Survey__c.Send_Survey__c == 'Yes')}">
+        <apex:pageMessage severity="INFO">
+            This record has been locked and can not be edited.
+        </apex:pageMessage>
+        <apex:detail />
+    </apex:outputPanel>
+    
+    
+    <apex:outputPanel rendered="{!!canReadOnly}" id="op">
+        <apex:pageMessages />
+        <apex:form id="frm">
+            <apex:sectionHeader title="{!Client_Sat_Survey__c.name}" subtitle="{!Client_Sat_Survey__c.Opp_Engagement__c}"/>
+           
+            <apex:pageBlock id="pb">
+                <apex:pageBlockButtons >
+                    <apex:commandButton action="{!saveCustom}" value="Save" />
+                    <apex:commandButton action="{!cancel}" value="Cancel"/>
+                </apex:pageBlockButtons>
+                
+                <apex:pageBlockSection title="Client Sat Survey Detail">
+                    <apex:outputfield value="{!Client_Sat_Survey__c.name}"/>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.PIC_Country__c}"/>
+                    
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Opportunity__c}"/>            
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Survey_PIC_Full_Name__c}"/>
+                    
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Account__c}"/>
+                    <apex:outputText ></apex:outputText>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Opp_Engagement__c}"/>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Survey_EM_Name__c}"/>
+                    
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Opp_Engagement_start_date__c}"/>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Opportunity_Product_Codes__c}"/>
+                    
+                    <apex:outputfield rendered="{!(Client_Sat_Survey__c.Opportunity_Amount__c != null)}" 
+                    value="{!Client_Sat_Survey__c.Opportunity_Amount__c}"/>
+                    <apex:pageBlockSectionItem rendered="{!(Client_Sat_Survey__c.Opportunity_Amount__c == null)}">
+                        <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Opportunity_Amount__c .label}" />
+                        <apex:outputText value="{0, number, USD ###,###,###,###,##0.00}">
+                            <apex:param value="{!oppAmount}"/>
+                        </apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.Survey_Initiation_Status__c}"/>
+                                        
+                    <apex:outputfield value="{!Client_Sat_Survey__c.createdById}"/>
+                    <apex:outputfield value="{!Client_Sat_Survey__c.lastmodifiedById}"/>
+                </apex:pageBlockSection>
+                
+                <apex:pageBlockSection title="Survey Recipient Section">
+                    <apex:pageBlockSectionItem >
+                        <apex:pageMessage severity="warning" summary="At least one survey recipient is required."/>                
+                    </apex:pageBlockSectionItem>
+                    <br/>
+                    
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Recipient_1__c}" required="true"/>
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Language_for_Recipient_1__c}" />
+                    
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Recipient_2__c}"/>
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Language_for_Recipient_2__c}" />
+                    
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Recipient_3__c}"/>
+                    <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Language_for_Recipient_3__c}" />
+                    <br/>
+                </apex:pageBlockSection>
+                
+                <apex:pageBlockSection title="Survey Information" id="SI">
+                   <apex:pageBlockSectionItem >
+                       <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Send_Survey__c.label}"/>
+                       <apex:actionRegion >
+                           <apex:outputPanel id="op">
+                               <apex:inputfield value="{!Client_Sat_Survey__c.Send_Survey__c}" > 
+                                   <apex:actionSupport action="{!SetApproverDetails}" event="onchange" rerender="op,declinecs" status="sortStatus">
+                                       <apex:param name="t" value="{!NOW()}"/> <!-- IE caching workaround -->
+                                   </apex:actionSupport>
+                               </apex:inputfield>
+                               <apex:actionStatus id="sortStatus">
+                                   <apex:facet name="start"> 
+                                     <apex:outputPanel > 
+                                     Processing...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                                     </apex:outputPanel>  
+                                 </apex:facet> 
+                              </apex:actionStatus> 
+                           </apex:outputPanel>
+                       </apex:actionRegion>
+                   </apex:pageBlockSectionItem>
+                   <br/>
+                   <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Type__c}" required="true"/> 
+                   <br/>
+                   <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Send_Date__c}" required="true"/>
+                    <br/>
+                   <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Method__c}" required="true" />
+                   <apex:outputText /> 
+                   <apex:inputfield value="{!Client_Sat_Survey__c.Survey_Title__c}" />
+                    <br/>
+                   <apex:inputfield value="{!Client_Sat_Survey__c.Survey_PIC_Email__c}" />
+                    
+                </apex:pageBlockSection>
+                
+                <apex:outputPanel id="declinecs">
+                    <apex:pageBlockSection title="Survey Declined" rendered="{!Client_Sat_Survey__c.Send_Survey__c == 'No'}">
+                        <!-- <apex:outputfield value="{!Client_Sat_Survey__c.Declined_Survey_Approver_Group_lnk__c}"/> -->
+                        <!-- <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Declined_Survey_Approver_Group_lnk__c.label}"/>
+                            <apex:outputLink value="/setup/own/groupdetail.jsp?id={!grpId}&setupid=PublicGroups" target="_blank">{!grpNm}</apex:outputLink>
+                        </apex:pageBlockSectionItem>   -->
+                        <p/>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Don_t_Send_Survey_Reason__c.label}"/>
+                            <apex:actionRegion >
+                                <apex:outputPanel >
+                                    <apex:inputfield value="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c}" required="{!Client_Sat_Survey__c.Send_Survey__c == 'No'}">
+                                        <apex:actionSupport event="onchange" action="{!null}" rerender="op1,declineReason,declineReason1,delayReason,delayReason1,othrreason,othrreason1,othrreason2,othrreason3" status="sortStatus1"/>
+                                    </apex:inputfield> 
+                                    <apex:actionStatus id="sortStatus1">
+                                       <apex:facet name="start"> 
+                                         <apex:outputPanel > 
+                                         Processing...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                                         </apex:outputPanel>  
+                                     </apex:facet> 
+                                   </apex:actionStatus>                                
+                                 </apex:outputPanel>
+                             </apex:actionRegion>
+                        </apex:pageBlockSectionItem>
+                        <p/>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel id="declineReason" layout="block">
+                            <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Decline_Survey_Reason__c.label}" rendered="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Declined'}"/>
+                            </apex:outputPanel>
+                            <apex:actionRegion >
+                                <apex:outputPanel id="declineReason1" layout="block">
+                                    <apex:inputfield value="{!Client_Sat_Survey__c.Decline_Survey_Reason__c}" required="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Declined'}" rendered="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Declined'}">
+                                        <apex:actionSupport event="onchange" action="{!null}" rerender="othrreason,othrreason1,othrreason2,othrreason3" status="sortStatus1"/>
+                                    </apex:inputfield> 
+                                    <apex:actionStatus id="sortStatus1">
+                                       <apex:facet name="start"> 
+                                         <apex:outputPanel > 
+                                         Processing...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                                         </apex:outputPanel>  
+                                     </apex:facet> 
+                                   </apex:actionStatus>                                
+                                 </apex:outputPanel>
+                             </apex:actionRegion>
+                        </apex:pageBlockSectionItem>
+                        <p/>
+                        
+                        <apex:pageBlockSectionItem >   
+                            <apex:outputPanel id="othrreason" layout="block">
+                                <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Decline_Survey_Reason_Other__c.label}" rendered="{!if(Client_Sat_Survey__c.Decline_Survey_Reason__c == 'Other (please specify)'&& Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Declined',true,false)}"/>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="othrreason1" layout="block" >
+                                <!-- Added by Ritesh Gupta -- ER - 358 -- 15 Oct, 2013 -- Start -->
+                                <apex:inputfield value="{!Client_Sat_Survey__c.Decline_Survey_Reason_Other__c}" required="{!if(Client_Sat_Survey__c.Decline_Survey_Reason__c == 'Other (please specify)' && Client_Sat_Survey__c.Send_Survey__c == 'No',true,false)}" rendered="{!if(Client_Sat_Survey__c.Decline_Survey_Reason__c == 'Other (please specify)'&& Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Declined',true,false)}" />                         
+                                <!-- Added by Ritesh Gupta -- ER - 358 -- 15 Oct, 2013 -- End -->
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem> 
+                        <p/>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel id="delayReason" layout="block">
+                            <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Delay_Survey_Reason__c.label}" rendered="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Delayed'}"/>
+                            </apex:outputPanel>
+                            <apex:actionRegion >
+                                <apex:outputPanel id="delayReason1" layout="block">
+                                    <apex:inputfield value="{!Client_Sat_Survey__c.Delay_Survey_Reason__c}" required="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Delayed'}"  rendered="{!Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Delayed'}" >
+                                        <apex:actionSupport event="onchange" action="{!null}" rerender="othrreason,othrreason1,othrreason2,othrreason3" status="sortStatus1"/>
+                                    </apex:inputfield> 
+                                    <apex:actionStatus id="sortStatus1">
+                                       <apex:facet name="start"> 
+                                         <apex:outputPanel > 
+                                         Processing...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                                         </apex:outputPanel>  
+                                     </apex:facet> 
+                                   </apex:actionStatus>                                
+                                 </apex:outputPanel>
+                             </apex:actionRegion>
+                        </apex:pageBlockSectionItem>
+                        <p/>
+                      
+                        <!-- {} -->
+                         <apex:pageBlockSectionItem >
+                            <apex:outputPanel id="othrreason2"  layout="block">
+                                <apex:outputLabel value="{!$Objecttype.Client_Sat_Survey__c.fields.Delay_Survey_Reason_Other__c.label}" rendered="{!if(Client_Sat_Survey__c.Delay_Survey_Reason__c == 'Other (Please Specify)' && Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Delayed',true,false)}"/>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="othrreason3" layout="block" >
+                                <apex:inputfield value="{!Client_Sat_Survey__c.Delay_Survey_Reason_Other__c}" required="{!if(Client_Sat_Survey__c.Delay_Survey_Reason__c == 'Other (Please Specify)' && Client_Sat_Survey__c.Send_Survey__c == 'No',true,false)}" rendered="{!if(Client_Sat_Survey__c.Delay_Survey_Reason__c == 'Other (Please Specify)' && Client_Sat_Survey__c.Don_t_Send_Survey_Reason__c == 'Delayed',true,false)}"/>                         
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem> 
+                        
+                    </apex:pageBlockSection>
+                </apex:outputPanel>
+                
+        </apex:pageBlock>
+        </apex:form>
+    </apex:outputPanel>
+</apex:page>

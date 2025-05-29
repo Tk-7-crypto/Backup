@@ -1,0 +1,49 @@
+<apex:page standardController="Address__c" extensions="SAP_Sales_Org_Address_MDM_Extension" showHeader="{!ShowHeaderAndSidebar}" sidebar="{!ShowHeaderAndSidebar}" tabStyle="Address__c"  lightningStylesheets="true">
+    <apex:form id="NewSalesOrgRequestForm">
+        <apex:sectionHeader title="New Sales Org Request for Address {!Address.Name} (SAP Code {!Address.SAP_Reference__c})" /> 
+        <apex:outputPanel id="SubmitPanel">
+            <apex:outputPanel rendered="{!If(AND(NOT(RequestSubmitted),NOT(RequestFailed)),true,false)}">
+                <apex:pageBlock title="Submit New Sales Org Request" rendered="{!If(AND(NOT(RequestSubmitted),NOT(RequestFailed)),true,false)}">
+                    <apex:pageBlockButtons location="top">
+                        <apex:actionStatus id="SaveAndSubmitStatus" >    
+                            <apex:facet name="stop">    
+                                <apex:commandButton value="Submit Request" action="{!sendNewSalesOrgRequestNotificationEmail}" reRender="SubmitPanel,ResultsPanel,ResultFailedPanel" status="SaveAndSubmitStatus"/> 
+                            </apex:facet>    
+                            <apex:facet name="start">                            
+                                Processing ...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>                        
+                        </apex:actionStatus>
+                        <apex:commandButton value="Cancel" onClick="if({!NOT(ShowHeaderAndSidebar)}){window.top.close();}" action="{!goBack}" immediate="true"/>
+                    </apex:pageBlockButtons>
+                    <apex:pageBlockSection columns="1" title="New Sales Org">
+                        <apex:inputField value="{!Address.New_Sales_Org__c}" required="true"/>
+                        <apex:outputField value="{!Address.Name}"/>
+                        <apex:outputField value="{!Address.SAP_Reference__c}"/>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:outputPanel> 
+        
+        <apex:outputPanel id="ResultsPanel">
+            <apex:outputPanel rendered="{!RequestSubmitted}">
+                <apex:pageBlock title="Submit New Sales Org Request Submitted" rendered="{!RequestSubmitted}">
+                    <apex:pageBlockButtons location="top">
+                        <apex:commandButton onClick="if({!NOT(ShowHeaderAndSidebar)}){window.top.close();}" value="OK" action="{!goBack}"/>
+                    </apex:pageBlockButtons>
+                    <apex:pageMessages escape="false" id="UserMessages2"></apex:pageMessages>   
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:outputPanel> 
+
+        <apex:outputPanel id="ResultFailedPanel">
+            <apex:outputPanel rendered="{!RequestFailed}">
+                <apex:pageBlock title="New Sales Org Request Failed" rendered="{!RequestFailed}">
+                    <apex:pageBlockButtons location="top">
+                        <apex:commandButton onClick="if({!NOT(ShowHeaderAndSidebar)}){window.top.close();}" value="OK" action="{!goBack}"/>
+                    </apex:pageBlockButtons>
+                    <apex:pageMessages escape="false" id="UserMessages3"></apex:pageMessages>   
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:outputPanel> 
+    </apex:form>
+</apex:page>

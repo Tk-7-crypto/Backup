@@ -1,0 +1,226 @@
+<aura:component controller="CNT_CSM_PortalReports" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="portalCaseTypes" type="String[]" />
+    <aura:attribute name="IQVIAEmployeesAccountId" type="String" />
+    <aura:attribute name="contact" type="Object" />
+    <aura:attribute name="listTechnoDashboardIds" type="String" />
+    <aura:attribute name="technoDashboards" type="Object[]" />
+    <aura:attribute name="listDataDashboardIds" type="String" />
+    <aura:attribute name="dataDashboards" type="Object[]" />
+    <aura:attribute name="listIQVIAEmployeesDashboardIds" type="String" />
+    <aura:attribute name="IQVIAEmployeesDashboards" type="Object[]" />
+    <aura:attribute name="listTechnoReportIds" type="String" />
+    <aura:attribute name="technoReports" type="Object[]" />
+    <aura:attribute name="listDataReportIds" type="String" />
+    <aura:attribute name="dataReports" type="Object[]" />
+    <aura:attribute name="privateReports" type="Object[]" />
+    <aura:attribute name="dcs" type="Object[]" />
+    <aura:attribute name="rcs" type="Object[]" />
+    <aura:attribute name="drs" type="Object[]" />
+    <aura:attribute name="isLoading" type="boolean" default="true" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <div class="row">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <!--
+            <aura:if isTrue="{! v.IQVIAEmployeesAccountId eq v.contact.AccountId}">
+                <aura:if isTrue="{! v.IQVIAEmployeesDashboards.length gt 0}">
+                    <div class="col-12 col-sm mb-3">
+                        <div class="card mt-4 mb-4 h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">
+                                    <lightning:icon iconName="standard:dashboard" class="mr-3" size="small" alternativeText="Dashboard" />IQVIA Employees Dashboard</h3>
+                                <ul>
+                                    <aura:iteration items="{!v.IQVIAEmployeesDashboards}" var="dashboard">
+                                        <li>
+                                            <a href="{!'/support/s/dashboard/'+ dashboard.Id}" class="report_dashbord-link" target="_blank">{!dashboard.Title}</a>
+                                            <p class="text-secondary">{!dashboard.Description}</p>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:if>
+            <aura:if isTrue="{! or(v.portalCaseTypes.length gt 1, and(v.portalCaseTypes.length eq 1, v.portalCaseTypes[0] eq 'Technology Solutions'))}">
+                <aura:if isTrue="{!v.technoDashboards.length gt 0}">
+                    <div class="col-12 col-sm mb-3">
+                        <div class="card mt-4 mb-4 h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">
+                                    <lightning:icon iconName="standard:dashboard" class="mr-3" size="small" alternativeText="Dashboard" />Technology Solutions Dashboards</h3>
+                                <ul>
+                                    <aura:iteration items="{!v.technoDashboards}" var="technoDashboard">
+                                        <li>
+                                            <a href="{!'/support/s/dashboard/'+ technoDashboard.Id}" class="report_dashbord-link" target="_blank">{!technoDashboard.Title}</a>
+                                            <p class="text-secondary">{!technoDashboard.Description}</p>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:if>
+            <aura:if isTrue="{! or(v.portalCaseTypes.length gt 1, and(v.portalCaseTypes.length eq 1, v.portalCaseTypes[0] eq 'Technology Solutions'))}">
+                <aura:if isTrue="{!v.technoReports.length gt 0}">
+                    <div class="col-12 col-sm mb-3">
+                        <div class="card mt-4 mb-4 h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">
+                                    <lightning:icon iconName="standard:report" class="mr-3" size="small" alternativeText="Report" />Technology Solutions Reports</h3>
+                                <ul>
+                                    <aura:iteration items="{!v.technoReports}" var="technoReport">
+                                        <li>
+                                            <a href="{!'/support/s/report/'+ technoReport.Id}" class="report_dashbord-link" target="_blank">{!technoReport.Name}</a>
+                                            <p class="text-secondary">{!technoReport.Description}</p>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:if>
+            <aura:if isTrue="{! or(v.portalCaseTypes.length gt 1, and(v.portalCaseTypes.length eq 1, v.portalCaseTypes[0] eq 'Information Offering'))}">
+                <aura:if isTrue="{! v.dataDashboards.length gt 0}">
+                    <div class="col-12 col-sm mb-3">
+                        <div class="card mt-4 mb-4 h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">
+                                    <lightning:icon iconName="standard:dashboard" class="mr-3" size="small" alternativeText="Dashboard" />Information Offering Dashboard</h3>
+                                <ul>
+                                    <aura:iteration items="{!v.dataDashboards}" var="dataDashboard">
+                                        <li>
+                                            <a href="{!'/support/s/dashboard/'+ dataDashboard.Id}" class="report_dashbord-link" target="_blank">{!dataDashboard.Title}</a>
+                                            <p class="text-secondary">{!dataDashboard.Description}</p>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:if>
+            <aura:if isTrue="{! or(v.portalCaseTypes.length gt 1, and(v.portalCaseTypes.length eq 1, v.portalCaseTypes[0] eq 'Information Offering'))}">
+                <aura:if isTrue="{!v.dataReports.length gt 0}">
+                    <div class="col-12 col-sm mb-3">
+                        <div class="card mt-4 mb-4 h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">
+                                    <lightning:icon iconName="standard:report" class="mr-3" size="small" alternativeText="Report" />Information Offering Reports</h3>
+                                <ul>
+                                    <aura:iteration items="{!v.dataReports}" var="dataReport">
+                                        <li>
+                                            <a href="{!'/support/s/report/'+ dataReport.Id}" class="report_dashbord-link" target="_blank">{!dataReport.Name}</a>
+                                            <p class="text-secondary">{!dataReport.Description}</p>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:if>
+
+            -->
+        <aura:if isTrue="{! v.drs.length gt 0}">
+            <aura:iteration items="{!v.drs}" var="dr">
+                <div class="col-12 col-sm mb-3">
+                    <div class="card mt-4 mb-4 h-100">
+
+                        <div class="card-title h3 m-3">{! dr.name}</div>
+                        <aura:if isTrue="{! dr.dashboards.length gt 0}">
+                            <strong class="card-subtitle m-3 text-muted">
+                                <!--
+                                    <lightning:icon iconName="standard:dashboard" class="mr-2" size="small" alternativeText="Dashboard" />
+                                -->
+                                Dashboards</strong>
+
+                            <div class="list-group list-group-flush mb-3">
+
+                                <aura:iteration items="{!dr.dashboards}" var="dashboard">
+                                    <a href="{!'/support/s/dashboard/'+ dashboard.Id}" class="list-group-item list-group-item-action flex-column align-items-start" target="_blank">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1"> {!dashboard.Title}</h5>
+                                        </div>
+                                        <p class="mb-1"><small>{!dashboard.Description}</small></p>
+                                    </a>
+                                </aura:iteration>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{! dr.reports.length gt 0}">
+                            <strong class="card-subtitle m-3 text-muted">
+                                <!--
+                                    <lightning:icon iconName="standard:report" class="mr-2" size="small" alternativeText="Report" />
+                                -->
+                                    Reports</strong>
+
+                            <div class="list-group list-group-flush mb-3">
+
+                                <aura:iteration items="{!dr.reports}" var="report">
+                                    <a href="{!'/support/s/report/'+ report.Id}" class="list-group-item list-group-item-action flex-column align-items-start" target="_blank">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{!report.Name}</h5>
+                                        </div>
+                                        <p class="mb-1"><small>{!report.Description}</small></p>
+                                    </a>
+                                </aura:iteration>
+                            </div>
+                        </aura:if>
+                        <aura:if isTrue="{! dr.einsteins.length gt 0}">
+                            <strong class="card-subtitle m-3 text-muted">
+                                <!--
+                                    <lightning:icon iconName="standard:dashboard_ea" class="mr-2" size="small" alternativeText="Einstein Analytics" />
+                                -->
+                                Einstein Analytics</strong>
+
+                            <div class="list-group list-group-flush mb-3">
+
+                                <aura:iteration items="{!dr.einsteins}" var="einstein">
+                                    <a href="{!'/support/s/einstein?id='+ einstein.id}" class="list-group-item list-group-item-action flex-column align-items-start" target="_blank">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{!einstein.name}</h5>
+                                        </div>
+                                        <p class="mb-1"><small>{!einstein.description}</small></p>
+                                    </a>
+                                </aura:iteration>
+                            </div>
+                        </aura:if>
+                    </div>
+                </div>
+            </aura:iteration>
+        </aura:if>
+
+        <aura:if isTrue="{! v.privateReports.length gt 0}">
+            <div class="col-12 col-sm mb-3">
+                <div class="card mt-4 mb-4 h-100">
+                    <div class="card-title h3 m-3">Your private reports</div>
+                    <strong class="card-subtitle m-3 text-muted">
+                        <!--
+                            <lightning:icon iconName="standard:report" class="mr-2" size="small" alternativeText="Report" />
+                        -->
+                        Reports</strong>
+                    <div class="list-group list-group-flush mb-3">
+
+                        <aura:iteration items="{!v.privateReports}" var="report">
+                            <a href="{!'/support/s/report/'+ report.Id}" class="list-group-item list-group-item-action flex-column align-items-start" target="_blank">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1"> {!report.Name}</h5>
+                                </div>
+                                <p class="mb-1"><small>{!report.Description}</small></p>
+                            </a>
+                        </aura:iteration>
+                    </div>
+                </div>
+            </div>
+        </aura:if>
+    </div>
+</aura:component>

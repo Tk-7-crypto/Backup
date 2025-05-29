@@ -1,0 +1,93 @@
+<aura:component controller="CNT_CSM_KnowledgeBrowser" implements="flexipage:availableForAllPageTypes,lightning:isUrlAddressable" access="global">
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="filteredProducts" type="Object" />
+    <aura:attribute name="products" type="Object" />
+    <aura:attribute name="productName" type="String" default="" />
+    <aura:attribute name="articleObj" type="Object[]" />
+    <aura:attribute name="filteredArticleObj" type="Object[]" />
+    <aura:attribute name="maxShow" type="Integer" default="3" />
+    <aura:attribute name="numChapter" type="Integer" default="-1" />
+    <aura:attribute name="accounts" type="Object[]" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <div class="slds-card slds-has-cushion">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_1-of-5 slds-border_right">
+                <ui:inputText class="slds-input" updateOn="keyup" keyup="{!c.filteredProducts}" placeholder="Search a product..." />
+                <ul class="slds-m-top_medium">
+                    <aura:iteration items="{!v.filteredProducts}" var="product" indexVar="index">
+                        <li>
+                            <div class="slds-truncate">
+                                <a href="javascript:void(0);" onclick="{! c.productClick }" data-value="{!product.Name}" data-title="{!product.Name}">
+                                    <lightning:icon iconName="doctype:folder" size="medium" alternativeText="Folder" />
+                                    <span class="slds-p-left_large">{!product.Name}</span>
+                                </a>
+                            </div>
+                        </li>
+                    </aura:iteration>
+                </ul>
+            </div>
+            <div class="slds-col slds-size_4-of-5 ">
+                <aura:if isTrue="{! v.productName ne ''}">
+                    <div class="slds-text-heading_large slds-text-align_center">{! v.productName}</div>
+                    <ui:inputText class="slds-input" updateOn="keyup" keyup="{!c.filteredArticles}" placeholder="Search an article..." />
+                    <lightning:select name="accountId" label="Filtered by Account: " aura:id="accountId" onchange="{! c.selectedAccount }" >
+                        <option text="No specified" value=""/>
+                        <aura:iteration items="{!v.accounts}" var="account">
+                            <option text="{!account.Name}" value="{!account.Id}" selected="{!account.selected}"/>
+                        </aura:iteration>
+                    </lightning:select>
+                </aura:if>
+                <aura:if isTrue="{! v.filteredArticleObj.length > 0  }">
+                    <div class="slds-grid  slds-wrap slds-m-top_large">
+                        <aura:if isTrue="{! v.numChapter > -1}">
+                            <button class="slds-button" onclick="{! c.back}">Back to Chapters</button>
+                        </aura:if>
+                        <aura:iteration items="{!v.filteredArticleObj}" var="obj" indexVar="chapter">
+                            <aura:if isTrue="{! or( chapter eq v.numChapter, v.numChapter eq -1)}">
+                                <div class="{!and(v.numChapter == -1,v.filteredArticleObj[0].categorization ne 'Other') ? 'slds-size_1-of-1 slds-medium-size_1-of-2' : 'slds-size_1-of-1 slds-medium-size_1-of-1 slds-grid  slds-wrap slds-m-top_large'}">
+                                    <aura:if isTrue="{! v.filteredArticleObj[0].categorization ne 'Other'}">
+                                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-1">
+                                            <div class="slds-text-title_caps">
+                                                <b>{!obj.categorization}</b>
+                                            </div>
+                                        </div>
+                                    </aura:if>
+                                    <aura:iteration items="{! obj.articles}" var="article" indexVar="countArticle">
+                                        <aura:if isTrue="{! or(or( v.numChapter gt -1, countArticle lt v.maxShow ),v.filteredArticleObj[0].categorization eq 'Other')}">
+                                            <div class="{! and(v.numChapter == -1,v.filteredArticleObj[0].categorization ne 'Other') ? 'slds-size_1-of-1 slds-medium-size_1-of-1 slds-col' : 'slds-col slds-size_1-of-1 slds-medium-size_1-of-2'}">
+                                                <div class="slds-truncate">
+                                                    <a class="item-title-link" onclick="{! c.openRecord}" data-value="{!article.Id}">{!article.Title}</a>
+                                                </div>
+                                            </div>
+                                            <aura:set attribute="else">
+                                                <aura:if isTrue="{! countArticle eq v.maxShow }">
+                                                    <div class="slds-truncate">
+                                                        <button class="slds-button" data-chapter_num="{!chapter}" onclick="{! c.showMore}">Show all {! obj.articles.length} articles</button>
+                                                    </div>
+                                                </aura:if>
+                                            </aura:set>
+                                        </aura:if>
+                                    </aura:iteration>
+                                </div>
+                            </aura:if>
+                        </aura:iteration>
+                    </div>
+                    <aura:set attribute="else">
+                        <div class="slds-text-longform slds-m-top_xx-large slds-text-align_center">
+                            <h3 class="slds-text-heading_medium">Nothing to display</h3>
+                        </div>
+                    </aura:set>
+                </aura:if>
+            </div>
+        </div>
+    </div>
+</aura:component>

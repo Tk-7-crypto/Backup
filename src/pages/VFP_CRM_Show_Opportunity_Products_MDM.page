@@ -1,0 +1,161 @@
+<apex:page standardController="BNF2__c" extensions="CNT_CRM_ShowOpportunityProductsMDM">
+    <html>
+        <script>
+        window.onload = function() { 
+            var OpptyId = "{!bNFRecord.Opportunity__c}"; 
+            var OpptyCurrency = "{!bNFRecord.CurrencyIsoCode}"; 
+            var BNFId = "{!bNFRecord.Id}"; 
+            var IsRevised = "{!bNFRecord.Addendum__c}";
+            var IsPrebillingSalesCode = "{!isPrebillingSalesCode}";
+            var wbsCodeCheck = "{!wbsCodeCheck}";
+            var output = "<table width='100%' class=list border='0' cellspacing='0' cellpadding='0'><tr class='headerRow' height='20'>"; 
+            output += "<th wrap>#</th>"; 
+            output += "<th wrap>Product Name</th>"; 
+            output += "<th wrap>Product Code</th>"; 
+            output += "<th wrap>Sales Price<br> (" + OpptyCurrency + ") <br></th>"; 
+            output += "<th wrap>Data Period<br>Start</br></th>"; 
+            output += "<th wrap>Data Period<br>End</br></th>"; 
+            output += "<th wrap>Billing<br>Frequency</br></th>"; 
+            output += "<th wrap>Delivery<br>Media</br></th>"; 
+            output += "<th wrap>Delivery<br>Country</br></th>"; 
+            if(wbsCodeCheck == "true") {
+                output += "<th wrap>WBS Code</th>"; 
+            }
+            output += "<th wrap>Delivery/Rpt<br>Frequency</br></th>"; 
+            output += "<th wrap>Product Invoice Text</br></th>"; 
+            //output += "<th wrap>Invoice Date</th>"; 
+            output += "<th wrap>Discount %</th>"; 
+            output += "<th wrap>Discount Reason</th>";
+            output += "<th wrap>PO line item number</th>";
+            output += "<th wrap>Nbr of Users</th>"; 
+            output += "<th wrap>Therapy Area</th>"; 
+            output += "<th wrap>Other Ship To</th>";
+            if(IsRevised){ 
+                output += "<th wrap>Revised Sales<br>Price (" + OpptyCurrency + ") <br></th>"; 
+                output += "<th wrap>Cancel</th>"; 
+            } 
+            if(IsPrebillingSalesCode == "true"){
+                output += "<th wrap>Prebilling?</th>";
+            }
+            output += "</tr>"; 
+            var oliStr = '{!JSENCODE(OpportunityLineItemListStr)}';
+            oliStr = oliStr.replace(/\n/g, "\\n");
+            var OpptyLineList = JSON.parse(oliStr);
+            OpptyLineList.sort(function (a, b) { 
+                if ((a.PricebookEntry.ProductCode + a.Product_Start_Date__c) > (b.PricebookEntry.ProductCode + b.Product_Start_Date__c)) { 
+                    return 1; 
+                } 
+                if ((a.PricebookEntry.ProductCode + a.Product_Start_Date__c) < (b.PricebookEntry.ProductCode + b.Product_Start_Date__c)) { 
+                    return -1; 
+                } 
+                // a must be equal to b 
+                return 0; 
+            }); 
+            for (var j = 0; j < OpptyLineList.length; j++) { 
+                output += "<tr onmouseover=hiOn(this) onmouseout=hiOff(this)>"; 
+                //output +="<td><a href='/"+OpptyLineList[j].Id+"' target='_parent'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                //output +="<td><a href='/apex/BNFOpptyList?id="+OpptyId+"'&bnfid='"+BNFId+"' target='_parent'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                if(OpptyLineList[j].Position_Number__c != undefined && OpptyLineList[j].Position_Number__c != null){
+                    output +="<td>"+Math.round(OpptyLineList[j].Position_Number__c)+"</td>"; 
+                }else{
+                    output +="<td>&nbsp;</td>"; 
+                }
+                output +="<td><a href='/"+OpptyLineList[j].Id+"' target='_parent'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                //output +="<td><a href='/apex/BNFOpptyList?id="+OpptyLineList[j].Id+"' target='_parent'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                //output +="<td><a href='/apex/BNFOpptyList?id=006T0000003qfu0&bnfid=a06T0000000nqRh'>"+ OpptyLineList[j].PricebookEntry.Name + "</a></td>"; 
+                output +="<td wrap>"+ IsRecNull(OpptyLineList[j].PricebookEntry.ProductCode) + "</td>"; 
+                output +="<td>"+ (Number(OpptyLineList[j].TotalPrice)) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Product_Start_Date__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Product_End_Date__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Billing_Frequency__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Delivery_Media__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Delivery_Country__c) + "</td>"; 
+                if(wbsCodeCheck == "true") {
+                	output += "<td>" + IsRecNull(OpptyLineList[j].WBS_R_Element__c) + "</td>"; 
+            	}
+                output += "<td>" + IsRecNull(OpptyLineList[j].Proj_Rpt_Frequency__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Sales_Text__c) + "</td>"; 
+                //output += "<td>" + IsRecNull(OpptyLineList[j].Invoice_Date__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Discount_Percentage_Formula__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Discount_Reason__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].PO_line_item_number__c) + "</td>";
+                output += "<td>" + IsRecNull(OpptyLineList[j].Nbr_of_Users__c) + "</td>"; 
+                output += "<td>" + IsRecNull(OpptyLineList[j].Therapy_Area__c) + "</td>";
+                if(OpptyLineList[j].Other_Ship_To_Address__c != undefined)
+                    output += "<td>" + OpptyLineList[j].Other_Ship_To_Address__r.Name + "</td>";
+                else
+                    output += "<td>" + "&nbsp" + "</td>" ;
+                if(IsRevised){ 
+                    var revisedPrice = IsRecNull(OpptyLineList[j].Revised_Price__c);
+                    if(revisedPrice == NaN || revisedPrice == undefined){
+                        revisedPrice = '';
+                    }
+                    output += "<td>" + revisedPrice + "</td>";
+                    output += "<td>" + IsRecNull(OpptyLineList[j].Cancel_Text__c) + "</td>"; 
+                }
+                if(IsPrebillingSalesCode == "true"){
+                    output += "<td>" + IsRecNull(OpptyLineList[j].Prebilling__c) + "</td>";
+                }
+            } 
+            output += "</table>"; 
+            document.getElementById("ResultsHolder").innerHTML = output; 
+        };
+        function IsRecNull(sVal){ 
+            var returnVal; 
+            if(sVal==null || sVal == undefined){ 
+                returnVal = "&nbsp"; 
+            }else{ 
+                returnVal = sVal; 
+            } 
+            return returnVal; 
+        } 
+        function Comma(number) { 
+            number = '' + number; 
+            if (number.length > 3) { 
+                var mod = number.length % 3; 
+                var output = (mod > 0 ? (number.substring(0,mod)) : ''); 
+                for (i=0 ; i < Math.floor(number.length / 3); i++) { 
+                    if ((mod == 0) && (i == 0)) 
+                        output += number.substring(mod+ 3 * i, mod + 3 * i + 3); 
+                    else 
+                        output+= ',' + number.substring(mod + 3 * i, mod + 3 * i + 3); 
+                } 
+                return (output); 
+            } 
+            else return number; 
+        } 
+        </script>
+        <style type="text/css"> 
+            body, td {margin:0px; color:#333;} 
+            body {background-repeat: repeat-x; background-position: left top; font-size: 75%; font-family: 'Arial', 'Helvetica', sans-serif; background-color: #F3F3EC;} 
+            a {color:#333;} 
+            a:hover {text-decoration:underline;} 
+            th {text-align: left; font-weight: bold; white-space: nowrap;} 
+            form {margin:0px; padding:0px;} 
+            h1, h2, h3, h4, h5, h6 {font-family: "Verdana", "Geneva", sans-serif; font-size: 100%; margin:0px; display:inline;} 
+            .titleSeparatingColon {display: none;} 
+            .bPageBlock {width:100%;} 
+            .bPageBlock .pbSubheader {background-color:#222; color:#FFF; font-weight:bold; font-size: 91%; padding:2px 2px 2px 5px; margin-top: 3px; overflow: hidden; margin-bottom: 2px;} 
+            .bPageBlock .pbBody {background-color:#F3F3EC;} 
+            .bPageBlock .detailList {width:100%;} 
+            .bPageBlock .detailList th, .bPageBlock .detailList td {vertical-align:top;} 
+            .bPageBlock .labelCol {padding:2px 10px 2px 2px; text-align:right; font-size: 91%; font-weight: bold; color:#333;} 
+            .bPageBlock .detailList .labelCol {width: 18%;} 
+            .bPageBlock .dataCol {padding:2px 2px 2px 10px; text-align:left;} 
+            .bPageBlock .detailList .dataCol {width:32%;} 
+            .bPageBlock .detailList .data2Col {padding: 2px 2px 2px 10px; text-align: left; width: 82%;} 
+            .bEditBlock .detailList .dataCol, .bEditBlock .detailList .data2Col {padding: 0 2px 0 10px;} 
+            .bPageBlock .detailList .col02 {border-right: 20px solid #F3F3EC;} 
+            .bPageBlock .detailList tr td, .bPageBlock .detailList tr th {border-bottom:1px solid #E3DEB8;} 
+            .editPage .bPageBlock .detailList tr td, .editPage .bPageBlock .detailList tr th {border-bottom: none;} 
+            .bPageBlock .detailList th.last, .bPageBlock .detailList td.last, .bPageBlock.bLayoutBlock .detailList tr td, .bPageBlock.bLayoutBlock .detailList tr th {border-bottom:none;} 
+            .bPageBlock .detailList table td, .bPageBlock .detailList table th {border-bottom-style: none;} 
+            .lead .tertiaryPalette {background-color: #EBAF59; border-color: #EBAF59;} 
+        </style> 
+        <BODY class="opportunity"> 
+            <div class="pbBody"> 
+                <div id="ResultsHolder"></div> 
+            </div> 
+        </BODY> 
+    </html>
+</apex:page>

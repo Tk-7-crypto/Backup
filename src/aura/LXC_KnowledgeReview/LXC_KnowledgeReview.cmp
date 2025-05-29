@@ -1,0 +1,69 @@
+<aura:component implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:lightningQuickActionWithoutHeader,force:hasRecordId" controller="CNT_CSM_KnowledgeReview" access="global" >
+    <aura:attribute name="rdate" type="Date" />
+    <aura:attribute name="today" type="Date" />
+    <aura:attribute name="reviewList" type="Object" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <article class="slds-card slds-card_boundary">
+        <div class="slds-card__header slds-grid">
+        </div>
+        <div class="slds-grid slds-wrap slds-card__body slds-card__body_inner">
+            <div class="slds-col slds-size_2-of-4">
+                <lightning:input type="date" name="reviewdate" aura:id="reviewdate" label="Review Date" value="{!v.rdate}" messageWhenValueMissing="Review Date  is required" messageWhenBadInput="Please Enter a Valid Date"   dateStyle="short" max ="{!v.today }"/>
+            </div>
+            <div class="slds-col slds-size_4-of-4"/>
+            <div class="slds-col slds-size_4-of-4">
+                <lightning:textarea name="reviewcomment" aura:id="reviewcomment" label="Review Comment" value=""/>
+            </div>
+            <div class="slds-col slds-size_11-of-14"/>
+            <div class="slds-col slds-size_3-of-14">
+                <lightning:button label="Save" onclick="{!c.handleSave}"/>
+            </div>
+        </div>
+    </article>
+    <aura:if isTrue="{!not(empty(v.reviewList))}">
+    <article class="slds-card slds-card_boundary">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon iconName="standard:messaging_conversation" size="medium" alternativeText="Review Comments" />
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-feed">
+                <ul class="slds-feed__list">
+                    <aura:iteration items="{!v.reviewList}" var="review" indexVar="index">
+                        <li class="slds-feed__item">
+                            <article class="slds-post">
+                                <header class="slds-post__header slds-media">
+                                    <div class="slds-media__figure">
+                                        <a href="#" class="slds-avatar slds-avatar_circle slds-avatar_large">
+                                            <img alt="{!review.LastModifiedBy.Name}" src="{!review.LastModifiedBy.FullPhotoUrl}" title="{!review.LastModifiedBy.Name}" />
+                                        </a>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                            <p>
+                                                <a href="#" title="{!review.LastModifiedBy.Name}">{!review.LastModifiedBy.Name}</a>
+                                            </p>
+                                        </div>
+                                        <p class="slds-text-body_small">
+                                           Reviewed Date: <lightning:formattedDateTime value="{!review.Review_Date__c}" year="numeric" month="numeric" day="numeric"/> - 
+                                            Version: <lightning:formattedNumber value="{!review.Knowledge__r.VersionNumber}"/>
+                                        </p>
+                                    </div>
+                                </header>
+                                <div class="slds-post__content slds-text-longform">
+                                    <p>{!review.Comment__c}</p>
+                                </div>
+                            </article>
+                        </li>
+                    </aura:iteration>
+                </ul>
+            </div>
+        </div>
+    </article>
+    </aura:if>
+</aura:component>

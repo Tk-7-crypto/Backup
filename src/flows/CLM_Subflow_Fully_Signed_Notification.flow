@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>56.0</apiVersion>
+    <assignments>
+        <name>Set_Emails</name>
+        <label>Set Emails</label>
+        <locationX>567</locationX>
+        <locationY>242</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.Owner:User.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Change_Order</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_PFM_email</name>
+        <label>Set PFM email</label>
+        <locationX>435</locationX>
+        <locationY>1250</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.IQVIA_Project_Finance_Manager__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_AGR_Fully_Signed_Notification</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_PM_email</name>
+        <label>Set PM email</label>
+        <locationX>754</locationX>
+        <locationY>866</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.IQVIA_Project_Manager_Con__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Is_PFM_not_Null</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_PM_Email_for_CO</name>
+        <label>Set PM Email for CO</label>
+        <locationX>50</locationX>
+        <locationY>566</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.IQVIA_Project_Manager_Con__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Is_PFM_not_Null</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_PM_Email_for_CO_in_Case_of_Null</name>
+        <label>Set PM Email for CO in Case of Null</label>
+        <locationX>314</locationX>
+        <locationY>674</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.Agreement_Cloned_From__r.IQVIA_Project_Manager_Con__r.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Is_PFM_not_Null</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Requester_Email</name>
+        <label>Set Requester Email</label>
+        <locationX>754</locationX>
+        <locationY>566</locationY>
+        <assignmentItems>
+            <assignToReference>varT_Email</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_NewRecord.Bid_History__r.Requester_email__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Is_PM_not_null</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Change_Order</name>
+        <label>Change Order ?</label>
+        <locationX>567</locationX>
+        <locationY>350</locationY>
+        <defaultConnector>
+            <targetReference>Is_Requester_not_null</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>for_CO</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Apttus__Version_Number__c</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <numberValue>0.0</numberValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>is_PM_not_null_for_CO</targetReference>
+            </connector>
+            <label>for CO</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Agreement_Fully_Signed</name>
+        <label>Is Agreement Fully Signed ?</label>
+        <locationX>880</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Fully_Signed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Apttus__Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldRecord.Apttus__Status__c</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Apttus__Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Signatures</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Apttus__Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Fully Signed</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Emails</targetReference>
+            </connector>
+            <label>Fully Signed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_PFM_not_Null</name>
+        <label>Is PFM not Null ?</label>
+        <locationX>567</locationX>
+        <locationY>1142</locationY>
+        <defaultConnector>
+            <targetReference>Send_AGR_Fully_Signed_Notification</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>PFM is null</defaultConnectorLabel>
+        <rules>
+            <name>PFM_is_not_null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Finance_Manager__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Finance_Manager__r.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_PFM_email</targetReference>
+            </connector>
+            <label>PFM is not null</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_PM_not_null</name>
+        <label>Is PM not null?</label>
+        <locationX>886</locationX>
+        <locationY>758</locationY>
+        <defaultConnector>
+            <targetReference>Is_PFM_not_Null</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>PM is null</defaultConnectorLabel>
+        <rules>
+            <name>PM_is_not_null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Manager_Con__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Manager_Con__r.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_PM_email</targetReference>
+            </connector>
+            <label>PM is not null</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>is_PM_not_null_for_CO</name>
+        <label>is PM not null for CO?</label>
+        <locationX>248</locationX>
+        <locationY>458</locationY>
+        <defaultConnector>
+            <targetReference>Is_Previous_Agreement_PL_field_not_null</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>PM is null for CO</defaultConnectorLabel>
+        <rules>
+            <name>Yes_PM_is_not_null_for_CO</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Manager_Con__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.IQVIA_Project_Manager_Con__r.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_PM_Email_for_CO</targetReference>
+            </connector>
+            <label>Yes PM is not null for CO</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Previous_Agreement_PL_field_not_null</name>
+        <label>Is Previous Agreement&apos; PL field not null</label>
+        <locationX>446</locationX>
+        <locationY>566</locationY>
+        <defaultConnector>
+            <targetReference>Is_PFM_not_Null</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Yes_Previous_Agreement_PL_field_is_not_null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Agreement_Cloned_From__r.IQVIA_Project_Manager_Con__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Agreement_Cloned_From__r.IQVIA_Project_Manager_Con__r.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_PM_Email_for_CO_in_Case_of_Null</targetReference>
+            </connector>
+            <label>Yes Previous Agreement PL field is not null</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Requester_not_null</name>
+        <label>Is Requester not null?</label>
+        <locationX>886</locationX>
+        <locationY>458</locationY>
+        <defaultConnector>
+            <targetReference>Is_PM_not_null</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>NO</defaultConnectorLabel>
+        <rules>
+            <name>YES</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Bid_History__r.Requester_email__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Bid_History__r.Requester_email__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>$User.Email</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>VarR_NewRecord.Bid_History__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Requester_Email</targetReference>
+            </connector>
+            <label>YES</label>
+        </rules>
+    </decisions>
+    <description>CLMCMA-13354: Flow to send notification when Agreement Is fully Signed.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>formula_PFM</name>
+        <dataType>String</dataType>
+        <expression>IF(ISBLANK({!VarR_NewRecord.IQVIA_Project_Finance_Manager__c}), &apos;&apos;,
+ &apos; and &apos;+{!VarR_NewRecord.IQVIA_Project_Finance_Manager__r.FirstName}+&apos; &apos;+{!VarR_NewRecord.IQVIA_Project_Finance_Manager__r.LastName})</expression>
+    </formulas>
+    <formulas>
+        <name>forT_agreementEndDate</name>
+        <dataType>String</dataType>
+        <expression>TEXT(MONTH({!VarR_NewRecord.Apttus__Contract_End_Date__c})) + &quot;/&quot; + TEXT(DAY({!VarR_NewRecord.Apttus__Contract_End_Date__c})) + &quot;/&quot; + TEXT(YEAR({!VarR_NewRecord.Apttus__Contract_End_Date__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+{!VarR_NewRecord.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_agreementStartDate</name>
+        <dataType>String</dataType>
+        <expression>TEXT(MONTH({!VarR_NewRecord.Apttus__Contract_Start_Date__c})) + &quot;/&quot; + TEXT(DAY({!VarR_NewRecord.Apttus__Contract_Start_Date__c})) + &quot;/&quot; + TEXT(YEAR({!VarR_NewRecord.Apttus__Contract_Start_Date__c}))</expression>
+    </formulas>
+    <interviewLabel>CLM Subflow : Fully Signed Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : Fully Signed Notification</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>754</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Agreement_Fully_Signed</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Send_AGR_Fully_Signed_Notification</name>
+        <label>Send_AGR_Fully_Signed_Notification</label>
+        <locationX>567</locationX>
+        <locationY>1442</locationY>
+        <flowName>CLM_Subflow_Send_Notfication</flowName>
+        <inputAssignments>
+            <name>varC_EmailRecipients</name>
+            <value>
+                <elementReference>varT_Email</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailBody</name>
+            <value>
+                <elementReference>textT_EmailBody</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailSubject</name>
+            <value>
+                <elementReference>textT_Subject</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_FromAddress</name>
+            <value>
+                <stringValue>clmintegration@iqvia.com</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>VarR_NewRecord.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_SenderType</name>
+            <value>
+                <stringValue>OrgWideEmailAddress</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <textTemplates>
+        <name>textT_EmailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Dear {!VarR_NewRecord.Owner:User.FirstName} {!VarR_NewRecord.Owner:User.LastName} {!formula_PFM}
+&lt;br&gt;&lt;br&gt;
+Following Agreement has been Fully Signed.&lt;br&gt;
+Agreement Number : {!VarR_NewRecord.Apttus__FF_Agreement_Number__c}&lt;br&gt;
+Agreement Name : {!VarR_NewRecord.Name}&lt;br&gt;
+Start Date : {!forT_agreementStartDate}&lt;br&gt;
+End Date : {!forT_agreementEndDate}&lt;br&gt;
+Link : {!forT_AgreementLink}&lt;br&gt;
+
+
+Thank You,&lt;br&gt;
+IQVIA&lt;br&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <name>textT_Subject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Agreement Record is Fully Signed - Agreement #{!VarR_NewRecord.Apttus__FF_Agreement_Number__c}</text>
+    </textTemplates>
+    <variables>
+        <name>VarR_NewRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varT_Email</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

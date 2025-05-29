@@ -1,0 +1,158 @@
+<template>
+<lightning-tabset>
+    <lightning-tab label="Email Recipients">
+       
+        <div class="slds-form-element">
+            <lightning-textarea name="email" class ={className} value={mailIds} label="Add Email Address" placeholder="Add Email Address" onchange={mailIdsToAdd} blur ={addMailId}></lightning-textarea>
+        </div>
+        <div>
+            <template if:true ={error}>
+                <p class="errorMessage"> Invalid Email Address</p>
+            </template>
+        </div>
+        <div>
+            <lightning-button
+            name="Recipients"
+            label="Add to Recipients"
+            onclick={addMailId}>
+        </lightning-button>
+        </div>
+        <template if:true={record}>
+            <div>
+                <lightning-accordion allow-multiple-sections-open
+                                    active-section-name={activeSections}>
+                    <template if:true ={record}>
+                            <lightning-accordion-section name="To" label='To:'>
+                                    <template for:each={toRecord} for:item="item">
+                                        <template if:true ={item.Alerting_Email__c}>
+                                        <div key ={item} class ="tr divSpac">  
+                                            <div class="slds-grid slds-gutters">
+                                                <div class="slds-col slds-size_3-of-12">
+                                                  <span style="font-weight: bold;">{item.Name}</span>
+                                                </div>
+                                                <div class="slds-col slds-size_3-of-12">
+                                                  <span><lightning-pill style=" margin-left: 3%;" key ={item} label= "{item.Alerting_Email__c}" onremove={handleRemoveTo}></lightning-pill></span>
+                                                </div>
+                                                <div class="slds-col slds-size_6-of-12">
+                                                  <span>
+                                                    <c-lwc-filtered-tag item={item} record={sObjRec} opprecord ={oppRecord} parent-acct-ids ={parentAcctIds}></c-lwc-filtered-tag>
+                                                  </span>
+                                                </div>
+                                                
+                                              </div>  
+                                              <template if:true ={item.Reason_for_Notification__c}>
+                                                 <p style=" margin-left: 3%;" key ={item}>Reason for Notification: {item.Reason_for_Notification__c}</p>
+                                            </template>
+                                        </div>
+                                        </template>
+                                    </template>
+                            </lightning-accordion-section>
+                            <template if:true ={accountBCC}>
+                                <lightning-accordion-section name="BCC" label='BCC:'>
+                                    <!-- <table class= "rowSpace"> -->
+                                        <template for:each={bccRecord} for:item="item">
+                                            <template if:true ={item.Bcc_Recipient_Email__c}>
+                                                <div key ={item} class ="tr divSpac">  
+                                                    <div class="slds-grid slds-gutters">
+                                                        <div class="slds-col slds-size_3-of-12">
+                                                          <span style="font-weight: bold;">{item.Name}</span>
+                                                        </div>
+                                                        <div class="slds-col slds-size_3-of-12">
+                                                          <span><lightning-pill style=" margin-left: 3%;" key ={item} label= "{item.Bcc_Recipient_Email__c}" onremove={handleRemoveBCC}></lightning-pill></span>
+                                                        </div>
+                                                        <div class="slds-col slds-size_6-of-12">
+                                                          <span>
+                                                            <c-lwc-filtered-tag item={item} record={sObjRec} opprecord ={oppRecord} parent-acct-ids ={parentAcctIds}></c-lwc-filtered-tag>
+                                                          </span>
+                                                        </div>
+                                                        
+                                                      </div>
+                                                </div>
+                                                <!-- <tr key={item} class ="tr">
+                                                    <td style="font-weight: bold;">{item.Name}</td>
+                                                    <td>
+                                                    <lightning-pill style=" margin-left: 3%;" key ={item} label= "{item.Bcc_Recipient_Email__c}" onremove={handleRemoveBCC}></lightning-pill>
+                                                    </td>
+                                                    <td>
+                                                        <c-lwc-filtered-tag item={item} record={sObjRec} opprecord ={oppRecord}></c-lwc-filtered-tag>
+                                                    </td>
+                                                </tr> -->
+                                            </template>
+                                        </template>
+                                    <!-- </table> -->
+                                </lightning-accordion-section>
+                            </template>
+                            <template if:true ={accountCC}>
+                                <lightning-accordion-section name="CC" label='CC:'>
+                                        <template for:each={ccRecord} for:item="item">
+                                            <template if:true ={item.CC__c}>
+                                                <div key ={item} class ="tr divSpac">  
+                                                    <div class="slds-grid slds-gutters">
+                                                        <div class="slds-col slds-size_3-of-12">
+                                                          <span style="font-weight: bold;">{item.Name}</span>
+                                                        </div>
+                                                        <div class="slds-col slds-size_3-of-12">
+                                                          <span><lightning-pill style=" margin-left: 3%;" key ={item} label= "{item.CC__c}" onremove={handleRemoveCC}></lightning-pill></span>
+                                                        </div>
+                                                        <div class="slds-col slds-size_6-of-12">
+                                                          <span>
+                                                            <c-lwc-filtered-tag item={item} record={sObjRec} opprecord ={oppRecord} parent-acct-ids ={parentAcctIds}></c-lwc-filtered-tag>
+                                                          </span>
+                                                        </div>
+                                                        
+                                                      </div>
+                                                </div>
+                                            </template>
+                                        </template>
+                                   
+                                </lightning-accordion-section>
+                            </template>
+                    </template>
+                    <template if:true ={manuallyAddedList}>
+                        <lightning-accordion-section name="manualList" label="Manually Added Email Id">
+                            <template for:each={manuallyAddedList} for:item="item">
+                                    <div key ={item}>
+                                        <lightning-pill style=" margin-left: 3%;" key ={item} label= "{item}" onremove={handleRemoveManual}></lightning-pill>
+                                    </div>
+                            </template>
+                        </lightning-accordion-section>
+                    </template>
+                    
+                </lightning-accordion>
+            </div>
+        </template>    
+    </lightning-tab>
+    <lightning-tab label="Email Body">
+        <lightning-combobox
+            name="Templates"
+            label="Email Templates"
+            value={value}
+            placeholder="Select Email Templates"
+            options={templateList}
+            onchange={handleChange} >
+        </lightning-combobox>
+        <template if:true ={isTemplateSelected}>
+            <div class="slds-p-around_medium lgc-bg" style="margin-left: -2%;">
+                <lightning-input type="text" label="Subject" value={subject}></lightning-input>
+            </div>
+            <lightning-input-rich-text
+                value={mailBody} 
+                label = "Email Body"
+                disabled>
+            </lightning-input-rich-text>
+            <div style=" margin-top: 2%; ">
+                <lightning-button
+                    name="Send"
+                    label="Send Email"
+                    onclick={sendMail}>
+                </lightning-button>
+                <lightning-button
+                    name="close"
+                    label="Cancel"
+                    onclick={closeWindow}>
+                </lightning-button>
+            </div>
+        </template>
+    </lightning-tab>
+</lightning-tabset>
+</template>

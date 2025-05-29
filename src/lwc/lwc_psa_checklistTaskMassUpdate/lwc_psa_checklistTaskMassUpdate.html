@@ -1,0 +1,147 @@
+<template>
+
+    <!-- Header with buttons -->
+    <article class="slds-card slds-m-bottom_small">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="custom:custom18" size="medium"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <div class="slds-page-header__title slds-truncate" title="name">Update Checklist Tasks</div>
+                    </h2>
+
+                    <!-- temp text -->
+                    <!-- <h3 class="slds-card__header-title">
+                        <div class="slds-page-header__title slds-truncate" title="name">[Updated] P: {programId} R:
+                            {rdsProjectId} S: {serviceLineProjectId}</div>
+                    </h3>
+                    <div title="name">New Start Date: {newStartDate}</div>
+                    <div title="name">End Date: {newEndDate}</div>
+                    <div title="name">New Status: {newStatus}</div>
+                    <div title="name">New Status: {newDescription}</div> -->
+                    <!-- <div title="name">Got: {gotData}</div> -->
+                    <!-- <div title="name">Selected: {selectedTasksString}</div> -->
+
+                </div>
+                <div class="slds-no-flex">
+                    <lightning-button-group>
+                        <!-- <lightning-button name="OPEN_MODIFY_ASSIGNMENTS" label="Modify Selected" onclick={handleClick} disabled={modifyButtonDisabled}></lightning-button>
+                        <lightning-button name="GO_BACK_TO_RECORD_PAGE" label="Go Back" onclick={handleClick}></lightning-button> -->
+                        <lightning-button if:true={userHaveEditPermissionSet} label="Modify Selected"
+                            name="OPEN_MODIFY_TASKS" onclick={handleClick} disabled={modifyButtonDisabled}>
+                        </lightning-button>
+                        <lightning-button label="Go Back" name="GO_BACK_TO_RECORD_PAGE" onclick={handleClick}>
+                        </lightning-button>
+                    </lightning-button-group>
+                </div>
+            </header>
+        </div>
+    </article>
+
+    <!-- data table -->
+    <article class="slds-card slds-m-bottom_small">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="custom:custom68" size="medium"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <div>Project Tasks</div>
+                        <!-- <div if:true={hasProgramData} class="slds-page-header__title slds-truncate" title="name">{program.Name}</div> -->
+                    </h2>
+                </div>
+            </header>
+        </div>
+        <div class="slds-box slds-box_xx-small slds-m-horizontal_medium">
+            <div class="slds-text-heading_small slds-p-horizontal_small slds-p-top_x-small">Filters</div>
+            <lightning-layout>
+                <lightning-layout-item padding="around-small" size="4">
+                    <c-lwc_multi-select-picklist placeholder="Select Type" show-pills=true label="Type"
+                        name="typeOptions" options={typeOptions} onchange={handleTypeSelection}>
+                    </c-lwc_multi-select-picklist>
+                </lightning-layout-item>
+                <template if:true={isShowServiceLine}>
+                    <lightning-layout-item padding="around-small" size="4">
+                        <c-lwc_multi-select-picklist placeholder="Select Service Line" show-pills=true label="Service Line"
+                            name="serviceLineOptions" options={serviceLineOptions}
+                            onchange={handleServiceLineNameSelection}>
+                        </c-lwc_multi-select-picklist>
+                    </lightning-layout-item>
+                </template>
+                
+            </lightning-layout>
+        </div>
+        <div class="slds-card__body slds-card__body_inner ">
+            <lightning-datatable key-field="id" sorted-by={sortBy} sorted-direction={sortDirection} onsort={doSorting}
+                columns={tasksColumns} data={tasksListToShow} onrowselection={tasksSelected}>
+            </lightning-datatable>
+        </div>
+    </article>
+
+    <!-- modal for updation -->
+    <c-lwc_modal show-modal={showModifyModal} onclose={modifyModalClosed}>
+        <div slot="modal-heading">Modify Tasks</div>
+        <div slot="modal-content" class="slds-modal__content slds">
+            <div if:false={selectedTasks.length}>
+                Please select some tasks before making changes.
+            </div>
+            <div if:true={selectedTasks.length} class="slds-grid slds-wrap slds-gutters_small ">
+                <div class="slds-col slds-form-element_horizontal slds-m-around--medium">
+                    <lightning-combobox style="height: 100% !important;" name="status" label="Status" value={newStatus}
+                        placeholder="Select Status" options={options} onchange={handleStatusChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-form-element_horizontal slds-m-around--medium">
+                    <lightning-input label="Change Planned Start Date" name="NEW_START_DATE" type="date"
+                        value={newStartDate} onchange={newDateApplied}></lightning-input>
+                </div>
+                <div class="slds-col slds-form-element_horizontal  slds-m-around--medium">
+                    <lightning-input label="Change Planned End Date" name="NEW_END_DATE" type="date" value={newEndDate}
+                        onchange={newDateApplied}></lightning-input>
+                </div>
+                <div class="slds-col slds-form-element_horizontal  slds-m-around--medium">
+                    <c-lwc_lookup onsearch={handleResourceSearch} label="Resource"
+                        placeholder="Search for a resource..." errors={resourceErrors}
+                        onselectionchange={handleResourceLookupChange}>
+                    </c-lwc_lookup>
+                </div>
+                <div class="slds-col slds-form-element_horizontal  slds-m-around--medium">
+                    <lightning-input label="Long Description" name="LONG DESCRIPTION" type="text"
+                        placeholder={descriptionFieldPlaceholder} value={newDescription}
+                        onchange={handleDescriptionChange}></lightning-input>
+                </div>
+
+                <div class="slds-align_absolute-center slds-m-top--x-large slds-m-bottom--large">
+                    <lightning-button-group>
+                        <lightning-button name="MODIFY_TASKS_CANCEL" label="Cancel" onclick={handleClick}>
+                        </lightning-button>
+                        <lightning-button disabled={applyButtonDisabled} name="MODIFY_TASKS_APPLY" label="Apply"
+                            variant="brand" onclick={handleClick}>
+                        </lightning-button>
+                    </lightning-button-group>
+                </div>
+
+            </div>
+        </div>
+        <!-- <div slot="modal-footer">
+            <lightning-button-group>
+                <lightning-button name="MODIFY_TASKS_CANCEL" label="Cancel" onclick={handleClick}></lightning-button>
+                <lightning-button disabled={applyButtonDisabled} name="MODIFY_TASKS_APPLY" label="Apply" variant="brand" onclick={handleClick}>
+                </lightning-button>
+            </lightning-button-group>
+        </div> -->
+    </c-lwc_modal>
+
+    <!-- page spinner -->
+    <div if:true={showPageSpinner} class="slds-spinner_container">
+        <div role="status" class="slds-spinner slds-spinner_medium">
+            <span class="slds-assistive-text">Loading</span>
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+        </div>
+    </div>
+
+</template>

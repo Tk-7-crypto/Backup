@@ -1,0 +1,332 @@
+<apex:page controller="CNT_TPA_AddendumNotification" title="{!docTitle}" cache="true" contentType="{!if(openmode != 'word', null, 'application/msword#'+docTitle+'.doc')}" standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false"  sidebar="false" showHeader="false" renderAs="{!if(openmode != 'pdf', null, 'pdf')}">
+    <html xmlns:w="urn:schemas-microsoft-com:office:word">
+        <head>
+            <apex:outputText rendered="{!openmode == 'word'}" value="{!PrintView}" escape="false"/>
+            <style>
+                @page {
+                    size: letter;
+                    margin: 30mm 20mm;
+                    @top-center {
+                        content: element(header);
+                    }
+                    @bottom-center {
+                        content: element(footer);
+                    }
+                }
+
+                div.header
+                {
+                padding: 10px;
+                position: running(header);
+                }
+
+                div.footer
+                {
+                padding: 0px;
+                display:block;
+                position: running(footer);
+                }
+
+                .pagenumber:before {
+                content: counter(page);
+                }
+
+                .pagecount:before {
+                content: counter(pages);
+                }
+
+                .page-break
+                {
+                display:block;
+                page-break-after:always;
+                }
+                .headings
+                {
+                font-weight:bolder;
+                font-size:13px;
+                }
+
+                .content
+                {
+                font-size:11px;
+                }
+                .pbSubsection{background-color:white;}
+                body .bPageBlock .pbBody .blueHeader .pbSubheader{
+                background-color:;
+                }
+                body .bPageBlock .pbBody .blueHeader .pbSubheader h3{
+                text-align: center;
+                }
+                .pbSubheader h3{
+                font-size: 25px;
+                padding-bottom: 15px;
+                text-decoration: underline;
+                }
+                s, strike, del {
+                text-decoration:none !important;
+                }
+                .colStyle1 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle2 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle3 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle4 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle5 { width: 50%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle6 { width: 10%; text-align:left; padding-left:5px; padding-top:5px; border:1px solid gray; color:White}
+                .title {  font-weight: bold; text-align: center; display: table; margin-left: auto; margin-right: auto;}
+                .addendumText { text-align: center; display: table; margin-left: auto; margin-right: auto;}
+                .documentTable  th, .documentTable{
+                border: 1px solid gray
+                }
+                .documentTable  th{
+                padding-left:5px;
+                }
+                .documentTable tr td{
+                vertical-align:Top;
+                text-align:left;
+                }
+                .headerStyle { font-family: Arial Narrow;font-size:10.0pt;}
+                .contentStyle { font-family: Arial;font-size:10.0pt; }
+                .contentParagraph { font-family: Arial;font-size:10.0pt;text-align:justify; }
+                .marginT1Left { margin-left:80px; }
+                .marginT2Left { margin-left:20px; }
+                .marginT1Bottom { margin-bottom:10px; }
+                .marginDocOnly1 { margin-left: 30px; }
+                .marginDocOnly2 { margin-left: 10px; }
+                .margin1 { margin:0.05in; }
+                .boldEffect {font-weight:bold; !important}
+
+                .underlineEffect {
+                text-decoration:underline;
+                }
+                .italicEffect {font-style:italic;}
+
+            </style>
+        </head>
+
+        <body>
+            <apex:outputText rendered="{!openmode == 'word'}" value="{!wordStyle}" escape="false"/>
+            <div class="main">
+                <apex:repeat value="{!mapIdWithWrapperClassList}" var="key">
+                    <!-- Header and Footer for PDF Document Start -->
+                    <apex:outputLabel rendered="{!openMode != 'word'}">
+                        <div class="footer" style="margin-bottom:40px;margin-left:-40px; margin-right:-40px;">
+                            <div style="border-top:1px solid black;font-size:9px;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="23%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Form Rev. November 2016</span></td>
+                                        <td width="60%" style="text-align:center;padding-top:1px;">&#169;2015 {!$Label.TPA_IQVIA_Keyword} Incorporated or its affiliates. All rights reserved.</td> <!-- Updated by Babita Dadarwl under CR-11410 -->
+                                        <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" colspan="3">{!tpaRequest.Name} </td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" colspan="3">DOC Version:1.0</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </apex:outputLabel>
+                    <apex:pageBlock >
+                        <apex:repeat value="{!mapIdWithWrapperClassList}" var="key">
+                            <div style="{!centerAlign}">
+                                <span style="{!headerStyle}{!boldEffect}">Third Party Management Attribute Addendum</span><br />
+                                <span style="{!headerStyle}{!boldEffect}">To TPA Limited License Agreement No. {!tpaRequest.name}</span><br />
+                                <span style="{!headerStyle}{!boldEffect}">Effective Date:
+                                    <apex:outputText value="{0,date,MM'/'dd'/'yyyy}">
+                                        <apex:param value="{!tpaRequest.Today_s_Date__c}"/>
+                                    </apex:outputText>
+                                </span>
+                                <br /><br />
+                                <span style="{!contentStyle}"> {!clientVendorNote} </span><br/><br/>
+                                <span style="{!boldEffect} {!contentStyle}" >{!mapIdWithObjofwrapperClassOfLegalEntity[key].name} </span> <br/>
+                                <span style="{!contentStyle}">(&#34;{!$Label.TPA_IQVIA_Keyword}&#34; or &#34;{!$Label.TPA_IQVIA_Keyword}&#34;)</span><br/><br/> <!-- Updated by Babita Dadarwl under CR-11410 -->
+                                <span style="{!contentStyle}">and</span><br /> <br/>
+                                <span style="{!boldEffect} {!contentStyle}" >{!tpaRequest.Service_Provider_Address__r.name} </span><br/>
+                                <span style="{!contentStyle}">(&#34;Vendor&#34;)</span><br/><br/>
+
+                            </div>
+                            <p style="{!contentParagraph}">
+                                {!addendumNote}
+                            </p>
+
+                            
+                            <ol style="{!contentStyle}" >
+                                <li style="{!contentStyle}">
+                                    <span style ="{!contentStyle} {!boldEffect} {!underlineEffect}">Client</span>
+                                    <span style ="{!contentStyle}"> : </span> <br/> <br/>
+                                    <span style="{!contentStyle}">  Client (Company Name): {!clientCompanyName} ("Client")  </span> <br/> <br/>
+                                    <span style="{!contentStyle}">  Client Address (Country): {!clientAddress} </span> <br/> <br/> <!--Modified by Neha Bansal under CR-12286 Starts -->
+                                    <apex:outputPanel rendered="{!(clientRepresentativeName == null && clientRepresentativeEmail == null)}">
+                                        <span style="{!contentStyle}">  Client Contact Name: {!clientContactName} </span> <br/> <br/>
+                                        <span style="{!contentStyle}">  Client Contact Email Address: {!clientContactEmail}  </span> <br/> <br/> <br/>
+                                    </apex:outputPanel>
+
+                                    <apex:outputPanel rendered="{!(clientRepresentativeName != null && clientRepresentativeEmail != null)}">
+                                        <span style="{!contentStyle}">  Client TPA Representative Name: {!clientRepresentativeName} </span> <br/> <br/>
+                                        <span style="{!contentStyle}">  Client TPA Representative Email : {!clientRepresentativeEmail}  </span> <br/> <br/> <br/>
+                                    </apex:outputPanel>
+                                    
+                                </li>
+                                <li style="{!contentStyle}">
+                                    <span style = "{!contentStyle}{!boldEffect}{!underlineEffect}"> Managed Attribute Requirements </span> <br/> <br/>
+                                    <apex:pageBlock rendered="{!openmode != 'word'}">
+                                        <apex:pageBlockTable value="{!mapIdWithWrapperClassList[key]}" var="offNotObj" columnClasses="colStyle1,colStyle2,colStyle3,colStyle4,colStyle5,colStyle6"  styleClass="documentTable">
+                                            <apex:column headerValue="Offering Primary Name" >
+                                                <apex:outputText label="Data Offering"  value="{!offNotObj.priOffering}" styleClass="contentStyle"/>
+                                            </apex:column>
+                                            <apex:column headerValue="Offering Secondary Name">
+                                                <apex:outputText label="Data Offering"  value="{!offNotObj.secOffering}" styleClass="contentStyle" />
+                                            </apex:column>
+                                            <apex:column headerValue="Offering Country of Origin">
+                                                <apex:outputText label="Data Offering"  value="{!offNotObj.offeringCountry}" styleClass="contentStyle"/>
+                                            </apex:column>
+                                            <apex:column headerValue="Use">
+                                                <apex:outputText label="Use" escape="false"  value="{!offNotObj.use}" styleClass="contentStyle"/>
+                                            </apex:column>
+                                            <apex:column headerValue="Requirement">
+                                                <apex:outputText label="Requirement" escape="false" value="{!offNotObj.cotent}" styleClass="contentStyle"/>
+                                            </apex:column>
+                                            <apex:column headerValue="Acknowledgement">
+                                                <br /><apex:outputText escape="false" value="\i1\" style="color:White" />
+                                            </apex:column>
+                                        </apex:pageBlockTable>
+                                    </apex:pageBlock>
+                                    <apex:pageBlock rendered="{!openmode == 'word'}">
+
+                                        <table width="100%" style="border-collapse:collapse;border:1px solid black;">
+                                            <tr>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle} {!margin1}"> OfferingPrimary Name </span>
+                                                </th>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle}{!margin1}"> Offering Secondary Name </span>
+                                                </th>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle}{!margin1}"> Offering Country of Origin </span>
+                                                </th>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle}{!margin1}"> Use </span>
+                                                </th>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle}{!margin1}"> Requirement </span>
+                                                </th>
+                                                <th style="{!columnStyle}">
+                                                    <span style="{!contentStyle}{!margin1}"> Acknowledgement </span>
+                                                </th>
+                                            </tr>
+                                            <apex:repeat value="{!mapIdWithWrapperClassList[key]}" var="offNotObj">
+                                                <tr>
+                                                    <td style="{!columnStyle}">
+                                                        <span style ="{!contentStyle}">{!offNotObj.priOffering}  </span>
+                                                    </td>
+                                                    <td style="{!columnStyle}">
+                                                        <span style ="{!contentStyle}">{!offNotObj.secOffering}  </span>
+                                                    </td>
+                                                    <td style="{!columnStyle}">
+                                                        <span style ="{!contentStyle}">{!offNotObj.offeringCountry}  </span>
+                                                    </td>
+                                                    <td style="{!columnStyle}">
+                                                        <span style ="{!contentStyle}">{!offNotObj.use}  </span>
+                                                    </td>
+                                                    <td style="{!columnStyle}">
+                                                        <span style ="{!contentStyle}">{!offNotObj.cotent}  </span>
+                                                    </td>
+                                                    <td style="{!columnStyle}">
+                                                        <br /><span style ="{!contentStyle}"><font style="color:white;"> \i1\ </font> </span>
+                                                    </td>
+                                                </tr>
+                                            </apex:repeat>
+                                        </table>
+
+                                    </apex:pageBlock>
+                                </li>
+                            </ol>
+
+
+                            <apex:outputLabel rendered="{!openMode == 'word'}"><br clear="all" style="mso-special-character:line-break;page-break-before:always;"/></apex:outputLabel>
+                            <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+
+                            <span style="{!contentStyle}" >Accepted and agreed: </span><br/><br/>
+                            <table width="100%">
+                                <tr>
+                                    <td width="50%"><br/><br/>
+                                        <span style="{!contentStyle}" >{!mapIdWithObjofwrapperClassOfLegalEntity[key].name} </span>
+                                    </td>
+                                    <td><br/><br/>
+                                        <span style="{!contentStyle}" >{!tpaRequest.Service_Provider_Address__r.name}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%"> <br/><br/>
+                                        <span style="{!contentStyle}">Signature: <img style="margin-left:5px;" src="{!mapIdWithObjofwrapperClassOfLegalEntity[key].url}"/></span>
+                                    </td>
+                                    <td><br/><br/>
+                                        <span style="{!contentStyle}" >Signature:<font style="color:white;">\s1\</font></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%"><br/><br/>
+                                        <span style="{!contentStyle}" >Name: {!mapIdWithObjofwrapperClassOfLegalEntity[key].NameOfESign}</span>
+                                    </td>
+                                    <td><br/><br/>
+                                        <span style="{!contentStyle}" >Name:<font style="color:white;">\n1\</font></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%"><br/><br/>
+                                        <span style="{!contentStyle}" >Title: {!mapIdWithObjofwrapperClassOfLegalEntity[key].title}</span>
+                                    </td>
+                                    <td><br/><br/>
+                                        <span style="{!contentStyle}" >Title: <font style="color:white;">\t1\</font></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" ><br/><br/>
+                                        <span style="{!contentStyle}" >Date: <!-- Added By Neha Under CR-11765 -->
+                                            <apex:outputText value=" {0,date,MM/dd/yy}">
+                                                <apex:param value="{!tpaRequest.Today_s_Date__c}"/>
+                                            </apex:outputText>
+                                        </span>
+                                    </td>
+                                    <td><br/><br/>
+                                        <span style="{!contentStyle}" >Date: <font style="color:white;">\d1\</font></span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </apex:repeat>
+                    </apex:pageBlock>
+                    <!-- Header and Footer for PDF Document End -->
+                    <!-- Page Header and Footer for word document Start -->
+                    <apex:outputLabel rendered="{!openMode == 'word'}">
+                        <table id='hrdftrtbl' border='1' cellspacing='0' cellpadding='0'>
+                            <tr>
+                                <td>
+                                    <!--Footer-->
+                                    <div style='mso-element:footer' id="f1">
+                                        <p class="MsoFooter">
+                                            <table style="border-top:1px solid black;font-size:6.0pt;" width="111%" cellspacing="0" cellpadding="0">
+                                                <tr>
+                                                    <td width="23%" style="padding:0.0in;padding-left:0.1in;">
+                                                        Form Rev. November 2016
+                                                    </td>
+                                                    <td align="center" width="60%">
+                                                        ©2015 {!$Label.TPA_IQVIA_Keyword} Incorporated or its affiliates. All rights reserved.<br/>{!tpaRequest.Name} <br/>DOC Version:1.0 <!-- Updated by Babita Dadarwl under CR-11410 -->
+                                                    </td>
+                                                    <td align="right" width="17%" style="padding:0.0in;padding-right:0.1in;">
+                                                        <span style='mso-tab-count:2'></span>
+                                                        Page <span style='mso-field-code:" PAGE "'></span> of <span style='mso-field-code:" NUMPAGES "'></span>
+                                                    </td>
+                                                </tr>
+                                        </table>
+                                    </p>
+                                </div>
+                        </td>
+                    </tr>
+                </table>
+            </apex:outputLabel>
+            <!-- Page Header and Footer for word document End -->
+        </apex:repeat>
+    </div>
+</body>
+</html>
+</apex:page>

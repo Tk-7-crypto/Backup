@@ -1,0 +1,252 @@
+<aura:component controller="CNT_CSM_RelationshipList" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="fileName" type="String" default="No File Selected.." />
+    <aura:attribute name ="blobData" type ="String"/>
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="rowToRemove" type="AccountContactRelation"/>
+    <aura:attribute name="modalPromise" type="Aura.Action"/>
+    <aura:attribute name="noDataReturned" type="Boolean"/>
+    <aura:attribute name="sortedBy" type="String"/>
+    <aura:attribute name="photoURL" type="Object"/>
+    <aura:attribute name="sortedDirection" type="String"/>
+    <aura:attribute name="defaultSortDirection" type="String"/>
+    <aura:attribute name="showSpinner" type="Boolean"/>
+    <aura:attribute name="columns" type="List" default="[]"/>
+    <aura:attribute name="data" type="List" default="[]"/>
+    <aura:attribute name="recordLoadError" type="String"/>
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="headerTitle" type="Aura.Component[]">
+        <b><h2>{!$Label.c.IQVIA_Account_Relationship_Members}</h2></b>
+    </aura:attribute>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <aura:handler event="force:refreshView" action="{!c.init}"/>
+    
+    
+    <lightning:overlayLibrary aura:id="overlayLib" />
+    
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner aura:id="cmpSpinner" variant="brand" size="medium"/>
+    </aura:if>
+    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-1 slds-p-around_small">
+        <article class="slds-card slds-card_boundary">
+            
+            <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap">
+                <div class="profileIconContainer" style="width: 20%" data-aura-rendered-by="32:2;a">
+                    <span class="uiImage" data-aura-class="uiImage" data-aura-rendered-by="33:2;a">
+                        <img data-aura-rendered-by="34:2;a" src="{!v.photoURL.FullPhotoUrl}" class="circularPhoto" alt="User Photo" style="border-radius: 50%;margin-left :10%;width :58%"/></span>
+                </div>
+                <a href="javascript:void(0)" onclick="{!c.uploadImage}">
+                    <lightning:icon title ="update image" iconName="utility:photo" variant="photo" style="
+                                                                                                          margin-top: 130px;
+                                                                                                          margin-left: -100px;" size="small"/>
+                </a> 
+                <div class="slds-form" style="width: 80%" data-aura-rendered-by="35:2;a">
+                    <div class="slds-form__row">
+                        <div class="slds-form__item">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Contact}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {!v.simpleRecord.Name}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Job_Title}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {!v.simpleRecord.Title}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="slds-form__row">
+                        <div class="slds-form__item">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Email}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {!v.simpleRecord.Email}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Account_Name}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        <lightning:formattedText value="{!v.simpleRecord.Account.Name}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-form__row">
+                        <div class="slds-form__item">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Mobile}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {!v.simpleRecord.MobilePhone}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__item" role="listitem">
+                            <aura:if isTrue="{! v.simpleRecord.Account.AccountCountry__c ne 'US'}">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">{!$Label.c.Phone}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Phone}
+                                        </div>
+                                    </div>
+                                </div>
+                            </aura:if>
+                        </div>
+                    </div>
+                    
+                    <div class="slds-form__row">
+                        
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                <span class="slds-form-element__label">{!$Label.c.Address}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {!v.simpleRecord.Address_1__c}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="slds-form__row">
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent slds-form-element_1-col">
+                                <span class="slds-form-element__label">{!$Label.c.Email_Preferred_Language}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static slds-text-longform">
+                                        <lightning:formattedText value="{!v.simpleRecord.PreferredLanguage__c }" />
+                                        <br />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </article>
+    </div>
+    <div class="slds-col slds-size_1-of-1 slds-small-size_1-of-1 slds-p-around_small">
+        <aura:if isTrue="{!$Browser.formFactor == 'DESKTOP'}">
+            
+            <lightning:card title="{!v.headerTitle}" iconName="standard:groups" class="slds-card slds-card_boundary" >
+                <div>
+                    <lightning:datatable columns="{!v.columns}" 
+                                         data="{!v.data}" 
+                                         keyField="Id"
+                                         hideCheckboxColumn="true"
+                                         showRowNumberColumn="false"
+                                         />
+                    <aura:If isTrue="{!v.noDataReturned}">
+                        
+                        <b><p align="center">{!$Label.c.No_data_to_display} </p></b>
+                    </aura:If>
+                </div>
+            </lightning:card>
+            
+        </aura:if>
+        
+        <aura:if isTrue="{!$Browser.formFactor == 'PHONE'}">
+            <div>
+                <ul class="slds-has-dividers_bottom-space slds-theme_default">
+                    
+                    <li class="slds-item slds-theme_default">
+                        <div align="center">
+                            <p>{!v.headerTitle}</p>
+                        </div>
+                    </li>
+                    <aura:iteration items="{!v.data}" var="employee">
+                        <li class="slds-item" onclick="{!c.viewRelationshipMobile}" data-record="{!employee.Id}">
+                            <lightning:tile label="{!employee.ContactName}">
+                                <aura:set attribute="media">
+                                    <lightning:icon iconName="standard:avatar"/>
+                                </aura:set>
+                                <dl class="slds-list_horizontal slds-wrap">
+                                    
+                                    
+                                    <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                        <p class="slds-truncate" title="Focus">Focus:</p>
+                                    </dt>
+                                    <dd class="slds-item_detail slds-truncate">
+                                        <p class="slds-truncate" title="{!employee.Focus__c}">{!employee.Focus__c}</p>
+                                    </dd>
+                                    <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                        <p class="slds-truncate" title="Function">Function:</p>
+                                    </dt>
+                                    <dd class="slds-item_detail slds-truncate">
+                                        <p class="slds-truncate" title="{!employee.Function__c}">{!employee.Function__c}</p>
+                                    </dd>
+                                    <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                        <p class="slds-truncate" title="Geographic Responsibility">Geographic Responsibility:</p>
+                                    </dt>
+                                    <dd class="slds-item_detail slds-truncate">
+                                        <p class="slds-truncate" title="{!employee.Geographic_Responsibility__c}">{!employee.Geographic_Responsibility__c}</p>
+                                    </dd>
+                                    <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                        <p class="slds-truncate" title="Segment Responsibility">Segment Responsibility:</p>
+                                    </dt>
+                                    <dd class="slds-item_detail slds-truncate">
+                                        <p class="slds-truncate" title="{!employee.Responsibility__c}">{!employee.Responsibility__c}</p>
+                                    </dd>
+                                </dl>
+                            </lightning:tile>
+                        </li>
+                    </aura:iteration>
+                </ul>
+            </div>
+        </aura:if>
+    </div>
+    <div aura:id="modaldialog" role="dialog" tabindex="-1"  class="slds-modal slds-fade-in-hide" style="z-index: 9050">
+        <div class="slds-modal__container">
+            <div class="slds-modal__header">
+                <aura:if isTrue="{!v.isMandatory == false}">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{!c.closeForm}">
+                        <lightning:icon iconName="utility:close" variant="close" />
+                    </button>
+                </aura:if>
+                <h2 class="slds-text-heading--medium">{!$Label.c.Update_Photo}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <div class="slds-grid slds-wrap slds-grid--pull-padded slds-m-bottom_large">
+                    <div class="slds-col--padded slds-size--1-of-1"> 
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control" style =" margin-left: 30%">
+                                {!$Label.c.You_can_upload_a_JPG_PNG_file}
+                            </div>
+                        </div>
+                    </div>  
+                    <div class="slds-col--padded slds-size--1-of-1"> 
+                        <div class="slds-form-element__control" style="margin-left: 30%;margin-top: 5%;">
+                            <lightning:input name="file1" type="file" label="{!$Label.c.Add_image}" multiple="false" accept="image/jpeg,image/jpg, image/png" onchange="{! c.handleFilesChange }"/>
+                        </div>
+                    </div>  
+                    
+                    
+                </div>
+                <div class="slds-modal__footer slds-m-top_large" style="background-color: white; border: none;">
+                    <lightning:button variant="neutral" label="{!$Label.c.Cancel}" onclick="{!c.closeForm}" />
+                    <lightning:button variant="brand" label="{!$Label.c.Save}" onclick="{!c.saveData}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

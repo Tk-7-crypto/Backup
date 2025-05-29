@@ -1,0 +1,373 @@
+<apex:page standardController="BNF2__c" extensions="BNF_MDM_Extension" showHeader="false" sidebar="false" action="{!Initialise}">
+
+    <script language="JavaScript">
+       
+        function SetCheckBoxes(CheckedAddressId,Checked,AddressType,HiddenVariableId,Aname)
+        {
+             var AddressSelectorForm = document.getElementById('{!$Component.BnfAddressSelectorForm}');
+             if (Checked)
+             {
+                 document.getElementById(HiddenVariableId).value = CheckedAddressId;
+                 document.getElementById('Bill_To_Address_name').value = Aname;
+             }
+             else
+             {
+                 document.getElementById(HiddenVariableId).value = '';
+             }               
+             for (i=0;i < AddressSelectorForm.length;i++)
+             {
+                 if(AddressSelectorForm.elements[i].name == AddressType)
+                 {
+                     if (AddressSelectorForm.elements[i].value == CheckedAddressId && Checked)
+                     {
+                         AddressSelectorForm.elements[i].checked = true;
+                     }
+                     else
+                     {
+                         AddressSelectorForm.elements[i].checked = false;                     
+                     }
+                 }
+             }             
+        }
+        
+           
+         //  Function to set checkbox if address has been selected.  This function is called on completion
+        //  of the action to retrieve the next/previous address records
+
+        function SetSelectedAddressCheckbox()
+        {
+            var AddressSelectorForm = document.getElementById('{!$Component.BnfAddressSelectorForm}');
+            var AddressTypeArray = new Array();
+            AddressTypeArray[0] = 'BillTo';
+           
+            VariableIdArray = new Array();
+            VariableIdArray[0] = '{!$Component.BnfAddressSelectorForm.BillToAddress}';
+            for (j=0;j < AddressTypeArray.length;j++)
+            {             
+                 for (i=0;i < AddressSelectorForm.length;i++)
+                 {
+                      
+                     if(AddressSelectorForm.elements[i].name == AddressTypeArray[j] &&
+                        AddressSelectorForm.elements[i].value == document.getElementById(VariableIdArray[j]).value)
+                     {
+                         AddressSelectorForm.elements[i].checked = true;
+                     }
+                 }
+            }
+        }
+        
+         function lookUp()
+         {
+             var aID=document.getElementById('{!$Component.BnfAddressSelectorForm.BillToAddress}').value;
+             
+             var aSAPID=document.getElementById('BillToSAPContact').value;
+             var aName=document.getElementById('Bill_To_Address_name').value;
+             var aSAPName=document.getElementById('BillToAddressSAPNAME').value; 
+              var returnedArray = new Array(); 
+              window.returnValue = null;
+              returnedArray[0] = aID;
+              returnedArray[1] = aName;
+              returnedArray[2] = aSAPID;
+              returnedArray[3] = aSAPName;
+              top.window.opener.receiveDataFromPopup(returnedArray);
+              top.window.close();
+         }
+              
+        function noenter(e) 
+        {            
+            if(window.event)
+            {
+                key = window.event.keyCode; //IE
+            } 
+            else
+            {
+                key = e.which; //firefox
+            }
+            if(key == 13)
+            {
+                var ele=document.getElementById('contactMergePage:searchForm:searchButton');
+                SearchAddressByName();
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        
+        function setSAPConact(SAPContact)
+        {
+            var e = document.getElementById(SAPContact);
+            if(e.options[e.selectedIndex].value!='Default')
+            {
+                document.getElementById('BillToSAPContact').value = e.options[e.selectedIndex].value;
+                document.getElementById('BillToAddressSAPNAME').value = e.options[e.selectedIndex].text;
+            }
+            else
+            {
+              document.getElementById('BillToSAPContact').value ='';
+              document.getElementById('BillToAddressSAPNAME').value ='';
+            }
+            return false;
+        
+        }
+        
+         
+        //  Code to hook into the onLoad event and call the SetSelectedAddressCheckbox()
+        //  function to pre-select the checkboxes if addresses have already been chosen
+        //  for this BNF
+        var previousOnload = window.onload;        
+        window.onload = function() 
+        { 
+            if (previousOnload) 
+            { 
+                previousOnload();
+            }
+            //document.getElementById('{!$Component.BnfAddressSelectorForm.BillToAddress}').value='{!AddressID}';
+            
+            SetSelectedAddressCheckbox();
+        }
+        
+    function DisableAddress(CheckboxId,SapBaseCode)
+    {
+        if (SapBaseCode >= 420000 && SapBaseCode <= 429999)
+        {
+            document.getElementById(CheckboxId).disabled=true;
+        }
+        else
+        {
+            document.getElementById(CheckboxId).disabled=false;
+        }
+    }
+
+       
+
+    </script>
+    <apex:form id="BnfAddressSelectorForm">
+    
+        <apex:actionFunction name="SetSelectedAddress" action="{!DoNothing}" rerender="SelectedAddressDisplayPageBlock,Debug" status="RetrieveAddressContactsStatus"/>      
+        <apex:actionFunction name="SearchAddressByName" action="{!SearchAddressByName}" immediate="true" reRender="AddressSearchTablePanel,Debug" status="RetrieveSapCodeAddressStatus"/>
+        <!--  BEGIN Hidden fields used to store addresses/contacts selected by radio button clicks -->
+        <!--  END Hidden fields used to store addresses/contacts selected by radio button clicks -->       
+        <apex:inputHidden value="{!BNF.Bill_To__c}" id="BillToAddress" />
+        <input type="hidden" value="{!AddressName}" id="Bill_To_Address_name" />
+    
+        <input type="hidden" value="{!BNF.Bill_To_SAP_Contact__c}" id="BillToSAPContact" />
+        <input type="hidden" value="{!SAPContactName}" id="BillToAddressSAPNAME" />
+        
+        <apex:sectionHeader title="BNF {!BNF.Name} : Address Selection for {!BNF.Opportunity__r.Account.Name} (SAP PC Code {!BNF.Opportunity__r.Account.SAP_Reference__c})" /> 
+        
+        
+        <!---------------------  BEGIN BNF Locked display  ---------------------------->
+        <apex:outputPanel id="BnfLockedPanel" rendered="{!BnfLocked}">
+        <apex:pageBlock title="BNF Locked">     
+            <apex:pageMessages escape="false" id="UserMessages"></apex:pageMessages>       
+            <apex:pageBlockButtons >
+            <apex:commandButton onclick="javascript:top.window.close();" value="OK"/>            
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+        </apex:outputPanel>
+        <!---------------------  END BNF Locked display  ---------------------------->        
+        <apex:pageMessages escape="false" id="UserMessages" rendered="{!NOT(BnfLocked)}"></apex:pageMessages>        
+        <apex:outputPanel id="AddressSelectorPanel" rendered="{!AddressSelectorRendered}">
+            <apex:pageBlock title="Select BNF Address Details">     
+                <apex:outputPanel id="AddressTablePanel">
+                <apex:pageBlockTable id="AddressTable" value="{!AccountAddresses}" var="A" rendered="{!NOT(SapCodeSelectPanelRendered)}">
+                    <apex:column headerValue="Name">
+                        <apex:outputField value="{!A.Name}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}"/>
+                        <apex:outputField value="{!A.International_Name__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/>                    
+                    </apex:column>
+                    <apex:column headerValue="SAP Customer Code">
+                        <apex:outputField value="{!A.SAP_Reference__c}" />
+                    </apex:column>
+                    <apex:column headerValue="Street">                    
+                        <apex:outputField value="{!A.Street__c}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}"/>
+                        <apex:outputField value="{!A.International_Street__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/>  
+                    </apex:column>
+                    <apex:column headerValue="City">
+                        <apex:outputField value="{!A.City__c}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}"/>
+                        <apex:outputField value="{!A.International_City__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/>                        
+                        <apex:facet name="footer">
+                           <apex:commandLink status="RetrieveAddressStatus" oncomplete="SetSelectedAddressCheckbox()" value="< Prev {!NumAddressRecordsPerPage} records" action="{!PrevAddressPage}" reRender="AddressTable,Debug" rendered="{!MorePrevAddressesAvailable}"/>
+                        </apex:facet>
+                    </apex:column>
+                    <apex:column headerValue="Other Ship To">
+                        <input type="checkbox" id="{!A.Id}_BillTo" value="{!A.Id}" name="BillTo" onclick="SetCheckBoxes('{!A.Id}',this.checked,this.name,'{!$Component.BnfAddressSelectorForm.BillToAddress}','{!JSENCODE(A.name)}');SetSelectedAddress();" />
+                        <script language="JavaScript">DisableAddress('{!A.Id}_BillTo',{!A.SAP_Reference__c})</script>
+                        
+                         <apex:facet name="footer">
+                            <apex:commandLink status="RetrieveAddressStatus" oncomplete="SetSelectedAddressCheckbox()" value="Next {!NumAddressRecordsPerPage} records >" action="{!NextAddressPage}" reRender="AddressTable,Debug" rendered="{!MoreNextAddressesAvailable}" />
+                       
+                        </apex:facet>
+                        
+                        
+                    </apex:column>
+                 
+                </apex:pageBlockTable>
+                
+                <table width="100%"><tr><td align="right">
+                <apex:actionStatus id="RetrieveAddressStatus">
+                        <apex:facet name="start" >Retrieving records ...
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet> 
+                </apex:actionStatus>  
+                </td></tr></table>
+                </apex:outputPanel>  
+               
+                <br/>
+                <apex:actionRegion >
+                <apex:outputPanel id="SelectSapCodePanel">
+                 <apex:outputPanel id="SapCodeSelector" rendered="{!SapCodeSelectPanelRendered}">
+                 <apex:pageBlockSection columns="3">
+                 <apex:pageBlockSectionItem >
+                 <apex:outputLabel value="Select country"></apex:outputLabel>
+                 <apex:inputField value="{!ProxyAccount.Region_Territory__c}"/>
+                 </apex:pageBlockSectionItem>
+                 
+                 <apex:pageBlockSectionItem >
+                 <apex:outputLabel value="Customer Name Contains"></apex:outputLabel>
+                 <apex:outputPanel id="SapCodeSearchButtonPanel"><apex:inputText value="{!AddressSearchName}" onkeypress="return noenter(event);"/>
+                 </apex:outputPanel>
+                 </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                 <apex:outputLabel value="City Name Contains"></apex:outputLabel>
+                 <apex:inputText value="{!AddressSearchCity}" onkeypress="return noenter(event);"/>
+                 </apex:pageBlockSectionItem>
+                
+                 <apex:commandButton value="Search" action="{!SearchAddressByName}" reRender="AddressSearchTablePanel,Debug" status="RetrieveSapCodeAddressStatus"/>
+                 <apex:actionStatus id="RetrieveSapCodeAddressStatus">
+                        <apex:facet name="start" >Searching ...
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet> 
+                 </apex:actionStatus>  
+                 </apex:pageBlockSection>
+                 <br/>
+                 </apex:outputPanel>
+                                  
+                 <apex:outputPanel id="AddressSearchTablePanel">
+                 <apex:outputText rendered="{!SapCodeSelectPanelRendered && NumAddressSearchResults == 0 && AddressSearchRunOnce}">No results found</apex:outputText>
+                 <apex:pageBlockTable id="AddressSearchTable" value="{!SearchAddresses}" var="A" rendered="{!SapCodeSelectPanelRendered && NumAddressSearchResults > 0}">
+                   <apex:column headerValue="Name">
+                        <apex:outputField value="{!A.Name}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}" />
+                        <apex:outputField value="{!A.International_Name__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/> 
+                         <apex:facet name="footer">
+                             <apex:commandLink status="RetrieveAddressStatus" oncomplete="SetSelectedAddressCheckbox()" value="< Prev {!NumAddressRecordsPerPage} records" action="{!PrevAddressSearchPage}" reRender="AddressSearchTable,Debug" rendered="{!MorePrevAddressSearchAvailable}"/>
+                     
+                            </apex:facet>                   
+                    </apex:column>
+                    <apex:column headerValue="SAP Customer Code">
+                        <apex:outputField value="{!A.SAP_Reference__c}" />
+                    </apex:column>
+                    <apex:column headerValue="Street">                    
+                        <apex:outputField value="{!A.Street__c}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}"/>
+                        <apex:outputField value="{!A.International_Street__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/>  
+                    </apex:column>
+                    <apex:column headerValue="City">
+                        <apex:outputField value="{!A.City__c}" rendered="{!A.International_Name__c==null || UserCountry!=A.Country__c}"/>
+                        <apex:outputField value="{!A.International_City__c}" rendered="{!A.International_Name__c!=null && UserCountry==A.Country__c}"/>                        
+                   
+                    </apex:column>
+                    <apex:column headerValue="Other Ship To">
+                        <input type="checkbox" id="{!A.Id}_BillTo" value="{!A.Id}" name="BillTo" onclick="SetCheckBoxes('{!A.Id}',this.checked,this.name,'{!$Component.BnfAddressSelectorForm.BillToAddress}','{!JSENCODE(A.name)}');SetSelectedAddress();" />                        
+                        <script language="JavaScript">DisableAddress('{!A.Id}_BillTo',{!A.SAP_Reference__c})</script>
+                       
+                         <apex:facet name="footer">
+                             <apex:commandLink status="RetrieveAddressStatus" oncomplete="SetSelectedAddressCheckbox()" value="Next {!NumAddressRecordsPerPage} records >" action="{!NextAddressSearchPage}" reRender="AddressSearchTable,Debug" rendered="{!MoreNextAddressSearchAvailable}"/>
+                        
+                        </apex:facet>
+                    </apex:column>
+                </apex:pageBlockTable>
+                </apex:outputPanel>
+ 
+                </apex:outputPanel> 
+        </apex:actionRegion>
+                 <apex:outputPanel id="SapCodePanelLinks">
+                    <apex:pageBlockSection columns="2">                    
+                    <apex:commandLink style="font-weight:bold;" rendered="{!NOT(SapCodeSelectPanelRendered)}" value="Search for addresses outside {!BNF.Opportunity__r.Account.Region_Territory__c}" action="{!ShowSapCodeSelectionPanel}" reRender="SelectSapCodePanel,SapCodePanelLinks,AddressTablePanel,Debug" status="ShowSapCodePanelStatus" immediate="true" oncomplete="SetSelectedAddressCheckbox()"></apex:commandLink>                    
+                    <apex:commandLink style="font-weight:bold;" rendered="{!SapCodeSelectPanelRendered}" value="Back to addresses in {!BNF.Opportunity__r.Account.Region_Territory__c}" action="{!HideSapCodeSelectionPanel}" reRender="SelectSapCodePanel,SapCodePanelLinks,AddressTablePanel,Debug" status="ShowSapCodePanelStatus" immediate="true" oncomplete="SetSelectedAddressCheckbox()"></apex:commandLink>
+                    <apex:actionStatus id="ShowSapCodePanelStatus">
+                        <apex:facet name="start" >Loading ...
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet> 
+                    </apex:actionStatus>
+                    </apex:pageBlockSection>
+                </apex:outputPanel>            
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+
+        <apex:outputPanel id="SelectedAddressDisplayPanel" rendered="{!AddressSelectorRendered}">
+            <apex:pageBlock id="SelectedAddressDisplayPageBlock" title="Selected Addresses and Contacts">
+            <apex:pageBlockButtons location="top">
+                 <apex:actionStatus id="RetrieveAddressContactsStatus">    
+                    <apex:facet name="stop">    
+                        <apex:commandButton onclick="return lookUp();" value="Ok" disabled="false" rerender="UserMessages,Debug"/>  
+                       
+                    
+                    </apex:facet>    
+                    <apex:facet name="start">                            
+                        Retrieving records ...<img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>    
+                </apex:actionStatus>
+                 <apex:commandButton onclick="javascript:top.window.close();" value="Cancel"/>
+            </apex:pageBlockButtons>
+               <table border="1" style="border-collapse:collapse" cellpadding="5" width="100%">
+               
+               <tr>
+                    <td align="right" width="20%"> <b>Other Ship To Address :</b></td>
+                    <td width="45%"> 
+                        <apex:outputPanel >                   
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_Name__c}{!IF(BillToAddressDetails.International_Name__c!=null,'<br/>','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_Street__c}{!IF(BillToAddressDetails.International_Street__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_City__c}{!IF(BillToAddressDetails.International_City__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_State__c}{!IF(BillToAddressDetails.International_State__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_PostalCode__c}{!IF(BillToAddressDetails.International_PostalCode__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.International_Country__c}{!IF(BillToAddressDetails.International_Country__c!=null,'.','')}" />                     
+                        </apex:outputPanel> 
+                        <apex:outputPanel >   
+                            <apex:outputtext escape="false" rendered="{!BillToAddressDetails.International_Name__c!=null && UserCountry==BillToAddressDetails.Country__c}" ><br/><br/></apex:outputText>                
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.Name}{!IF(BillToAddressDetails.Name!=null,'<br/>','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.Street__c}{!IF(BillToAddressDetails.Street__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.City__c}{!IF(BillToAddressDetails.City__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.State__c}{!IF(BillToAddressDetails.State__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.PostalCode__c}{!IF(BillToAddressDetails.PostalCode__c!=null,', ','')}" />
+                            <apex:outputText escape="false" value="{!BillToAddressDetails.Country__c}{!IF(BillToAddressDetails.Country__c!=null,'.','')}" />                                                
+                        </apex:outputPanel>                     
+                    </td>
+                    <td align="right" width="20%"><b>Other Ship To Contact :</b></td>
+                    <td width="15%">
+                        <apex:selectList id="ShipToSAPContact" size="1"  value="{!BNF.Bill_To_SAP_Contact__c}" rendered="{!(BillToContacts.size > 0)}" onchange="setSAPConact(this.id);" > 
+                            <apex:selectOptions value="{!BillToContacts}"></apex:selectOptions>                          
+                        </apex:selectList> 
+                        <apex:actionStatus id="RetrieveBillToContactsStatus">
+                            <apex:facet name="start" >Retrieving records ...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                        </apex:actionStatus>
+                    </td>
+                  </tr>
+                </table>
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+        <!-------------------------------------------------------------------->
+        <!-----------  BEGIN DEBUG DISPLAY  ---------------------------------->
+        <!-------------------------------------------------------------------->
+        <apex:outputPanel id="Debug" rendered="{!CONTAINS($Profile.Name,'Administrator') && false}">
+            <apex:pageBlock title="Debug">
+                Debug: {!Debug} <br />
+                BNF Id: {!BnfId}<br />
+                BNF AccountId: {!BnfAccountId}<br />     
+                Num accounts per page: {!NumAddressRecordsPerPage} <br/>      
+                BNF Locked: {!BnfLocked} <br/>
+                AddressSelectorRendered: {!AddressSelectorRendered} <br/>
+                SapCodeSelectPanelRendered: {!SapCodeSelectPanelRendered} <br/>
+                NumAddressSearchResults: {!NumAddressSearchResults} <br/>
+             <apex:outputLink value="#" onClick="SetCheckBoxes('a1AS0000000LLi8MAG',true,'ShipTo','{!$Component.BnfAddressSelectorForm.ShipToAddress}')" >testdd</apex:outputLink>   
+            </apex:pageBlock>
+        </apex:outputPanel>
+        <!-------------------------------------------------------------------->
+        <!-------------  END DEBUG DISPLAY  ---------------------------------->
+        <!-------------------------------------------------------------------->
+    </apex:form>
+</apex:page>

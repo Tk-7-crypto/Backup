@@ -1,0 +1,283 @@
+<apex:page controller="MI_BNF_WizardEx">
+<script>
+function opendlg(HiddenVariableId)
+{
+        
+                var prdids='';
+                if(document.getElementsByName('prdlist').length!=0)
+                {
+                    for(var i=0; i < document.getElementsByName('prdlist').length; i++)
+                    {
+                        if(document.getElementsByName('prdlist')[i].checked)
+                        prdids +=document.getElementsByName('prdlist')[i].value + ','
+                    }
+                    if(prdids!='')
+                    {
+                        prdids=prdids.substr(0,(prdids.length-1));  
+                        document.getElementById(HiddenVariableId).value =prdids;
+                    }
+                    else
+                    {
+                       document.getElementById(HiddenVariableId).value='';
+                    }
+                    
+                }
+                
+                
+                
+}
+
+</script>
+    <apex:sectionHeader title="New Multi Invoice BNF" subtitle="{!InvoiceStatusText}"/>
+    
+    <apex:form id="frmWizardstep2" >
+    <apex:inputHidden value="{!SelectProductList}" id="SelectedPrdList" />
+    <apex:pageBlock title="BNF Edit Error" rendered="{!ErrorFlag}">
+        <apex:pageBlockButtons location="top" >
+                <apex:commandButton action="{!cancel}" value="OK" immediate="true" />
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="errorMessages2" escape="false" rendered="{!ErrorFlag}"/>
+       
+    </apex:pageBlock>
+        <apex:pageBlock title="BNF Details" mode="edit" rendered="{!!ErrorFlag}">
+         <apex:pageMessages id="errorMessages3" escape="false"/>
+            <!-- The pageBlockButtons tag defines the buttons that appear at the top
+and bottom of the pageBlock. Like a facet, it can appear anywhere in
+a pageBlock, but always defines the button areas.-->
+            <!-- The Next button contained in this pageBlockButtons area
+calls the step2 controller method, which returns a pageReference to
+the next step of the wizard. -->
+           <apex:pageMessages id="errorMessages" escape="false" rendered="{!ErrorFlag}"/> 
+            
+            <apex:pageMessage summary="{!SuccessMsg}" severity="info" strength="1" rendered="{!ProductAdded}"/>
+            
+            <apex:pageBlockButtons location="top" >
+                <apex:commandButton action="{!step1}" value="Previous" rendered="{!ShowPrevious}" immediate="true" />
+                <apex:commandButton action="{!save}" value="Save" onclick="return opendlg('{!$Component.frmWizardstep2.SelectedPrdList}');" />
+            <!--    <apex:commandButton action="{!saveandNew}" rendered="{!!BNFRevised}" value="Save & New" onclick="return opendlg('{!$Component.frmWizardstep2.SelectedPrdList}');"/>
+              --> 
+                <apex:commandButton action="{!cancel}" value="Cancel"
+                    immediate="true" />
+            </apex:pageBlockButtons>
+              <apex:pageBlockButtons location="bottom" >
+                <apex:commandButton action="{!step1}" value="Previous" rendered="{!ShowPrevious}" immediate="true" />
+                <apex:commandButton action="{!save}" value="Save" onclick="return opendlg('{!$Component.frmWizardstep2.SelectedPrdList}');" />
+              
+                <apex:commandButton action="{!cancel}" value="Cancel"
+                    immediate="true" />
+            </apex:pageBlockButtons>
+          
+            <apex:pageBlockSection title="BNF Information" rendered="{!!BNFEdit}">
+                <!-- Within a pageBlockSection, inputFields always display with their
+                corresponding output label. -->
+                
+                <apex:inputField id="mibnf_comp_CurrencyIsoCode" value="{!MIBNF_Comp.Billing_Currency__c}"/>
+                <apex:inputField value="{!MIBNF_Comp.Client_PO_Number__c}"/>
+                <apex:inputField value="{!MIBNF_Comp.BNF_Description__c}"/>             
+                <apex:inputField value="{!MIBNF_Comp.Is_PO_Required__c}"/>
+                <apex:inputfield value="{!MIBNF_Comp.No_Pricing_Date_Update__c}" />
+               
+               
+              
+                <apex:outputText >&nbsp;</apex:outputText>
+                
+                <apex:inputfield value="{!MIBNF_Comp.Manual_Handling_in_SAP__c}" rendered="{!!RenderRevisedBnfFields}"/> 
+                
+                <apex:outputText rendered="{!RenderRevisedBnfFields}">&nbsp;</apex:outputText>
+                <apex:outputText rendered="{!RenderRevisedBnfFields}">&nbsp;</apex:outputText>           
+                <apex:outputText rendered="{!!RenderRevisedBnfFields}">&nbsp;</apex:outputText>     
+                <apex:inputfield value="{!MIBNF_Comp.Urgent_Handling__c}"/>
+                <apex:outputText >&nbsp;</apex:outputText>  
+                <apex:inputfield value="{!MIBNF_Comp.Local_Printing__c}"/> 
+            </apex:pageBlockSection>
+            
+              <!-- Billing/Invoice and Address Details section when BNF in edit mode -->
+              
+              <apex:pageBlockSection title="Invoice Information" rendered="{!BNFEdit}">
+                <!-- Within a pageBlockSection, inputFields always display with their
+                corresponding output label. -->
+                <apex:outputfield value="{!MIBNF_Comp.MIBNF__c}"/>
+                <apex:inputField value="{!MIBNF_Comp.Client_PO_Number__c}"/>
+                <apex:inputField value="{!MIBNF_Comp.BNF_Description__c}"/>   
+                <apex:inputField value="{!MIBNF_Comp.Is_PO_Required__c}"/>
+                 <apex:inputField value="{!MIBNF_Comp.Addendum__c}" rendered="{!RenderRevisedBnfFields}" styleClass="AddendumClass"/>
+                <apex:outputfield value="{!MIBNF_Comp.Orignal_BNF__c}" rendered="{!RenderRevisedBnfFields}"/>
+               
+               
+                
+                <apex:inputField value="{!MIBNF_Comp.Revised_BNF_Reason__c}" rendered="{!RenderRevisedBnfFields}" required="true"/>
+                <apex:inputField id="mibnf_comp_CurrencyIsoCode" value="{!MIBNF_Comp.Billing_Currency__c}" required="true" />                        
+                <apex:outputText rendered="{!!RenderRevisedBnfFields}" >&nbsp;</apex:outputText>
+                <apex:inputField value="{!MIBNF_Comp.Revised_BNF_Comment__c}" rendered="{!RenderRevisedBnfFields}"/>
+                
+                <apex:inputfield value="{!MIBNF_Comp.No_Pricing_Date_Update__c}" />                    
+                <apex:outputText rendered="{!!RenderRevisedBnfFields}" >&nbsp;</apex:outputText>
+                <apex:inputfield value="{!MIBNF_Comp.Manual_Handling_in_SAP__c}" rendered="{!!RenderRevisedBnfFields}" />
+                <apex:outputText rendered="{!!RenderRevisedBnfFields}" >&nbsp;</apex:outputText>              
+                <apex:inputField value="{!MIBNF_Comp.Revised_BNF_Date__c}" rendered="{!RenderRevisedBnfFields}" required="true"/>
+                <apex:inputfield value="{!MIBNF_Comp.Urgent_Handling__c}"/> 
+                <apex:outputText >&nbsp;</apex:outputText>
+                <apex:inputfield value="{!MIBNF_Comp.Local_Printing__c}"/>
+                
+                
+            </apex:pageBlockSection>
+            <script>
+            if(document.getElementsByClassName("AddendumClass").length > 0){
+                document.getElementsByClassName("AddendumClass")[0].checked =true;
+                document.getElementsByClassName("AddendumClass")[0].disabled =true;
+            }
+            </script>
+
+          <!--  <apex:pageBlockSection title="Address Details" rendered="{!BNFEdit}">
+                    <apex:outputfield id="Bill_TO" value="{!MIBNF_Comp.Bill_To__c}" />
+                    <apex:outputfield id="Ship_TO" value="{!MIBNF_Comp.Ship_To__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Bill_To_SAP_Base_Code__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Ship_To_SAP_Base_Code__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Bill_To_SAP_Contact__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Ship_To_SAP_Contact__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.X2nd_Copy__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Cover_Sheet__c}" />
+
+                    <apex:outputfield value="{!MIBNF_Comp.X2nd_Copy_SAP_Base_Code__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Cover_Sheet_SAP_Base_Code__c}" />
+
+                    <apex:outputfield value="{!MIBNF_Comp.X2nd_Copy_SAP_Contact__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Cover_Sheet_SAP_Contact__c}" />
+                    <apex:outputfield value="{!MIBNF_Comp.Carbon_Copy__c}" />
+                    <apex:outputText >&nbsp;</apex:outputText>
+                    <apex:outputfield value="{!MIBNF_Comp.Carbon_Copy_SAP_Base_Code__c}" />
+                    <apex:outputText >&nbsp;</apex:outputText>
+                   <apex:outputfield value="{!MIBNF_Comp.Carbon_Copy_SAP_Contact__c}" />
+            
+            </apex:pageBlockSection> -->
+            <!-- Billing and Address Details section end -->
+            
+             <!-- Retainer/Down Payment, Subscription and Specification Information -->
+             <apex:pageBlockSection title="Retainer/Down Payment, Subscription and Specification Information">
+                <!-- Within a pageBlockSection, inputFields always display with their
+                    corresponding output label. -->
+                    
+                <apex:inputField id="mibnfretainerdownpayment" value="{!MIBNF_Comp.Is_this_a_retainer_downpayment__c}" required="true" />
+                <apex:inputField id="mibnfSubscriptiontype" value="{!MIBNF_Comp.Subscription_Type__c}" />
+                <apex:inputField id="mibnfRetainerdatavalue" value="{!MIBNF_Comp.Retainer_Data_Value__c}" required="true" />
+                <apex:inputField id="mibnSpecification" value="{!MIBNF_Comp.Specification__c}" />
+                <apex:inputField id="mibnfDescription" value="{!MIBNF_Comp.Description__c}" />
+                <apex:inputField id="mibnfPrint_Shop" value="{!MIBNF_Comp.Print_Shop__c}"  required="true" />
+                <apex:inputField id="mibnfRetainerOpportunityNumber" value="{!MIBNF_Comp.Retainer_Opportunity_Number__c}"/>
+            </apex:pageBlockSection>
+          
+                <!-- Invoice Billing Information -->
+           <apex:pageBlockSection title="Invoice/Billing Information">
+                
+                 <apex:inputField id="mibnf_comp_Comments" value="{!MIBNF_Comp.Comments__c}"/>
+                
+                 <apex:inputField id="mibnf_comp_Additional_Billing_Date_Information" value="{!MIBNF_Comp.Additional_Billing_Date_Information__c}"/>
+                 
+                 <apex:outputText >&nbsp;</apex:outputText>
+                 <apex:inputField id="mibnf_comp_Invoice_Default_Day" value="{!MIBNF_Comp.Invoice_Default_Day__c}" required="true"/>
+             
+                <apex:outputText >&nbsp;</apex:outputText>
+                
+                 <apex:inputField id="mibnf_compPayment_Terms" value="{!MIBNF_Comp.Payment_Terms__c}"/>
+                  
+              
+                 
+                     <apex:inputField id="mibnf_Invoice_Header_Text" value="{!MIBNF_Comp.Invoice_Header_Text__c}"/>
+           </apex:pageBlockSection>
+           
+             <!-- Pass Through Information -->
+             <apex:pageBlockSection title="Pass Through Information">
+                <!-- Within a pageBlockSection, inputFields always display with their
+                    corresponding output label. -->
+                    
+                <apex:inputField id="mibnfTravel_Amount" value="{!MIBNF_Comp.Travel_Amount__c}" />
+                <apex:inputField id="mibnfAccomodation_Amount" value="{!MIBNF_Comp.Accomodation_Amount__c}" />
+                <apex:inputField id="mibnfSubcontractoramount" value="{!MIBNF_Comp.Sub_Contractor_Amount__c}" />
+                <apex:inputField id="mibnfHono" value="{!MIBNF_Comp.Hono__c}" />
+                <apex:inputField id="mibnfPassThruSchedules" value="{!MIBNF_Comp.Pass_thru_schedules__c}"/>
+            </apex:pageBlockSection>
+            <!-- Pass Through Information section end -->
+           
+             <apex:pageBlockSection title="Available Product List" columns="1" collapsible="true" rendered="{!( NOT(oppAvailableProductsList.empty) && !BNFEdit) }">
+             <apex:outputpanel layout="block" id="divproduct" style="height:232px; width:84%; overflow-x:scroll ; overflow-y: scroll; padding-bottom:10px;"> 
+      
+        
+                <!-- Within a pageBlockSection, inputFields always display with their
+corresponding output label. -->
+                     <apex:dataTable style="width:100%;" border="0" value="{!oppAvailableProductsList}" var="oli" id="Availableprd" cellspacing="3" cellpadding="6" bgcolor="#DCDCDC">
+
+                                    <apex:column width="100px" headerValue="Action">
+                                      <input type="checkbox" id="chk{!oli.id}" name="prdlist" value="{!oli.id}"/>
+                                    </apex:column>
+                                    
+                                    <apex:column width="220px" headerValue="Name">
+                                            <apex:outputfield value="{!oli.PricebookEntry.Name}"/>
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Product Code">
+                                        <apex:outputText value="{!oli.PricebookEntry.ProductCode}"/>
+                            
+                                    </apex:column>
+                                        <apex:column headerValue="Sales Price({!MIBNF_Comp.CurrencyIsoCode}) " >{!oli.TotalPrice}                                                           
+                                    </apex:column>
+                                    <apex:column headerValue="Data Period Start" >                                      
+                                                                    
+                                        <apex:outputfield value="{!oli.Product_Start_Date__c}"/>
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Data Period End">
+                                        <apex:outputfield value="{!oli.Product_End_Date__c}"/>
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Quantity">{!oli.Quantity}
+                                                                                                            
+                                     
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Sale Type">
+                                        {!oli.Sale_Type__c}
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Material Type">
+                                                                    
+                                   {!oli.PricebookEntry.Product2.Material_Type__c}
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Delivery Media">
+                                       {!oli.Delivery_Media__c}
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Billing Frequency">
+                                      {!oli.Billing_Frequency__c}
+                                    </apex:column>
+                                    
+                                    <apex:column headerValue="Delivery/Rpt Frequency" >
+                                      {!oli.Proj_Rpt_Frequency__c}
+                                    </apex:column>
+                                     <!-- Added By : Himanshu Parashar : 11 April 2013 :: Issue : 1990  -->
+                                    <apex:column headerValue="Therapy Area" >
+                                      {!oli.Therapy_Area__c}
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Discount Reason">
+                                        {!oli.Discount_Reason__c}
+                            
+                                    </apex:column>
+                         
+                                    <apex:column headerValue="PO line item number">
+                                        {!oli.PO_line_item_number__c}
+                            
+                                    </apex:column>                         
+                         
+                                    <apex:column headerValue="Prebilling?" rendered="{!isMIBNFPrebillingSalesOrgCode}">
+                                        {!oli.Prebilling__c}
+                            
+                                    </apex:column>                         
+                                    </apex:dataTable>
+   
+          
+         </apex:outputpanel>
+           </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form> 
+</apex:page>

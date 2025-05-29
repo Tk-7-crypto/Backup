@@ -1,0 +1,74 @@
+<aura:component implements="flexipage:availableForAllPageTypes" controller="CNT_OWF_CreateAssignmentFromResReq" access="global">
+    <!--declare aura attributes-->
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="resReqId" type="String" />
+    <aura:attribute name="selectedResourceId" type="String" default=""/>
+    <aura:attribute name="resSuggestedFTE" type="String"/>
+    <aura:attribute name="isError" type="Boolean" default="false"/>
+    <aura:attribute name="errorMessage" type="String"/>
+    <aura:attribute name="isError2" type="Boolean" default="false"/>
+    <aura:attribute name="errorMessage2" type="String"/>
+    <aura:attribute name="Likedisable" type="Boolean" default="false" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <div id="maincontainer" style="height:45vh;">
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_large">Assign Resource</h2>
+        </header>
+        <div class="slds-m-around_small">
+            <aura:if isTrue="{!v.isError}">
+                <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                    <ul>                            
+                        <li>{!v.errorMessage}</li>
+                    </ul>
+                </div>
+            </aura:if>
+            <aura:if isTrue="{!v.isError2}">
+                <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                    <ul>                            
+                        <li>{!v.errorMessage2}</li>
+                    </ul>
+                </div>
+            </aura:if>
+        </div>
+        <aura:if isTrue="{!v.Spinner}">
+            <div aura:id="spinnerId" class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        
+        <aura:if isTrue="{!!v.isError2}">
+            <div class="slds-page-header row slds-p-right_small slds-align_absolute-center">
+                <div class="slds-size_1-of-2">
+                    <lightning:input type="text" name="suggestedFTE" readonly="true" aura:id="suggestedFTE" label="Suggested FTE" value="{!v.resSuggestedFTE}"/>
+                </div>
+                <br/>
+            </div>     
+            
+            <div class="slds-page-header row slds-p-right_small slds-align_absolute-center">
+                <div class="slds-size_1-of-2">
+                    <c:LXC_CRM_lookup label="Resource" object="Contact" 
+                                      searchField="Name" placeholder="Select a Resource" iconName="standard:contact" 
+                                      subtitleField="" order="FirstName" limit="5" loadingMessage="Loading..." 
+                                      errorMessage="Invalid input" aura:id="lookup" value="{!v.selectedResourceId}" 
+                                      filter="pse__Is_Resource__c = true and pse__Is_Resource_Active__c = true and pse__Salesforce_User__r.IsActive = true" />
+                </div>
+                <br/>
+            </div>    
+        </aura:if>
+        <footer class="slds-modal__footer slds-align_absolute-center ">
+            <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.returnToResourceRequest}">Cancel</button>
+            <aura:if isTrue="{!!v.isError2}">
+                <button class="slds-button slds-button_brand " disabled="{!v.Likedisable}" onclick="{!c.assignResourceRec}">Save</button>
+            </aura:if>
+        </footer>
+        
+    </div>
+</aura:component>

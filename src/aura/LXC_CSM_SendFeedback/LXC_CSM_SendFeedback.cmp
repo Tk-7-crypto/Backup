@@ -1,0 +1,57 @@
+<aura:component controller="CNT_CSM_Feedback">
+    <aura:attribute name="showError" type="boolean" default="false" />
+    <aura:attribute name="isModalOpen" type="boolean" default="false" />
+    <aura:attribute name="recordId" type="String" default="" />
+    <aura:attribute name="likeOrDislike" type="String" default="" />
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:handler event="aura:waiting" action="{!c.waiting}"></aura:handler>
+    <aura:handler event="aura:doneWaiting" action="{!c.doneWaiting}"></aura:handler>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:if isTrue="{!v.isLoading}">
+        <lightning:spinner aura:id="Spinner" alternativeText="Loading" variant="brand" />
+    </aura:if>
+    <div class="text-center">
+        <h4 class="h4 mb-3">{!$Label.c.Was_this_page_helpful}</h4>
+        <div class=" mb-3">
+            <div class="btn-group" role="group">
+                <a href="javascript:void(0);" class="mr-1" data-value="Like" onclick="{!c.saveLikeOrDislike}">
+                    <lightning:buttonIcon class="{!v.likeOrDislike eq 'Like' ? 'fill' : ''}" iconName="utility:like" alternativeText="Like" title="Like" />
+                </a>
+                <a href="javascript:void(0);" class="ml-1" data-value="Dislike" onclick="{!c.saveLikeOrDislike}">
+                    <lightning:buttonIcon class="{!v.likeOrDislike eq 'Dislike' ? 'fill' : ''}" iconName="utility:dislike" alternativeText="Dislike" title="Dislike" />
+                </a>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="{!c.openModal}">{!$Label.c.Send_feedback}</button>
+    </div>
+
+    <aura:if isTrue="{!v.isModalOpen}">
+        <section tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title h5">
+                            {!$Label.c.Send_feedback}
+                        </h5>
+                        <button type="button" class="close" onclick="{!c.closeModal}">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <aura:if isTrue="{!v.showError}">
+                            <div class="alert alert-danger" role="alert">
+                                {!$Label.c.Please_enter_feedback}
+                            </div>
+                        </aura:if>
+                        <ui:inputTextArea aura:id="feedback" placeholder="{!$Label.c.Have_feedback_We_d_love_to_hear_it}" maxlength="2000" rows="15"></ui:inputTextArea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="{!c.sendFeedback}" class="btn btn-primary">{!$Label.c.Send_feedback}</button>
+                        <button type="button" onclick="{!c.closeModal}" class="btn btn-primary">{!$Label.c.Close}</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

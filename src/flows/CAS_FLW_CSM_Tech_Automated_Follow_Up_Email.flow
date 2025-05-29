@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <decisions>
+        <name>AFU_TechnologyCase_Count_NULL</name>
+        <label>AFU - TechnologyCase - Count-NULL</label>
+        <locationX>182</locationX>
+        <locationY>276</locationY>
+        <defaultConnectorLabel>AFU - TechnologyCase - Count-NULL False</defaultConnectorLabel>
+        <rules>
+            <name>AFU_TechnologyCase_Count_NULL_True</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.RecordTypeName__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>TechnologyCase</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.AFU_TECH__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Count_of_AFU__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myRule_1_A1</targetReference>
+            </connector>
+            <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+            <label>AFU - TechnologyCase - Count-NULL TRUE</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>AFU_TechnologyCase_Scheduled_Update</name>
+        <label>AFU - TechnologyCase  Scheduled Update</label>
+        <locationX>710</locationX>
+        <locationY>276</locationY>
+        <defaultConnector>
+            <targetReference>Case_Closed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Count-of AFU Scheduled Update False</defaultConnectorLabel>
+        <rules>
+            <name>AFU_Not_Max</name>
+            <conditionLogic>1 AND 2 AND (3 OR 4)</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.AFU_TECH__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.RecordTypeName__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>TechnologyCase</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Count_of_AFU__c</leftValueReference>
+                <operator>IsBlank</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>CheckIfCount</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_AFU_Next_Date</targetReference>
+            </connector>
+            <label>AFU Not Max</label>
+        </rules>
+    </decisions>
+    <description>CSM-3244 : TECH - AFU - Converting Process Builder to Flow</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>AFUCloseDateUpdateEmailNotificationFalse</name>
+        <dataType>Date</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 11, 
+1, 10, 
+2, 10, 
+3, 12, 
+4, 12, 
+5, 12, 
+6, 12, 
+999) = 11, 
+{!$Record.AFU_TimeStamp__c} + 11,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 11, 
+1, 10, 
+2, 10, 
+3, 12, 
+4, 12, 
+5, 12, 
+6, 12, 
+999) = 10, 
+{!$Record.AFU_TimeStamp__c} + 10,
+{!$Record.AFU_TimeStamp__c} + 12
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUCloseDateUpdateEmailNotificationTrue</name>
+        <dataType>Date</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 9, 
+1, 8, 
+2, 8, 
+3, 8, 
+4, 8, 
+5, 10, 
+6, 10, 
+999) = 9, 
+{!$Record.AFU_TimeStamp__c} + 9,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 9, 
+1, 8, 
+2, 8, 
+3, 8, 
+4, 8, 
+5, 10, 
+6, 10,
+999) = 8, 
+{!$Record.AFU_TimeStamp__c} + 8,
+{!$Record.AFU_TimeStamp__c} + 10
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUCountEqualstoNull</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;,
+{!$Record.AFU_TECH__c},
+ISBLANK({!$Record.Count_of_AFU__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>AFUCriteria1Scheduledupdate</name>
+        <dataType>DateTime</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 5, 
+1, 4, 
+2, 6, 
+3, 6, 
+4, 6, 
+5, 6, 
+6, 6, 
+999) = 4, 
+{!$Record.AFU_TimeStamp__c} + 4,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 5, 
+1, 4, 
+2, 6, 
+3, 6, 
+4, 6, 
+5, 6, 
+6, 6, 
+999) = 5, 
+{!$Record.AFU_TimeStamp__c} + 5,
+{!$Record.AFU_TimeStamp__c} + 6 
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUCriteria2ScheduleUpdate</name>
+        <dataType>DateTime</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 9, 
+1, 8, 
+2, 8, 
+3, 8, 
+4, 8, 
+5, 10, 
+6, 10, 
+999) = 8, 
+{!$Record.AFU_TimeStamp__c} + 8,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 9, 
+1, 8, 
+2, 8, 
+3, 8, 
+4, 8, 
+5, 10, 
+6, 10, 
+999) = 9, 
+{!$Record.AFU_TimeStamp__c} + 9,
+{!$Record.AFU_TimeStamp__c} + 10 
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUCriteria3ScheduledUpdate</name>
+        <dataType>DateTime</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 11, 
+1, 10, 
+2, 10, 
+3, 10, 
+4, 12, 
+5, 12, 
+6, 12, 
+999) = 11, 
+{!$Record.AFU_TimeStamp__c} + 11,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 11, 
+1, 10, 
+2, 10, 
+3, 10, 
+4, 12, 
+5, 12, 
+6, 12, 
+999) = 10, 
+{!$Record.AFU_TimeStamp__c} + 10,
+{!$Record.AFU_TimeStamp__c} + 12
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUFrequencyOnAccount</name>
+        <dataType>Number</dataType>
+        <expression>{!$Record.Account.Tech_AFU_Frequency__c}</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>AFUFrequencyOnCustomSettings</name>
+        <dataType>Number</dataType>
+        <expression>{!$Setup.CSM_AFU_DEFAULT_EMAIL__c.Tech_AFU_Frequency_In_Days__c}</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>AFUNextDateUpdateEmailNotificationFalse</name>
+        <dataType>DateTime</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 3, 
+1, 1, 
+2, 1, 
+3, 1, 
+4, 4, 
+5, 4, 
+6, 4, 
+999) = 1, 
+{!$Record.AFU_TimeStamp__c} + 2,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 3,
+1, 1, 
+2, 1, 
+3, 1, 
+4, 4, 
+5, 4, 
+6, 4,
+999) = 3, {!$Record.AFU_TimeStamp__c} + 3, {!$Record.AFU_TimeStamp__c} + 4 
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUNextDateUpdateEmailNotificationTrue</name>
+        <dataType>DateTime</dataType>
+        <expression>IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c} ) - DATE(1900,1,7),7), 
+0, 3, 
+1, 1, 
+2, 1, 
+3, 1, 
+4, 4, 
+5, 4, 
+6, 4, 
+999) = 1, 
+{!$Record.AFU_TimeStamp__c} + 2,
+IF( 
+CASE( 
+MOD(DATEVALUE({!$Record.AFU_TimeStamp__c}) - DATE(1900,1,7),7), 
+0, 3,
+1, 1, 
+2, 1, 
+3, 1, 
+4, 4, 
+5, 4, 
+6, 4,
+999) = 3, {!$Record.AFU_TimeStamp__c} + 3, {!$Record.AFU_TimeStamp__c} + 4 
+) 
+)</expression>
+    </formulas>
+    <formulas>
+        <name>AFUTechnoCase</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;</expression>
+    </formulas>
+    <formulas>
+        <name>AFUTimeStampNow</name>
+        <dataType>DateTime</dataType>
+        <expression>NOW()</expression>
+    </formulas>
+    <formulas>
+        <name>CheckCurrentAFUCount</name>
+        <dataType>Boolean</dataType>
+        <expression>If(NOT(ISBLANK(AFUFrequencyOnAccount)),{!$Record.Count_of_AFU__c} &lt; AFUFrequencyOnAccount,{!$Record.Count_of_AFU__c} &lt; AFUFrequencyOnCS)</expression>
+    </formulas>
+    <formulas>
+        <name>CheckIfCount</name>
+        <dataType>Boolean</dataType>
+        <expression>IF(
+	NOT(ISBLANK(AFUFrequencyOnAccount)),
+		IF
+			({!$Record.Low_Email_Notification_frequency__c} == true,
+				IF(
+					AFUFrequencyOnAccount == 1, {!$Record.Count_of_AFU__c}== 1 ,{!$Record.Count_of_AFU__c}&lt;= 2), {!$Record.Count_of_AFU__c}&lt;=AFUFrequencyOnAccount),
+		IF
+			({!$Record.Low_Email_Notification_frequency__c}== true,
+				IF(
+					AFUFrequencyOnCustomSettings == 1, {!$Record.Count_of_AFU__c}== 1, {!$Record.Count_of_AFU__c}&lt;=2), {!$Record.Count_of_AFU__c}&lt;=AFUFrequencyOnCustomSettings)
+					)</expression>
+    </formulas>
+    <formulas>
+        <name>CloseDateCal</name>
+        <dataType>Date</dataType>
+        <expression>DATEVALUE(
+  {!$Record.AFU_TimeStamp__c} +  
+  IF(
+    AND(
+      NOT(ISBLANK(AFUFrequencyOnAccount)),
+      NOT(ISBLANK(MaxReminderCountOnAccount)),
+      {!$Record.Low_Email_Notification_frequency__c} = false
+    ),
+    (AFUFrequencyOnAccount * MaxReminderCountOnAccount) + AFUFrequencyOnAccount,
+    IF(
+      {!$Record.Low_Email_Notification_frequency__c} = true,
+      IF(
+        NOT(ISBLANK(AFUFrequencyOnAccount)),
+        (
+          (AFUFrequencyOnAccount * 
+            IF(MaxReminderCountOnAccount == 1, MaxReminderCountOnAccount, 2)
+          ) + AFUFrequencyOnAccount
+        ),
+        (
+          (AFUFrequencyOnCustomSettings * 
+            IF(MaxReminderCountOnCustomSettings == 1, MaxReminderCountOnCustomSettings, 2)
+          ) + AFUFrequencyOnCustomSettings
+        )
+      ),
+      (AFUFrequencyOnCustomSettings * MaxReminderCountOnCustomSettings) + AFUFrequencyOnCustomSettings
+    )
+  )
+)</expression>
+    </formulas>
+    <formulas>
+        <name>CountOfAFU1</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;,
+{!$Record.AFU_TECH__c},
+{!$Record.AFU_TECH__c},
+{!$Record.Count_of_AFU__c} = 1)</expression>
+    </formulas>
+    <formulas>
+        <name>CountOfAFU2</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;,
+{!$Record.AFU_TECH__c},
+{!$Record.Low_Email_Notification_frequency__c} = false,
+{!$Record.AFU_TECH__c},
+{!$Record.Count_of_AFU__c} = 2)</expression>
+    </formulas>
+    <formulas>
+        <name>CountOfAFU3</name>
+        <dataType>Boolean</dataType>
+        <expression>OR(
+AND(
+{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;,
+{!$Record.AFU_TECH__c},
+{!$Record.Low_Email_Notification_frequency__c},
+{!$Record.Count_of_AFU__c} = 2)
+,AND(
+{!$Record.RecordType.DeveloperName} =&quot;TechnologyCase&quot;,
+{!$Record.AFU_TECH__c},
+{!$Record.Count_of_AFU__c} = 3)
+)</expression>
+    </formulas>
+    <formulas>
+        <name>CountPlusOne</name>
+        <dataType>Number</dataType>
+        <expression>If(NOT(ISBLANK({!$Record.Count_of_AFU__c})),{!$Record.Count_of_AFU__c}+1,1)</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>MaxReminderCountOnAccount</name>
+        <dataType>Number</dataType>
+        <expression>VALUE(TEXT({!$Record.Account.Tech_AFU_Reminder__c}))</expression>
+        <scale>2</scale>
+    </formulas>
+    <formulas>
+        <name>MaxReminderCountOnCustomSettings</name>
+        <dataType>Number</dataType>
+        <expression>{!$Setup.CSM_AFU_DEFAULT_EMAIL__c.Tech_AFU_Max_Reminder__c}</expression>
+        <scale>0</scale>
+    </formulas>
+    <formulas>
+        <name>NextDateCal</name>
+        <dataType>DateTime</dataType>
+        <expression>IF(
+  ISBLANK(AFUFrequencyOnAccount),
+  {!$Record.AFU_TimeStamp__c} + (AFUFrequencyOnCustomSettings * 1),
+  {!$Record.AFU_TimeStamp__c} + (AFUFrequencyOnAccount * 1)
+)</expression>
+    </formulas>
+    <formulas>
+        <name>NextDateCalForFollowUp</name>
+        <dataType>DateTime</dataType>
+        <expression>IF(NOT(ISBLANK(AFUFrequencyOnAccount)),{!$Record.AFU_Next_Date__c} + AFUFrequencyOnAccount,{!$Record.AFU_Next_Date__c} + AFUFrequencyOnCustomSettings)</expression>
+    </formulas>
+    <formulas>
+        <name>ValueForAfuCountUpdate</name>
+        <dataType>Number</dataType>
+        <expression>1</expression>
+        <scale>0</scale>
+    </formulas>
+    <interviewLabel>CAS FLW CSM Tech Automated Follow Up Email Back To SetupHelp {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CAS FLW CSM Tech Automated Follow Up Email</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Case_Closed</name>
+        <label>Case Closed</label>
+        <locationX>842</locationX>
+        <locationY>384</locationY>
+        <inputAssignments>
+            <field>AFU_Email_Flag__c</field>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>AFU_Next_Date__c</field>
+            <value>
+                <elementReference>NextDateCalForFollowUp</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Count_of_AFU__c</field>
+            <value>
+                <elementReference>CountPlusOne</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Closed</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>myRule_1_A1</name>
+        <label>Update TimeStamp</label>
+        <locationX>50</locationX>
+        <locationY>384</locationY>
+        <connector>
+            <targetReference>Update_Next_and_Close_Date</targetReference>
+        </connector>
+        <inputAssignments>
+            <field>AFU_TimeStamp__c</field>
+            <value>
+                <elementReference>AFUTimeStampNow</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Update_AFU_Next_Date</name>
+        <label>Update AFU Next Date</label>
+        <locationX>578</locationX>
+        <locationY>384</locationY>
+        <inputAssignments>
+            <field>AFU_Email_Flag__c</field>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>AFU_Next_Date__c</field>
+            <value>
+                <elementReference>NextDateCalForFollowUp</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Count_of_AFU__c</field>
+            <value>
+                <elementReference>CountPlusOne</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Resolution__c</field>
+            <value>
+                <stringValue>FromFlowCountIsNotMax</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Update_Next_and_Close_Date</name>
+        <label>Update Next and Close Date</label>
+        <locationX>50</locationX>
+        <locationY>492</locationY>
+        <inputAssignments>
+            <field>AFU_Close_Date__c</field>
+            <value>
+                <elementReference>CloseDateCal</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>AFU_Next_Date__c</field>
+            <value>
+                <elementReference>NextDateCal</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>320</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>AFU_TechnologyCase_Count_NULL</targetReference>
+        </connector>
+        <object>Case</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>X0hrs_after_AFU_Next_Date</name>
+            <connector>
+                <targetReference>AFU_TechnologyCase_Scheduled_Update</targetReference>
+            </connector>
+            <label>0hrs after AFU Next Date</label>
+            <offsetNumber>0</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>AFU_Next_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>AFUFrequencyOnCS</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+    </variables>
+    <variables>
+        <name>CurrentAFU</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+    </variables>
+    <variables>
+        <name>MaxReminderCountOnCS</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+    </variables>
+    <variables>
+        <name>TechAfuFrequencyValue</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>2</scale>
+    </variables>
+</Flow>

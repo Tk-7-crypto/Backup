@@ -1,0 +1,537 @@
+<apex:page standardController="Agreement_Line_Item__c" extensions="ATCSearch" id="pgId" sidebar="false" lightningStylesheets="true">
+  <apex:slds />
+ <c:JQueryBlockUI />
+  <script type="text/javascript"> 
+    
+   function noenter(e){         
+
+
+      if(window.event){                    
+         key = window.event.keyCode;               
+      } 
+      else{                    
+         key = e.which;             
+      }               
+
+      if(key == 13) {                    
+       return false;               
+      } else{                    
+          return true;               
+      }          
+    }     
+    </script>
+    
+     <style>
+        .vfHelpText a            {position:relative;}
+        .vfHelpText a span       {display: none;}
+        .vfHelpText a:hover span {display: block;
+                                  position:absolute;
+                                  top:1.25em;
+                                  padding:2px 5px;
+                                  left:-10em; width:15em;
+                                  z-index:100;
+                                  border:1px solid orange;
+                                  background-color:#FEFDB9;
+                                  color:black;
+                                 }
+    </style>
+    <script>
+       function checkAll(cb,lstSize)
+          {                          
+            try {
+               var id ;
+               var parId = (cb.id).replace("sall","");                                                       
+               for(var i=0; i<lstSize; i++)
+               {                                
+                 id = parId+i+":chkSelected";  
+
+                 document.getElementById(id).checked = cb.checked;
+
+               }
+               }
+
+               catch(e) {                           
+               }
+         }     
+
+         function selectOrDeselectAll(cb,lstSize) 
+         {
+           var id ;
+           try { 
+                  var parentId= ((cb.id).replace(":chkSelected","")).substr(0,((cb.id).replace(":chkSelected","")).length-1); 
+                  var SelectAllid = parentId+"sall";
+                  if(!cb.checked) {
+                     document.getElementById(SelectAllid).checked = false ; 
+                  }
+                  else {
+                        for(var i=0; i<lstSize; i++)
+                        {
+                           id = parentId+i+":chkSelected";
+                           if(!document.getElementById(id).checked){
+                             return ;
+                           }                            
+                        }         
+                        document.getElementById(SelectAllid).checked = cb.checked;                                                  
+                 }
+              }
+              catch(e) {                          
+
+              }
+        }
+
+
+        function selectOrDeselectAllSelectdSec(cb) 
+        {
+          var id ;
+          try { 
+                 var parId = "pgId:frmId:PB2id:PBS2id:PBSIid:"
+                 var SelectAllid = "pgId:frmId:PB2id:PBS2id:PBSIid:sall";
+                 if(!cb.checked) {
+                     document.getElementById(SelectAllid).checked = false ;  
+                 }
+                 else {
+                     for(var i=1; i<= requests[0]; i++)
+                     {
+                        for(var j=0 ;j < requests[i]; j++) {
+                        id = parId+"pbtATCSelected1:"+(i-1)+":pbtATCSelected2:"+j+":chkSelected"; 
+                        if(!document.getElementById(id).checked){
+                          return ;  
+                        }
+                      }
+                     }
+
+
+                     document.getElementById(SelectAllid).checked = cb.checked;                             
+                 } 
+          }catch(e) {  
+            alert(e);                        
+          }
+       }
+       function checkAll2(cb)
+       {    
+          try {      
+               var id ;
+               var parId = (cb.id).replace("sall","");
+               for(var i=1; i<= requests[0]; i++)
+               {                
+                 for(var j=0 ;j < requests[i]; j++) {  
+                   id = parId+"pbtATCSelected1:"+(i-1)+":pbtATCSelected2:"+j+":chkSelected";
+                   document.getElementById(id).checked = cb.checked;
+                 }
+               }
+           }
+
+
+           catch(e) {
+             alert(e);
+           } 
+       }
+        
+  </script>
+  <apex:outputPanel id="pageMsg" rendered="{!!ShowComponentMessage}">
+  <apex:pageMessages id="pgMsg" />
+  </apex:outputPanel>
+
+  <head>
+
+      <script>    
+      function checkForWilChar(str) {
+        var perlen ;
+        for(var i = 0; i< str.length ; i++ ) {
+          perlen = str.length;
+          str = str.replace('*','');
+          str = str.replace('%','');
+          str = str.replace('?','');
+          if (perlen > str.length ) {
+             i = i - (perlen - str.length)  ;
+          }
+        } 
+        if(str.length <= 0) {
+          return false;
+        }
+        return true ;
+     }
+     function callErrorMsg() { 
+
+       callErrorMsg1();
+     }
+     </script>
+  
+
+</head>
+
+  <script>
+    
+    function searchRecords()
+    {   
+      try { 
+          if(document.getElementById('pgId:frmId:PBid:pbs1:PBSI:txtCode') != null ) {
+
+            var codeVal = document.getElementById('pgId:frmId:PBid:pbs1:PBSI:txtCode').value
+            codeVal= codeVal.replace(/^\s+|\s+$/g, ''); 
+            if(codeVal != '' ) {                    
+              var wildCharCod  = checkForWilChar(codeVal);  
+              if(wildCharCod) { 
+                YUIShowLoading();
+                jsSearchATC(codeVal);                       
+              }else {              
+                callErrorMsg();
+              }
+            }else 
+            {
+              alert('Please enter search criteria first');
+                return false;
+
+            }
+          }//end of IF  
+
+       }catch(e) {
+         alert(e);
+       }
+   }
+   function setGridHeight()
+   {
+
+   }
+         
+  function JSgetSelObj(objValue)
+   {
+      var codeVal = document.getElementById('pgId:frmId:PBid:pbs1:PBSI:txtCode').value  
+      codeVal= codeVal.replace(/^\s+|\s+$/g, ''); 
+      if(codeVal != '' ) {
+        var wildCharCod  = checkForWilChar(codeVal); 
+        if(wildCharCod) {
+          YUIShowLoading();
+          getSelObj(objValue);  
+        }else {
+           callErrorMsg();
+        }  
+     }
+     else {
+        callErrorMsg2();
+     }
+   }  
+
+
+    </script>
+    <apex:form rendered="{!ShowComponentMessage}">
+        <c:SCM_Cancel />
+    </apex:form>
+    
+    <apex:form id="frmId" rendered="{!ShowAllElement}">
+    
+
+      <apex:actionFunction name="callErrorMsg1" action="{!callErrorMsg}" id="cem" rerender="thePanelWrapper,charmsg,PBid" ></apex:actionFunction> 
+      <apex:actionFunction name="callErrorMsg2" action="{!callErrorMsg2}" id="cem2" rerender="thePanelWrapper,PBid" ></apex:actionFunction> 
+      <apex:actionFunction name="AddSelected" action="{!AddSelected}"  reRender="selRes,thePanelWrapper,btnAddToAgreementLineItem,PBid" oncomplete="YUIHideLoading();"/>
+      
+      <!---------------------------------------------------------- Object Selection Block -------------------------------------------------------------------->        
+
+      <apex:actionFunction name="getSelObj" action="{!SearchMarketDefinition}" id="gosl" oncomplete="setGridHeight();YUIHideLoading(); "  reRender="pbsId,pbs1,pageMsg,PBid" >
+        <apex:param name="objValue" value="" assignTo="{!selectedObject}" /> 
+      </apex:actionFunction>
+       
+        <apex:pageBlock id="DefinitionTypeBlockId">
+          <apex:pageBlockSection id="pbsId" columns="1" title="Select Market Definition Type:" >
+                <apex:selectList value="{!selectedObject}" size="1" id="plsoId" >
+                    <apex:selectOptions value="{!ObjectList}" />
+                </apex:selectList>            
+            </apex:pageBlockSection> 
+        </apex:pageBlock>       
+       
+        <apex:actionFunction name="jsSearchATC" action="{!SearchMarketDefinition}" oncomplete="YUIHideLoading();" reRender="thePanelWrapper,PBid" >
+          <apex:param name="codeVal" value="" assignTo="{!searchText}" /> 
+          <apex:param name="profile" value="{!$Profile.Name}" assignTo="{!profile}"/> 
+        </apex:actionFunction>
+        <!---------------------------------------------------------Search Box section---------------------------------------------------------------->
+        <apex:pageBlock title="Search Market Definition " id="PBid" >
+            <apex:pageBlockButtons rendered="{!IF(Agreement_Line_Item__c.AgreementId__r.RecordType.Name != 'SOW', true , false)}">
+              <apex:commandButton id="btnId" value="Add Selected Code(s)"  onclick="AddSelectedjs();return false;"/>
+            </apex:pageBlockButtons> 
+                     
+            <apex:pageBlockSection columns="2" id="pbs1">          
+            <apex:actionRegion >
+               <apex:outputPanel id="SerachRegion">
+                    <apex:pageblocksectionitem id="PBSI">
+                       <apex:OutputLabel value="Please Type Market Definition:"  for="txtCode" />
+                       <apex:outputPanel id="searctTxtpnl">                       
+                          <br/><apex:inputText value="{!searchText}" id="txtCode" onkeypress="return noenter(event)" /> 
+                          <apex:commandButton id="searchbtn" value="Search" onclick="javascript:searchRecords();return false;"  />                          
+                      </apex:outputPanel>
+                    </apex:pageblocksectionitem>
+               </apex:outputPanel>
+           </apex:actionRegion> 
+           <apex:outputPanel id="opSearchResults"  layout="block"  >
+             <!--------------------------------------------------------------------------  ATC - Table ------------------------------------------- -->
+        
+             <apex:outputPanel id="thePanelWrapper" >
+               <apex:outputPanel id="charmsg" rendered="{!charMsg}">
+                  <apex:pageMessage summary="Please Provide atleast one character/Numeric value for Searching"  severity="Info" strength="3" />
+               </apex:outputPanel>
+              <apex:outputPanel id="parentOfTable" rendered="{!ShowResultTbl}" style="height:300px ; overflow:auto;"  layout="block">
+              <script>
+                var currentFlag = {!checkAll};
+                if (!currentFlag){
+                  document.getElementById('pgId:frmId:PBid:pbs1:pbtATC:sall').checked = false;
+                }
+              </script>
+         
+              <!---------------------------------  Table shows Search Result  ------------------------------------------------------------------>                           
+              
+              <apex:pageBlockTable id="pbtATC" value="{!lstATC}" var="objATC" width="100%;">
+               <apex:column >
+                 <apex:facet name="header">
+                   <apex:outputPanel >
+                     <apex:inputcheckbox id="sall" disabled="{!lstATC.size == 0}" onclick="checkAll(this,{!lstATC.size});"  value="{!checkAll}"/>
+                   </apex:outputPanel>
+                 </apex:facet>
+                 <apex:inputcheckbox id="chkSelected" value="{!objATC.selectedFlag}" onclick="selectOrDeselectAll(this,{!lstATC.size});"/>
+               </apex:column>
+
+               <apex:column >
+                 <apex:facet name="header">
+                    <apex:outputLabel value="{!$ObjectType.ATC__c.fields.ATC_Code__c.label}"/>
+                 </apex:facet>
+                 <apex:outputLabel value="{!objATC.ATC.ATC_Code__c}"></apex:outputLabel>
+               </apex:column>
+
+               <apex:column >
+                 <apex:facet name="header">
+                   <apex:outputLabel value="{!$ObjectType.ATC__c.fields.Level__c.label}"/>
+                 </apex:facet>
+                 &nbsp;
+                 <apex:outputLabel value="{!objATC.ATC.Level__c}"></apex:outputLabel>
+               </apex:column>                             
+               <apex:column >
+                   <apex:facet name="header">
+                      <apex:outputLabel value="{!$ObjectType.ATC__c.fields.Name_Other__c.label}"/>
+                    </apex:facet>
+                    &nbsp;
+                    <apex:outputLabel value="{!objATC.ATC.Name_Other__c}"></apex:outputLabel>
+              </apex:column>   
+              <apex:column >
+                 <apex:facet name="header">
+                   <apex:outputLabel value="{!$ObjectType.ATC__c.fields.Name_Eng__c.label}"/>
+                 </apex:facet>
+                 &nbsp;
+                 <apex:outputLabel value="{!objATC.ATC.Name_Eng__c}"></apex:outputLabel>
+               </apex:column>                                  
+            </apex:pageBlockTable>  
+           <!-- ------------------------------------- End of Page Block Table shows Search Result ---------------------------------------------------------->             
+        </apex:outputPanel> 
+        <script> 
+        function AddSelectedjs() 
+        {   
+         try 
+         {                           
+           var lstS = {!lstATC.size} ;                                             
+           if(lstS  > 0) 
+           {      
+             var ids = document.getElementById('pgId:frmId:PBid:pbs1:pbtATC:sall');               
+             if(ids.checked == true){
+               YUIShowLoading(); 
+               AddSelected(); 
+              }else 
+              {
+                var parId = (ids.id).replace("sall",""); 
+                for(var i=0; i<lstS ; i++)
+                { 
+                  id = parId+i+":chkSelected";  
+                  if(document.getElementById(id).checked == true){
+                    YUIShowLoading();
+                    AddSelected(); 
+                    return ;
+                  }
+                }
+                alert('Please select at least one item from the list'); 
+              }
+
+           }else {
+             var codeVal = document.getElementById('pgId:frmId:PBid:pbs1:PBSI:txtCode').value 
+             if(codeVal == '')           
+             {
+
+               alert('Please select Search Criteria first');
+               return false ;                          
+             }                    
+           }            
+
+        }catch(e){
+           alert(e);
+        } 
+      }
+      
+
+      </script> 
+               
+      </apex:outputPanel> 
+      
+      </apex:outputPanel>
+
+      </apex:pageBlockSection>
+      </apex:pageBlock>
+          <apex:pageBlock id="otherLineItemBlock">
+              <apex:actionFunction name="renderLineItemDiv" reRender="OtherLineItemList, checkSelectedPanel" oncomplete="YUIHideLoading();"/> 
+              <apex:inputHidden id="isAllSelectedHidden" value="{!isAllSelected}"/>
+              <apex:pageBlockSection columns="1" ID="pbsALIList">
+                  <apex:outputPanel >
+                  <apex:pageBlockSectionItem >
+                      <apex:inputCheckbox selected="{!applyToOtherLineItem}" onclick="YUIShowLoading(); renderLineItemDiv();"></apex:inputCheckbox>
+                      <apex:outputLabel value="{!$Label.Apply_same_Changes_to_other_line_items}" style="font-weight:bold;"></apex:outputLabel>                         
+                  </apex:pageBlockSectionItem>
+                  </apex:outputPanel>
+                  <apex:outputPanel id="OtherLineItemList">                                                                   
+                      <apex:selectList rendered="{!applyToOtherLineItem}" multiselect="true" value="{!selectedAGLILineItem}" size="4" id="multiSelectALIlist">
+                          <apex:selectOptions value="{!AGLIListOption}"></apex:selectOptions>
+                      </apex:selectList>
+                  </apex:outputPanel>
+              </apex:pageBlockSection>         
+          </apex:pageBlock>
+          <apex:outputPanel id="checkSelectedPanel">
+              <script>
+                  var isChecked = {!applyToOtherLineItem};
+              </script>
+          </apex:outputPanel>
+       
+          <script>    
+              function checkSelected(){
+                
+                  var noOfSelectedALI = 0;
+                  var selectALI ;
+                  var isAllSelected = false;
+                  if(isChecked) {
+                      selectALI  = document.getElementById('{!$Component.pgId:frmId:otherLineItemBlock:pbsALIList:multiSelectALIlist}').options ;
+                      for(var i = 0; i < selectALI.length; i++) {
+                          if (selectALI[i].selected) {
+                              if(selectALI[i].value == 'All' ) {
+                                  isAllSelected = true;
+                              }
+                                noOfSelectedALI++;
+                            }
+                        }
+                        document.getElementById('{!$Component.pgId:frmId:otherLineItemBlock:isAllSelectedHidden}').value = isAllSelected;
+                    }
+                  AddLineItemATCsJS();
+                  return;    
+                }
+            </script>
+           <!-- End -->
+       
+        <!-- ******************************************************************* Selected scetion for insertion of records *************************************************************************************-->
+        <apex:pageBlock title="Selected Market Definition " id="PB2id" >
+            <apex:pageBlockButtons location="both" id="PB2Btn">
+    			    <apex:commandButton id="btnAddToAgreementLineItem" value="Save Changes" title="{!$Label.Add_selected_items_to_the_agreement_line_item}"   onclick="checkSelected(); return false"/>
+              <apex:commandButton id="btnCancel" value="Cancel" title="Cancel" action="{!CancelATCSearch}" />
+           </apex:pageBlockButtons> 
+           <apex:pageBlockSection columns="1" id="PBS2id">
+                <apex:outputPanel id="additionalSectionPanel" rendered="{!IF(Agreement_Line_Item__c.AgreementId__r.RecordType.Name == 'SOW', true , false)}">
+                    <apex:OutputLabel value="Additional Subsetting" style="vertical-align: top;"/>&nbsp;
+                    <span class="vfHelpText">
+                        <apex:outputLink value="javascript:return false;">
+                            <img src="/s.gif" alt="" class="helpOrb" />
+                            <span>{!$ObjectType.Agreement_Line_item__c.Fields.Apts_Additional_Subsetting__c.inlineHelpText}</span>
+                        </apex:outputLink>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    </span>
+                    <apex:inputField value="{!Agreement_Line_Item__c.Apts_Additional_Subsetting__c}" id="additionalSection" Style="width:300px;height:100px;"/>
+               </apex:outputPanel> 
+                <apex:pageBlockSectionitem id="PBSIid">                 
+                <apex:outputPanel id="selRes" style="height:300px;overflow:auto;" layout="block">
+                  <table id="tableId" border="1" width="100%" class="list" cellspacing="0" cellpadding="0" >
+                        <tbody id="tbodyId">
+                            <tr id="rowId"  class="headerRow" >
+                                <th id="header1Id">
+                                 <apex:inputcheckbox id="sall" disabled="{!listOfAllSelectedData.size == 0}" value="{!checkAllResultLst}" onclick="checkAll2(this,{!listOfAllSelectedData.size});"/>
+                                </th>
+                                <th>
+                                    Code
+                                </th>
+                                <th>
+                                    <apex:outputLabel >Code Type</apex:outputLabel>
+                                    <apex:outputLabel value="{!$ObjectType.ATC__c.fields.Level__c.label}">
+                                    
+                                    </apex:outputLabel>                                    
+                                </th> 
+                                <!-- <th style="display:{!if( NOT(CONTAINS(LOWER($Profile.Name),'japan')),'none','')};">                                    
+                                    <apex:outputLabel rendered="{!CONTAINS(LOWER($Profile.Name),'japan')}" value="{!$ObjectType.ATC__c.fields.Name_Other__c.label}">
+                                    
+                                    </apex:outputLabel>  
+                                </th> -->
+                                <th>
+                                    <apex:outputLabel value="{!$ObjectType.ATC__c.fields.Name_Eng__c.label}">
+                                    </apex:outputLabel>                                    
+
+                                </th>
+                            </tr>
+                           <apex:repeat id="pbtATCSelected1" value="{!listOfAllSelectedData}" var="list"   >                       
+                                <apex:repeat id="pbtATCSelected2" value="{!list}" var="objATCSelected"   >
+                                    <tr id="otherRowId"  class="dataRow" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}">
+                                        <td id="otherColId">
+                                         <apex:inputcheckbox id="chkSelected" value="{!objATCSelected.selectedFlag}" onclick="selectOrDeselectAllSelectdSec(this);"/>
+                                        </td>                   
+                                        <td>
+                                            <apex:outputLabel value="{!objATCSelected.ATC.ATC_Code__c}"></apex:outputLabel>
+                                        </td>
+                                        <td>
+                                          <apex:outputLabel value="{!objATCSelected.ATC.Level__c}"></apex:outputLabel> 
+                                          <apex:outputLabel value="{!objATCSelected.ATC.RecordType.Name}"></apex:outputLabel> 
+                                        </td>
+                                        <!-- <td style="display:{!if( NOT(CONTAINS(LOWER($Profile.Name),'japan')),'none','')};">
+                                            <apex:outputLabel rendered="{!IF(objATCSelected.ATC.Name_Other__c!= null , true , false)}" value="{!objATCSelected.ATC.Name_Other__c}"></apex:outputLabel>
+                                            <apex:outputLabel rendered="{!IF(objATCSelected.ATC.Name_Other__c!= null , false , true)}">&nbsp;</apex:outputLabel>                                            
+                                        </td>
+                                        -->
+                                        <td>
+                                            <apex:outputLabel rendered="{!IF(objATCSelected.ATC.Name_Eng__c != null , true , false)}" value="{!objATCSelected.ATC.Name_Eng__c}"></apex:outputLabel>
+                                            <apex:outputLabel rendered="{!IF(objATCSelected.ATC.Name_Eng__c != null , false, true)}">&nbsp;</apex:outputLabel>
+                                        </td>
+                                    </tr>
+                                </apex:repeat>
+                            </apex:repeat>                            
+                        </tbody>
+                    </table>                   
+                    <apex:actionFunction name="AddLineItemATCActnFun"  action="{!AddLineItemATCs}" reRender="checkSelectedPanel"/>
+                    <script>
+                       requests = [];  
+                       requests.push('{!listOfAllSelectedData.size}'); 
+                       function AddLineItemATCsJS() {                         
+
+                         var parId = "pgId:frmId:PB2id:PBS2id:PBSIid:"
+                         var SelectAllid = "pgId:frmId:PB2id:PBS2id:PBSIid:sall";
+                         if({!listOfAllSelectedData.size} <= 0) {
+                           alert('There is no Item to save, Please select Market Definition');
+                           return;
+                         }  else {                             
+      
+                         for(var i=1; i<= requests[0]; i++) {
+                           for(var j=0 ;j < requests[i]; j++) { 
+                             id = parId+"pbtATCSelected1:"+(i-1)+":pbtATCSelected2:"+j+":chkSelected";
+                             if(document.getElementById(id).checked) {
+                               AddLineItemATCActnFun();
+                               return ;
+                             }          
+                          }
+                        }
+                        }
+                       
+
+                        if(!{!alertmsgSaveButton}) {
+                          AddLineItemATCActnFun();
+                          return ;
+                        } else {
+                          alert('Please select at least one item from the list ');  
+                          return;
+                        }
+                      }  
+
+                    </script>
+                     <apex:repeat value="{!listOfAllSelectedData}" var="request"> 
+                            <script> 
+                                requests.push('{!request.size}'); 
+                            </script> 
+                    </apex:repeat>  
+                    </apex:outputPanel>
+                </apex:pageBlockSectionitem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>     
+    </apex:form>    
+</apex:page>

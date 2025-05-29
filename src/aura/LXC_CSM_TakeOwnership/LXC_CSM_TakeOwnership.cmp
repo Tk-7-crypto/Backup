@@ -1,0 +1,124 @@
+<aura:component controller="CNT_CSM_TakeOwnership" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="simpleNewCase" type="Case" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="value" type="String" default="option2"/>
+    <aura:attribute name="statusList" type="String[]" />
+    <aura:attribute name="currentStatus" type="String" />
+    <aura:attribute name="currentSubStatus" type="String" />
+    <aura:attribute name="substatus" type="String[]" />
+    <aura:attribute name="substatusselect" type="String" />
+    <aura:attribute name="previousowner" type="String[]" />
+    <aura:attribute name="caseowner" type="String[]" />
+    <aura:attribute name="cssStyle" type="String"/>
+    <aura:unescapedHtml value="{!v.cssStyle}"/>
+    <aura:attribute name="disabledPick" type="Boolean" default="true"/>
+    <aura:attribute name="dependentPicklist" type="Object"/>
+    <aura:attribute name="dependentOptions" type="List"/>
+    <aura:attribute name="assignQueueList" type="Object[]"/>
+    <aura:attribute name="sltAssignQueue" type="String"/>
+    <aura:attribute name="currentQueueName" type="String" />
+    <aura:attribute name="currentQueueId" type="String" />
+    <aura:attribute name="showComponent" type="Boolean" default="false" />
+    <aura:attribute name="nonTechStatus" type="String[]" default="['New', 'Acknowledged', 'In Progress', 'Waiting for', 'Resolved', 'Closed', 'Canceled']"/>
+    <aura:attribute name="technoStatus" type="String[]" default="['New', 'In Progress', 'Awaiting', 'Internal Solution Provided', 'Resolved with Customer', 'Abandoned', 'Closed']"/>
+    <aura:attribute name="createDataStatus" type="String[]" default="['New', 'Coding', 'Verification', 'Rework', 'Review','Rejected','Closed']"/>
+    
+    <aura:attribute name="caseSubstatus" type="Object[]" default="[{'RecordTypeName':'DATACase','Status':'Waiting for','SubStatus':['Customer','Internal Support','Schedule','Vendor']},
+                                                                  {'RecordTypeName':'DATACase','Status':'Resolved','SubStatus':['Pending Correction','Pending Customer Confirmation']},
+                                                                  {'RecordTypeName':'DATACase','Status':'Closed','SubStatus':['Customer']},
+                                                                  {'RecordTypeName':'TechnologyCase','Status':'In Progress','SubStatus':['Approved','Awaiting Internal Information','CIO','In QA','Product Development','Rejected','Response Received','Standard Change Request','Work Order']},
+                                                                  {'RecordTypeName':'TechnologyCase','Status':'Resolved with Customer','SubStatus':['Pending Resolution Confirmation','Root Cause Analysis']},
+                                                                  {'RecordTypeName':'TechnologyCase','Status':'Awaiting','SubStatus':['Approval','Client UAT Validation','Customer Info','Customer Confirmation to Close','Customer Template','Estimation Approval','External Vendor','Patch/Major release','Pending Problem Resolution','Schedule','SOW','Sprint/Dev Cycle Allocation']},
+                                                                  {'RecordTypeName':'RandDCase','Status':'Acknowledged','SubStatus':['Response Received']},
+                                                                  {'RecordTypeName':'RandDCase','Status':'In Progress','SubStatus':['Response Received']},
+                                                                  {'RecordTypeName':'RandDCase','Status':'Waiting for','SubStatus':['ACS Approval','Automated FU','CardioTech','CRA','CTM','Customer','DTL','ECGAllocators','ERT Tier 1','ERT Tier 2','Global IT','Internal Support','TPM','Lab Operations','Logistics','Machine Logistics','Oracle','Other','PM','Prime','Programmer','Project Coordinator','QC','QECGLogisticTeam','QMTeam','Response Received','Schedule','Send PA1','Site Creation Team','Site Support','Sponsor/CRO','Tier 2','Tier 3','Vendor']},
+                                                                  {'RecordTypeName':'RandDCase','Status':'Resolved','SubStatus':['Automated FU','Response Received']},
+                                                                  {'RecordTypeName':'RandDCase','Status':'Closed','SubStatus':['Customer','Non-Actionable','Unconfirmed']}]" />
+    <aura:attribute name="newContact" type="Case"  default="{ 'sobjectType': 'Case',
+                                                            'Owner': '','Email':'','Phone':'','IsEscalated':'','AssignCaseToCurrentUser__c':'','Priority':'','Status':'','SubStatus__c':'','Previous_User__c':'','Previous_Queue__c':'','OwnerId':'','Id':'','PreviousQueueUser__c':'','CurrentQueue__c':'','Internal_Follow_Up__c':''}"/>
+    
+  <form style="background-color: white;" class = "cuf-scroller-outside">
+        
+        <div class="slds-grid slds-wrap slds-grid--pull-padded" style="background-color: white;" >   
+           <aura:if isTrue="{!v.Spinner}">
+              <div aura:id="spinnerId" class="slds-spinner_container">
+                  <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                   <span class="slds-assistive-text">Loading</span>
+                   <div class="slds-spinner__dot-a"></div>
+                   <div class="slds-spinner__dot-b"></div>
+                  </div>
+              </div>
+           </aura:if>
+           
+           <aura:if isTrue="{!v.showComponent}">
+		    <div class="slds-col--padded slds-size--1-of-2">
+		        <!--<label class="slds-form-element__label" for="text-input-id-1" id="inline-text-label">Current Queue</label>
+		         <ui:outputText aura:id="text-input-id-1" class="field" value="{!v.currentQueueName}"/>-->
+		        <div class="slds-form-element slds-form-element_readonly slds-hint-parent">
+		            <span class="slds-form-element__label slds-truncate" title="CurrentQueue" >Current Queue</span>
+		            <div class="slds-form-element__control">
+		                <div class="slds-form-element__static slds-truncate">
+		                    <span><ui:outputText aura:id="text-input-id-1" class="field" value="{!v.currentQueueName}"/></span>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="slds-col--padded slds-size--1-of-2">
+		        <div aura:id="assigncurrentQueueSelect" class="slds-form-element">
+		            <div class="slds-form-element__control">
+		                <lightning:select name="assigncurrentQueue" label="Assign Current Queue" aura:id="assigncurrentQueue" value="{!v.newContact.CurrentQueue__c}" >
+		                    <aura:iteration items="{!v.assignQueueList}" var="c">
+		                        <option value="{!c.value}" text="{!c.name}" selected= "{!c.value == v.currentQueueId}"></option>
+		                    </aura:iteration>
+		                </lightning:select>
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="slds-col--padded slds-size--1-of-2">
+		        <div aura:id="statusSelectFormElement" class="slds-form-element">
+		            <div class="slds-form-element__control">
+		                <lightning:select name="status" label="Status" aura:id="parentStatus" onchange="{!c.PickStatusChange}"
+		                                  value="{!v.newContact.Status}" >
+
+		                    <aura:iteration items="{!v.statusList}" var="type">
+		                        <option value="{!type}" text="{!type}" selected= "{!type == v.currentStatus}"></option>
+		                    </aura:iteration>
+		                </lightning:select>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="slds-col--padded slds-size--1-of-2">
+		        <div aura:id="prioritySelectFormElement" class="slds-form-element">
+		            <div class="slds-form-element__control">
+		                <lightning:select name="substatus" label="Sub Status" disabled="{!v.disabledPick}" aura:id="subStatusParent" 
+		                                  value="{!v.newContact.SubStatus__c}">
+		                    <option value="" text="None" ></option>
+		                    <aura:iteration items="{!v.substatus}" var="type">
+		                        <option value="{!type}" text="{!type}" selected= "{!type==v.currentSubStatus}"></option>
+		                    </aura:iteration>
+		                </lightning:select>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="slds-col--padded slds-size--1-of-2">
+		       <aura:if isTrue="{!v.simpleNewCase.RecordTypeName__c == 'TechnologyCase'}">
+		                <lightning:input name="internalFollowUp" type="datetime" label="Internal Follow Up" value="{!v.newContact.Internal_Follow_Up__c}" />
+		       </aura:if>
+   		    </div>
+		    <div class="slds-col--padded slds-size--1-of-1 slds-m-top_large">
+		        <lightning:button aura:id="contactField" label="Save" onclick="{!c.saveData}" />
+		    </div>
+                <aura:set attribute="else">
+                    <p><b>Only member of the case's current queue can use this quick action.</b></p>
+                </aura:set>
+            </aura:if> 
+        </div>
+    </form>
+    <aura:handler name="init" value="{!this}" action="{!c.openForm}" />
+    
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+    
+</aura:component>

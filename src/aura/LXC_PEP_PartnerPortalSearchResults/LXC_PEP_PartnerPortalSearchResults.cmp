@@ -1,0 +1,101 @@
+<aura:component controller="CNT_PEP_PartnerPortalSearch" implements="forceCommunity:availableForAllPageTypes" access="global">
+    <aura:attribute type="list" name="recordIds" />
+    <aura:attribute type="list" name="caseRecordIds" />
+    <aura:attribute type="list" name="knowledgeRecordIds" />
+    <aura:attribute name="caseDatas" type="Object" />
+    <aura:attribute name="articleDatas" type="Object" />
+    <aura:attribute name="fileDatas" type="Object" />
+    <aura:attribute name="caseColumns" type="List" />
+    <aura:attribute name="articleColumns" type="List" />
+    <aura:attribute name="filesColumns" type="List" />
+    <aura:attribute name="searchText" type="String" />
+    <aura:attribute name="displayAlert" type="Boolean" default="false" />
+    <aura:attribute name="caseLoadMore" type="Boolean" default="true" />
+    <aura:attribute name="articleLoadMore" type="Boolean" default="true" />
+	<aura:attribute name="filesLoadMore" type="Boolean" default="true" />    
+    <aura:attribute name="caseOffSet" type="Integer" default="50" />
+    <aura:attribute name="articleOffSet" type="Integer" default="50" />
+    <aura:attribute name="filesOffSet" type="Integer" default="50" />
+    <aura:attribute name="limit" type="Integer" default="50" />
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <div class="container-fluid" style="margin-top: 90px">
+        <aura:if isTrue="{! or(v.articleDatas.length > 0,v.caseDatas.length > 0)}">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <aura:if isTrue="{!v.articleDatas.length > 0}">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="profile-tab" data-toggle="tab" href="#articles" role="tab" aria-controls="profile" aria-selected="false">Articles ({! v.articleDatas.length})</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{!v.caseDatas.length > 0}">
+                            <li class="nav-item">
+                                <a class="{! v.articleDatas.length eq 0 ? 'nav-link active' : 'nav-link'}" id="home-tab" data-toggle="tab" href="#cases" role="tab" aria-controls="home" aria-selected="true">{!$Label.c.Cases} ({! v.caseDatas.length})</a>
+                            </li>
+                        </aura:if>
+                        <aura:if isTrue="{!v.fileDatas.length > 0}">
+                            <li class="nav-item">
+                                <a class="{! v.articleDatas.length eq 0 ? v.caseDatas.length  eq 0 ?'nav-link active' : 'nav-link' : 'nav-link'}" id="home-tab" data-toggle="tab" href="#files" role="tab" aria-controls="home" aria-selected="true">Files ({! v.fileDatas.length})</a>
+                            </li>
+                        </aura:if>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="{! v.articleDatas.length > 0 ? 'tab-pane fade show active' : 'tab-pane fade'}" id="articles" role="tabpanel" aria-labelledby="articles-tab">
+                            <lightning:datatable keyField="id" data="{! v.articleDatas }" columns="{! v.articleColumns }" hideCheckboxColumn="true" />
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.articleLoadMore , v.articleDatas.length ge v.limit) }">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="Knowledge__kav">Load More Articles</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>
+                        </div>
+                        <div class="{! and(v.articleDatas.length eq 0,v.caseDatas.length > 0) ? 'tab-pane fade show active' : 'tab-pane fade'}" id="cases" role="tabpanel" aria-labelledby="cases-tab">
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                            <lightning:datatable keyField="id" data="{! v.caseDatas }" columns="{! v.caseColumns }" hideCheckboxColumn="true" />
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.caseLoadMore , v.caseDatas.length ge v.limit)}">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="Case">Load More Cases</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>                            
+                        </div>
+                        <div class="{! and(v.articleDatas.length eq 0,v.caseDatas.length eq 0,v.fileDatas.length > 0) ? 'tab-pane fade show active' : 'tab-pane fade'}" id="files" role="tabpanel" aria-labelledby="files-tab">
+                            <div class="slds-is-relative text-center mt-2 slds-spinner_brand" style="min-height: 15px;">
+                                
+                            <lightning:datatable keyField="id" data="{! v.fileDatas }" columns="{! v.filesColumns }" hideCheckboxColumn="true" />
+                                <!--
+                                <aura:iteration items="{!v.fileDatas}" var="file" indexVar="index">
+                                    <button name="{! file.recId}" onclick="{!c.handleButtonClick}">Launch Action</button>
+                                    <div data-obj="{! file.recId}">
+                                        <lightning:fileCard  fileId="{! file.recId}" description="{! file.recId}" />
+                                    </div>
+                                    
+                                </aura:iteration>-->
+                                <aura:if isTrue="{!v.isLoading}">
+                                    <lightning:spinner alternativeText="Loading" size="small" />
+                                    <aura:set attribute="else">
+                                        <aura:if isTrue="{! and(v.fileLoadMore , v.fileDatas.length ge v.limit)}">
+                                            <a onclick="{!c.handleLoadMore}" data-obj="ContentDocument">Load More Files</a>
+                                        </aura:if>
+                                    </aura:set>
+                                </aura:if>
+                            </div>                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aura:if>
+        <aura:if isTrue="{! v.displayAlert }">
+            <c:LXC_CSM_CommunityAlert type="info" title="{!$Label.c.No_results}" message="{! $Label.c.We_searched_the_objects_you_use_most_and_didn_t_find_any_matches_for  + '&nbsp;&ldquo;&lt;b&gt;'  + v.searchText + '&lt;/b&gt;&rdquo;' }" />
+        </aura:if>
+    </div>
+
+</aura:component>

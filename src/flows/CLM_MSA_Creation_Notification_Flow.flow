@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>MSA_Creation_Notification_For_Anuja_Deb</name>
+        <label>MSA Creation Notification For Anuja Deb</label>
+        <locationX>560</locationX>
+        <locationY>546</locationY>
+        <actionName>Apttus__APTS_Agreement__c.AGR_WEA02_CLM_MC_MSA_Record_Created</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Apttus__APTS_Agreement__c.AGR_WEA02_CLM_MC_MSA_Record_Created</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>MSA_Record_Creation</name>
+        <label>MSA Record Creation</label>
+        <locationX>444</locationX>
+        <locationY>552</locationY>
+        <actionName>Apttus__APTS_Agreement__c.AGR_WEA01_CLM_MC_GSA_MSA_record_created</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Apttus__APTS_Agreement__c.AGR_WEA01_CLM_MC_GSA_MSA_record_created</nameSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <description>CLMCMA-13068 : CLM Flow to send notification immediately and after 1hr. of creation of MSA.</description>
+    <environments>Default</environments>
+    <interviewLabel>CLM MSA Creation Notification Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM MSA Creation Notification Scheduled Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>373</locationX>
+        <locationY>47</locationY>
+        <connector>
+            <targetReference>MSA_Record_Creation</targetReference>
+        </connector>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterFormula>AND(NOT({!$Setup.Trigger_Control_For_Migration__c.Disable_Agreement_Trigger__c}), {!$Record.RecordType.DeveloperName}== &apos;MSA&apos;, OR(AND({!$Record.Apttus__Version_Number__c}=0,NOT(ISPICKVAL({!$Record.Apttus__Subtype__c}, &apos;Amendment&apos;))),AND({!$Record.Apttus__Version_Number__c}&gt;0,ISPICKVAL({!$Record.Apttus__Subtype__c}, &apos;Amendment&apos;))))</filterFormula>
+        <object>Apttus__APTS_Agreement__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Scheduled_Creation_Notification</name>
+            <connector>
+                <targetReference>MSA_Creation_Notification_For_Anuja_Deb</targetReference>
+            </connector>
+            <label>Scheduled Creation Notification</label>
+            <offsetNumber>1</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <timeSource>RecordTriggerEvent</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

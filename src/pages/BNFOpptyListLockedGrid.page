@@ -1,0 +1,246 @@
+<apex:page standardController="Opportunity" extensions="BNFOpptyListLockedGrid" tabStyle="BNF2__c" id="thePage" standardStylesheets="true">
+<!-- <apex:page Controller="BNFOpptyListLockedGrid1" tabStyle="BNF2__c" id="thePage" standardStylesheets="true"> -->
+<c:AutoCompleteWidget />
+	<c:JQueryBlockUI />
+	<!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- Start -->
+    <apex:outputpanel id="jsautocomplete">
+         <style>
+            .ui-autocomplete {
+                max-height: 100px;
+                max-width: 200px;
+                overflow-y: auto;
+                /* prevent horizontal scrollbar */
+                overflow-x: hidden;
+            }
+            
+            /* IE 6 doesn't support max-height
+             * we use height instead, but this forces the menu to always be this tall
+             */
+            * html .ui-autocomplete {
+                height: 100px;
+            }
+        </style> 
+        <script type="text/javascript"> 
+            var revenueCountryLeftPartId = "#thePage\\:theForm\\:theBlock\\:cm\\:comp\\:nlkdrptblk\\:";
+            var revenueCountryRightPartId = "\\:nlkddatatbl\\:0\\:col21";
+            
+            $( function() {
+                var listJSON = {!isProfitCenterReadOnlyListJSON};
+                var size = '{!opptyLineItem2.size}';
+                for(i = 0 ; i < size ; i++) {
+                    $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).combobox();
+                    $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).next().width('180px');
+                    // ritesh gupta
+                    $('.ui-autocomplete-input').focusout(
+                    	function(e){ 
+                    		var autocomplete = $(this).data("autocomplete");
+                    		autocomplete.selectedItem = this.value;
+                    		return false;
+                   		}
+                    );
+                    
+                    if(listJSON[i]) {
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().attr('disabled','disabled');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().attr('disabled','disabled');
+                        //$(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().css('pointer-events','none');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().css('opacity','0.5');
+                        $(revenueCountryLeftPartId + i + revenueCountryRightPartId).next().next().css({'opacity':'0.5','pointer-events':'none'});
+                    }
+                }
+                
+                    
+            }); 
+            function setRevenueCountryId() {
+                YUIShowLoading();
+                
+                var jsonMap = '{!revenueCountryMapJSON}';
+                var jsonKeys = Object.keys(jsonMap);
+                var size = '{!opptyLineItem2.size}';
+                for(i = 0 ; i < size ; i++) {
+                    var revenueCountry = $( revenueCountryLeftPartId + i + revenueCountryRightPartId ).next().val();
+                    if(revenueCountry != null && revenueCountry != '' && jsonKeys.indexOf(revenueCountry) == -1) {
+                        alert("Incorrect Profit Center \'" + revenueCountry + "\'");
+                        YUIHideLoading();
+                        return false;
+                    } 
+                }
+                saveNow();
+            }
+        </script>
+    </apex:outputpanel>
+ 	<!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- End -->
+    <apex:sectionHeader title="BNF {!bnf.Name} Opportunity Product">
+        <apex:form id="theForm">
+            <!--a href="javascript:(window.open('/apex/BNFGlossary','width=20','height=500'))">Click Here for the Glossary/a-->
+            <a href="/servlet/servlet.FileDownload?file=01570000000SG1A" target="_blank">For further explanation, click here for glossary</a>
+            <apex:pageBlock id="theBlock">
+                <apex:pageMessages id="Mess"/>
+                <apex:pageBlockButtons >
+					<!-- Updated by Dheeraj -- Issue-10593 -- 23 march 2017  -->
+                	<apex:actionFunction action="{!save}" reRender="theBlock,jsautocomplete" name="saveNow" onComplete="YUIHideLoading();"/>
+                    <apex:commandButton value="Save" onclick="this.blur();setTimeout(setRevenueCountryId, 500);" reRender="dummy" id="SaveButton" ></apex:commandButton>
+                    <!--<apex:commandButton value="Save" action="{!save}" reRender="theBlock"></apex:commandButton> -->
+                    <apex:commandButton value="Cancel" action="{!cancel}" onclick="YUIShowLoading()" ></apex:commandButton>                    
+                </apex:pageBlockButtons>
+                
+				<apex:outputpanel id="dummy"/>
+                <!-- BEGIN - Contract Start Date and End Date Section -->                
+                <apex:pageBlockSection columns="3" id="theGrid" showHeader="false">
+                   <apex:pageBlockSectionItem >
+                            <apex:outputpanel >
+                            <apex:outputLabel value="Contract Start Date" style="font-weight:bold" ></apex:outputLabel>&nbsp;
+                            <apex:outputfield value="{!bnf.Contract_Start_Date__c}"/><br/><br/>
+                            <apex:outputLabel value="Contract End Date" style="font-weight:bold"></apex:outputLabel>&nbsp;
+                            <apex:outputfield value="{!bnf.Contract_End_Date__c}"/>
+                            </apex:outputpanel>
+                  </apex:pageBlockSectionItem>
+                  
+                  <apex:pageBlockSectionItem >
+                        <apex:pageBlockSectionItem > &nbsp;</apex:pageBlockSectionItem>
+                  </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem />                                       
+               </apex:pageBlockSection>
+                <!-- END - Contract Start Date and End Date Section -->
+                
+                <c:LockedGridComponent lokcedColList1="{!lokcedColList}" unLockedColList1="{!unLockedColList}" idHierarchy="{!$Component.thePage.theForm.theBlock.cm}"
+                                           objItemList1="{!opptyLineItem2}" var="opptyLineItem" totalUnLockedWidthtopass="totalUnLockedWidth" id="cm">
+                    <apex:dataTable var="opptyLineItem" styleClass="list" cellspacing="0" cellpadding="0" border="0" onRowMouseOver="hiOn(this);" onRowMouseOut="hiOff(this);"
+                                                              value="{!act}" width="{!totalUnLockedWidth - 3}px;" id="nlkddatatbl" rowClasses="mycolheight"> 
+                           <!-- <apex:column width="{!unLockedColList[0].colWidth - 1}">
+                                <apex:outputField value="{!opptyLineItem.PricebookEntry.Name}" id="col0" style="text-align:right;"/>
+                            </apex:column> -->
+                            <apex:column width="{!unLockedColList[0].colWidth - 1}">
+                            	<!-- Updated By Dheeraj Kumar -- Issue-11149 - 22-Aug 2017-->
+                                <apex:inputField required="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB'}" value="{!opptyLineItem.Product_Start_Date__c}" id="col0" onchange="replicateCheck('col0','{!unLockedColList[0].colHdrId}')" style="text-align:right;"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[1].colWidth - 1}" >
+                                <apex:inputField required="{!opptyLineItem.PricebookEntry.Product2.Material_Type__c=='ZPUB'}" value="{!opptyLineItem.Product_End_Date__c}" id="col1" style="text-align:right" onchange="replicateCheck('col1','{!unLockedColList[1].colHdrId}')"  />
+                            </apex:column> 
+
+                            <apex:column width="{!unLockedColList[2].colWidth - 1 }" >                                
+                                <apex:actionRegion renderRegionOnly="true">
+                               <!-- <apex:inputField value="{!opptyLineItem['Delivery_Media__c']}" id="col2" required="true"  style="width : {!unLockedColList[2].colWidth - 10}px;" onchange="replicateCheck('col2','{!unLockedColList[2].colHdrId}')" />
+                                -->
+                                    <div class="requiredInput"><div class="requiredBlock"></div>
+                                        <apex:selectList id="col2" value="{!opptyLineItem.Delivery_Media__c}" multiselect="false" size="1" required="true" style="width : {!unLockedColList[2].colWidth - 10}px;" onchange="replicateCheck('col2','{!unLockedColList[2].colHdrId}')">
+                                                                 <apex:selectOptions value="{!DeliveryMedia_Map[opptyLineItem.id]}"></apex:selectOptions>  
+                                                        </apex:selectList>
+                                    </div>
+                            </apex:actionRegion>
+                            </apex:column>
+
+                           <apex:column width="{!unLockedColList[3].colWidth - 1}" >                                
+                          <!--   <apex:inputField value="{!opptyLineItem.Proj_Rpt_Frequency__c}" id="col3" required="true" style="width : {!unLockedColList[3].colWidth - 10}px;" onchange="replicateCheck('col3','{!unLockedColList[3].colHdrId}')"/>  -->
+                                          <apex:actionRegion renderRegionOnly="true">
+            
+                                    <div class="requiredInput"><div class="requiredBlock"></div>
+                                        <apex:selectList id="col3" value="{!opptyLineItem.Proj_Rpt_Frequency__c}" multiselect="false" size="1" required="true" style="width : {!unLockedColList[3].colWidth - 10}px;" onchange="replicateCheck('col3','{!unLockedColList[3].colHdrId}')">
+                                            <apex:selectOptions value="{!DeliveryFrequency_Map[opptyLineItem.id]}"></apex:selectOptions>  
+                                        </apex:selectList>
+                                    </div>
+                            </apex:actionRegion>
+                        </apex:column>
+
+                            <apex:column width="{!unLockedColList[4].colWidth - 1}" >                                
+                                <apex:inputField value="{!opptyLineItem.Billing_Frequency__c}" id="col4" required="true" style="width : {!unLockedColList[4].colWidth - 10}px;" onchange="replicateCheck('col4','{!unLockedColList[4].colHdrId}')" />
+                            </apex:column>
+                           
+                            <apex:column width="{!unLockedColList[5].colWidth - 1 }" >                                
+                                <apex:inputField value="{!opptyLineItem.Product_Invoice_Text__c}" />
+                            </apex:column>
+                            
+                            <!---  YLi add List Price ---->
+                            <apex:column width="{!unLockedColList[6].colWidth - 1 }">                                
+                                <apex:inputField value="{!opptyLineItem.List_Price__c}" onchange="DiscountCheck({!opptyLineItem.List_Price__c})" id="col6" required="{!(opptyLineItem.PricebookEntry.Product2.Offering_Type__c !='Management Consulting') 
+          && (opptyLineItem.PricebookEntry.Product2.Offering_Type__c !=$Label.CES_TOT_Offering_Type) && US_SalesOrg == false}" style="width : {!unLockedColList[6].colWidth - 15  }px;"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[7].colWidth - 1}" >                                
+                                <apex:outputField value="{!opptyLineItem.Discount_Percentage_Formula__c}" />
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[8].colWidth - 1 }" >                                
+                                <apex:outputField value="{!opptyLineItem.Discount_Amount_Formula__c}" id="col8"/>
+                            </apex:column>
+                            <apex:column width="{!unLockedColList[9].colWidth - 1}" >                                
+                                <apex:inputField value="{!opptyLineItem.Discount_Reason__c}" style="width : {!unLockedColList[9].colWidth - 10}px;" id="col9" onchange="replicateCheck('col10','{!unLockedColList[9].colHdrId}')"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[10].colWidth - 1  }" >                                
+                                <apex:inputField value="{!opptyLineItem.Nbr_of_Users__c}" id="col10" style="width : {!unLockedColList[10].colWidth - 20}px;" onchange="replicateCheck('col10','{!unLockedColList[10].colHdrId}')"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[11].colWidth - 1 }" >                                
+                                <apex:inputField value="{!opptyLineItem.Other_Ship_To__c }" id="col11" style="width : {!unLockedColList[11].colWidth - 20 }px;" onchange="replicateCheck('col11','{!unLockedColList[11].colHdrId}')"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[12].colWidth - 1}" >
+                                <apex:inputField value="{!opptyLineItem.Billing_Date__c }" 
+                                          onblur="this.x = 0;this.onfocus = function (){DatePicker.pickDate(true, this.id, false);}"
+                                          onclick="if( !(this.x == 1)) {getElementById('datePicker').style.left = (event.clientX) + 'px'; this.x = 1; this.onfocus = this.onclick;} else {this.x = 0; this.onfocus = function (){DatePicker.pickDate(true, this.id, false);} }"
+                                          required="{! (opptyLineItem.Revenue_Type__c='Ad Hoc')  || (opptyLineItem.Billing_Frequency__c='Once')}"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[13].colWidth - 1 }">                                
+                                <apex:inputField value="{!opptyLineItem.Sale_Type__c}" style="width : {!unLockedColList[13].colWidth - 10}px;" id="col13" required="true"/>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[14].colWidth - 1}">                                
+                                <apex:actionRegion >
+                                    <apex:inputField value="{!opptyLineItem.Revenue_Type__c}" style="width : {!unLockedColList[14].colWidth - 10}px;" id="col14" required="true" >
+                                    <apex:actionSupport event="onchange" rerender="BillingDate" immediate="false"/>
+                                    </apex:inputField>
+                                </apex:actionRegion>
+                            </apex:column>
+                            
+                            <apex:column width="{!unLockedColList[15].colWidth - 1  }" >                                
+                                <apex:inputField value="{!opptyLineItem.Invoice_Lag_to_Data_Period__c}" style="width : {!unLockedColList[15].colWidth - 10}px;" id="col15"/>
+                            </apex:column>
+                            
+                           <!-- Added By Sneha Rathi : 19 dec 2012 : Adding column of Therapy_Area field - ER:0303-->
+                           <!--Updated by Dheeraj -- Issue-11063 -- 11 July 2017-->
+                           <apex:column width="{!unLockedColList[16].colWidth - 1  }" >                                
+                                <!-- <apex:inputField value="{!opptyLineItem.Therapy_Area__c}" style="width : {!unLockedColList[16].colWidth - 10}px;" id="colTA" required="true"/> -->
+                                <apex:selectList id="therapyAreaOptions" styleClass="clsTherapy_Area" value="{!opptyLineItem.Therapy_Area__c}" multiselect="false" size="1" required="true" style="width : {!unLockedColList[16].colWidth - 10}px;" >
+                                    	<apex:selectOptions value="{!oliIdToTherapyAreaOptionsMap[opptyLineItem.id]}"></apex:selectOptions>  
+                                </apex:selectList>
+                            </apex:column>
+                            
+                            <!-- Added by Ritesh Gupta : Issue :07072 : add field Audit_Subscription_Status__c -->
+                        	 <apex:column width="{!unLockedColList[16].colWidth - 1  }" >  
+                                <apex:facet name="header">Audit Subscription Status<br>&nbsp;</br></apex:facet>                               
+                                <apex:inputField value="{!opptyLineItem.Audit_Subscription_Status__c}" style="width : {!unLockedColList[16].colWidth - 10}px;" id="colASS" required="{!opptyLineItem.PricebookEntry.Product2.Offering_Type__c=='National Tracking'}"/>
+                                <apex:outputpanel rendered="{!if(opptyLineItem.Pricebookentry.Product2.Offering_Type__c!='National Tracking',true,false)}">
+                                    <script type="text/javascript">
+                                           document.getElementById("{!$Component.colASS}").disabled = true;
+                                    </script>
+                                </apex:outputpanel>
+                            </apex:column> 
+                            
+ 		       			<!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- Start -->
+                        <apex:column width="230px">
+                            <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.Product2.Material_Group_1__c =='MAN','requiredInput','')}" layout="block">
+                                <apex:outputPanel styleClass="{!IF(opptyLineItem.Pricebookentry.Product2.Material_Group_1__c =='MAN','requiredBlock','')}" layout="block" />
+                                <apex:selectList value="{!opptyLineItem.ProfitCenter__c}" id="col21" size="1"> 
+                                    <apex:selectOptions value="{!profitCenterOptions}"></apex:selectOptions> 
+                                </apex:selectList> 
+                                </apex:outputPanel>
+                        </apex:column>
+                        <!-- Added by Dheeraj -- Issue-10593 -- 23 march 2017 -- End -->
+
+                            <apex:column width="{!unLockedColList[18].colWidth - 1 }" rendered="{!bnf.Addendum__c}">                                
+                                <apex:inputField value="{!opptyLineItem.Revised_Price__c}" id="col16" />
+                            </apex:column>
+                            
+                            <apex:column width="{!IF(bnf.Addendum__c, unLockedColList[19].colWidth,unLockedColList[18].colWidth ) }" rendered="{!bnf.Addendum__c}">                                
+                                <apex:inputField value="{!opptyLineItem.Cancel__c}" id="col17"/>
+                            </apex:column>
+                            <!---  end of YLi add List Price ---->
+                    </apex:dataTable>
+                </c:LockedGridComponent>
+            </apex:pageBlock>
+        </apex:form>  
+    </apex:sectionHeader> 
+    
+</apex:page>

@@ -1,0 +1,1961 @@
+<aura:component controller="CNT_CDA_RequestEditScreen" implements="force:appHostable,flexipage:availableForRecordHome,force:hasRecordId,lightning:isUrlAddressable" access="global">
+    <aura:attribute name="requestObject" type="CDA_Request__c" default="{ 'sobjectType': 'CDA_Request__c' }"/>
+    <aura:attribute name="simpleRequestObject" type="CDA_Request__c" default="{ 'sobjectType': 'CDA_Request__c' }"/>
+    <aura:attribute name="requestError" type="String" />
+    <aura:attribute name="recordId" type="String" />
+
+    <aura:attribute name="requestEditWrapper" type="UTL_CDA_RequestEditWrapper" />
+
+    <!-- Picklist Dependency Attributes Start -->
+    <aura:attribute name="cdaTypedepnedentFieldMap" type="Map" description="Key - Controller Picklist Values(QuintilesIMS_Business__c), value - dependent picklist values(CDA_Type__c)" />
+    <aura:attribute name="disclosurePeriodDepnedentFieldMap" type="Map" description="Key - Controller Picklist Values(QuintilesIMS_Business__c), value - dependent picklist values(Disclosure_Period__c)" />
+    <aura:attribute name="cdaLangDepnedentFieldMap" type="Map" description="Key - Controller Picklist Values(CDA_Type__c), value - dependent picklist values(CDA_Language__c)" />
+    <aura:attribute name="customerEntityStateDepnedentFieldMap" type="Map" description="Key - Controller Picklist Values(Customer_Legal_Entity_Country_Other_PL__c), value - dependent picklist values(Customer_Legal_Entity_State_Other_PL__c)" />
+    <aura:attribute name="recipientAccountStateDepnedentFieldMap" type="Map" description="Key - Controller Picklist Values(Recipient_Account_Country_Other_PL__c), value - dependent picklist values(Recipient_Account_State_Other_PL__c)" />
+    <aura:attribute name="competContractCapDepFieldMap" type="Map" description="Key - Controller Picklist Values(CDA_Type__c), value - dependent picklist values(Competitor_Contracting_Capacity__c)" />
+    <aura:attribute name="studySponSituDepFieldMap" type="Map" description="Key - Controller Picklist Values(Competitor_Contracting_Capacity__c), value - dependent picklist values(What_is_the_Study_Sponsor_situation__c)" />
+
+    <aura:attribute name="isDependentDisable" type="boolean" default="true" description="Check where dependent picklist CDA_Type__c is disabled" />
+    <aura:attribute name="isCdaLangDisabled" type="boolean" default="true" description="Check where dependent picklist CDA_Language__c is disabled" />
+    <aura:attribute name="isCustomerEntityStateDisabled" type="boolean" default="true" description="Check where dependent picklist Customer_Legal_Entity_State_Other_PL__c is disabled" />
+    <aura:attribute name="isRecipientAccountStateDisabled" type="boolean" default="true" description="Check where dependent picklist Recipient_Account_State_Other_PL__c is disabled" />
+    <aura:attribute name="isCompetContractCapDisabled" type="boolean" default="true" description="Check where dependent picklist Competitor_Contracting_Capacity__c is disabled" />
+    <aura:attribute name="isStudySponSituDisabled" type="boolean" default="true" description="Check where dependent picklist What_is_the_Study_Sponsor_situation__c is disabled" />
+
+    <aura:attribute name="iqviaBusinessPicklistValues" type="Object" />
+    <aura:attribute name="cdaTypePicklistValues" type="Object" />
+    <aura:attribute name="cdaLanguagePicklistValues" type="Object" />
+    <aura:attribute name="customerLegalEntityCountryValues" type="Object" />
+    <aura:attribute name="customerLegalEntityStateValues" type="Object" />
+    <aura:attribute name="recipientAccountCountryValues" type="Object" />
+    <aura:attribute name="recipientAccountStateValues" type="Object" />
+    <aura:attribute name="competContractCapValues" type="Object" />
+    <aura:attribute name="studySponSituValues" type="Object" />
+    <aura:attribute name="disclosurePeriodPicklistValues" type="Object" />
+
+    <aura:attribute name="toggleCustomerLEntityStatesError" type="boolean" default="true" />
+    <aura:attribute name="toggleRecipientLEntityStatesError" type="boolean" default="true" />
+    <aura:attribute name="isPrivilegedBusinessAreaSelected" type="boolean" default="false" />
+    <!-- Picklist Dependency Attributes End -->
+
+    <aura:attribute name="cdaRequestFieldsDetailMap" type="Map"/>
+    <aura:attribute name="custLegalEntityFieldsDetailMap" type="Map"/>
+
+    <aura:attribute name="isPopupOpen" type="boolean" default="false" />
+    <aura:attribute name="isShowPopupFooter" type="boolean" default="true" />
+    <aura:attribute name="popupType" type="String" />
+    <aura:attribute name="popupButtonMap" type="Map" />
+
+    <aura:attribute name="isCdaTypeAuditor" type="boolean" default="false"/>
+    <aura:attribute name="isCdaTypeVendor" type="boolean" />
+    <aura:attribute name="isCdaTypeCustomer" type="boolean" />
+    <aura:attribute name="isCdaTypeCEVA" type="boolean" />
+
+    <aura:attribute name="oldRecAccId" type="String" />
+    <aura:attribute name="oldCustLehEntityAccId" type="String" />
+    <aura:attribute name="recipientAccount" type="CDA_Account__c" default="{ 'sobjectType': 'CDA_Account__c' }"/>
+    <aura:attribute name="customerLegalEntityAccount" type="CDA_Account__c" default="{ 'sobjectType': 'CDA_Account__c' }"/>
+    <aura:attribute name="sponsorLegalEntity" type="CDA_Account__c" default="{ 'sobjectType': 'CDA_Account__c' }"/>
+    <aura:attribute name="qiLegalEntityObj" type="QI_Legal_Entity__c" default="{ 'sobjectType': 'QI_Legal_Entity__c' }"/>
+
+    <aura:attribute name="isAuditTypeDisabled" type="boolean" default="false"/>
+    <aura:attribute name="qiLegalEntityAddress" type="String" />
+
+    <aura:attribute name="isProjectSpeIndiDisabled" type="boolean" />
+    <aura:attribute name="loggedInUserType" type="String" />
+    <aura:attribute name="originatingRequestorConfirmEmailAddress" type="String" />
+    <aura:attribute name="empClientCustomerOptionVal" type="String" />
+    <aura:attribute name="isCustomerLegalEntityOther" type="boolean" default="false"/>
+    <aura:attribute name="isSponsorLegalEntityNameOther" type="boolean" default="false"/>
+    <aura:attribute name="isRecipientAccountNameOther" type="boolean" default="false"/>
+    <aura:attribute name="cdaSetting" type="Object" />
+    <aura:attribute name="confirmEmailAddress" type="String" />
+    <aura:attribute name="confirmRecipientAuthorizedSignerEmailAddress" type="String" />
+    <aura:attribute name="isAuthorizedSigner" type="String" />
+    <aura:attribute name="isDataAndServices" type="boolean" />
+    <aura:attribute name="isClinicalResearch" type="boolean" />
+    <aura:attribute name="dateRangeErrorMessage" type="String" />
+    <aura:attribute name="beforeIntervalType" type="String"/>
+    <aura:attribute name="afterIntervalType" type="String"/>
+    <aura:attribute name="beforeInterval" type="Integer"/>
+    <aura:attribute name="afterInterval" type="Integer"/>
+    <aura:attribute name="isSiteSignatorySameAsSiteContact" type="boolean" />
+    <aura:attribute name="isCdaSourceDisabled" type="boolean" default="false"/>
+    <aura:attribute name="isNextButtonDisabled" type="boolean" default="false"/>
+
+    <aura:attribute name="errorMsgs" type="List" />
+    <aura:attribute name="recipeintConfirmEmailError" type="String" />
+    <aura:attribute name="originatingReqConfirmEmailError" type="String" />
+    <aura:attribute name="recipeintEmailError" type="String" />
+    <aura:attribute name="originatingReqEmailError" type="String" />
+    <aura:attribute name="siteContactEmailError" type="String" />
+
+    <aura:attribute name="qiLegalEntityFilter" type="String" default="IQVIA_Business_Area__c != '--None--' and Is_Active__c = true"/>
+    <aura:attribute name="contactList" type="List" />
+    <aura:attribute name="addContactEmailError" type="String" />
+
+    <aura:attribute name="isOpenChatbot" type="Boolean" default="false"/>
+    <ltng:require scripts="{!$Resource.CDA_ChatbotFile}"></ltng:require>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler name="change" value="{!v.simpleRequestObject.Cust_Legal_Entity_Name__c}" action="{!c.setCustomerLegalEntity}" />
+    <aura:handler name="change" value="{!v.simpleRequestObject.Sponsor_Legal_Entity__c}" action="{!c.setSponsorLegalEntity}" />
+    <aura:handler name="change" value="{!v.simpleRequestObject.QI_Legal_Entity_Name__c}" action="{!c.setQILegalEntity}" />
+    <aura:handler name="change" value="{!v.simpleRequestObject.Recipient_Account__c}" action="{!c.setRecipentAccount}" />
+    <aura:handler name="render" value="{!this}" action="{!c.onRenderOrigiReqConfEmail}"/>
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.reInit}"/>
+    <aura:attribute name="ChatIcon" type="String" default="/resource/ChatIcon" />
+    <aura:attribute name="closeIcon" type="String" default="/resource/closeicon" />
+
+    <c:LXC_CDA_DownTimeMessage isMessageDownType="true" isShowHeader="true" />
+
+    <lightning:spinner class="slds-is-fixed" aura:id="mySpinner" alternativeText="Processing.." title="Processing.." variant="brand" size="large"/>
+
+    <div class="slds-page-header">
+        <div class="slds-grid">
+            <div class="slds-col slds-has-flexi-truncate">
+                <div class="slds-media slds-no-space slds-grow">
+                    <div class="slds-media__figure">
+                        <span class="slds-icon_container slds-icon-standard-opportunity" title="Description of icon when needed">
+                            <lightning:icon class="slds-icon slds-page-header__icon" iconName="custom:custom18" alternativeText="CDA Requests"/>
+                        </span>
+                    </div>
+                    <div class="slds-media__body">
+                        <nav>
+                            <ol class="slds-breadcrumb slds-line-height_reset">
+                                <li class="slds-breadcrumb__item">
+                                    <span>CDA Request</span>
+                                </li>
+                            </ol>
+                        </nav>
+                        <h1 class="slds-page-header__title slds-m-right_small slds-align-middle slds-truncate"
+                            title="CDA Request">
+                            <aura:if isTrue="{! v.simpleRequestObject.CDA_Id__c == null }">
+                                New CDA Request
+                                <aura:set attribute="else">
+                                    {!v.simpleRequestObject.Name}
+                                </aura:set>
+                            </aura:if>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div aria-labelledby="EditRequestForm" class="slds-p-top_small">
+        <div class="slds-box slds-theme_default">
+
+            <div aura:id="errorMessageBlock" class="slds-box slds-theme_alert-texture slds-theme_error slds-hide" role="alert">
+                <!--<span class="slds-icon_container" title="Errors">
+                    <lightning:icon class="slds-icon slds-icon-text-error"
+                                    iconName="utility:error"
+                                    alternativeText="Error"/>
+
+                </span>-->
+                <div><span class="slds-text-heading--medium"><strong>Errors:</strong></span></div>
+                <div class="slds-m-top_x-small">
+                    <ul>
+                        <aura:iteration items="{!v.errorMsgs}" var="errMsg">
+                            <li>{!errMsg}</li>
+                        </aura:iteration>
+                    </ul>
+                </div>
+            </div>
+
+            <form class="slds-form">
+                <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small"> <!-- slds-is-open"> -->
+                    <h3 class="slds-section__title slds-theme_shade">
+                        <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_Basic_Information}">{!$Label.c.CDA_Basic_Information}</span>
+                    </h3>
+                    <div class="slds-section__content">
+                        <lightning:layout horizontalAlign="spread" multipleRows="true">
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    {!$Label.c.CDA_Sharing_Confidential_Info}
+                                </label>
+                                <lightning:helptext content="{!$Label.c.CDA_IQVIA_Business_Helptext}" class="slds-p-left_xx-small"/>
+                                <lightning:select aura:id="editField"
+                                                  label="IQVIA Business"
+                                                  value="{!v.simpleRequestObject.QuintilesIMS_Business__c}"
+                                                  onchange="{!c.onIqviaBusinessFieldChange}"
+                                                  required="true"
+                                                  messageWhenValueMissing="You must enter a value">
+                                    <aura:iteration items="{!v.iqviaBusinessPicklistValues}" var="item" >
+                                        <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.QuintilesIMS_Business__c}">{!item.label}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+
+                            <aura:if isTrue="{! v.simpleRequestObject.CDA_Id__c != null }">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        {!v.cdaRequestFieldsDetailMap.CDA_Id__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.CDA_Id__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <div class="slds-form-element__control">
+                                        <span >{!v.simpleRequestObject.Name}</span>
+                                    </div>
+                                </lightning:layoutItem>
+                            </aura:if>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    <aura:if isTrue="{!v.simpleRequestObject.QuintilesIMS_Business__c != 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                        {!v.cdaRequestFieldsDetailMap.CDA_Type__c.fieldLabel}
+                                        <lightning:helptext content="{!$Label.c.CDA_Customer_CDA_with_the_party_that_would_contract_engage_QuintilesIMS}" class="slds-p-left_xx-small" />
+                                    </aura:if>
+                                    <aura:if isTrue="{!v.simpleRequestObject.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                        Region
+                                        <lightning:helptext content="{!$Label.c.CDA_Select_the_appropriate_region_for_which_your_Master_CDA_is_required_for}" class="slds-p-left_xx-small" />
+                                    </aura:if>
+                                </label>
+                                <lightning:select aura:id="editField"
+                                                  label="CDA Type/Region"
+                                                  disabled="{!v.isDependentDisable}"
+                                                  value="{!v.simpleRequestObject.CDA_Type__c}"
+                                                  required="true"
+                                                  onchange="{!c.cdaTypeChangeInvoke}"
+                                                  messageWhenValueMissing="You must enter a value">
+                                    <aura:iteration items="{!v.cdaTypePicklistValues}" var="item" >
+                                        <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.CDA_Type__c}">{!item.label}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    {!v.cdaRequestFieldsDetailMap.CDA_Effective_Date__c.fieldLabel}
+                                </label>
+                                <lightning:helptext content="{!$Label.c.CDA_Effective_Date_HT}" class="slds-p-left_xx-small"/>
+
+                                <c:LXC_CDA_DatePicker aura:id="datePicker"
+                                                      label="Effective Date"
+                                                      placeholder="MM/DD/YYYY"
+                                                      valueFormat="MM/dd/yyyy"
+                                                      yearsBefore="1"
+                                                      yearsAfter="5"
+                                                      errorMessage="Invalid Input"
+                                                      required="true"
+                                                      notBeforeInterval="{!v.beforeInterval}"
+                                                      notBeforeIntervalType="{!v.beforeIntervalType}"
+                                                      notAfterInterval="{!v.afterInterval}"
+                                                      notAfterIntervalType="{!v.afterIntervalType}"
+                                                      daysRangeErrorMessage="{!v.dateRangeErrorMessage}"
+                                                      value="{!v.simpleRequestObject.CDA_Effective_Date__c}" />
+                                <!-- <lightning:input type="date"
+                                                 aura:id="editInputField"
+                                                 name="CDA_Effective_Date__c"
+                                                 label="{!v.cdaRequestFieldsDetailMap.CDA_Effective_Date__c.fieldLabel}"
+                                                 class="slds-form-element__control"
+                                                 value="{!v.simpleRequestObject.CDA_Effective_Date__c}"
+                                                 required="true"
+                                                 placeholder="MM/DD/YYYY"/>
+                                <ui:inputDate aura:id="cdaEffectiveDate"
+                                              displayDatePicker="true"
+                                              format="MM/DD/YYYY"
+                                              value="{!v.simpleRequestObject.CDA_Effective_Date__c}"
+                                              required="true"
+                                              onchange=""/>
+                                 <label>(MM/DD/YYYY)</label> -->
+                            </lightning:layoutItem>
+
+                            <aura:if isTrue="{!!v.isCdaTypeAuditor}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Disclosure_Period__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Disclosure_Period__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:select aura:id="editField"
+                                                      label="Disclosure Period"
+                                                      value="{!v.simpleRequestObject.Disclosure_Period__c}"
+                                                      required="true"
+                                                      disabled="{!v.isDependentDisable}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <aura:iteration items="{!v.disclosurePeriodPicklistValues}" var="item" >
+                                            <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Disclosure_Period__c}">{!item.label}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    {!v.cdaRequestFieldsDetailMap.CDA_Language__c.fieldLabel}
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.CDA_Language__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                <lightning:select aura:id="editField"
+                                                  label="CDA Language"
+                                                  disabled="{!v.isCdaLangDisabled}"
+                                                  value="{!v.simpleRequestObject.CDA_Language__c}"
+                                                  required="true"
+                                                  onchange="{!c.showLanguageInfo}"
+                                                  messageWhenValueMissing="You must enter a value">
+                                    <aura:iteration items="{!v.cdaLanguagePicklistValues}" var="item" >
+                                        <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.CDA_Language__c}">{!item.label}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    {!v.cdaRequestFieldsDetailMap.Requestor_Carbon_Copies__c.fieldLabel}
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Requestor_Carbon_Copies__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                <lightning:input label="Requestor Carbon Copies"
+                                                 aura:id="editField"
+                                                 type="checkbox"
+                                                 checked="{!v.simpleRequestObject.Requestor_Carbon_Copies__c}" />
+                            </lightning:layoutItem>
+
+                            <aura:if isTrue="{! v.isCdaTypeCustomer || v.isCdaTypeVendor || v.simpleRequestObject.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.CDA_Source__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.CDA_Source__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      disabled="{!v.isCdaSourceDisabled}"
+                                                      label="CDA Source"
+                                                      value="{!v.simpleRequestObject.CDA_Source__c}"
+                                                      required="true"
+                                                      onchange="{!c.handleCdaSourseChange}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.CDA_Source__c.fieldValues}" var="item" >
+                                            <option value="{!item}" selected="{!item == v.simpleRequestObject.CDA_Source__c}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+
+                            <aura:if isTrue="{! v.isCdaTypeCEVA}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.CDA_Does_this_request_pertain_to_the_Merck_Alliance_Study_initiated_before_Janua}
+                                    </label>
+                                    <lightning:helptext content="{!$Label.c.CDA_Identifies_if_the_customer_requires_use_of_a_customer_specific_CDA_template}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="Customer Specified Vendor Template"
+                                                      value="{!v.simpleRequestObject.Customer_Specified_Vendor_Template__c}"
+                                                      required="true"
+                                                      onchange="{!c.customerSpecifiedVendorTemplateChanged}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Customer_Specified_Vendor_Template__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+
+                            <aura:if isTrue="{! (!v.isCdaTypeCEVA &amp;&amp; v.simpleRequestObject.CDA_Source__c == 'IQVIA') || (v.isCdaTypeCEVA &amp;&amp; v.simpleRequestObject.Customer_Specified_Vendor_Template__c == 'No') }">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.CDA_Format__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!$Label.c.CDA_Format_Helptext}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="CDA Format"
+                                                      value="{!v.simpleRequestObject.CDA_Format__c}"
+                                                      required="true"
+                                                      onchange="{!c.displayCDAFormatPopup}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.CDA_Format__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <aura:if isTrue="{!(v.simpleRequestObject.QuintilesIMS_Business__c == $Label.c.CDA_Q_Squared || v.simpleRequestObject.QuintilesIMS_Business__c == $Label.c.CDA_Research_Development_Solutions_RDS_Legacy_Quintiles) &amp;&amp; !(v.simpleRequestObject.QuintilesIMS_Business__c == $Label.c.CDA_Research_Development_Solutions_RDS_Legacy_Quintiles &amp;&amp;  v.simpleRequestObject.CDA_Type__c == 'Vendor') }">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Project_Specific_Indicator__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!$Label.c.CDA_Project_Specific_Indicator_Helptext}" class="slds-p-left_xx-small" />
+                                        <lightning:select aura:id="editField"
+                                                          label="Project Specific Indicator"
+                                                          value="{!v.simpleRequestObject.Project_Specific_Indicator__c}"
+                                                          required="true"
+                                                          onchange="{!c.isProtocolNumberKnownChanged}"
+                                                          disabled="{!v.isProjectSpeIndiDisabled}"
+                                                          messageWhenValueMissing="You must enter a value">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Project_Specific_Indicator__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                            <aura:if isTrue="{! (v.isCdaTypeAuditor || v.isCdaTypeCustomer  || v.isCdaTypeVendor) &amp;&amp; (v.simpleRequestObject.QuintilesIMS_Business__c != 'Q Squared' &amp;&amp; v.simpleRequestObject.QuintilesIMS_Business__c != 'Research &amp; Development Solutions (RDS) (Legacy Quintiles)')}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Competitor_Flag__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!$Label.c.CDA_1_direct_competitor_2_a_third_party_whose_business_it_is_to_provide_ser}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="Competitor Flag"
+                                                      value="{!v.simpleRequestObject.Competitor_Flag__c}"
+                                                      required="true"
+                                                      onchange="{!c.setSpecificIndicatorMethod_AF}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Competitor_Flag__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                                <aura:if isTrue="{! (v.isCdaTypeAuditor &amp;&amp; v.simpleRequestObject.Audit_Type__c != null &amp;&amp; v.simpleRequestObject.Audit_Type__c != '')
+                                                 || (!v.isCdaTypeAuditor &amp;&amp; v.simpleRequestObject.Project_Specific_Indicator__c != '' &amp;&amp; v.simpleRequestObject.Project_Specific_Indicator__c != null &amp;&amp; v.simpleRequestObject.Competitor_Flag__c == 'Yes')}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            {!v.cdaRequestFieldsDetailMap.Project_Specific_Indicator__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!$Label.c.CDA_Project_Specific_Indicator_Helptext}" class="slds-p-left_xx-small" />
+                                        <div class="slds-form-element__control">
+                                            <span >{!v.simpleRequestObject.Project_Specific_Indicator__c}</span>
+                                        </div>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! (v.simpleRequestObject.Competitor_Flag__c != 'Yes' &amp;&amp; !v.isCdaTypeAuditor  &amp;&amp; !v.isCdaTypeVendor) || !v.popupType == 'broadCDAPopup' }">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Project_Specific_Indicator__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!$Label.c.CDA_Project_Specific_Indicator_Helptext}" class="slds-p-left_xx-small" />
+                                        <lightning:select aura:id="editField"
+                                                          label="Project Specific Indicator"
+                                                          value="{!v.simpleRequestObject.Project_Specific_Indicator__c}"
+                                                          required="true"
+                                                          onchange="{!c.isProtocolNumberKnownChanged}"
+                                                          disabled="{!v.isProjectSpeIndiDisabled}"
+                                                          messageWhenValueMissing="You must enter a value">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Project_Specific_Indicator__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                            </aura:if>
+                        </lightning:layout>
+
+                        <aura:if isTrue="{! v.loggedInUserType == 'Requestor Admin'
+                                         || v.loggedInUserType == 'Negotiator'
+                                         || v.loggedInUserType == 'System Admin'}">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.Originating_Requestor_Flag_Label}
+                                    </label>
+                                    <lightning:helptext content="{!$Label.c.Originating_Requestor_Flag_Helptext}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="{!$Label.c.Originating_Requestor_Flag_Label}"
+                                                      value="{!v.simpleRequestObject.Originating_Requestor_Flag__c}"
+                                                      required="true"
+                                                      onchange="{!c.resetOriginatingRequestorSection}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Originating_Requestor_Flag__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </aura:if>
+
+                    </div>
+                </div>
+
+                <aura:if isTrue="{! v.isCdaTypeAuditor}">
+                    <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_Auditor_Info}">{!$Label.c.CDA_Auditor_Info}</span>
+                        </h3>
+                        <div class="slds-section__content">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.CDA_Emp_Client_Customer}
+                                    </label>
+                                    <lightning:select aura:id="editField"
+                                                      label="Is the auditor an employee of the client / customer?"
+                                                      value="{!v.empClientCustomerOptionVal}"
+                                                      required="true"
+                                                      onchange="{!c.isEmpClientCustomer}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.CDA_Customer_Consent_Disclose_Info}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Customer_Consent_to_Disclose__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="Customer Consent to Disclose"
+                                                      value="{!v.simpleRequestObject.Customer_Consent_to_Disclose__c}"
+                                                      required="true"
+                                                      onchange="{!c.isCustomerProvideDiscloseInfo}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Customer_Consent_to_Disclose__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Audit_Type__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Audit_Type__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="Audit Type"
+                                                      value="{!v.simpleRequestObject.Audit_Type__c}"
+                                                      required="true" 
+													  disabled="{!v.isAuditTypeDisabled}"
+                                                      onchange="{!c.setSpecificIndicatorMethod_AF}"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Audit_Type__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large" />
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Cust_Legal_Entity_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Cust_Legal_Entity_Name__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <c:LXC_CDA_lookup aura:id="customerLegalEntity"
+                                                      label="Customer Legal Entity Name"
+                                                      object="CDA_Account__c"
+                                                      searchField="CDA_Account_Name__c"
+                                                      value="{!v.simpleRequestObject.Cust_Legal_Entity_Name__c}"
+                                                      iconName="standard:account"
+                                                      subtitleField="CDA_Account_Lookup_Subtitle__c"
+                                                      order="CDA_Account_Name__c"
+                                                      limit="50"
+                                                      loadingMessage="Loading..."
+                                                      errorMessage="Invalid input"
+                                                      allowNewRecords="false"
+                                                      disabled="{!v.isCustomerLegalEntityOther}"
+                                                      placeholder="Search by Name"
+                                                      showRecentRecords="true"/>
+                                    <label>
+                                        {!$Label.c.CDA_Legal_Entity_Other}
+                                    </label>
+                                    <lightning:input label="{!$Label.c.CDA_Legal_Entity_Other}"
+                                                     aura:id="editField"
+                                                     type="checkbox"
+                                                     checked="{!v.isCustomerLegalEntityOther}"
+                                                     onchange="{!c.customerLegalEntityChangePopup}"/>
+                                </lightning:layoutItem>
+
+                                <aura:if isTrue="{!v.customerLegalEntityAccount.Complete_Address__c  == null}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large" />
+                                </aura:if>
+
+                                <aura:if isTrue="{! (!v.isCustomerLegalEntityOther &amp;&amp; v.customerLegalEntityAddress  != null &amp;&amp; v.simpleRequestObject.Cust_Legal_Entity_Name__c != null) }">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            {!v.cdaRequestFieldsDetailMap.Cust_Legal_Entity_Address__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Cust_Legal_Entity_Address__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <div class="slds-form-element__control">
+                                            <span >{!v.customerLegalEntityAccount.Complete_Address__c}</span>
+                                        </div>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{!v.isCustomerLegalEntityOther}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_Name_Other__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_Name_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:input label="Customer Legal Entity Name Other"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Customer_Legal_Entity_Name_Other__c}"
+                                                         required="true"
+                                                         maxlength="255"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                        {!255 - v.simpleRequestObject.Customer_Legal_Entity_Name_Other__c.length} characters remaining of 255
+                                    </lightning:layoutItem>
+
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_Street_Other__c.fieldLabel}
+                                        </label>
+
+                                        <lightning:input label="Customer Legal Entity Street Other"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Customer_Legal_Entity_Street_Other__c}"
+                                                         required="true"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                    </lightning:layoutItem>
+
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_Country_Other_PL__c.fieldLabel}
+                                        </label>
+                                        <lightning:select aura:id="editField"
+                                                          label="Customer Legal Entity Country Other"
+                                                          value="{!v.simpleRequestObject.Customer_Legal_Entity_Country_Other_PL__c}"
+                                                          onchange="{!c.onCustomerLegalEntityCountryChange}"
+                                                          required="true"
+                                                          messageWhenValueMissing="You must enter a value">
+                                            <aura:iteration items="{!v.customerLegalEntityCountryValues}" var="item" >
+                                                <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Customer_Legal_Entity_Country_Other_PL__c}">{!item.label}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+
+                                    <aura:if isTrue="{!v.toggleCustomerLEntityStatesError}">
+                                        <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                            <label>
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_State_Other_PL__c.fieldLabel}
+                                            </label>
+                                            <lightning:select aura:id="editField"
+                                                              label="Customer Legal Entity State/Province Other"
+                                                              disabled="{!v.isCustomerEntityStateDisabled}"
+                                                              value="{!v.simpleRequestObject.Customer_Legal_Entity_State_Other_PL__c}"
+                                                              required="{! !v.isCustomerEntityStateDisabled}"
+                                                              messageWhenValueMissing="You must enter a value">
+                                                <aura:iteration items="{!v.customerLegalEntityStateValues}" var="item" >
+                                                    <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Customer_Legal_Entity_State_Other_PL__c}">{!item.label}</option>
+                                                </aura:iteration>
+                                            </lightning:select>
+                                        </lightning:layoutItem>
+                                    </aura:if>
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_City_Other__c.fieldLabel}
+                                        </label>
+
+                                        <lightning:input label="{!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_City_Other__c.fieldLabel}"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Customer_Legal_Entity_City_Other__c}" />
+                                    </lightning:layoutItem>
+
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Customer_Legal_Entity_ZipCode_Other__c.fieldLabel}
+                                        </label>
+
+                                        <lightning:input label="Customer Legal Entity ZipCode Other"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Customer_Legal_Entity_ZipCode_Other__c}"
+                                                         required="true"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                            </lightning:layout>
+                        </div>
+                    </div>
+                </aura:if>
+
+                <aura:if isTrue="{! v.simpleRequestObject.Competitor_Flag__c == 'Yes' &amp;&amp; !v.isCdaTypeAuditor}">
+                    <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_Competitor_Details}">{!$Label.c.CDA_Competitor_Details}</span>
+                        </h3>
+                        <div class="slds-section__content">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+                                <aura:if isTrue="{! !v.isDataAndServices}" >
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.CDA_In_what_capacity_will_the_Competitor_be_working_with_QuintilesIMS}
+                                    </label>
+                                    <lightning:helptext content="{!$Label.c.CDA_Competitor_Capacity_HT}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="Competitor Contracting Capacity"
+                                                      value="{!v.simpleRequestObject.Competitor_Contracting_Capacity__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value"
+                                                      disabled="{!v.isCompetContractCapDisabled}"
+                                                      onchange="{!c.competitorContractingCapacityChanged}">
+                                        <aura:iteration items="{!v.competContractCapValues}" var="item" >
+                                            <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Competitor_Contracting_Capacity__c}">{!item.label}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                                </aura:if>
+                                
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.isCdaTypeVendor &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Is_the_requirement_to_work_with_a_competitor_originating_from_the_study_spon}
+                                        </label>
+                                        <!-- <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Competitor_Originating_from_Sponsor__c.fieldHelpText}" class="slds-p-left_xx-small" /> -->
+                                        <lightning:select aura:id="editField"
+                                                          label="Competitor Originating From Sponsor"
+                                                          value="{!v.simpleRequestObject.Competitor_Originating_from_Sponsor__c}"
+                                                          required="true"
+                                                          messageWhenValueMissing="You must enter a value">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Competitor_Originating_from_Sponsor__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                                
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise'}" >
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.What_is_the_Study_Sponsor_situation__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.What_is_the_Study_Sponsor_situation__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <lightning:select aura:id="editField"
+                                                      label="What Is The Study Sponsor Situation"
+                                                      value="{!v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value"
+                                                      disabled="{!v.isStudySponSituDisabled}"
+                                                      onchange="{!c.sponsorConsentToDiscloseChanged}">
+                                        <aura:iteration items="{!v.studySponSituValues}" var="item" >
+                                            <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c}">{!item.label}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                                </aura:if>
+                                
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c == 'Collaborator'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Business_line_or_Services_involved}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Colaboration_Business_Line_Services__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <lightning:input label="Colaboration Business Line Services"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Colaboration_Business_Line_Services__c}"
+                                                         required="true"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c  == 'Study Sponsor identified'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <c:LXC_CDA_lookup aura:id="sponsorLegalEntity"
+                                                          label="{!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity__c.fieldLabel}"
+                                                          object="CDA_Account__c"
+                                                          searchField="CDA_Account_Name__c"
+                                                          value="{!v.simpleRequestObject.Sponsor_Legal_Entity__c}"
+                                                          iconName="standard:account"
+                                                          subtitleField="CDA_Account_Lookup_Subtitle__c"
+                                                          order="CDA_Account_Name__c"
+                                                          limit="50"
+                                                          loadingMessage="Loading..."
+                                                          errorMessage="Invalid input"
+                                                          allowNewRecords="false"
+                                                          disabled="{!v.isSponsorLegalEntityNameOther}"
+                                                          placeholder="Search by Name"
+                                                          showRecentRecords="true"/>
+                                        <label>
+                                            {!$Label.c.CDA_Legal_Entity_Other}
+                                        </label>
+                                        <lightning:input label="{!$Label.c.CDA_Legal_Entity_Other}"
+                                                         aura:id="editField"
+                                                         type="checkbox"
+                                                         checked="{!v.isSponsorLegalEntityNameOther}"
+                                                         onchange="{!c.sponsorLegalEntityNameOtherChanged}"/>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; (!v.isSponsorLegalEntityNameOther &amp;&amp; v.sponsorLegalEntity.Complete_Address__c != null &amp;&amp; v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c  == 'Study Sponsor identified') }">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            {!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity_Address__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity_Address__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <div class="slds-form-element__control">
+                                            <span >{!v.sponsorLegalEntity.Complete_Address__c}</span>
+                                        </div>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.isSponsorLegalEntityNameOther &amp;&amp; v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c  == 'Study Sponsor identified'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity_Name_Other__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Sponsor_Legal_Entity_Name_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:input label="Sponsor Legal Entity Name Other"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Sponsor_Legal_Entity_Name_Other__c}"
+                                                         required="true"
+                                                         maxlength="255"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                        {!255 - v.simpleRequestObject.Sponsor_Legal_Entity_Name_Other__c.length} characters remaining of 255
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.What_is_the_Study_Sponsor_situation__c  == 'Study Sponsor identified'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Has_QuintilesIMS_received_Study_Sponsor_Consent_to_Disclose_Sponsor_informat}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Sponsor_Consent_to_Disclose__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <lightning:select aura:id="editField"
+                                                          label="Sponsor Consent To Disclose"
+                                                          value="{!v.simpleRequestObject.Sponsor_Consent_to_Disclose__c}"
+                                                          required="true"
+                                                          messageWhenValueMissing="You must enter a value"
+                                                          onchange="{!c.sponsorConsentToDisclosePopup}">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Sponsor_Consent_to_Disclose__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.CDA_i_Will_the_Recipient_obtain_access_to_a_QuintilesIMS_System}
+                                    </label>
+                                    <lightning:select aura:id="editField"
+                                                      label="Competitor System Access"
+                                                      value="{!v.simpleRequestObject.Competitor_System_Access__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value"
+                                                      onchange="{!c.competitorSystemAccessChanged}">
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Competitor_System_Access__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                            
+                            <aura:if isTrue="{!v.simpleRequestObject.Competitor_System_Access__c == 'Yes'}" >
+                                <lightning:layout horizontalAlign="spread" multipleRows="true">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Describe_the_System_in_which_access_is_required}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Systems_To_Be_Accessed__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:textarea label="Systems To Be Accessed"
+                                                            aura:id="editField"
+                                                            type="textArea"
+                                                            value="{!v.simpleRequestObject.Systems_To_Be_Accessed__c}"
+                                                            required="true"
+                                                            messageWhenValueMissing="You must enter a value"
+                                                            maxlength="255"/>
+                                        <aura:if isTrue="{!v.simpleRequestObject.Systems_To_Be_Accessed__c.length >= 0 }">
+                                            <span style="color:#01136f;">*{!255 - v.simpleRequestObject.Systems_To_Be_Accessed__c.length} characters remaining</span>
+                                            <aura:set attribute="else">
+                                                <span style="color:#01136f;">*255 characters remaining</span>
+                                            </aura:set>
+                                        </aura:if>
+                                    </lightning:layoutItem>
+
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Purpose_why_QuintilesIMS_is_working_with_the_Competitor}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Purpose_for_Working_for_a_Competitor__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                        <lightning:textarea label="Purpose For Working For A Competitor"
+                                                            aura:id="editField"
+                                                            type="textArea"
+                                                            value="{!v.simpleRequestObject.Purpose_for_Working_for_a_Competitor__c}"
+                                                            required="true"
+                                                            messageWhenValueMissing="You must enter a value"
+                                                            maxlength="255" />
+                                        <aura:if isTrue="{!v.simpleRequestObject.Purpose_for_Working_for_a_Competitor__c.length >= 0 }">
+                                            <span style="color:#01136f;">*{!255 - v.simpleRequestObject.Purpose_for_Working_for_a_Competitor__c.length} characters remaining</span>
+                                            <aura:set attribute="else">
+                                                <span style="color:#01136f;">*255 characters remaining</span>
+                                            </aura:set>
+                                        </aura:if>
+                                    </lightning:layoutItem>
+                                    
+                                    <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise'}">
+                                        <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                            <label>
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                {!$Label.c.CDA_Description_of_work_QuintilesIMS_is_engaged_to_provide_Customer}
+                                            </label>
+                                            <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Description_of_work_provided_to_Customer__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                            
+                                            <lightning:textarea label="Description Of Work Provided To Customer"
+                                                                aura:id="editField"
+                                                                type="textArea"
+                                                                value="{!v.simpleRequestObject.Description_of_work_provided_to_Customer__c}"
+                                                                required="true"
+                                                                messageWhenValueMissing="You must enter a value"
+                                                                maxlength="255" />
+                                            <aura:if isTrue="{!v.simpleRequestObject.Description_of_work_provided_to_Customer__c.length >= 0 }">
+                                                <span style="color:#01136f;">*{!255 - v.simpleRequestObject.Description_of_work_provided_to_Customer__c.length} characters remaining</span>
+                                                <aura:set attribute="else">
+                                                    <span style="color:#01136f;">*255 characters remaining</span>
+                                                </aura:set>
+                                            </aura:if>
+                                        </lightning:layoutItem>
+                                    </aura:if>
+                                    
+                                    <aura:if isTrue="{! !v.isDataAndServices &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise'}">
+                                        <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                            <label>
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                {!$Label.c.CDA_Description_of_Work_to_be_provided_to_Customer_by_the_competitor}
+                                            </label>
+                                            <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Desc_of_Work_provided_to_Cust_By_Comp__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                            
+                                            <lightning:textarea label="Description Of Work Provided To Customer By Competitor"
+                                                                aura:id="editField"
+                                                                type="textArea"
+                                                                value="{!v.simpleRequestObject.Desc_of_Work_provided_to_Cust_By_Comp__c}"
+                                                                required="true"
+                                                                messageWhenValueMissing="You must enter a value"
+                                                                maxlength="255" />
+                                            <aura:if isTrue="{!v.simpleRequestObject.Desc_of_Work_provided_to_Cust_By_Comp__c.length >= 0 }">
+                                                <span style="color:#01136f;">*{!255 - v.simpleRequestObject.Desc_of_Work_provided_to_Cust_By_Comp__c.length} characters remaining</span>
+                                                <aura:set attribute="else">
+                                                    <span style="color:#01136f;">*255 characters remaining</span>
+                                                </aura:set>
+                                            </aura:if>
+                                        </lightning:layoutItem>
+                                    </aura:if>
+                                    
+                                    <aura:if isTrue="{! (v.simpleRequestObject.Competitor_Contracting_Capacity__c != null &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != '') || v.isDataAndServices}">
+                                        <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                            <label>
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                {!v.cdaRequestFieldsDetailMap.QI_information_disclosed_to_competitor__c.fieldLabel}
+                                            </label>
+                                            <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.QI_information_disclosed_to_competitor__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                            <lightning:textarea label="IQVIA Information Disclosed To Competitor"
+                                                                aura:id="editField"
+                                                                type="textArea"
+                                                                value="{!v.simpleRequestObject.QI_information_disclosed_to_competitor__c}"
+                                                                required="true"
+                                                                messageWhenValueMissing="You must enter a value"
+                                                                maxlength="255" />
+                                            <aura:if isTrue="{!v.simpleRequestObject.QI_information_disclosed_to_competitor__c.length >= 0 }">
+                                                <span style="color:#01136f;">*{!255 - v.simpleRequestObject.QI_information_disclosed_to_competitor__c.length} characters remaining</span>
+                                                <aura:set attribute="else">
+                                                    <span style="color:#01136f;">*255 characters remaining</span>
+                                                </aura:set>
+                                            </aura:if>
+                                        </lightning:layoutItem>
+                                    </aura:if>
+                                    <aura:if isTrue="{! (v.simpleRequestObject.Competitor_Contracting_Capacity__c != null &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != '') || v.isDataAndServices}">
+
+                                        <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                            <label>
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                {!v.cdaRequestFieldsDetailMap.Competitor_information_disclosed_to_QI__c.fieldLabel}
+                                            </label>
+                                            <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Competitor_information_disclosed_to_QI__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                            <lightning:textarea label="Competitor Information Disclosed To QI"
+                                                                aura:id="editField"
+                                                                type="textArea"
+                                                                value="{!v.simpleRequestObject.Competitor_information_disclosed_to_QI__c}"
+                                                                required="true"
+                                                                messageWhenValueMissing="You must enter a value"
+                                                                maxlength="255" />
+                                            <aura:if isTrue="{!v.simpleRequestObject.Competitor_information_disclosed_to_QI__c.length >= 0 }">
+                                                <span style="color:#01136f;">*{!255 - v.simpleRequestObject.Competitor_information_disclosed_to_QI__c.length} characters remaining</span>
+                                                <aura:set attribute="else">
+                                                    <span style="color:#01136f;">*255 characters remaining</span>
+                                                </aura:set>
+                                            </aura:if>
+                                        </lightning:layoutItem>
+                                    </aura:if>
+                                </lightning:layout>
+                            </aura:if>
+                        </div>
+                    </div>
+                </aura:if>
+
+                <aura:if isTrue="{! (v.simpleRequestObject.Competitor_Contracting_Capacity__c != 'Collaborator' &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c != null)
+                                 || (v.simpleRequestObject.Project_Specific_Indicator__c == 'Yes' &amp;&amp; v.simpleRequestObject.Competitor_Contracting_Capacity__c == null)}" >
+                    <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="CDA Coverage Level">CDA Coverage Level</span>
+                        </h3>
+                        <div class="slds-section__content">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+
+                                <aura:if isTrue="{! !v.isDataAndServices}" >
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Is_Protocol_Number_Known__c.fieldLabel}
+                                        </label>
+                                        <lightning:select aura:id="editField"
+                                                          label="Is Protocol Number Known"
+                                                          value="{!v.simpleRequestObject.Is_Protocol_Number_Known__c}"
+                                                          required="true"
+                                                          messageWhenValueMissing="You must enter a value"
+                                                          onchange="{!c.isProtocolTitleKnownChanged}">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Is_Protocol_Number_Known__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices  &amp;&amp; v.simpleRequestObject.Is_Protocol_Number_Known__c   == 'Yes'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Protocol_Number__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Protocol_Number__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:input label="Protocol Number"
+                                                         aura:id="editField"
+                                                         type="text"
+                                                         value="{!v.simpleRequestObject.Protocol_Number__c}"
+                                                         required="true"
+                                                         messageWhenValueMissing="You must enter a value"/>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! !v.isDataAndServices  &amp;&amp; v.simpleRequestObject.Is_Protocol_Number_Known__c == 'No'}">
+
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Is_Protocol_Title_Known__c.fieldLabel}
+                                        </label>
+                                        
+                                        <lightning:select aura:id="editField"
+                                                          label="Is Protocol Title Known"
+                                                          value="{!v.simpleRequestObject.Is_Protocol_Title_Known__c}"
+                                                          required="true"
+                                                          messageWhenValueMissing="You must enter a value"
+                                                          onchange="{!c.isProtocolTitleDiscriptionChanged}">
+                                            <option value="">--None--</option>
+                                            <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Is_Protocol_Title_Known__c.fieldValues}" var="item" >
+                                                <option value="{!item}">{!item}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                                <aura:if isTrue="{! !v.isDataAndServices  &amp;&amp; v.simpleRequestObject.Is_Protocol_Title_Known__c == 'Yes'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Protocol_Title_Long_Textarea__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Protocol_Title_Long_Textarea__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:textarea label="Protocol Title"
+                                                            aura:id="editField"
+                                                            type="richText"
+                                                            value="{!v.simpleRequestObject.Protocol_Title_Long_Textarea__c}"
+                                                            required="true"
+                                                            messageWhenValueMissing="You must enter a value"/>
+                                        <span style="color:#01136f;">{!$Label.c.CDA_Text_in_this_field_appears_in_the_CDA_exactly_as_written_Max_255_character}</span>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                                <aura:if isTrue="{! v.isDataAndServices || v.simpleRequestObject.Is_Protocol_Title_Known__c == 'No'}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!v.cdaRequestFieldsDetailMap.Project_Description_Long_Textarea__c.fieldLabel}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Project_Description_Long_Textarea__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:textarea label="Project Description"
+                                                            aura:id="editField"
+                                                            type="richText"
+                                                            value="{!v.simpleRequestObject.Project_Description_Long_Textarea__c}"
+                                                            required="true"
+                                                            messageWhenValueMissing="You must enter a value"/>
+                                        <span style="color:#01136f;">{!$Label.c.CDA_Text_in_this_field_appears_in_the_CDA_exactly_as_written_Max_255_character}</span>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                            </lightning:layout>
+                        </div>
+                    </div>
+                </aura:if>
+
+                <aura:if isTrue="{! (v.loggedInUserType == 'Requestor Admin'
+                                 || v.loggedInUserType == 'Negotiator'
+                                 || v.loggedInUserType == 'System Admin')
+                                 &amp;&amp; v.simpleRequestObject.Originating_Requestor_Flag__c == 'Yes'}" >
+                    <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.Originating_Requestor_s_Information}">{!$Label.c.Originating_Requestor_s_Information}</span>
+                        </h3>
+                        <div class="slds-section__content">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Originating_Requestor_First_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Originating_Requestor_First_Name__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Originating_Requestor_First_Name__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"/>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Originating_Requestor_Last_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Originating_Requestor_Last_Name__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Originating_Requestor_Last_Name__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"/>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" aura:id="originatingReqEmailItem" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Originating_Requestor_IQVIA_Email__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Originating_Requestor_IQVIA_Email__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Originating_Requestor_IQVIA_Email__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Originating_Requestor_IQVIA_Email__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"/>
+                                    <div class="slds-form-element__help slds-hide"
+                                     	aura:id="originatingReqEmailError">{!v.originatingReqEmailError}</div>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6"
+                                                      class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large"
+                                                      aura:id="originatingReqConfirmEmailItem">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.Originating_Requestor_Confirm_Email_Address}
+                                    </label>
+
+                                    <!--<lightning:input label="{!$Label.c.Originating_Requestor_Confirm_Email_Address}"
+                                                     aura:id="editField"
+                                                     type="email"
+                                                     value="{!v.originatingRequestorConfirmEmailAddress}"
+                                                     required="true"/> -->
+                                    <div class="slds-form-element__control">
+                                        <input label="{!$Label.c.Originating_Requestor_Confirm_Email_Address}"
+                                               type="email"
+                                               class="slds-input"
+                                               aura:id="originatingReqConfirmEmail"
+                                               value="{!v.originatingRequestorConfirmEmailAddress}"
+                                               required="true"
+                                               messageWhenValueMissing="You must enter a value" />
+                                    </div>
+                                    <div class="slds-form-element__help slds-hide"
+                                         aura:id="originatingReqConfirmEmailError">{!v.originatingReqConfirmEmailError}</div>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!$Label.c.Requestor_Admin_Email_Flag_Label}
+                                    </label>
+                                    <lightning:select aura:id="editField"
+                                                      label="{!$Label.c.Requestor_Admin_Email_Flag_Label}"
+                                                      value="{!v.simpleRequestObject.Requestor_Admin_Email_Flag__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value" >
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Requestor_Admin_Email_Flag__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </div>
+                    </div>
+                </aura:if>
+                
+                <aura:if isTrue="{! (v.loggedInUserType == 'Requestor Extended'
+                                 || v.loggedInUserType == 'Negotiator'
+                                 || v.loggedInUserType == 'System Admin') 
+                                 || v.isPrivilegedBusinessAreaSelected == true
+                                 || v.simpleRequestObject.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}" >
+                    <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_QI_Legal_Entity_Details}">{!$Label.c.CDA_QI_Legal_Entity_Details}</span>
+                        </h3>
+                        <div class="slds-section__content">
+                            <lightning:layout horizontalAlign="spread" multipleRows="true">
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.QI_Legal_Entity_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.QI_Legal_Entity_Name__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <c:LXC_CDA_lookup aura:id="qiLegalEntity"
+                                                      label="IQVIA Legal Entity Name"
+                                                      object="QI_Legal_Entity__c"
+                                                      searchField="IQVIA_Legal_Entity_Search_Name__c"
+                                                      value="{!v.simpleRequestObject.QI_Legal_Entity_Name__c}"
+                                                      iconName="standard:account"
+                                                      subtitleField="IQVIA_Legal_Entity_Lookup_Subtitle__c"
+                                                      order="IQVIA_Legal_Entity_Search_Name__c"
+                                                      limit="50"
+                                                      loadingMessage="Loading..."
+                                                      errorMessage="Invalid input"
+                                                      allowNewRecords="false"
+                                                      placeholder="Search by Country Code"
+                                                      showRecentRecords="true"
+                                                      filter="{!v.qiLegalEntityFilter}"
+                                                      cdaRequest="{!v.simpleRequestObject}"/>
+                                </lightning:layoutItem>
+
+                                <aura:if isTrue="{! (v.loggedInUserType == 'Negotiator' || v.loggedInUserType == 'System Admin')}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_QI_Legal_Entity_Governing_Law_Label}
+                                        </label>
+                                        <lightning:helptext content="{!$Label.c.CDA_QI_Legal_Entity_Governing_Law}" class="slds-p-left_xx-small" />
+                                        <c:LXC_CDA_lookup aura:id="governingLaw"
+                                                          label="Governing Law"
+                                                          object="CDA_Approved_Governing_Law_Location__c"
+                                                          searchField="Name"
+                                                          value="{!v.simpleRequestObject.Location_of_Governing_Law__c}"
+                                                          iconName="standard:account"
+                                                          subtitleField="Court_of_Jurisdiction__c"
+                                                          order="Name"
+                                                          limit="50"
+                                                          loadingMessage="Loading..."
+                                                          errorMessage="Invalid input"
+                                                          allowNewRecords="false"
+                                                          placeholder="Search by Name"
+                                                          showRecentRecords="true"/>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+                                <aura:if isTrue="{! v.qiLegalEntityAddress != null}">
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            {!$Label.c.CDA_QI_Legal_Entity_Address_Label}
+                                        </label>
+                                        <!-- <lightning:helptext content="{!$Label.c.CDA_QI_Legal_Entity_Address}" class="slds-p-left_xx-small" /> -->
+                                        <div class="slds-form-element__control">
+                                            <span >{!v.qiLegalEntityAddress}</span>
+                                        </div>
+                                    </lightning:layoutItem>
+                                </aura:if>
+
+
+                            </lightning:layout>
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{!v.simpleRequestObject.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                        <label>
+                            <abbr class="slds-required" title="required">*</abbr>
+                            IQVIA Contact Name:
+                        </label>
+                        <lightning:input label="IQVIA Contact Name:"
+                                         aura:id="editField"
+                                         type="text"
+                                         value="{!v.simpleRequestObject.IQVIA_Contact_Name__c}"
+                                         required="true"
+                                         messageWhenValueMissing="You must enter a value"/>
+                    </lightning:layoutItem>
+                </aura:if>
+                <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                    <h3 class="slds-section__title slds-theme_shade">
+                        <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_Contact_Details}">{!$Label.c.CDA_Contact_Details}</span>
+                    </h3>
+                    <div class="slds-section__content">
+                        <lightning:layout horizontalAlign="spread" multipleRows="true">
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    {!v.cdaRequestFieldsDetailMap.Recipient_Account__c.fieldLabel}
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                <c:LXC_CDA_lookup aura:id="recipientAccount"
+                                                  label="Recipient Account Name"
+                                                  object="CDA_Account__c"
+                                                  searchField="CDA_Account_Name__c"
+                                                  value="{!v.simpleRequestObject.Recipient_Account__c}"
+                                                  iconName="standard:account"
+                                                  subtitleField="CDA_Account_Lookup_Subtitle__c"
+                                                  order="CDA_Account_Name__c"
+                                                  limit="50"
+                                                  loadingMessage="Loading..."
+                                                  errorMessage="Invalid input"
+                                                  allowNewRecords="false"
+                                                  disabled="{!v.isRecipientAccountNameOther}"
+                                                  placeholder="Search by Name"
+                                                  showRecentRecords="true"/>
+                                <label>
+                                    {!$Label.c.CDA_Legal_Entity_Other}
+                                </label>
+                                <lightning:input label="{!$Label.c.CDA_Legal_Entity_Other}"
+                                                 aura:id="editField"
+                                                 type="checkbox"
+                                                 checked="{!v.isRecipientAccountNameOther}"
+                                                 onchange="{!c.recipientAccountNameOtherChanged}"/>
+                            </lightning:layoutItem>
+
+                            <aura:if isTrue="{!v.recipientAccount.Complete_Address__c == null}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large" />
+                            </aura:if>
+
+                            <aura:if isTrue="{! (!v.isRecipientAccountNameOther &amp;&amp; v.recipientAccount.Complete_Address__c  != null &amp;&amp; v.simpleRequestObject.Recipient_Account__c != null) }">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_Address__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_Address__c.fieldHelpText}" class="slds-p-left_xx-small" />
+                                    <div class="slds-form-element__control">
+                                        <span >{!v.recipientAccount.Complete_Address__c}</span>
+                                    </div>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            
+                            <aura:if isTrue="{!v.recipientAccount.Individual_Indicator__c == null &amp;&amp; v.recipientAccount.Id != null}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        For protection of Privacy, is the Recipient Legal Entity Name the name of a unique individual?
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Individual_Indicator__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:select label="For protection of Privacy, is the Recipient Legal Entity Name the name of a unique individual?"
+                                                      aura:id="editField"
+                                                      value="{!v.simpleRequestObject.Individual_Indicator__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value" >
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Individual_Indicator__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+
+                            <aura:if isTrue="{!v.isRecipientAccountNameOther}">
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_Name_Other__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_Name_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:input label="Recipient Account Name Other"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Recipient_Account_Name_Other__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"
+                                                     maxlength="255"/>
+                                    {!255 - v.simpleRequestObject.Recipient_Account_Name_Other__c.length} characters remaining of 255
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_Street_Other__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_Street_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:input label="Recipient Account Street Other"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Recipient_Account_Street_Other__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"/>
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_Country_Other_PL__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_Country_Other_PL__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:select aura:id="editField"
+                                                      label="Recipient Account Country Other"
+                                                      value="{!v.simpleRequestObject.Recipient_Account_Country_Other_PL__c}"
+                                                      onchange="{!c.onRecipientAccountCountryChange}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value">
+                                        <aura:iteration items="{!v.recipientAccountCountryValues}" var="item" >
+                                            <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Recipient_Account_Country_Other_PL__c}">{!item.label}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+
+                                <aura:if isTrue="{!v.toggleRecipientLEntityStatesError}" >
+                                    <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                        <label>
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {!$Label.c.CDA_Recipient_Account_State_Province_Other}
+                                        </label>
+                                        <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_State_Other_PL__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                        <lightning:select aura:id="editField"
+                                                          label="Recipient Account State/Province Other"
+                                                          disabled="{!v.isRecipientAccountStateDisabled}"
+                                                          value="{!v.simpleRequestObject.Recipient_Account_State_Other_PL__c}"
+                                                          required="{! !v.isRecipientAccountStateDisabled}"
+                                                          messageWhenValueMissing="You must enter a value">
+                                            <aura:iteration items="{!v.recipientAccountStateValues}" var="item" >
+                                                <option value="{!item.value}" selected="{!item.value == v.simpleRequestObject.Recipient_Account_State_Other_PL__c}">{!item.label}</option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </lightning:layoutItem>
+                                </aura:if>
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_City_Other__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_City_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Recipient_Account_City_Other__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Recipient_Account_City_Other__c}" />
+                                </lightning:layoutItem>
+
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Recipient_Account_ZipCode_Other__c.fieldLabel}
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Account_ZipCode_Other__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:input label="Recipient Account ZipCode Other"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     value="{!v.simpleRequestObject.Recipient_Account_ZipCode_Other__c}"
+                                                     required="true"
+                                                     messageWhenValueMissing="You must enter a value"/>
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        For protection of Privacy, is the Recipient Legal Entity Name the name of a unique individual?
+                                    </label>
+                                    <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Individual_Indicator__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                    <lightning:select label="Individual Indicator"
+                                                      aura:id="editField"
+                                                      value="{!v.simpleRequestObject.Individual_Indicator__c}"
+                                                      required="true"
+                                                      messageWhenValueMissing="You must enter a value" >
+                                        <option value="">--None--</option>
+                                        <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Individual_Indicator__c.fieldValues}" var="item" >
+                                            <option value="{!item}">{!item}</option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+                        </lightning:layout>
+                    </div>
+                </div>
+
+                <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                    <h3 class="slds-section__title slds-theme_shade">
+                        <span class="slds-truncate slds-p-horizontal_small" title="{!$Label.c.CDA_Recipient_Point_of_Contact_Information}">{!$Label.c.CDA_Recipient_Point_of_Contact_Information}</span>
+                    </h3>
+                    <div class="slds-section__content">
+                        <lightning:layout horizontalAlign="spread" multipleRows="true">
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Recipient Point-of-Contact First Name
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_First_Name__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                <lightning:input label="Recipient Point of Contact First Name"
+                                                 aura:id="editField"
+                                                 type="text"
+                                                 value="{!v.simpleRequestObject.Recipient_Point_of_Contact_First_Name__c}"
+                                                 required="true"
+                                                 messageWhenValueMissing="You must enter a value"
+                                                 pattern="[a-zA-Z0-9 '-]*"
+                                                 messageWhenPatternMismatch="Special characters are not allowed."/>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Recipient Point-of-Contact Last Name
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_Last_Name__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                <lightning:input label="Recipient Point of Contact Last Name"
+                                                 aura:id="editField"
+                                                 type="text"
+                                                 value="{!v.simpleRequestObject.Recipient_Point_of_Contact_Last_Name__c}"
+                                                 required="true"
+                                                 messageWhenValueMissing="You must enter a value"
+                                                 pattern="[a-zA-Z0-9 '-]*"
+                                                 messageWhenPatternMismatch="Special characters are not allowed."/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="6" aura:id="recipeintEmailItem" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Recipient Point-of-Contact Email
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_Email_Address__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                <lightning:input label="Recipient Point of Contact Email Address"
+                                                 aura:id="editField"
+                                                 type="text"
+                                                 value="{!v.simpleRequestObject.Recipient_Point_of_Contact_Email_Address__c}"
+                                                 required="true"
+                                                 messageWhenValueMissing="You must enter a value"/>                                
+                                <div class="slds-form-element__help slds-hide"
+                                     aura:id="recipeintEmailError">{!v.recipeintEmailError}</div>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="6"
+                                                  class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large"
+                                                  aura:id="recipeintConfirmEmailItem">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Recipient Point-of-Contact Email Confirmation
+                                </label>
+
+                                <!-- <lightning:input label="Recipient Point-of-Contact Email Confirmation"
+                                                 aura:id="editField1"
+                                                 type="email"
+                                                 value="{!v.confirmEmailAddress}"
+                                                 required="true"/> -->
+
+                                <div class="slds-form-element__control">
+                                    <input type="email"
+                                           class="slds-input"
+                                           aura:id="recipeintConfirmEmail"
+                                           value="{!v.confirmEmailAddress}"/>
+                                </div>
+                                <div class="slds-form-element__help slds-hide"
+                                     aura:id="recipeintConfirmEmailError">{!v.recipeintConfirmEmailError}</div>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Recipient Point-of-Contact Title
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_Title__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                <lightning:input label="Recipient Point of Contact Title"
+                                                 aura:id="editField"
+                                                 type="text"
+                                                 value="{!v.simpleRequestObject.Recipient_Point_of_Contact_Title__c}"
+                                                 required="true"
+                                                 messageWhenValueMissing="You must enter a value"/>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    Recipient Point-of-Contact Telephone
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_Telephone_Num__c.fieldHelpText}" class="slds-p-left_xx-small" />
+
+                                <lightning:input label="{!v.cdaRequestFieldsDetailMap.Recipient_Point_of_Contact_Telephone_Num__c.fieldLabel}"
+                                                 aura:id="editField"
+                                                 type="text"
+                                                 value="{!v.simpleRequestObject.Recipient_Point_of_Contact_Telephone_Num__c}" />
+                            </lightning:layoutItem>
+                            
+                            <aura:if isTrue="{!v.simpleRequestObject.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}" >
+                            <lightning:layoutItem size="12" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Is the Site signatory same as the Site Contact?
+                                </label>
+                                <lightning:select class="slds-size_1-of-2" 
+                                                  aura:id="editField" 
+                                                  label="Is the Site signatory same as the Site Contact?" 
+                                                  value="{!v.simpleRequestObject.IsSiteSignatorySameAsSiteContact__c}" 
+                                                  required="true" 
+                                                  messageWhenValueMissing="You must enter a value"
+                                                  onchange="{!c.setSiteSignatoryFlag}">
+                                    <option value="">--None--</option>
+                                    <aura:iteration items="{!v.cdaRequestFieldsDetailMap.IsSiteSignatorySameAsSiteContact__c.fieldValues}" var="item">
+                                        <option value="{!item}" selected="{!item == v.simpleRequestObject.IsSiteSignatorySameAsSiteContact__c}">{!item}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>                            
+                            <aura:if isTrue="{!v.simpleRequestObject.IsSiteSignatorySameAsSiteContact__c == 'No'}" >
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Site_Contact_First_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Site_Contact_First_Name__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     required="true" 
+                                                     messageWhenValueMissing="You must enter a value"
+                                                     value="{!v.simpleRequestObject.Site_Contact_First_Name__c}" />
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="6" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Site_Contact_Last_Name__c.fieldLabel}
+                                    </label>
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Site_Contact_Last_Name__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     required="true" 
+                                                     messageWhenValueMissing="You must enter a value"
+                                                     value="{!v.simpleRequestObject.Site_Contact_Last_Name__c}" />
+                                </lightning:layoutItem>
+                                
+                                <lightning:layoutItem size="6" aura:id="siteContactEmailItem" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                    <label>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        {!v.cdaRequestFieldsDetailMap.Site_Contact_Email_Address__c.fieldLabel}
+                                    </label>
+                                    <lightning:input label="{!v.cdaRequestFieldsDetailMap.Site_Contact_Email_Address__c.fieldLabel}"
+                                                     aura:id="editField"
+                                                     type="text"
+                                                     required="true" 
+                                                     messageWhenValueMissing="You must enter a value"
+                                                     value="{!v.simpleRequestObject.Site_Contact_Email_Address__c}" />
+                                    <div class="slds-form-element__help slds-hide"
+                                     	aura:id="siteContactEmailError">{!v.siteContactEmailError}</div>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            </aura:if>
+                            <lightning:layoutItem size="12" class="slds-form-element slds-p-bottom_small slds-p-left_medium slds-p-right_large">
+                                <label>
+                                    {!$Label.c.CDA_Additional_IQVIA_contacts}
+                                </label>
+                                <lightning:helptext content="{!v.cdaRequestFieldsDetailMap.Additional_Contact_Flag__c.fieldHelpText}"
+                                    class="slds-p-left_xx-small" />
+                                <lightning:select class="slds-size_1-of-2" aura:id="editField" label="Additional IQVIA contacts" value="{!v.simpleRequestObject.Additional_Contact_Flag__c}" required="false" onchange="{!c.resetAdditionalContactFlag}">
+                                    <aura:iteration items="{!v.cdaRequestFieldsDetailMap.Additional_Contact_Flag__c.fieldValues}" var="item">
+                                        <option value="{!item}" selected="{!item == v.simpleRequestObject.Additional_Contact_Flag__c}">{!item}</option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            
+                        </lightning:layout>
+                    </div>
+                    <aura:if isTrue="{!v.simpleRequestObject.Additional_Contact_Flag__c == 'Yes'}">
+                        <div class="slds-section slds-is-open slds-p-left_small slds-p-right_small">
+                            <div class="slds-section__content">
+                                <div class="slds-float_left slds-p-bottom_small">
+                                    <button aura:id="addContact" onclick="{!c.addContact}" type="button" class="slds-button slds-button_success"
+                                        title="Add Contact" rendered="{!v.simpleRequestObject.Additional_Contact_Flag__c == Yes}">{!$Label.c.CDA_Add_Contact}</button>
+                                </div>
+                                <div class="container-fluid">
+                                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                                        <thead>
+                                            <tr class="slds-text-title_caps">
+                                                <th scope="col">
+                                                    <div class="slds-truncate">#</div>
+                                                </th>
+                                                <th scope="col">
+                                                    <div class="slds-truncate" title="Action">{!$Label.c.CDA_Action}</div>
+                                                </th>
+                                                <th scope="col">
+                                                    <div class="slds-truncate" title="First Name"><abbr class="slds-required"
+                                                            title="required">*</abbr>{!$Label.c.CDA_First_Name}</div>
+                                                </th>
+                                                <th scope="col">
+                                                    <div class="slds-truncate" title="Last Name"><abbr class="slds-required"
+                                                            title="required">*</abbr>{!$Label.c.CDA_Last_Name}</div>
+                                                </th>
+                                                <th scope="col">
+                                                    <div class="slds-truncate" title="Email"><abbr class="slds-required"
+                                                            title="required">*</abbr>{!$Label.c.CDA_Email}</div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.contactList}" var="con" indexVar="index">
+                                                <tr>
+                                                    <td>
+                                                        {!index + 1}
+                                                    </td>
+                                                    <td>
+                                                        <a onclick="{!c.removeContact}" data-record="{!index}">
+                                                            <lightning:icon iconName="utility:delete" size="small" alternativeText="{!$Label.c.CDA_Delete}" />
+                                                            <span class="slds-assistive-text">{!$Label.c.CDA_Delete}</span>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <lightning:input aura:id="editField" name="acFName" type="text" required="true"
+                                                            maxlength="50" label="First Name" value="{!con.acFirstName}"
+                                                            messageWhenValueMissing="You must enter a value" />
+                                                    </td>
+                                                    <td>
+                                                        <lightning:input aura:id="editField" name="acLName" type="text" required="true"
+                                                            maxlength="50" label="Last Name" value="{!con.acLastName}"
+                                                            messageWhenValueMissing="You must enter a value" />
+                                                    </td>
+                                                    <td>
+                                                        <lightning:input aura:id="editField" name="acEmail" type="text" required="true"
+                                                            maxlength="100" label="Email" value="{!con.acEmail}"
+                                                            messageWhenValueMissing="You must enter a value" messageWhenPatternMismatch="Please enter a valid email id" pattern="^(([a-zA-Z0-9_\-\. ]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)(\s*;\s*|\s*$))*$" />
+                                                    </td>
+                                                </tr>
+                                            </aura:iteration>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </aura:if>
+                </div>
+                
+                <div style="height: 180px;">
+                    <div class="slds-docked-form-footer" style="z-index: 10000000 !important;">
+                        <div style="width: 95%;text-align: center;padding: 10px;">
+                        	<button aura:id="saveForLaterButton"
+                                onclick="{!c.saveForLaterRecord}"
+                                type="button"
+                                class="slds-button slds-button_outline-brand"
+                                immediate="true"
+                                title="{!$Label.c.CDA_Save_Request_for_later_use}">{!$Label.c.CDA_Save_For_Later}</button>
+                        	<button aura:id="submitButton"
+                                onclick="{!c.handleNextAction}"
+                                type="button"
+                                class="slds-button slds-button_success"
+                                disabled="{!v.isNextButtonDisabled}"
+                                title="{!$Label.c.CDA_Next}">{!$Label.c.CDA_Next}</button>
+                        	<button type="button"
+                                class="slds-button slds-button_outline-brand"
+                                onclick="{!c.cancelRequest}"
+                                title="{!$Label.c.CDA_It_will_delete_the_request_when_request_is_new_else_it_will_return_to_landin}">{!$Label.c.CDA_Cancel}</button>
+                        </div>
+                        <div class="fixed-button">
+        					<aura:if isTrue="{! !v.isOpenChatbot &amp;&amp; v.cdaSetting.Is_Chatboat_Enabled__c}" >
+                                <button style="width: 45px;" class="slds-button" onclick="{! c.toggleChatbot }" title="CDA Query? Click here">
+        							<img src="{!v.ChatIcon}" alt="Button Image" />
+                                </button>
+                           	</aura:if>
+        					<aura:if isTrue="{! v.isOpenChatbot &amp;&amp; v.cdaSetting.Is_Chatboat_Enabled__c}" >
+                                <button style="width: 55px;" class="slds-button" onclick="{! c.toggleChatbot }" title="CDA Query? Click here">
+        							<img src="{!v.closeIcon}" alt="Button Image" />
+                                </button>
+       						</aura:if>
+       					</div>
+                    
+                    </div>
+                </div>
+                <aura:if isTrue="{!v.isOpenChatbot}">
+                	<div>    
+                    	<iframe id="sn_va_web_client"  style="z-index: 10000000 !important;bottom: 10%;right: 0%; position:fixed;" title="VIA Chat" width="400" height="450" src="{!v.cdaSetting.IQVIASupportChatSrcURL__c}" onload="{!c.loadIframe}">
+                            {!v.cdaSetting.IQVIASupportURL__c}
+                        </iframe>
+               		</div>
+            	</aura:if>
+                
+            </form>
+        </div>
+    </div>
+
+    <aura:if isTrue="{!v.isPopupOpen}" >
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <aura:if isTrue="{!v.isShowPopupFooter}">
+                    <header class="slds-modal__header">
+                        <lightning:buttonIcon iconName="utility:close"
+                                              onclick="{! c.popupActionButton2 }"
+                                              alternativeText="close"
+                                              variant="bare-inverse"
+                                              class="slds-modal__close"/>
+                        <!-- <h2 class="slds-text-heading_medium slds-hyphenate">Heading</h2>-->
+                    </header>
+                </aura:if>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p>
+                        <b>
+                           	<aura:if isTrue="{!v.popupType == 'recAccIsMaster'}">
+                                <aura:unescapedHtml value="ATTENTION: This Vendor has master agreement with IQVIA. You can exit out of this CDA and continue under the master." />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'quintilesLegacyIMSPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Do_you_intend_to_provide_access_to_QuintilesIMS_data_as_part_of_activities}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'quintilesBusinessAckPopupLegacyIms'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_A_Confidential_Agreement_does_not_contain_the_proper_legal_terms_to_protect}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'quintilesFinancePopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Do_you_intend_to_include_payment_or_financial_terms_under_the_CDA_Will_our}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'quintilesBusinessAckPopupfinance'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_A_Confidential_Disclosure_Agreement_does_not_contain_the_proper_legal_terms}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cdalanguageInfo'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_It_is_strongly_suggested_that_the_CDA_be_provided_initially_in_English}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'externalCdaSource'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Template_Prefered_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'externalOnlyWordPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_When_providing_a_CDA_agreement_template_from_the_external_party_only_WORD_do}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'verifyIqviaPaperPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Verify_QuintilesIMS_Paper_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cusVenTemplateYes'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_QuintilesIMS_has_agreed_to_utilize_a_customer_specific_CDA_template}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cdaFormatProtectedWord'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Protected_Word_Popup_1}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cdaFormatProtectedWordAckAlert'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Protected_Word_Popup_2}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'CompetitorAuditorPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Auditor_Identified_As_Compitator_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'CompAuditorSrMangPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Sr_Management_Approval_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'empClientCustomerPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Confidentiality_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cdaDiscloseApprovalIndicationPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Disclose_Approval_Indication_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'cdaCustomerConsentInfoPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Customer_consent_Info_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'customerLegalEntityChangePopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Recipent_Account_Name_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'competitorContractingCapacityPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Competitor_Contracting_Capacity_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'sponsorLegalEntityNameOtherPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Sponsor_Legal_Entity_Name_Other_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'sponsorConsentToDiscloseNoPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Study_sponsor_consent_is_mandatory_Please_acquired_written_consent_before_p}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'sponsorConsentToDiscloseYesPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Please_attach_approval_from_the_study_sponsor_indicating_their_approval_to_d}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'recipientAccountChangePopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Recipent_Account_Name_Popup}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'saveForLaterPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_The_CDA_request_has_been_saved_and_is_available_for_further_editing}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'executedRequestPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Request_is_Already_Executed}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'qualificationQuestionPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Is_this_for_an_M_A_project_or_potential_acquisition}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'qualificationQuestionPopupYes'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_M_A_non_disclosure_agreements_are_handled_exclusively_by_IQVIA_s_Corporate_D}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'addContactInfo'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Please_enter_atleast_one_additional_contact}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'broadCDALangPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.Chinese_and_English_are_the_only_two_languages_permitted_for_a_broad_CDA_for_the}" />
+                            </aura:if>
+                            <aura:if isTrue="{!v.popupType == 'recAccPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_IQVIA_and_Boehringer_Ingelheim_Pharma_GmbH_Co_KG_have_agreed_a_Mutual_Mas}" />
+                            </aura:if>
+                        </b>
+                        <aura:if isTrue="{!v.popupType == 'broadCDAPopup'}">
+                            <aura:unescapedHtml value="{!$Label.c.Broad_Popup_Message_1 + ' ' + $Label.c.Broad_Popup_Message_2 + ' ' + $Label.c.Broad_Popup_Message_3}" />
+                        </aura:if>
+                    </p>
+                </div>
+                <aura:if isTrue="{!v.isShowPopupFooter}">
+                    <footer class="slds-modal__footer">
+                        
+                        <lightning:button label="{!v.popupButtonMap.button1}"
+                                          title="{!v.popupButtonMap.button1}"
+                                          class="slds-button slds-button_outline-brand"
+                                          onclick="{!c.popupActionButton1}"/>
+                        <aura:if isTrue="{!v.popupButtonMap.button2 != null}">
+                            <lightning:button label="{!v.popupButtonMap.button2}"
+                                              title="{!v.popupButtonMap.button2}"
+                                              class="slds-button slds-button_outline-brand"
+                                              onclick="{!c.popupActionButton2}"/>
+                        </aura:if>
+                        <aura:if isTrue="{!v.popupButtonMap.button3 != null}">
+                            <lightning:button label="{!v.popupButtonMap.button3}"
+                                              title="{!v.popupButtonMap.button3}"
+                                              class="slds-button slds-button_outline-brand"
+                                              onclick="{!c.popupActionButton3}"/>
+                        </aura:if>
+                    </footer>
+                </aura:if>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

@@ -1,0 +1,430 @@
+<aura:component controller="CNT_CSM_CaseCategorization"
+    implements="lightning:actionOverride,flexipage:availableForRecordHome,flexipage:availableForAllPageTypes,force:hasRecordId,force:hasSObjectName"
+    access="global">
+    <aura:attribute name="object" type="SObject" />
+    <aura:attribute name="caseArticle" type="CaseArticle" />
+    <aura:attribute name="isMandatory" type="boolean" default="false" />
+    <aura:attribute name="showEditButton" type="boolean" default="true" />
+    <aura:attribute name="productName" type="string" />
+    <aura:attribute name="subtype1" type="string" />
+    <aura:attribute name="subtype2" type="string" />
+    <aura:attribute name="isDependentSubType1Disable" type="boolean" default="true" />
+    <aura:attribute name="isDependentSubType2Disable" type="boolean" default="true" />
+    <aura:attribute name="isDependentSubType3Disable" type="boolean" default="true" />
+    <aura:attribute name="isDependentArticleDisable" type="boolean" default="true" />
+    <aura:attribute name="errors" type="List" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:attribute name="isLoading2" type="boolean" default="false" />
+    <aura:attribute name="record" type="Object" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="recordError" type="String" />
+    <aura:attribute name="dependentFieldMap" type="map"
+        description="store controller(key)--> dependent(values) picklist value as a map." />
+    <aura:attribute name="isDependentDisable" type="boolean" default="true"
+        description="use for, make disbale depandent field." />
+    <aura:attribute name="RDCDP" type="String" default="ConnectedDevicePatient" />
+    <aura:attribute name="RDCTP" type="String" default="ClinicalTrialPayment" />
+    <aura:attribute name="RDVirtualTrialsCase" type="String" default="VirtualTrialsCase" />
+    <aura:attribute name="RDAssistReqRecordTypeId" type="String" default="0126A000000hC34QAE" />
+    <aura:attribute name="RDActivityPlanRecordTypeId" type="String" default="0126A000000hC32QAE" />
+    <aura:attribute name="TechnoRecordTypeId" type="String" default="0126A000000hC35QAE" />
+    <aura:attribute name="DataRecordTypeId" type="String" default="0126A000000hC33QAE" />
+    <aura:attribute name="pillar" type="String" />
+    <aura:attribute name="pillarTechnoName" type="String" default="Technology Solutions" />
+    <aura:attribute name="pillarDataName" type="String" default="Information Offering" />
+    <aura:attribute name="pillarRDName" type="String" default="R&amp;D" />
+    <aura:attribute name="DataCreateName" type="String" default="DATACreateService" />
+    <aura:attribute name="mediaDateOptions" type="List" />
+    <aura:attribute name="mediaDateDetail" type="CSM_QI_CREATE_Media_Date__c" />
+    <aura:attribute name="reasonforLateRequestReRun" type="String" />
+    <aura:attribute name="reasonforLateRequestReRunRequired" type="boolean" default="false" />
+    <aura:attribute name="otherAuditsAndTheirFrequenciesRequired" type="boolean" default="false" />
+    <aura:attribute name="createAdditionalInfoData" type="String" />
+    <lightning:quickActionAPI aura:id="quickActionAPI" />
+    <article class="slds-card">
+        {!v.recordError}
+        <!--<div class="slds-page-header"> -->
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon size="small" iconName="standard:product" />
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                            title="{!$Label.c.Categorization}">
+                            <span class="slds-text-heading_small">{!$Label.c.Categorization}</span>
+                        </a>
+                    </h2>
+                </div>
+            </header>
+            <aura:if isTrue="{!v.showEditButton == true}">
+                <div class="slds-no-flex">
+                    <lightning:buttonGroup>
+                        <lightning:button label="Edit" iconPosition="left" onclick="{! c.openForm }" />
+                    </lightning:buttonGroup>
+                </div>
+            </aura:if>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div>
+                <aura:if isTrue="{!v.errors.length > 0}">
+                    <button class="slds-button errorClose" title="Close" onclick="{!c.hideErrors}">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" alternativeText="Close"
+                            iconClass="slds-button__icon_large errorClose" />
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <div class="slds-box slds-theme_error">
+                        <ul>
+                            <aura:iteration items="{!v.errors}" var="error">
+                                <li>{!error}</li>
+                            </aura:iteration>
+                        </ul>
+                    </div>
+                </aura:if>
+            </div>
+            <aura:if isTrue="{!v.isLoading}">
+                <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <dl class="slds-dl--horizontal">
+                <aura:if isTrue="{! (v.pillar == v.pillarTechnoName)}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="{!$Label.c.Product}">{!$Label.c.Product}:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.ProductName__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.ProductName__c != undefined)}">
+                                {!v.simpleRecord.ProductName__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                </aura:if>
+                <aura:if isTrue="{! (v.pillar == v.pillarDataName) }">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="{!$Label.c.Asset}">{!$Label.c.Asset}:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.ProductName__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.ProductName__c != undefined)}">
+                                {!v.simpleRecord.ProductName__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                </aura:if>
+                <aura:if isTrue="{! (v.pillar == v.pillarRDName)}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Product">LOS:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <aura:if
+                            isTrue="{!and((v.sObjectName == 'Knowledge__kav'),(v.simpleRecord.ProductName__c != undefined))}">
+                            <p class="slds-truncate" title="{!v.simpleRecord.ProductName__c}">
+                                {!v.simpleRecord.ProductName__c}
+                            </p>
+                            <aura:set attribute="else">
+                                <aura:if
+                                    isTrue="{!and((v.sObjectName == 'Case'),(v.simpleRecord.LOS__c != undefined))}">
+                                    <p class="slds-truncate" title="{!v.simpleRecord.LOS__c}">
+                                        {!v.simpleRecord.LOS__c}
+                                    </p>
+                                    <aura:set attribute="else">
+                                        <p class="slds-truncate">
+                                            {!$Label.c.Please_Specify}
+                                        </p>
+                                    </aura:set>
+                                </aura:if>
+                            </aura:set>
+                        </aura:if>
+                    </dd>
+                </aura:if>
+                <dt class="slds-dl--horizontal__label">
+                    <aura:if isTrue="{! (v.simpleRecord.RecordTypeName__c == v.DataCreateName)}">
+                        <p class="slds-truncate" title="Weekly/Monthly">Weekly/Monthly:</p>
+                        <aura:set attribute="else">
+                            <p class="slds-truncate" title="{!$Label.c.Sub_Type +'1'}">{!$Label.c.Sub_Type}1:</p>
+                        </aura:set>
+                    </aura:if>
+                </dt>
+                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                    <p class="slds-truncate" title="{!v.simpleRecord.SubType1__c}">
+                        <aura:if isTrue="{!(v.simpleRecord.SubType1__c != undefined)}">
+                            {!v.simpleRecord.SubType1__c}
+                            <aura:set attribute="else">
+                                {!$Label.c.Please_Specify}
+                            </aura:set>
+                        </aura:if>
+                    </p>
+                </dd>
+                <dt class="slds-dl--horizontal__label">
+                    <aura:if isTrue="{! (v.simpleRecord.RecordTypeName__c == v.DataCreateName)}">
+                        <p class="slds-truncate" title="Extract">Extract:</p>
+                        <aura:set attribute="else">
+                            <p class="slds-truncate" title="{!$Label.c.Sub_Type +'2'}">{!$Label.c.Sub_Type}2:</p>
+                        </aura:set>
+                    </aura:if>
+
+                </dt>
+                <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                    <p class="slds-truncate" title="{!v.simpleRecord.SubType2__c}">
+                        <aura:if isTrue="{!(v.simpleRecord.SubType2__c != undefined)}">
+                            {!v.simpleRecord.SubType2__c}
+                            <aura:set attribute="else">
+                                {!$Label.c.Please_Specify}
+                            </aura:set>
+                        </aura:if>
+                    </p>
+                </dd>
+                <aura:if isTrue="{! NOT(AND(v.simpleRecord.RecordTypeName__c == v.DataCreateName, v.simpleRecord.Case_Type__c != 'Market Definition'))}">
+                    <dt class="slds-dl--horizontal__label">
+                        <aura:if isTrue="{! (v.simpleRecord.RecordTypeName__c == v.DataCreateName)}">
+                            <p class="slds-truncate" title="Market Type">Market Type:</p>
+                            <aura:set attribute="else">
+                                <p class="slds-truncate" title="{!$Label.c.Sub_Type +'3'}">{!$Label.c.Sub_Type}3:</p>
+                            </aura:set>
+                        </aura:if>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.SubType3__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.SubType3__c != undefined)}">
+                                {!v.simpleRecord.SubType3__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                </aura:if>
+
+                <aura:if isTrue="{! and((v.sObjectName == 'Case'),(v.pillar == v.pillarTechnoName))}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="{!$Label.c.Affects_Version}">{!$Label.c.Affects_Version}:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta" style="display: flex;">
+                        <p class="slds-truncate" title="{!v.simpleRecord.Affects_Version__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.Affects_Version__c != undefined)}">
+                                {!v.simpleRecord.Affects_Version__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                        <aura:if isTrue="{!v.showEditButton == false}">
+                            <div class="" style="margin-top: -7px;">
+                                <lightning:buttonIcon iconName="utility:edit" variant="container"
+                                    onclick="{! c.openForm }" alternativeText="Edit" title="Edit" />
+                            </div>
+                        </aura:if>
+                    </dd>
+                </aura:if>
+                <aura:if isTrue="{! (v.sObjectName == 'Knowledge__kav')}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="{!$Label.c.Article_Chapter}">{!$Label.c.Article_Chapter}:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.Article_Chapter__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.Article_Chapter__c != undefined)}">
+                                {!v.simpleRecord.Article_Chapter__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                </aura:if>
+
+                <aura:if isTrue="{! (v.simpleRecord.RecordTypeId == v.RDActivityPlanRecordTypeId)}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="{!$Label.c.Template}">{!$Label.c.Template}:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.Template__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.Template__c != undefined)}">
+                                {!v.simpleRecord.Template__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                </aura:if>
+
+                <aura:if isTrue="{! (v.simpleRecord.RecordTypeName__c == v.DataCreateName)}">
+                    <dt class="slds-dl--horizontal__label">
+                        <p class="slds-truncate" title="Media Date">Media Date:</p>
+                    </dt>
+                    <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                        <p class="slds-truncate" title="{!v.simpleRecord.Media_Date_Label__c}">
+                            <aura:if isTrue="{!(v.simpleRecord.Media_Date_Label__c != undefined)}">
+                                {!v.simpleRecord.Media_Date_Label__c}
+                                <aura:set attribute="else">
+                                    {!$Label.c.Please_Specify}
+                                </aura:set>
+                            </aura:if>
+                        </p>
+                    </dd>
+                    <aura:if isTrue="{!v.reasonforLateRequestReRunRequired}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="Reason for Late Request Re Run">Reason for Late Request Re
+                                Run:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleRecord.Reason_for_Late_Request_Re_Run__c}">
+                                <aura:if isTrue="{!(v.simpleRecord.Reason_for_Late_Request_Re_Run__c != undefined)}">
+                                    {!v.simpleRecord.Reason_for_Late_Request_Re_Run__c}
+                                    <aura:set attribute="else">
+                                        {!$Label.c.Please_Specify}
+                                    </aura:set>
+                                </aura:if>
+                            </p>
+                        </dd>
+                    </aura:if>
+                    <aura:if isTrue="{!v.otherAuditsAndTheirFrequenciesRequired}">
+                        <dt class="slds-dl--horizontal__label">
+                            <p class="slds-truncate" title="Other audits and their frequencies">Other audits and their
+                                frequencies:</p>
+                        </dt>
+                        <dd class="slds-dl--horizontal__detail slds-tile__meta">
+                            <p class="slds-truncate" title="{!v.simpleRecord.Other_audits_and_their_frequencies__c}">
+                                <aura:if
+                                    isTrue="{!(v.simpleRecord.Other_audits_and_their_frequencies__c != undefined)}">
+                                    {!v.simpleRecord.Other_audits_and_their_frequencies__c}
+                                    <aura:set attribute="else">
+                                        {!$Label.c.Please_Specify}
+                                    </aura:set>
+                                </aura:if>
+                            </p>
+                        </dd>
+                    </aura:if>
+                </aura:if>
+            </dl>
+        </div>
+        <!-- </div> -->
+    </article>
+    <c:lwc_csm_create_categorizaton_additional_info aura:id="createAdditionalInfo" caseId="{!v.recordId}" subtype2="" assetName=""
+                    maintenanceType="" oncancel="{!c.handleAdditionalInfoCancel}" onsubmit="{!c.handleAdditionalInfoSubmit}"></c:lwc_csm_create_categorizaton_additional_info>
+
+    <div aura:id="modaldialog" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-hide" style="z-index: 9050">
+        <div class="slds-modal__container">
+
+            <div class="slds-modal__header">
+                <aura:if isTrue="{!v.isMandatory == false}">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close" onclick="{!c.closeForm}">
+                        <lightning:icon iconName="utility:close" variant="close" />
+                    </button>
+                </aura:if>
+                <h2 class="slds-text-heading--medium">{!$Label.c.Categorization}</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium slds-is-relative">
+                <aura:if isTrue="{!v.isLoading2}">
+                    <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                        <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+                </aura:if>
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control">
+                        <ui:inputSelect aura:id="controllingField" class="slds-select" label="{!$Label.c.Product}"
+                            disabled="{!v.showEditButton == false}" change="{!c.onControllingFieldChange}"
+                            required="{!v.isMandatory}" />
+                    </div>
+                </div>
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control">
+                        <ui:inputSelect aura:id="subType1" label="st1"
+                            disabled="{!or(v.isDependentSubType1Disable,(v.showEditButton == false))}"
+                            class="slds-select" change="{!c.onSubType1Change}" required="{!v.isMandatory}" />
+                    </div>
+                </div>
+                <div class="slds-form-element">
+                    <div class="slds-form-element__control">
+                        <ui:inputSelect aura:id="subType2" label="st2"
+                            disabled="{! or(v.isDependentSubType2Disable,(v.showEditButton == false))}"
+                            change="{!c.onSubType2Change}" class="slds-select" required="{!v.isMandatory}" />
+                    </div>
+                </div>
+                <aura:if isTrue="{! NOT(AND(v.simpleRecord.RecordTypeName__c == v.DataCreateName, v.simpleRecord.Case_Type__c != 'Market Definition'))}">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <ui:inputSelect aura:id="subType3" label="st3"
+                                disabled="{! or(v.isDependentSubType3Disable,(v.showEditButton == false))}"
+                                change="{!c.onSubType3Change}" class="slds-select" required="{!v.isMandatory}" />
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{! and((v.sObjectName == 'Case'),(v.pillar == v.pillarTechnoName))}">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <ui:inputSelect aura:id="AffectsVersion" label="{!$Label.c.Affects_Version}"
+                                class="slds-select" />
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{! (v.sObjectName == 'Knowledge__kav')}">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <ui:inputSelect aura:id="ArticleChapter" label="{!$Label.c.Article_Chapter}"
+                                disabled="{!v.isDependentArticleDisable}" class="slds-select" />
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{! (v.simpleRecord.RecordTypeId == v.RDActivityPlanRecordTypeId)}">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <!--<ui:inputSelect aura:id="template" label="{!$Label.c.Template}" disabled="{!or(v.isDependentDisable,(v.showEditButton == false))}" class="slds-select" />-->
+                            <ui:inputSelect aura:id="template" label="{!$Label.c.Template}" class="slds-select" />
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{! (v.simpleRecord.RecordTypeName__c == v.DataCreateName)}">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <ui:inputSelect aura:id="MediaDate" label="Media date" change="{!c.handleMediaDateChange}"
+                                class="slds-select" />
+                        </div>
+                    </div>
+                    <aura:if isTrue="{!v.reasonforLateRequestReRunRequired}">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <ui:inputSelect aura:id="ReasonforLateRequestReRun"
+                                    label="Reason for Late Request Re Run" class="slds-select"
+                                    required="{!v.reasonforLateRequestReRunRequired}" />
+                            </div>
+                        </div>
+                    </aura:if>
+                    <aura:if isTrue="{!v.otherAuditsAndTheirFrequenciesRequired}">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning:input aura:id="OtherAuditsAndTheirFrequencies"
+                                    label="Other audits and their frequencies"
+                                    required="{!v.otherAuditsAndTheirFrequenciesRequired}" maxlength="254" />
+                            </div>
+                        </div>
+                    </aura:if>
+                </aura:if>
+
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button variant="neutral" label="{!$Label.c.Cancel}" onclick="{!c.closeForm}"
+                    disabled="{!v.isMandatory}" />
+                <lightning:button variant="brand" label="{!$Label.c.Save}" onclick="{!c.onSubmit}" />
+            </div>
+        </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

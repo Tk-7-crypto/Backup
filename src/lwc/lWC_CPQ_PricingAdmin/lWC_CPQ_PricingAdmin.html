@@ -1,0 +1,303 @@
+<template>
+    <lightning-card if:true={oldPricingSetup} title="Pricing Update" icon-name="standard:ai_accelerator_card">
+        <div>
+            <template if:true={showInProgressBatchStatus}>
+                <div class="slds-p-around_x-small">
+                    <h1>New Price creation progress: {progress} %</h1>
+                    <lightning-progress-bar value={progress} size="large" variant="circular"></lightning-progress-bar>
+                </div>
+            </template>
+            <template if:true={showPricingOptions}>
+                <div if:true={showPicklist} class="slds-p-horizontal_medium slds-grid slds-wrap">
+                    <div class="slds-p-around_x-small slds-size_6-of-12">
+                        
+                        <lightning-radio-group name="pricingTool" label="Select Pricing Tool"
+                            options={picklist} disabled = {showRadioDisabled} value={selectedPricingTool} onchange={handlePricingTool} required
+                            type="radio">
+                        </lightning-radio-group>
+                        <br/>                    
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_medium slds-grid slds-wrap">
+                    <div class="slds-p-around_x-small slds-size_6-of-12">
+                        <lightning-radio-group name="radioGroup" label="Select Rounding Options"
+                            options={roundingOptions} value={selectedRound} onchange={handleChangeRoundUp} required
+                            type="radio">
+                        </lightning-radio-group>
+                        <br/>                    
+                    </div>
+                </div>
+                <div if:true={showRadioDisabled} class="slds-p-horizontal_medium slds-grid slds-wrap">
+                    <div class="slds-p-around_x-small slds-size_4-of-12">
+                        <lightning-radio-group name="pricingOption" label="Select a pricing option" options={pricingOptions}
+                            value={selectedPricingOption} onchange={handlePricingOption} disabled = {showPricingOptionDisabled} required type="radio">
+                        </lightning-radio-group>
+                    </div>
+                    <div if:true={hasPartialPricing} class="slds-p-around_x-small slds-size_4-of-12">
+                        <lightning-radio-group name="pricingCategory" label="Select a pricing category"
+                            options={categoryOptions} value={selectedCategory} onchange={handlePricingCategory} disabled = {showPricingOptionDisabled} required
+                            type="radio">
+                        </lightning-radio-group>
+                    </div>
+                    <br/>
+                    <span class="slds-text-color_destructive" if:true={showReviewChanges}> &nbsp;&nbsp;&nbsp; <b> Disclaimer - If pricing is reviewed for one country with new year , the pricing for the remaining countries will be added for same year based on the same inherited price from the previous year.</b></span>
+                </div>
+                <span if:false={showInProgressBatchStatus}>
+                    <lightning-button if:false={showRadioDisabled} variant="brand" label="Select Pricing Tool" title="Pricing Tool" onclick={handleSelectPricingTool} class="slds-m-left_x-small"></lightning-button>
+                </span>
+            </template>
+            <template if:true={showNewYearPricingSection}>
+                <div class="slds-p-around_small slds-grid slds-wrap">
+                    <div class="slds-p-around_x-small slds-size_4-of-12">
+                        <lightning-combobox
+                        name="country"
+                        label="New Year Pricing"
+                        value={selectedNewYear}
+                        placeholder="Select Year"
+                        disabled={disableNewYearPicklist}
+                        options={newYearOptions}
+                        required
+                        onchange={handleNewYearOption} ></lightning-combobox>
+                    </div>
+                    <div class="slds-p-around_x-small slds-size_4-of-12">
+                        <lightning-combobox
+                        name="country"
+                        label="Select existing year to inherit pricing"
+                        value={selectedExistingYear}
+                        placeholder="Select Year"
+                        options={existingYearOptions}
+                        disabled={disableExistingYearPicklist}
+                        required
+                        onchange={handleExistingYearOptionToInherit} ></lightning-combobox>
+                    </div>
+                </div>
+            </template>
+            <template if:true={showUpdateExistingYearPricingSection}>
+                <div class="slds-p-around_small slds-grid slds-wrap">
+                    <div class="slds-p-around_x-small slds-size_4-of-12">
+                        <lightning-combobox
+                        name="country"
+                        label="Update Existing Year Pricing"
+                        value={selectedExistingYear}
+                        placeholder="Select Year"
+                        options={existingYearOptions}
+                        required
+                        onchange={handleExistingYearOption} ></lightning-combobox>
+                    </div>
+                </div>
+            </template>
+            <template if:true={showPercentageInput}>
+                <template if:false={showPercentageInputWithButton} for:each={groupAttributeLabelList} for:item="att">
+                    <div key={att} class="slds-p-around_small slds-m-bottom_medium slds-grid slds-wrap">
+                        <div class="slds-p-around_x-small slds-size_3-of-12">
+                            <p class="slds-p-bottom_x-small" >{groupAttribute}</p>
+                            <div class="slds-box slds-box_xx-small">
+                                <p>{att.country}</p>
+                            </div>
+                        </div>
+                        <div class="slds-p-around_x-small slds-size_2-of-12">
+                            <p class="slds-p-bottom_x-small" >Currency</p>
+                            <div class="slds-box slds-box_xx-small">
+                                <p>{att.currency}</p>
+                            </div>
+                        </div>
+                        <div class="slds-m-around_x-small slds-size_3-of-12">
+                            <lightning-input type="number" value={att.percentageChange}
+                                name={att.country} label="Enter Percentage of Increment/Decrement in Year Pricing" formatter="percent"
+                                format-fraction-digits= "2" onchange={handleInputChange} disabled={disablePercentageInput} step="any" required>
+                            </lightning-input>
+                        </div>
+                        <div if:true={showRespctiveChangesBtn} class="slds-p-around_x-small slds-size_3-of-12">
+                            <div class="slds-m-top_large">
+                                <lightning-button variant="brand" name={att.country} label="Review Changes" title="Review Changes"
+                                    onclick={handleReviewChanges}>
+                                </lightning-button>
+                                <span> &nbsp;&nbsp;&nbsp; <b>{att.msg}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={showPercentageInputWithButton} for:each={attributeToPercentMap} for:item="attPer">
+                    <div key={attPer} class="slds-p-around_small slds-m-bottom_medium slds-grid slds-wrap">
+                        <div class="slds-p-around_x-small slds-size_3-of-12">
+                            <p class="slds-p-bottom_x-small">{groupAttribute}</p>
+                            <div class="slds-box slds-box_xx-small">
+                                <p>{attPer.key}</p>
+                            </div>
+                        </div>
+                        <div class="slds-p-around_x-small slds-size_2-of-12">
+                            <p class="slds-p-bottom_x-small" >Currency</p>
+                            <div class="slds-box slds-box_xx-small">
+                                <p>{attPer.currency}</p>
+                            </div>
+                        </div>
+                        <div class="slds-m-around_x-small slds-size_3-of-12">
+                            <lightning-input type="number"
+                                label="Enter Percentage of Increment/Decrement in Year Pricing" formatter="percent"
+                                format-fraction-digits="2" step="any" disabled="true" value={attPer.value}>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-p-around_x-small slds-size_3-of-12">
+                            <div class="slds-m-top_large">
+                                <lightning-button variant="brand" name={attPer.key} label="Review Changes" title="Review Changes"
+                                    onclick={handleReviewFullChanges}>
+                                </lightning-button>
+                                <span> &nbsp;&nbsp;&nbsp; <b>{attPer.msg}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={showProgessBar}>
+                    <lightning-layout class="slds-grid slds-m-around_x-large" style="display:block">
+                        <h1>Progress {progress} %</h1>
+                        <lightning-progress-bar value={progress} size="large" variant="circular"></lightning-progress-bar>
+                    </lightning-layout>
+                </template>
+                <lightning-button if:true={showReviewChanges} variant="brand" label={reviewChangeBtnLabel}
+                    title="Review Changes" onclick={finalSavePartialRecord} class="slds-m-around_medium"></lightning-button>            
+                <lightning-button if:true={showCreatePriceButton} variant="brand" label="Create Price"
+                    title="Create Price" onclick={createPriceBookEntries} class="slds-m-around_medium">
+                </lightning-button>
+                <lightning-button if:true={showActivatePriceListButton} variant="brand" label="Activate Price"
+                    title="Activate Price" onclick={activatePLI} class="slds-m-around_medium">
+                </lightning-button>
+            </template>
+            <template if:true={showPME}>
+                <div class="slds-p-around_small">
+                    <div class="slds-grid">
+                        <lightning-input class="slds-p-bottom_small slds-size--1-of-2" type="search" label="Search Product" onchange={setSearchKey}></lightning-input>
+                    </div>
+                    <lightning-button variant="brand" label="Search" title="Search" disabled={disableSearchButton} onclick={handleSearch} class="slds-m-bottom_small"></lightning-button>
+                    <lightning-input type="number" class="slds-size--1-of-4 slds-m-bottom_small" label="Enter percentage change" formatter="percent" format-fraction-digits="2" onchange={handleInputChangeForUpdate} step="any"></lightning-input>
+                    <lightning-button variant="brand" label="Update" title="Update" disabled={disableUpdateButton} onclick={getSelectedRec} class="slds-m-bottom_small"></lightning-button>
+                    <div data-id="dataTable" style="height:400px" class="slds-card slds-scrollable slds-m-top_x-small">
+                        <lightning-datatable key-field="Id"
+                        data={showData} 
+                        columns={cols} 
+                        onsave={handleSave}
+                        draft-values={saveDraftValues}
+                        sorted-by={sortBy}
+                        sorted-direction={sortDirection}
+                        onsort={doSorting} 
+                        onrowaction={handleRowAction}
+                        onrowselection={updateSelectedRows}
+                        enable-infinite-loading
+                        onloadmore={loadMoreData}>
+                        </lightning-datatable>
+                    </div>
+                </div>
+                <lightning-button variant="neutral" label="Cancel" title="Cancel" onclick={handleCancelReview} class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand-outline" label="Export" title="Export Pricing Data" onclick={exportPricingData} class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand" label="Save" title="Save" onclick={handleFinalSave} class="slds-m-left_x-small"></lightning-button>
+                <lightning-button if:true={showReviewAllforNew} variant="brand" label="Review All" title="Review All" onclick={handleReviewAll} class="slds-m-left_x-small"></lightning-button>
+            </template>
+    
+            <template if:true={showPartialPricing}>
+                <div class="slds-p-around_small">
+                    <lightning-input class="slds-p-bottom_small" type="search" label="Search Product" onchange={setPartialSearchKey}></lightning-input>
+                    <lightning-button variant="brand" label="Search" title="Search" onclick={handlePartialSearch} class="slds-m-bottom_small"></lightning-button>
+                    <div style="height:400px" class="slds-card slds-scrollable slds-m-top_x-small">
+                        <lightning-datatable key-field="Id"
+                        data={showPartialData} 
+                        columns={columns2} 
+                        onsave={handlePartialSave}
+                        draft-values={savePartialDraftValues}
+                        sorted-by={sortBy}
+                        sorted-direction={sortDirection}
+                        onsort={doSorting} 
+                        onrowaction={handlePartialRowAction}
+                        hide-checkbox-column 
+                        show-row-number-column>
+                        </lightning-datatable>
+                    </div>
+                </div>
+                <lightning-button variant="neutral" label="Cancel" title="Cancel" onclick={handleCancelReview} class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand-outline" label="Export" title="Export Pricing Data" onclick={exportPricingData} class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand" label="Save" title="Save" onclick={handleFinalPartialSave} class="slds-m-left_x-small"></lightning-button>
+            </template>
+    
+            <template if:true={showUpdatePME}>
+                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+                    <div class="slds-modal__container">
+                       <header class="slds-modal__header">
+                          <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                             <lightning-icon icon-name="utility:close"
+                                alternative-text="close"
+                                size="small" ></lightning-icon>
+                             <span class="slds-assistive-text">Close</span>
+                          </button>
+                          <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Pricing Update</h2>
+                       </header>
+                        <div class="slds-p-around_small slds-card slds-scrollable">
+                            <div class="slds-grid">
+                                <lightning-input class="slds-p-bottom_small slds-size--1-of-2" type="search" label="Search Product" onchange={setSearchKey}></lightning-input>
+                            </div>
+                            <lightning-button variant="brand" label="Search" title="Search" disabled={disableUpdateSearchButton} onclick={handleSearch} class="slds-m-bottom_small"></lightning-button>
+                            <div class="slds-p-top_x-small">
+                                <lightning-datatable key-field="Id"
+                                data={pmeListToUpdate} 
+                                columns={cols2} 
+                                sorted-by={sortBy}
+                                sorted-direction={sortDirection}
+                                onsort={doSorting} 
+                                hide-checkbox-column 
+                                onrowaction={handleRowAction}
+                                show-row-number-column>
+                                </lightning-datatable>
+                            </div>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button if:true={showReviewAll} variant="brand-outline" label="Review All" title="Review All" onclick={handleReviewAll} class="slds-m-left_x-small"></lightning-button>
+                            <lightning-button variant="neutral" label="Cancel" title="Cancel" onclick={closeModal} class="slds-m-left_x-small"></lightning-button>
+                            <lightning-button variant="brand" label="Commit" title="Commit" onclick={handleUpdate} class="slds-m-left_x-small"></lightning-button>
+                        </footer>
+                    </div>
+                 </section>
+                <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+            </template>
+    
+            <template if:true={showUpdatePartial}>
+                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+                    <div class="slds-modal__container">
+                       <header class="slds-modal__header">
+                          <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                             <lightning-icon icon-name="utility:close"
+                                alternative-text="close"
+                                size="small" ></lightning-icon>
+                             <span class="slds-assistive-text">Close</span>
+                          </button>
+                          <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Partial Pricing Update</h2>
+                       </header>
+                        <div class="slds-p-around_small slds-card slds-scrollable">
+                            <lightning-input class="slds-p-bottom_small" type="search" label="Search Product" onchange={setPartialSearchKey}></lightning-input>
+                            <lightning-button variant="brand" label="Search" title="Search" onclick={handlePartialSearch} class="slds-m-bottom_small"></lightning-button>
+                            <div class="slds-p-top_x-small">
+                                <lightning-datatable key-field="Id"
+                                data={showUpdatePartialData} 
+                                columns={columns2} 
+                                sorted-by={sortBy}
+                                sorted-direction={sortDirection}
+                                onsort={doSorting} 
+                                hide-checkbox-column 
+                                onrowaction={handlePartialRowAction}
+                                show-row-number-column>
+                                </lightning-datatable>
+                            </div>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button variant="neutral" label="Cancel" title="Cancel" onclick={closeModal} class="slds-m-left_x-small"></lightning-button>
+                            <lightning-button variant="brand" label="Commit" title="Commit" onclick={handlePartialUpdate} class="slds-m-left_x-small"></lightning-button>
+                        </footer>
+                    </div>
+                 </section>
+                <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+            </template>
+        </div>
+        <template if:true={showSpinner}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+    </lightning-card>
+    <div if:false={oldPricingSetup}>
+        <c-l-w-c_-c-p-q_-pricing-admin-screen pricing-tool={selectedPricingTool}></c-l-w-c_-c-p-q_-pricing-admin-screen>
+    </div>
+</template>

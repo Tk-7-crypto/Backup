@@ -1,0 +1,394 @@
+<template>
+    <div class="slds-box slds-p-around_none">
+        <article class="slds-card">
+            <div class="slds-page-header">
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-title">
+                        <div class="slds-media__body" style="display: grid;">
+                            <div class="slds-card__header slds-grid">
+                                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                    <div class="slds-media__figure">
+                                        <lightning-icon icon-name="custom:custom19" title="custom19"
+                                            size="small"></lightning-icon>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <h4 class="slds-card__header-title">
+                                            <span class="slds-card__header-link" title="Document Versions">Document
+                                                Versions ({count})</span>
+                                        </h4>
+                                    </div>
+                                    <div class="slds-no-flex">
+                                        <template if:false={checkedBoxesIds.length}>
+                                            <button class="slds-button slds-button_destructive"
+                                                disabled="">Delete</button>
+                                        </template>
+                                        <template if:true={checkedBoxesIds.length}>
+                                            <button class="slds-button slds-button_neutral"
+                                                onclick={openModal}>Delete</button>
+                                        </template>
+                                    </div>
+                                    <div class="slds-no-flex" style="margin-left: 10px;">
+                                        <button class="slds-button slds-button_neutral" title="Refresh"
+                                            onclick={handleRefresh} style="height: 32px;">
+                                            <svg class="slds-button__icon" aria-hidden="true">
+                                                <use
+                                                    xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg?cache=9.28.0#refresh">
+                                                </use>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </header>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-meta">
+                        <p class="slds-page-header__meta-text slds-text-title">{count} items • Sorted by Created Date
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-card__body slds-scrollable_x slds-m-around_none">
+                <template if:true={isLoading}>
+                    <lightning-spinner></lightning-spinner>
+                </template>
+                <table aria-multiselectable="true"
+                    class="slds-table slds-table_bordered slds-table_edit slds-table_absolute-layout slds-table_resizable-cols slds-tree slds-table_tree"
+                    role="treegrid" aria-label="Tree grid with selected row">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <td class="slds-text-align_right" role="gridcell"
+                                style="width:3.25rem; background-color: #f3f3f3">
+                                <div class="slds-checkbox">
+                                </div>
+                            </td>
+                            <th aria-label="Document Type" aria-sort="none"
+                                class="slds-has-button-menu slds-is-resizable" scope="col" style="width: 315px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Document Type" style="margin-left: 40px;">Document Type</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="Document Type column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-128"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="Title (Click To Download)" aria-sort="none"
+                                class="slds-has-button-menu slds-is-resizable" scope="col" style="width: 250px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Title (Click To Download)">Title (Click To
+                                            Download)</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="Title column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-129"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="Latest Version" aria-sort="none"
+                                class="slds-has-button-menu slds-is-resizable" scope="col" style="width: 240px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Latest Version">Latest Version</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="Latest Version column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-130"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="Review Status" aria-sort="none"
+                                class="slds-has-button-menu slds-is-resizable" scope="col" style="width: 240px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Review Status">Review Status</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="Review Status column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-131"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="View" aria-sort="none" class="slds-has-button-menu slds-is-resizable"
+                                scope="col" style="width: 240px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="View">View</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="View column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-132"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="By" aria-sort="none" class="slds-has-button-menu slds-is-resizable"
+                                scope="col" style="width: 240px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="By">Last Modified By</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="View column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-133"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                            <th aria-label="Date" aria-sort="none" class="slds-has-button-menu slds-is-resizable"
+                                scope="col" style="width: 240px;">
+                                <a class="slds-th__action slds-text-link_reset" href="#" role="button" tabindex="-1">
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Date">Last Modified Date</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input type="range" aria-label="View column width"
+                                        class="slds-resizable__input slds-assistive-text" id="cell-resize-handle-134"
+                                        max="1000" min="20" tabindex="-1" />
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                    </span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={dvData} for:item="d" for:index="index1">
+                            <tr key={d.Name} aria-expanded="true" aria-level="1" aria-selected="false"
+                                class="slds-hint-parent">
+                                <template lwc:if={d.isModifiable}>
+                                    <td class="slds-text-align_right slds-cell_action-mode" role="gridcell">
+                                        <lightning-input type="checkbox" data-id={index1} checked={d.isChecked}
+                                            onclick={handleCheckboxChange}></lightning-input>
+                                    </td>
+                                </template>
+                                <template lwc:else>
+                                    <td class="slds-text-align_right slds-cell_action-mode" role="gridcell">
+                                        <lightning-input type="checkbox" data-id={index1}
+                                            disabled="true"></lightning-input>
+                                    </td>
+                                </template>
+                                <th class="slds-tree__item" data-label="Document Version Type" scope="row">
+                                    <template if:true={d.Apttus__Document_Version_Details__r.length}>
+                                        <template if:false={d.isActive}>
+                                            <button data-index={d.Id}
+                                                class="slds-button slds-button_icon slds-button_icon-x-small slds-m-right_x-small"
+                                                aria-hidden="true" tabindex="-1" onclick={handleOnChange} style="margin-left: -28px;">
+                                                <svg class="slds-button__icon slds-button__icon_small"
+                                                    aria-hidden="true">
+                                                    <use
+                                                        xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#chevronup">
+                                                    </use>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                        <template if:true={d.isActive}>
+                                            <button data-index={d.Id}
+                                                class="slds-button slds-button_icon slds-button_icon-x-small slds-m-right_x-small"
+                                                aria-hidden="true" tabindex="-1" onclick={handleOnChange} style="margin-left: -28px;">
+                                                <svg class="slds-button__icon slds-button__icon_small"
+                                                    aria-hidden="true">
+                                                    <use
+                                                        xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#chevronright">
+                                                    </use>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                    </template>
+                                    <div class="slds-truncate slds-p-around_xx-small">
+									    <template if:true={d.isLocked}>
+											<button
+													class="slds-button slds-button_icon slds-cell-edit__button slds-m-left_x-small"
+													tabindex="0" title={d.lockedBy} onclick={openDialog} data-index={d.Id}
+													data-id={index1}>
+													<svg class="slds-button__icon" style="margin-bottom: 5px;transform: rotate(0deg);" aria-hidden="true">
+														<use xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#lock">
+														</use>
+													</svg>
+											</button>
+										</template>
+										<template if:false={d.isLocked}>
+											<button
+													class="slds-button slds-button_icon slds-cell-edit__button slds-m-left_x-small"
+													tabindex="0" data-index={d.Id}
+													data-id={index1} disabled>
+													<svg class="slds-button__icon" aria-hidden="true">
+														<use xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#">
+														</use>
+													</svg>
+											</button>
+										</template>
+                                        <a href={d.titleName} tabindex="-1">{d.Name}</a>
+                                    </div>
+                                </th>
+                                <template if:true={d.isEdit}>
+                                    <td data-label="Title" class="slds-cell-edit slds-cell_action-mode" role="gridcell">
+                                        <span class="slds-grid slds-grid_align-spread">
+                                            <input type="text" class="slds-truncate" value={d.Apttus__Title__c}
+                                                data-index={d.Id} data-id={index1} style="width: 300px;"
+                                                onchange={inputChange}>
+                                            <button
+                                                class="slds-button slds-button_icon slds-cell-edit__button slds-m-left_x-small"
+                                                tabindex="0" title="Edit Name" onclick={handleSave} data-index={d.Id}
+                                                data-id={index1}>
+                                                <svg class="slds-button__icon" aria-hidden="true">
+                                                    <use xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#save">
+                                                    </use>
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </td>
+                                </template>
+                                <template if:false={d.isEdit}>
+                                    <td data-label="Employees" class="slds-cell-edit slds-cell_action-mode"
+                                        role="gridcell">
+                                        <span class="slds-grid slds-grid_align-spread">
+                                            <a href={d.Title_Click_to_view__c} onclick={handleBlankFile} data-value={d.Title_Click_to_view__c}>
+                                                <span class="slds-truncate">{d.Apttus__Title__c}</span>
+                                            </a>
+                                            <template if:true={d.isModifiable}>
+                                                <button onclick={handleOnChangeEdit} data-index={d.Id}
+                                                    class="slds-button slds-button_icon slds-cell-edit__button slds-m-left_x-small"
+                                                    tabindex="0" title="Edit Name">
+                                                    <svg class="slds-button__icon" aria-hidden="true">
+                                                        <use
+                                                            xlink:href="/_slds/icons/utility-sprite/svg/symbols.svg#edit">
+                                                        </use>
+                                                    </svg>
+                                                </button>
+                                            </template>
+                                        </span>
+                                    </td>
+                                </template>
+                                <td data-label="Version" role="gridcell" tabindex="-1">
+                                    <div class="slds-truncate">{d.Apttus__LatestVersion__c}</div>
+                                </td>
+                                <td data-label="Review Status" role="gridcell">
+                                    <div class="slds-truncate">
+                                        <lightning-formatted-url data-navigation="enable" data-action-triggers="enter"
+                                            value={d.reviewLink} label={d.Apttus__LatestReviewCycleStatus__c}
+                                            target="_self">
+                                        </lightning-formatted-url>
+                                    </div>
+                                </td>
+                                <td data-label="View" role="gridcell">
+                                    <button class="slds-button" data-id={d.contentId}
+                                        onclick={previewHandler}>View</button>
+                                </td>
+                                <td data-label="By" role="gridcell" tabindex="-1">
+                                    <div class="slds-truncate">{d.LastModifiedBy.Name}</div>
+                                </td>
+                                <td data-label="Date" role="gridcell" tabindex="-1">
+                                    <div class="slds-truncate">
+                                        <lightning-formatted-date-time value={d.LastModifiedDate} year="numeric"
+                                            month="numeric" day="numeric" hour="2-digit" minute="2-digit"
+                                            hour12="true"></lightning-formatted-date-time>
+                                    </div>
+                                </td>
+                            </tr>
+                            <template if:true={d.isActive}>
+                                <template for:each={d.Apttus__Document_Version_Details__r} for:item="d2"
+                                    for:index="index2">
+                                    <tr key={d2.Id} aria-level="2" aria-selected="false" class="slds-hint-parent">
+                                        <td class="slds-text-align_right" role="gridcell" style="width:3.25rem">
+                                            <div class="slds-checkbox"></div>
+                                        </td>
+                                        <th class="slds-tree__item" data-label="Document Version Details" scope="row">
+                                            <div class="slds-truncate slds-p-around_xx-small" style = "margin-left: 30px">
+                                                <a href={d2.typeName}>
+                                                    <div class="slds-truncate">{d2.Apttus__Action2__c}</div>
+                                                </a>
+                                            </div>
+                                        </th>
+                                        <td data-label="Doc Version Detail Title" role="gridcell">
+                                            <a href={d2.titleName} data-value={d2.titleName} onclick={handleBlankFile}> 
+                                                <div class="slds-truncate">{d2.Apttus__Title__c}</div>
+                                            </a>
+                                        </td>
+                                        <td data-label="Doc Version Detail Version" role="gridcell">
+                                            <div class="slds-truncate">{d2.Name}</div>
+                                        </td>
+                                        <td data-label="Doc Version Detail Review" role="gridcell">
+                                            <div class="slds-truncate"></div>
+                                        </td>
+                                        <td data-label="Doc Version Detail View" role="gridcell">
+                                            <button class="slds-button" data-id={d2.Apttus__ContentId__c}
+                                                onclick={previewHandler}>View</button>
+                                        </td>
+                                        <td data-label="Doc Version Detail By" role="gridcell">
+                                            <div class="slds-truncate">{d2.LastModifiedBy.Name}</div>
+                                        </td>
+                                        <td data-label="Doc Version Detail Date" role="gridcell">
+                                            <div class="slds-truncate">
+                                                <lightning-formatted-date-time value={d2.LastModifiedDate} year="numeric" month="numeric" day="numeric"
+                                                    hour="2-digit" minute="2-digit" hour12="true"></lightning-formatted-date-time>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </template>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <p><b>Are you sure you want to delete?</b>
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={handleDelete} title="OK">Delete</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+	<template if:true={isDialogOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                    <p><b>Are you sure you want to unlock this document?</b>
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeDialog} title="Cancel">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={handleUnlock} title="=OK">Unlock</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

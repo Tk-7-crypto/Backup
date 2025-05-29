@@ -1,0 +1,87 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" controller="CNT_GBL_FileRelatedList">
+    <aura:attribute type="Integer" name="numberOfRecords" default="6" />
+    <aura:attribute type="String" name="sobjectApiName" required="true" default="Sharepoint_File__c" />
+    <aura:attribute type="String" name="parentObjectName"/>
+    <aura:attribute type="String" name="parentObjectLabel"/>
+    <aura:attribute type="String" name="parentRecord"/>
+    <aura:attribute type="String" name="recordId"/>
+    <aura:attribute type="String" name="folderName"/>
+    <aura:attribute type="String" name="relatedFieldApiName" required="true" default="Parent_Id__c" />
+    <aura:attribute type="String" name="acceptFiles" default=""/>
+    <aura:attribute type="String" name="sobjectLabel" access="private" default="File"/>
+    <aura:attribute type="String" name="sobjectLabelPlural" access="private" default="Files"/>
+    <aura:attribute type="String" name="numberOfRecordsForTitle" access="private" default="0"/>
+    <aura:attribute type="String" name="iconName" access="private" default="standard:file"/>
+    <aura:attribute type="Boolean" name="showLoading" default="false"/> 
+    <aura:attribute type="Boolean" name="multiple" default="true"/>
+    <aura:attribute type="Boolean" name="isUploadFromAttachment" default="true"/>
+    <aura:attribute type="Boolean" name="isRelatedList" default="false"/>
+    <aura:attribute type="Object" name="records"/>
+    <aura:attribute type="String[]" name="fileFormats"/>
+    <aura:attribute type="List" name="customActions" />
+    <aura:attribute type="List" name="columns"/>
+    <aura:attribute type="List" name="columnsWithActions" access="private" />
+    <aura:attribute type="Aura.Action" name="onRowActionHandler" default="" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <aura:handler name="change" value="{!v.parentRecord}" action="{!c.parentRecordChange}"/>
+    <aura:handler name="change" value="{!v.columns}" action="{!c.handleColumnsChange}" />
+    
+    <aura:handler event="force:showToast" action="{!c.handleToastEvent}" />
+
+    <lightning:navigation aura:id="navLink"/>
+    <lightning:overlayLibrary aura:id="overlayLib" />
+
+    <lightning:card class="{!if(v.isRelatedList, 'slds-card_boundary relatedList', 'slds-card_boundary')}" iconName="{!v.iconName}">
+        <aura:set attribute="actions">
+            <aura:if isTrue="{!not(empty(v.records))}">
+                <div class="divActionFileUpload">
+                    <c:LXC_GBL_FileUpload recordId="{!v.recordId}" acceptFiles="{!v.fileFormats}" aura:id="cmpFileUpload" 
+                        method="{!c.parentRefresh}" showLoading="{!v.showLoading}" multiple="{!v.multiple}" folderName="{!v.folderName}" 
+                        isUploadFromAttachment="{!v.isUploadFromAttachment}"/>
+                </div>
+            </aura:if>
+        </aura:set>
+        <aura:set attribute="title">
+            <aura:if isTrue="{!!v.isRelatedList}">
+                <b>
+                    <a class="slds-card__header-link" onclick="{!c.handleGotoRelatedList}">
+                        {!v.sobjectLabelPlural + ' (' + (v.numberOfRecordsForTitle) + ')'}
+                    </a>
+                </b>
+                <aura:set attribute="else">
+                    <lightning:breadcrumbs>
+                        <lightning:breadcrumb label="{!v.parentObjectLabel}" href="javascript:void(0);" onclick="{!c.navigateToParentObjectList}"/>
+                        <lightning:breadcrumb label="{!v.parentRecord}" href="javascript:void(0);" onclick="{!c.navigateToParentObject}"/>
+                    </lightning:breadcrumbs>
+                    <b>
+                        <h1>
+                            {!v.sobjectLabelPlural}
+                        </h1>
+                    </b>
+                </aura:set>
+            </aura:if>
+        </aura:set>
+        <aura:set attribute="footer">
+            <aura:if isTrue="{!and(not(empty(v.records)),!v.isRelatedList)}">
+                <a onclick="{!c.handleGotoRelatedList}">View All</a>
+            </aura:if>
+        </aura:set>
+        <aura:if isTrue="{!not(empty(v.records))}">
+            <p class="slds-p-horizontal_small">  
+                <lightning:datatable class="related-list" columns="{!v.columnsWithActions}" data="{!v.records}" keyField="id" 
+                    onrowaction="{!c.handleRowAction}" hideCheckboxColumn="true" resizeColumnDisabled="true"/>                     
+            </p>         
+            <aura:set attribute="else">
+                <div class="divFileUpload">
+                    <c:LXC_GBL_FileUpload recordId="{!v.recordId}" acceptFiles="{!v.acceptFiles}" aura:id="cmpFileUpload" 
+                        method="{!c.parentRefresh}" showLoading="{!v.showLoading}" multiple="{!v.multiple}" 
+                        folderName="{!v.folderName}" isUploadFromAttachment="{!v.isUploadFromAttachment}"/>
+                </div>
+            </aura:set>
+        </aura:if>
+        <aura:if isTrue="{!v.showLoading}">
+            <lightning:spinner size="medium" />
+        </aura:if>
+    </lightning:card>
+</aura:component>

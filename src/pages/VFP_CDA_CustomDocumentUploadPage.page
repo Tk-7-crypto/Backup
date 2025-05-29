@@ -1,0 +1,107 @@
+<apex:page standardController="CDA_Request__c" extensions="EXT_CDA_CustomDocumentUploadCont" showHeader="false" sidebar="false" id="pg" lightningStyleSheets="true">
+<html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+    <c:VFC_CDA_LoadingImage />
+    <!-- <c:LXC_CRM_Spinner /> -->
+    <head>
+		<script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>
+        <script>
+            var iFileSize = 0;
+            function saveAttachment() {
+                showLoading();
+                var content = document.getElementById("pg:attachForm:idAttachBlock:inputfile").value;
+                if (content == null || content == "") {
+                    alert('{!$Label.CDA_Please_select_a_file_for_the_upload}');
+                    hideLoading();
+                    return false;
+                } else {
+                    // Added by Babita Dadarwal under CR-11458 Start
+                    if('{!attachmentType}' == 'Partially Executed CDA Document') {
+                        var ext = content.substring(content.lastIndexOf('.') + 1);
+                        if(ext !="pdf") {
+                            document.getElementById("pg:attachForm:idAttachBlock:inputfile").value = null;
+                            alert("{!$Label.CDA_Please_select_only_pdf}");
+                            hideLoading();
+                            return false;
+                        }
+                        // Added by Babita Dadarwal under CR-11659 Start
+                        else if(content.indexOf('{!cdaRequestName}') == -1) {
+                            document.getElementById("pg:attachForm:idAttachBlock:inputfile").value = null;
+                            alert("{!$Label.CDA_File_name_must_have_CDA}");
+                            hideLoading();
+                            return false;
+                        }
+                        // Added by Babita Dadarwal under CR-11659 End
+                    }
+                    // Added by Babita Dadarwal under CR-11458 End
+                    iFileSize = $(".inputfile")[0].files[0].size;
+                    if(iFileSize != null && iFileSize > 0) {
+                        iFileSize = iFileSize / 1024;
+                        iFileSize = (Math.round(iFileSize * 100) / 100);
+                        if(iFileSize > 3000) {
+                            alert("{!$Label.CDA_Uploaded_file_size_cannot_be_more_than_3_Mb}");
+                            $(".inputfile").val('');
+                            hideLoading();
+                            return false;
+                        }
+                    }
+                    attachAndContinue();
+                }
+            }
+            $(document).ready(function() {
+                hideLoading();
+                $("[id$=saveBtn]").attr( "class", "slds-button slds-button_success" );
+            });
+        </script>
+    	<apex:slds />
+	</head>
+    <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-repeat: top left;">
+        <div class="slds-scope">
+        <!-- <apex:sectionHeader title="Import Offline Document" subtitle="{!CDA_Request__c.CDA_Id__c}" /> -->
+        <!-- PAGE HEADER -->
+        <div class="slds-page-header" role="banner" style="margin: 12px 12px; border-radius: 4px;">
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <div class="slds-media slds-no-space slds-grow">
+                        <span class="slds-icon_container slds-icon-custom-custom62 slds-media__figure" title="Import Offline Document">
+                            <svg aria-hidden="true" class="slds-icon">
+                                <use xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/custom-sprite/svg/symbols.svg#custom62')}"></use>
+                            </svg>
+                            <!-- <lightning:icon aura:id="searchSectionIcon" class="slds-section__title-action-icon slds-button__icon slds-button__icon_left" iconName="utility:switch" size="x-small" alternativeText="Open Search Section"/> -->
+                            <span class="slds-assistive-text">Document Icon</span>
+                        </span>
+                        <!-- HEADING AREA -->
+                        <div class="slds-media__body">
+                            <!-- <h1 class="slds-page-header__title slds-m-right_small slds-align-middle slds-truncate" title="My Accounts">My Accounts</h1> -->
+                            <p class="slds-breadcrumb__item slds-line-height_reset">Import Offline Document</p>
+                            <h1 class="slds-page-header__title slds-truncate" title="{!CDA_Request__c.CDA_Id__c}">{!CDA_Request__c.Name}</h1>
+                            <!-- <h2 id="InformationBlockHeading" class="slds-text-heading--medium slds-m-vertical--large">{!$Label.CDA_Information_Label}</h2> -->
+                        </div>
+                        <!-- / HEADING AREA -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- / PAGE HEADER -->
+        <apex:form id="attachForm" style="margin: 0px 12px;">
+            <apex:outputPanel id="idImportOfflinePanel">
+                <apex:actionFunction name="attachAndContinue" action="{!doSave}" />
+                <apex:pageMessages />
+                <apex:pageBlock id="idAttachBlock" mode="edit">
+                    <apex:pageBlockButtons location="bottom" id="idAttachBlockButtons">
+                        <apex:commandButton value="Attach and Continue" id="saveBtn" onclick="saveAttachment();return false;" />
+                        <apex:commandButton value="Cancel" action="{!doCancel}" immediate="true" />
+                    </apex:pageBlockButtons>
+                    <apex:outputPanel id="upload" styleClass="slds-form-element"><br/>
+                        <apex:outputText style="font-weight: bold" value="{!UploadFileName}" /><br/><br/>
+                        <apex:outputText value="Type the path of the file or click the Browse button to select a document to import and attach to this CDA request." />
+                        <p/>
+                        <apex:inputFile size="80" value="{!filebody}" fileName="{!fileName}" contentType="{!contentType}" id="inputfile" styleClass="inputfile" />
+                        <p/>
+                    </apex:outputPanel>
+                </apex:pageBlock>
+            </apex:outputPanel>
+        </apex:form>
+    </div>
+	</body>
+</html>
+</apex:page>

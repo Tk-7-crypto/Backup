@@ -1,0 +1,58 @@
+<template>
+    <lightning-card if:true={hasValuesToShow}>
+        <lightning-layout multiple-rows="true">
+            <template if:true={fields.data}>
+                <lightning-layout-item flexibility="grow" size="12" small-device-size="12" medium-device-size="6" padding="horizontal-medium">
+                    <b>Key Fields <a onclick={openPopupfun} style="float: right;">Edit</a></b></br>
+                    <lightning-record-form record-id={recordId} object-api-name="Opportunity" columns="1" mode="view"
+                        fields={fields.data}></lightning-record-form>
+                </lightning-layout-item>
+            </template>
+            <template if:true={guidance.data}>
+                <lightning-layout-item flexibility="grow" size="12" small-device-size="12" medium-device-size="6" padding="horizontal-medium">
+                    <p><b>Guidance for Success</b></p>
+                    <p></br></p>
+                    <lightning-formatted-rich-text value={guidance.data}></lightning-formatted-rich-text>
+                </lightning-layout-item>
+            </template>
+        </lightning-layout>
+    </lightning-card>
+
+    <template if:true={openPopup}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_small">
+            <div class="slds-modal__container">
+                <div class="slds-clearfix">
+                    <lightning-button-icon icon-name="utility:close" size="large" variant="bare-inverse" title="Close"
+                        alternative-text="Close window" onclick={closePopup} class="slds-float_right">
+                    </lightning-button-icon>
+                </div>
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Edit Opportunity</h2>
+                </header>
+                <template if:true={showSpinner}>
+                    <lightning-spinner></lightning-spinner>
+                </template>
+                <div class="slds-modal__content slds-modal_small" id="modal-content-id-1">
+                    <lightning-record-edit-form record-id={recordId} object-api-name="Opportunity"
+                        onsuccess={handleSuccess} onerror={handleError} onsubmit={handleSubmit}>
+                        <div class="slds-p-horizontal_xx-large">
+                            <lightning-messages></lightning-messages></br>
+                            <template for:each={fields.data} for:item="fieldName">
+                                <lightning-input-field field-name={fieldName} key={recordId}> </lightning-input-field>
+                            </template>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button class="slds-m-left_x-small" label="Cancel" title="Cancel"
+                                onclick={closePopup}>
+                            </lightning-button>
+                            <lightning-button class="slds-m-left_x-small" label="Save" variant="brand" type="submit"
+                                title="Save"></lightning-button>
+                        </footer>
+                    </lightning-record-edit-form>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments>
+        <name>Set_CA_TL_Email_Address</name>
+        <label>Set CA/TL Email Address</label>
+        <locationX>270</locationX>
+        <locationY>566</locationY>
+        <assignmentItems>
+            <assignToReference>varT_TLCMEmailAdddress</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Iterate_Agreement_Team.Email__c</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_TLCMEmailAdddress</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <stringValue>,</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Iterate_Agreement_Team</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Content_Document_Ids</name>
+        <label>Set Content Document Ids</label>
+        <locationX>270</locationX>
+        <locationY>1058</locationY>
+        <assignmentItems>
+            <assignToReference>varT_ContentDocumentIds</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Iterate_Content_Document_Link.ContentDocumentId</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Iterate_Content_Document_Link</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Requester_Email</name>
+        <label>Set Requester Email</label>
+        <locationX>50</locationX>
+        <locationY>1466</locationY>
+        <assignmentItems>
+            <assignToReference>varT_RequestorEmail</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>forT_RequestorEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varT_RequestorEmail</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>varR_NewRecord.Related_Opportunity__r.Owner.Email</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_Activation_Notification_to_Requestor</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_TL_or_CA</name>
+        <label>Check TL or CA</label>
+        <locationX>402</locationX>
+        <locationY>458</locationY>
+        <defaultConnector>
+            <targetReference>Iterate_Agreement_Team</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>TL_or_CA</name>
+            <conditionLogic>1 OR (2 AND NOT(3))</conditionLogic>
+            <conditions>
+                <leftValueReference>Iterate_Agreement_Team.Role__c</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>Team Lead</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>Iterate_Agreement_Team.Role__c</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>Contract Analyst</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>Iterate_Agreement_Team.Role__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Other Contract Analyst</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_CA_TL_Email_Address</targetReference>
+            </connector>
+            <label>TL or CA</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Activated</name>
+        <label>Is Activated ?</label>
+        <locationX>380</locationX>
+        <locationY>134</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Activated</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Activated</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewRecord.Status_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>In Effect</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Agreement_Team</targetReference>
+            </connector>
+            <label>Activated</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Requestor_Found</name>
+        <label>Is Requestor Found ?</label>
+        <locationX>182</locationX>
+        <locationY>1358</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Requestor_Found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>forT_RequestorEmail</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>forT_RequestorEmail</leftValueReference>
+                <operator>NotEqualTo</operator>
+            </conditions>
+            <connector>
+                <targetReference>Set_Requester_Email</targetReference>
+            </connector>
+            <label>Requestor Found</label>
+        </rules>
+    </decisions>
+    <description>CLMCMA-18392: This flow will send Activation Notification for IQVIA Agreements</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>forT_AccountLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &quot;/services&quot;, {!$Api.Partner_Server_URL_260})) + {!varR_NewRecord.Account__c}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) + {!varR_NewRecord.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_AgreementType</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Original_Agreement__c} != null, TEXT({!varR_NewRecord.Original_Agreement__r.Subtype__c}), TEXT({!varR_NewRecord.Subtype__c}))</expression>
+    </formulas>
+    <formulas>
+        <name>forT_DocdownloadLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_140},FIND(&apos;.com&apos;,{!$Api.Partner_Server_URL_140})+4)+&quot;sfc/servlet.shepherd/document/download/&quot;+{!Get_Final_Signed_Document.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_OpportunityLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND( &apos;/services&apos;, {!$Api.Partner_Server_URL_260})) + {!varR_NewRecord.Related_Opportunity__c}</expression>
+    </formulas>
+    <formulas>
+        <name>forT_RequestorEmail</name>
+        <dataType>String</dataType>
+        <expression>IF({!varR_NewRecord.Requestor__r.IsActive}, {!varR_NewRecord.Requestor__r.Email}, {!varR_NewRecord.Owner:Group.Email})</expression>
+    </formulas>
+    <interviewLabel>CLM Subflow : IQVIA Agreement Activation Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : IQVIA Agreement Activation Notification</label>
+    <loops>
+        <name>Iterate_Agreement_Team</name>
+        <label>Iterate Agreement Team</label>
+        <locationX>182</locationX>
+        <locationY>350</locationY>
+        <collectionReference>Get_Agreement_Team</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Check_TL_or_CA</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Get_All_Content_Document_Ids</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <loops>
+        <name>Iterate_Content_Document_Link</name>
+        <label>Iterate Content Document Link</label>
+        <locationX>182</locationX>
+        <locationY>950</locationY>
+        <collectionReference>Get_All_Content_Document_Ids</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Set_Content_Document_Ids</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Get_Final_Signed_Document</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Agreement_Team</name>
+        <label>Get Agreement Team</label>
+        <locationX>182</locationX>
+        <locationY>242</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Iterate_Agreement_Team</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Agreement__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>varR_NewRecord.Id</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Contact__c</field>
+            <operator>IsNull</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>IQVIA_Agreement_Team__c</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Role__c</queriedFields>
+        <queriedFields>Email__c</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>Get_All_Content_Document_Ids</name>
+        <label>Get All Content Document Ids</label>
+        <locationX>182</locationX>
+        <locationY>842</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Iterate_Content_Document_Link</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>LinkedEntityId</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>varR_NewRecord.Id</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>ContentDocumentLink</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>ContentDocumentId</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>Get_Final_Signed_Document</name>
+        <label>Get Final Signed Document</label>
+        <locationX>182</locationX>
+        <locationY>1250</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Is_Requestor_Found</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Description</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Final Signed Document</stringValue>
+            </value>
+        </filters>
+        <filters>
+            <field>Id</field>
+            <operator>In</operator>
+            <value>
+                <elementReference>varT_ContentDocumentIds</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>ContentDocument</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Description</queriedFields>
+        <queriedFields>Title</queriedFields>
+        <sortField>CreatedDate</sortField>
+        <sortOrder>Desc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>254</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Activated</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Send_Activation_Notification_to_Requestor</name>
+        <label>Send Activation Notification to Requestor</label>
+        <locationX>50</locationX>
+        <locationY>1574</locationY>
+        <flowName>CLM_Subflow_Send_Notfication</flowName>
+        <inputAssignments>
+            <name>varC_EmailRecipients</name>
+            <value>
+                <elementReference>varT_RequestorEmail</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_CCEmailRecipients</name>
+            <value>
+                <elementReference>varT_TLCMEmailAdddress</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailBody</name>
+            <value>
+                <elementReference>textT_EmailBody</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_EmailSubject</name>
+            <value>
+                <elementReference>textT_Subject</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_FromAddress</name>
+            <value>
+                <stringValue>clmintegration@iqvia.com</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_RecordId</name>
+            <value>
+                <elementReference>varR_NewRecord.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varT_SenderType</name>
+            <value>
+                <stringValue>OrgWideEmailAddress</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <textTemplates>
+        <name>textT_EmailBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>AGREEMENT ACTIVATED &lt;br/&gt;
+&lt;br/&gt;
+The following agreement has been ACTIVATED in CLM: &lt;br/&gt;
+&lt;br/&gt;
+&lt;table border=&quot;1&quot; style=&quot;border-collapse: collapse; border: 1px solid&quot;&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      Agreement
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt;
+      &lt;a href=&quot;{!forT_AgreementLink}&quot;&gt;{!varR_NewRecord.FF_Agreement_Number__c} -
+        {!varR_NewRecord.Name}&lt;/a&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      Requester
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt;
+      {!varR_NewRecord.Requestor__r.FirstName} {!varR_NewRecord.Requestor__r.LastName}
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      Client
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt;
+      &lt;a href=&quot;{!forT_AccountLink}&quot;&gt;{!varR_NewRecord.Account__r.Name}&lt;/a&gt;
+    &lt;/td&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      Opportunity
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt; 
+      &lt;a href=&quot;{!forT_OpportunityLink}&quot;&gt;{!varR_NewRecord.Related_Opportunity__r.Opportunity_Number__c} -
+        {!varR_NewRecord.Related_Opportunity__r.Name}&lt;/a&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      IQVIA Service Line
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt;
+      {!varR_NewRecord.Primary_Business_Line1__c}
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr style=&quot;border-bottom: 1px solid&quot;&gt;
+    &lt;td style=&quot;border-right: 1px solid&quot;&gt;
+      Agreement Type
+    &lt;/td&gt;
+    &lt;td style=&quot;padding-left:10px;&quot;&gt;
+      {!forT_AgreementType}
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;br /&gt;
+&lt;i&gt;&lt;b&gt;Activated Document: &lt;/b&gt; &lt;a href=&quot;{!forT_DocdownloadLink}&quot;&gt;{!Get_Final_Signed_Document.Title} : {!Get_Final_Signed_Document.Description}&lt;/i&gt;&lt;/a&gt;&lt;br /&gt;
+&lt;br /&gt;
+Thank You, &lt;br /&gt;
+CLM System Notifications&lt;br /&gt;
+The CLM integration email &lt;b&gt;&lt;u&gt;is not&lt;/u&gt;&lt;/b&gt; an active or monitored email account, please reach out to USCC-CLM-Support@iqvia.com for any additional assistance.</text>
+    </textTemplates>
+    <textTemplates>
+        <name>textT_Subject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Agreement Activated || Client: {!varR_NewRecord.Account__r.Name} || Agreement : {!varR_NewRecord.FF_Agreement_Number__c} - {!varR_NewRecord.Name}</text>
+    </textTemplates>
+    <variables>
+        <name>varR_NewRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>IQVIA_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldRecord</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>IQVIA_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varT_ContentDocumentIds</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_RequestorEmail</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varT_TLCMEmailAdddress</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

@@ -1,0 +1,477 @@
+<!--
+custom manual metrics for 'metrics' page tab
+-->
+
+<template>
+
+  <lightning-spinner if:true={manualMetricTableLoadingState} alternative-text="Loading" size="large" variant="brand" class="spinner-z-index"></lightning-spinner>
+
+  <c-lwc_helper></c-lwc_helper>
+
+  <!-- filter heading -->
+  <div class="slds-p-around_x-small slds-theme_shade cursor-pointer" onclick={toggleFilter}>
+    <div class="slds-grid">
+      <div class="slds-size_2-of-3">
+        <div class="slds-media slds-accordion__summary-heading">
+          <div class="slds-media__figure">
+            <!-- icon when not expanded -->
+            <lightning-icon if:false={viewFilters} icon-name="utility:chevronright" size="x-small">
+            </lightning-icon>
+            <!-- icon when is expanded -->
+            <lightning-icon if:true={viewFilters} icon-name="utility:chevrondown" size="x-small">
+            </lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <span>Filter</span>
+          </div>
+        </div>
+      </div>
+      <div class="slds-size_1-of-3 slds-text-align_right slds-p-right_small">
+        <lightning-icon icon-name="utility:filterList" size="x-small"></lightning-icon>
+      </div>
+    </div>
+  </div>
+  <!-- filter details -->
+  <div class="slds-box slds-theme_default" if:true={viewFilters}>
+  <!-- style="box-shadow: 9px 12px 10px -10px rgba(0,0,0,0.4);"> -->
+    <div aria-hidden="false" class="slds-grid slds-wrap slds-grid_align-spread">
+
+
+      <!--
+        Service Line
+          column is hidden (slds-hide) until the edit form is loaded!
+      -->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium slds-hide serviceMetricFilter">
+        <lightning-record-edit-form object-api-name="Lightning_Filter__c"
+        onload={serviceLineFilterChangeLoad}>
+          <lightning-input-field field-name="Service_Line__c" class="service-line-filter"
+            value={filterServiceLine}
+            onchange={serviceLineFilterChange}>
+          </lightning-input-field>
+        </lightning-record-edit-form>
+      </div>
+
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium">
+        <!--
+          Last reviewed Month filter!
+        -->
+        <lightning-combobox
+            name="lastReviewedMonth"
+            label="Last reviewed Month"
+            value={psaMetricsFilterLastReviewedMonth}
+            onchange={lastReviewedMonthFilterChange}
+            options={lastReviewedMonthOptions}>
+          </lightning-combobox>
+      </div>
+
+      <!--
+        Frequency!
+      -->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium">
+        <lightning-combobox
+            name="frequency"
+            label="Frequency"
+            value={filterFrequency}
+            options={projFreqOptions}
+            onchange={frequencyFilterChange}>
+        </lightning-combobox>
+      </div>
+
+      <!--
+        Location
+          column is hidden (slds-hide) until the edit form is loaded!
+      -->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium slds-hide locationFilter">
+        <lightning-record-edit-form object-api-name="Lightning_Filter__c"
+        onload={locationFilterChangeLoad}>
+          <lightning-input-field field-name="Location__c" class="location-filter"
+            value={filterLocation}
+            onchange={locationFilterChange}>
+          </lightning-input-field>
+        </lightning-record-edit-form>
+      </div>
+
+      <!--
+        Range Start
+      -->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium">
+        <div class="slds-m-bottom_small">
+          <lightning-input class="filter-range-start" type="date" value={filterRangeStart} onchange={rangeStartFilterApplied}
+            label={filterRangeStartLabel} autocomplete="false">
+          </lightning-input>
+        </div>
+      </div>
+      <!--
+        Range End
+      -->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium">
+        <div class="slds-m-bottom_small">
+          <lightning-input class="filter-range-end" type="date" value={filterRangeEnd} onchange={rangeEndFilterApplied}
+            label={filterRangeEndLabel} autocomplete="false"></lightning-input>
+        </div>
+      </div>
+      <!--Protocol-->
+      <div class="slds-col slds-size_1-of-7 slds-p-right_medium">
+        <lightning-combobox dropdown-alignment="auto"
+            name="protocol"
+            label="Protocol"
+            value={filterProtocolName}
+            options={filterProtocolOptions}
+            onchange={handleProtocolNameChange}>
+        </lightning-combobox>
+      </div>
+    </div>
+  </div>
+
+  <!-- when no data loaded from filter! -->
+  <template if:false={hasLoadedData}>
+    <section class="slds-box slds-m-top_small">
+      <div class="slds-media slds-media_center">
+        <span class="slds-icon_container slds-icon-action-delete slds-icon_container--circle slds-media__figure">
+          <lightning-icon if:false={viewFilters} icon-name="utility:warning" size="x-small" variant="inverse">
+          </lightning-icon>
+        </span>
+        <div class="slds-media__body slds-text-title_caps">
+          <div class="slds-text-heading_small" id="panel-heading-id">
+            No Records Found Use the <a onclick={toggleFilter}>Filter</a> to refine your search
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- data table for manual metrics -->
+  <div class="slds-m-top_medium slds-border_left slds-border_right slds-border_top slds-border_bottom" if:true={hasLoadedData}>
+    <div class="metric-scroller slds-scrollable" if:true={computedManualMetrics}>
+      <table class="metric-table slds-table slds-table_col-bordered slds-table_resizable-cols slds-table_header-fixed slds-table_bordered slds-table_edit">
+        <thead>
+          <tr class="slds-line-height_reset stickyHeader">
+            <th data-id="MetricName" onclick={metricNameSort}>
+              <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                  <span class="slds-assistive-text">Sort</span>
+                  <span class="slds-truncate" title="Metric Name">Metric Name</span>
+                  <div if:true={isMetricNameSort}>
+                      <div if:true={isAsc}>
+                        <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!" size="x-small"></lightning-icon>
+                      </div>
+                      <div if:true={isDsc}>
+                        <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!" size="x-small"></lightning-icon>
+                      </div>
+                  </div>
+              </a>
+          </th>
+          <th data-id="ServiceLine" onclick={sortServiceLine}>
+              <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                  <span class="slds-assistive-text">Sort</span>
+                  <span class="slds-truncate" title="Service Line">Service Line</span>
+                  <div if:true={isServiceLineSort}>
+                      <div if:true={isAsc}>
+                        <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!" size="x-small"></lightning-icon>
+                      </div>
+                      <div if:true={isDsc}>
+                        <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!" size="x-small"></lightning-icon>
+                      </div>
+                  </div>
+              </a>
+          </th>
+          <th data-id="LastReviewedMonth" onclick={sortLastReviewedMonth}>
+            <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                <span class="slds-assistive-text">Sort</span>
+                <span class="slds-truncate" title="Last reviewed Month">Last reviewed Month</span>
+                <div if:true={isLastReviewedMonthSort}>
+                    <div if:true={isAsc}>
+                      <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!" size="x-small"></lightning-icon>
+                    </div>
+                    <div if:true={isDsc}>
+                      <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!" size="x-small"></lightning-icon>
+                    </div>
+                </div>
+            </a>
+        </th>
+          <th data-id="Frequency" onclick={sortFrequency}>
+              <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                  <span class="slds-assistive-text">Sort</span>
+                  <span class="slds-truncate" title="Frequency">Frequency</span>
+                  <div if:true={isFrequencySort}>
+                      <div if:true={isAsc}>
+                        <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!" size="x-small"></lightning-icon>
+                      </div>
+                      <div if:true={isDsc}>
+                        <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!" size="x-small"></lightning-icon>
+                      </div>
+                  </div>
+              </a>
+          </th>
+          <th data-id="Location" onclick={sortLocation}>
+              <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                  <span class="slds-assistive-text">Sort</span>
+                  <span class="slds-truncate" title="Location">Location</span>
+                  <div if:true={isLocationSort}>
+                      <div if:true={isAsc}>
+                        <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!"  size="x-small"></lightning-icon>
+                      </div>
+                      <div if:true={isDsc}>
+                        <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!"  size="x-small"></lightning-icon>
+                      </div>
+                  </div>
+              </a>
+          </th>
+          <th data-id="Protocol" onclick={sortProtocol}>
+              <a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+                  <span class="slds-assistive-text">Sort</span>
+                  <span class="slds-truncate" title="Protocol">Protocol</span>
+                  <div if:true={isProtocolSort}>
+                      <div if:true={isAsc}>
+                        <lightning-icon icon-name="utility:arrowup" alternative-text="arrowup!"  size="x-small"></lightning-icon>
+                      </div>
+                      <div if:true={isDsc}>
+                        <lightning-icon icon-name="utility:arrowdown" alternative-text="arrowdown!"  size="x-small"></lightning-icon>
+                      </div>
+                  </div>
+              </a>
+          </th>
+             <template for:each={manualMetricColumns} for:item="column">
+              <template if:true={column.isMonthly}>
+                <th  key={column.field} class={column.className}>
+                  <div class="slds-text-title_caps">
+                    <div tabindex="-1" class="xslds-cell-fixed slds-has-button-menu">
+                      <span if:true={column.isMonthly} class="slds-th__action" style="display:inline-block; margin-top: .3rem;">
+                        <span title={column.label} class="slds-truncate">
+                          {column.label}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </th>
+              </template>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="slds-hint-parent" for:each={computedManualMetrics} for:item="row" key={row.rowIndex}>
+            <td for:each={row} for:item="column" key={column.field} class={column.className}>
+            <!--
+              when not a dynamic monthly type
+            -->
+            <template if:false={column.isMonthlyType}>
+
+              <div class="slds-truncate">
+
+                <template if:true={column.isUrl}>
+                  <div class="" title={column.typeFieldValue}>
+                    <a href={column.value} title={column.typeFieldValue}>{column.typeFieldValue}</a>
+                  </div>
+                </template>
+                <template if:false={column.isUrl}>
+                  <div class="" title={column.value}>
+                    {column.value}
+                  </div>
+                </template>
+              </div>
+            </template>
+            <!--
+              render monthly type!
+               onclick ... add comments ... modal for
+            -->
+            <template if:true={column.isMonthlyType}>
+              <div class="monthly-type cursor-pointer" onclick={onMonthlyClick} style="min-width:2rem;"
+                data-project-actuals-id={column.id}
+                data-project-id={column.projectId}
+                data-project-metric-id={column.projectMetricId}
+                data-psa-metric-id={column.psaMetricId}
+                data-percentage-calculation-required={column.showPercentage}
+                data-column-field={column.fieldName}
+                data-column-comments={column.comments}
+                data-output-type={column.outputType}
+                data-row-index={row.rowIndex}>
+                <div class="slds-grid" style="display:inline-flex;">
+                  <div class="slds-truncate" title={column.quantity}>
+
+                    <span if:true={column.showPercentage}>
+                      <lightning-formatted-number value={column.quantity} maximum-fraction-digits="3"></lightning-formatted-number> %
+                    </span>
+                    <span if:false={column.showPercentage}>
+                      <lightning-formatted-number value={column.quantity} maximum-fraction-digits="3"></lightning-formatted-number>
+                    </span>
+
+                  </div>
+                  <div class="slds-m-left_small">
+                    <lightning-helptext
+                      if:true={column.comments}
+                      icon-name="utility:note"
+                      icon-variant="error"
+                      content={column.comments}>
+                    </lightning-helptext>
+                  </div>
+                </div>
+              </div>
+            </template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- end table wrapper-->
+
+
+  <!-- history !!! -->
+
+  <!-- history  -->
+  <div if:true={hasHistoryRecords}>
+    <!-- history heading -->
+    <div class="slds-p-around_x-small slds-theme_shade cursor-pointer slds-m-top_medium" onclick={toggleHistory}>
+      <div class="slds-grid">
+        <div class="slds-size_2-of-3">
+          <div class="slds-media slds-accordion__summary-heading">
+            <div class="slds-media__figure">
+              <!-- icon when not expanded -->
+              <lightning-icon if:false={viewHistory} icon-name="utility:chevronright" size="x-small">
+              </lightning-icon>
+              <!-- icon when is expanded -->
+              <lightning-icon if:true={viewHistory} icon-name="utility:chevrondown" size="x-small">
+              </lightning-icon>
+            </div>
+            <div class="slds-media__body">
+              <span>History</span>
+            </div>
+          </div>
+        </div>
+        <div class="slds-size_1-of-3 slds-text-align_right slds-p-right_small">
+          <lightning-icon icon-name="utility:date_time" size="x-small"></lightning-icon>
+        </div>
+      </div>
+    </div>
+    <!-- history datatable-->
+    <div class="history slds-border_left slds-border_right slds-border_bottom" if:true={viewHistory}>
+        <div class="lgc-bg "
+          style="height:200px;">
+          <lightning-datatable hide-checkbox-column
+            key-field="id"
+            class="metric-history-datatable-container"
+            data={historyRecords}
+            columns={historyColumns}
+            is-loading={historyTableLoadingState}>
+              <!-- sorted-by={state.metricSortedBy}
+              sorted-direction={state.metricSortedDirection}
+              onsort={updateProjectMetricSorting}
+              > -->
+          </lightning-datatable>
+        </div>
+    </div>
+  </div>
+
+  <div class="page-modals!">
+    <!--
+        metric actual / comments modal!
+    -->
+    <c-lwc_modal show-modal={showMericsActualModal} onclose={onMetricsActualModalCancel} if:true={showMericsActualModal}>
+      <span slot="modal-heading">
+        Actuals {selectedMetricActual.label}
+      </span>
+
+      <div slot="modal-content" class="slds-p-around_medium ">
+        <div class="errorMessageDiv" if:true={errorMsgFlag}>
+          {errorMsg}
+        </div>
+        <!-- when percentage calculation is not required! -->
+        <div if:false={selectedMetricActual.showDenominator}>
+          <lightning-record-edit-form object-api-name="Project_Metric_Actual__c">
+            <lightning-input-field
+              field-name="Quantity__c"
+              class="project-metric-actual-quantity"
+              value={selectedMetricActual.editQuantity}
+              onchange={onMetricActualFieldChange}
+              disabled={disabledInputField}>
+            </lightning-input-field>
+          </lightning-record-edit-form>
+        </div>
+
+        <!-- when percentage calculation is required!
+selectedMetricActual
+        -->
+        <div if:true={selectedMetricActual.showDenominator}>
+          <lightning-record-edit-form object-api-name="Project_Metric_Actual__c">
+
+            <div class="slds-grid slds-border_bottom slds-p-around_small">
+              <div class="slds-size_1-of-2 slds-text-align_right">
+                <label for="numerator-label" class="slds-form-element__label slds-no-flex">
+                  {selectedMetricActual.numeratorLabel}
+                </label>
+              </div>
+              <div class="slds-size_1-of-3 slds-m-left_medium">
+                <lightning-input-field
+                  variant="label-hidden"
+                  field-name="Numerator__c"
+                  class="project-metric-actual-numerator"
+                  value={selectedMetricActual.editNumerator}
+                  onchange={onMetricActualFieldChange}
+                  disabled={disabledInputField}>
+                </lightning-input-field>
+              </div>
+            </div>
+
+            <div class="slds-grid slds-border_bottom slds-p-around_small">
+              <div class="slds-size_1-of-2 slds-text-align_right">
+                <label for="denominator-label" class="slds-form-element__label slds-no-flex">
+                  {selectedMetricActual.denominatorLabel}
+                </label>
+              </div>
+              <div class="slds-size_1-of-3 slds-m-left_medium">
+                <lightning-input-field
+                  variant="label-hidden"
+                  field-name="Denominator__c"
+                  class="project-metric-actual-denominator"
+                  value={selectedMetricActual.editDenominator}
+                  onchange={onMetricActualFieldChange}
+                  disabled={disabledInputField}>
+                </lightning-input-field>
+              </div>
+            </div>
+
+            <div class="slds-grid slds-border_bottom slds-p-around_small slds-theme_alert-texture">
+              <div class="slds-size_1-of-2 slds-text-align_right">
+                <label for="value-label" class="slds-form-element__label slds-no-flex">
+                  Value
+                </label>
+              </div>
+              <div class="slds-size_1-of-3 slds-m-left_medium">
+                <div class="slds-p-around_xx-small">
+                  <lightning-formatted-number value={calcResultValue} maximum-fraction-digits="3"></lightning-formatted-number>
+                  <span if:true={selectedMetricActual.showPercentage}> %</span>
+                  <span if:false={selectedMetricActual.showPercentage}> {selectedMetricActual.outputType}</span>
+                </div>
+              </div>
+            </div>
+
+
+          </lightning-record-edit-form>
+        </div>
+
+        <div class="slds-m-top_small">
+          <lightning-textarea label="Comments"
+            class="comment-textarea-input"
+            name="metric-actual-comments"
+            value={selectedMetricActual.editComments}
+            onchange={onMetricActualCommentsChange}
+            disabled={disabledInputField}
+            max-length="255">
+          </lightning-textarea>
+        </div>
+      </div>
+      <span slot="modal-footer">
+        <!-- modal footer spinner -->
+        <div if:true={showModalSpinner} class="slds-is-relative">
+          <lightning-spinner alternative-text="saving..." variant="brand">
+          </lightning-spinner>
+        </div>
+        <button class="slds-button slds-button_neutral" onclick={onMetricsActualModalCancel} disabled={showModalSpinner}>Cancel</button>
+        <template if:false={isReadOnly}>
+          <button class="slds-button slds-button_brand" onclick={onMetricsActualModalSave} disabled={showModalSpinner}>Save</button>
+        </template>
+      </span>
+    </c-lwc_modal>
+
+  </div>
+
+</template>

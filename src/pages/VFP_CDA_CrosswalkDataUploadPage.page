@@ -1,0 +1,791 @@
+<apex:page controller="CNT_CDA_CrosswalkDataUploadPage" title="CDA Crosswalk Data Uploader" sidebar="false" standardstylesheets="false" lightningStylesheets="true" showHeader="false" applyBodyTag="false" applyHtmlTag="false" docType="html-5.0">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+    	<head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+
+        	<style type="text/css">
+                .tableWrapper {
+                    height: 200px;
+                    overflow-x:hidden;
+                }
+                .sortingHighlighter {
+                    background-image:linear-gradient(to bottom,#F0F6F2,#FBFDFC);
+                    color:#000000 !important;
+                    font-weight:bold;
+                    border-left: 2px solid #ccc !important;
+                    border-right: 2px solid #ccc !important;
+                }
+               .txtAreaLangInput {
+                    width: 250px;
+                    height: 100px;
+                }
+                .highlighted {
+                    background: #FFFF00;
+                    color:#000000;
+                }
+        	</style>
+
+            <script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>
+            <script src="{!$Resource.TPA_AngularJS}" type="text/javascript"></script>
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <script src="../static/102010/js/picklist.js"></script>
+            <script src="{!URLFOR($Resource.CDACustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <script src="{!URLFOR($Resource.ckeditor, 'ckeditor.js')}" type="text/javascript"></script>
+            <script src="{!URLFOR($Resource.ckeditor, 'samples/js/sample.js')}"></script>
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+            <script src="{!$Resource.TPA_Fixed_Header}" type="text/javascript"></script>
+
+            <!-- *** Yahoo Javascript Library reference *** -->
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/dragdrop/dragdrop-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/treeview-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/menu-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo/yahoo-min.js')}" />
+            <!-- *** Yahoo Javascript Library reference *** -->
+
+            <!-- *** Yahoo Css Library reference *** -->
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/assets/skins/sam/skin.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+            <!-- *** Yahoo Css Library reference *** -->
+
+            <script type="text/javascript">
+                var myapp = angular.module('CdaEditor', ['ui.bootstrap']);
+
+                var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$log', '$window', function ($scope, $filter, $log, $window)
+                {
+                    $scope.allData = {!AllData};
+                    $scope.allData.mlSettingsValues.sort(function(a,b){return b.Value__c - a.Value__c;});
+                    $scope.allData.mlSettingsValues.splice(0, 0, {Name :'-1', MasterLabel :'--None--', Record_Type__c :'--None--', Value__c :'--None--', Rank__c :''});
+                    $scope.rootObj = {};
+                    $scope.rootObj.mlSettings = angular.copy($scope.allData.mlSettingsValues);
+                    $scope.rootObj.selectedLanguage = $scope.rootObj.mlSettings[0];
+                    $scope.rootObj.selectedObjectType = $scope.rootObj.mlSettings[0];
+                    $scope.rootObj.selectedControlType = $scope.rootObj.mlSettings[0];
+                    $scope.rootObj.selectedFieldType = $scope.rootObj.mlSettings[0];
+
+                    $scope.fieldTypeList = [];
+                    $scope.fieldTypeList.splice(0, 0, '--None--');
+
+                    $scope.$log = $log;
+                    $scope.recordToProcess = {};
+                    $scope.recordToProcess.Id = '';
+                    $scope.recordToProcess.Default_Value__c = '';
+                    $scope.recordToProcess.English_Translation__c = '';
+                    $scope.recordToProcess.Chinese_Translation__c = ''; //Updated by Vikram Singh under CR-11147
+                    $scope.recordToProcess.Rank__c = '';
+                    $scope.editIndex = -1;
+                    $scope.isSortingAllowed = true;//{!isSorteable};
+                    $scope.isSearchingAllowed = true;//{!isSearchAllowed};
+                    $scope.columnSortBy = 'Object_Label__c';
+                    $scope.columnSearchBy = 'Default';
+                    $scope.isDescending = false;
+                    $scope.columnsToSort = [];
+                    $scope.columnsToSearch = [];
+                    $scope.sortOrder = 'ascObjectName';
+                    $scope.searchTxt = '';
+                    $scope.isUnChanged = false;
+                    $scope.recordUnChanged = {};
+
+                    if($scope.isSortingAllowed)
+                    {
+                        $scope.columnsToSort.push('Default_Value__c~Default Value');
+                        $scope.columnsToSort.push('Object_Label__c~Object Name');
+                        $scope.columnsToSort.push('Control_Type__c~Control Type');
+                        $scope.columnsToSort.push('Field_Label__c~Field Name');
+                    }
+
+                    if($scope.isSearchingAllowed)
+                    {
+                        $scope.columnsToSearch.push('Default~Default Search');
+                        $scope.columnsToSearch.push('Object_Label__c~Object Name');
+                        $scope.columnsToSearch.push('Control_Type__c~Control Type');
+                    }
+
+                    $scope.orderbyChange = function()
+                    {
+                        $scope.$log.info('$scope.columnSortBy::::'+$scope.columnSortBy);
+                    }
+
+                    $scope.existingListCopy;
+                    $scope.isObjectNameEmpty = false;
+                    $scope.isControlTypeEmpty = false;
+                    $scope.isFieldTypeEmpty = false;
+                    $scope.isDefaultValEmpty = false;
+                    $scope.isLocalValEmpty = false;
+                    $scope.isDuplicateRecord = false;
+
+                    $scope.isNew = true;
+                    $scope.descImage = '&nbsp;<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAD1BMVEX////////e3t6ZmZkzMzPjUSqdAAAABXRSTlMA/////xzQJlIAAAAJcEhZcwAACvAAAArwAUKsNJgAAAAldEVYdFNvZnR3YXJlAE1hY3JvbWVkaWEgRmlyZXdvcmtzIE1YIDIwMDSHdqzPAAAAKklEQVR4nGNgIA+wuACBA4hhJCioDGIwOCsKmUDkjCACQCETmHIHIs0FABo8BA7kFkjvAAAAAElFTkSuQmCC" alt="test Image" />';
+                    $scope.ascImage = '&nbsp;<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAPUExURf///////97e3pmZmTMzM+NRKp0AAAABdFJOUwBA5thmAAAACXBIWXMAAArwAAAK8AFCrDSYAAAAJXRFWHRTb2Z0d2FyZQBNYWNyb21lZGlhIEZpcmV3b3JrcyBNWCAyMDA0h3aszwAAAClJREFUGNNjIBKwOEAZziZQASNliJCzopAJREBQECzE4gIEDgzkAAYGACuRBA6ce+7fAAAAAElFTkSuQmCC" alt="test Image" />';
+                    $scope.filterImage = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAQAAAD8fJRsAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAHdElNRQffCw4NEDmlrEtyAAAA50lEQVQY0y3Fvy4EYRTG4d/55kMyu9koZGWTbSQStlO4AQrRSKjE3oe7cAMqhURCo5GoVOIKbKcwhWRUJP5l2DnnVfA0j63tcmmtsoEAMGHIi/5LbPpQ7iksLEwo3HRhI1jXtS1QUymbWFWPu7RjK0Xr6UBnPGhLlW3bFa+2oUkxr2xf9xS+F4vxqOPoa+y3RWHLNNajyT+n7FMz4HB6VKZu2BLQpM8oB7qxkc7LMXyoqySC2ZibmdZet/jkLd5zRyJXDGn5FpgBSUBDJsMT0AFwQQA8AxkApgAJMP6lvzwcP3G8dRyAX2CJbaooSuEmAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE1LTExLTE0VDEzOjE2OjU3LTA1OjAwUHeVLwAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNS0xMS0xNFQxMzoxNjo1Ny0wNTowMCEqLZMAAAAZdEVYdFNvZnR3YXJlAEFkb2JlIEltYWdlUmVhZHlxyWU8AAAAAElFTkSuQmCC"/>';
+
+                    $scope.searchByText = function()
+                    {
+                        if($scope.searchTxt != null && $scope.searchTxt.length > 1)
+                        {
+                            if($scope.existingListCopy == null)
+                                $scope.existingListCopy = angular.copy($scope.existingList);
+                            $scope.existingList = [];
+                            angular.forEach($scope.existingListCopy, function(v, k){
+                                if($scope.columnSearchBy == 'Default' && ((v['Object_Label__c'] != null && v['Object_Label__c'].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1) || (v['Control_Type__c'] != null && v['Control_Type__c'].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1)))
+                                    $scope.existingList.push(angular.copy(v));
+                                else if(v[$scope.columnSearchBy] != null && v[$scope.columnSearchBy].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1)
+                                    $scope.existingList.push(angular.copy(v));
+                            });
+                        }
+                        else
+                        {
+                            if($scope.existingListCopy != null)
+                                $scope.existingList = angular.copy($scope.existingListCopy);
+                        }
+                    }
+
+                    $scope.editRecord = function(obj)
+                    {
+                        $scope.recordUnChanged = angular.copy(obj);
+                        $scope.recordToProcess.Id = angular.copy(obj.Id);
+                        $.each($scope.rootObj.mlSettings, function(k, v){
+                            if(obj.Object_Type__c == v.Value__c)
+                                $scope.rootObj.selectedObjectType = v;
+                            else if(obj.Control_Type__c == v.Value__c)
+                                $scope.rootObj.selectedControlType = v;
+                            else if(obj.Field_Type__c == v.Value__c)
+                                $scope.rootObj.selectedFieldType = v;
+                        });
+                        $scope.recordToProcess.Default_Value__c = angular.copy(obj.Default_Value__c);
+                        $scope.recordToProcess.Chinese_Translation__c = angular.copy(obj.Chinese_Translation__c);   //Updated by Vikram Singh under CR-11147
+                        $scope.recordToProcess.English_Translation__c = angular.copy(obj.English_Translation__c);
+                        $scope.recordToProcess.Rank__c = angular.copy(obj.Rank__c);
+                        $scope.isNew = false;
+                        $scope.resetErrors();
+                        $scope.editIndex = obj.Id;
+                    }
+
+                    $scope.filterDropdowns = function(filterType)
+                    {
+                        return function(data)
+                        {
+                            if(data.Record_Type__c == '--None--')
+                                return true;
+                            else if((filterType == 'Object' || filterType == 'Language') && data.Record_Type__c == filterType)
+                                return true;
+                            else if(filterType == 'Control' && $scope.rootObj.selectedObjectType.Value__c != '--None--' && data.Record_Type__c == filterType)
+                                return true;
+                            else if(filterType == 'Field Type' && $scope.rootObj.selectedObjectType.Value__c != '--None--' && $scope.rootObj.selectedControlType.Value__c == 'Picklist' && $scope.rootObj.selectedObjectType.Value__c == data.Parent_Name__c && data.Record_Type__c == 'Picklist')
+                                return true;
+                            return false;
+                        }
+                    }
+
+                    $scope.actionButtonType = '';
+                    $scope.saveRecord = function(saveType, buttonType)
+                    {
+                        $scope.recordToProcess.Object_Type__c = $scope.rootObj.selectedObjectType.Value__c;
+                        $scope.recordToProcess.Object_Label__c = $scope.rootObj.selectedObjectType.MasterLabel;
+                        $scope.recordToProcess.Control_Type__c = $scope.rootObj.selectedControlType.Value__c;
+                        $scope.recordToProcess.Field_Type__c = $scope.rootObj.selectedFieldType.Value__c;
+                        $scope.recordToProcess.Field_Label__c = $scope.rootObj.selectedFieldType.MasterLabel;
+
+                        $scope.actionButtonType = buttonType;
+
+                        if(!$scope.isFormValid(saveType))
+                            return false;
+                        if(saveType == 'New')
+                            delete $scope.recordToProcess["Id"];
+
+                            // $scope.popupConfirm('Do you really want to create/update this information. Once you create/update this information, It will become live.', function(){ //updated by C.P.Pandey under ER-2106
+                            // onActionClick();
+                            CNT_CDA_CrosswalkDataUploadPage.saveRecord(JSON.stringify($scope.recordToProcess), JSON.stringify($scope.recordUnChanged), function(result, event)
+                            {
+                                if(event.type == 'exception')
+                                {
+                                    onActionComplete();
+                                    $scope.$log.info('saveRecord.Error: ' + event.message);
+                                    return false;
+                                }
+                                else
+                                {
+                                    onActionComplete();
+                                    $scope.allData = result;
+                                    $scope.existingList = $scope.allData.editorRecords;
+                                    $.each($scope.existingList, function(k, v){
+                                        v.localValue = v[$scope.rootObj.selectedLanguage.Value__c];
+                                    });
+                                    $scope.$log.warn('saveRecord.Result: ' +JSON.stringify(result));
+                                    $scope.resetForm();
+                                }
+                                $scope.applyChanges();
+                            });
+                        // }, function(){}, true);
+                    }
+
+                    $scope.isFormValid = function(saveType)
+                    {
+                        $scope.resetErrors();
+                        var isDuplicate = false;
+                        $scope.isUnChanged = false;
+                        $log.info($scope.existingList);
+                        $.each($scope.existingList, function(k, v){
+                            if($scope.editIndex != v.Id
+                               && v.Object_Type__c.toLowerCase() == $scope.recordToProcess.Object_Type__c.toLowerCase()
+                               && ((v.Control_Type__c == 'Picklist' && v.Field_Type__c.toLowerCase() == $scope.recordToProcess.Field_Type__c.toLowerCase()) && v.Control_Type__c.toLowerCase() == $scope.recordToProcess.Control_Type__c.toLowerCase())
+                               && v.Default_Value__c.toLowerCase() == $scope.recordToProcess.Default_Value__c.toLowerCase()){
+                                isDuplicate = true;
+                                return false;
+                            }else if($scope.editIndex == v.Id
+                               && v.Object_Type__c.toLowerCase() == $scope.recordToProcess.Object_Type__c.toLowerCase()
+                               && ((v.Control_Type__c == 'Picklist' && v.Field_Type__c.toLowerCase() == $scope.recordToProcess.Field_Type__c.toLowerCase()) || v.Control_Type__c.toLowerCase() == $scope.recordToProcess.Control_Type__c.toLowerCase())
+                               && v.Default_Value__c.toLowerCase() == $scope.recordToProcess.Default_Value__c.toLowerCase()
+                               && ((v.English_Translation__c != null && v.English_Translation__c.toLowerCase() == $scope.recordToProcess.English_Translation__c.toLowerCase())
+                                  && (v.Chinese_Translation__c != null && v.Chinese_Translation__c.toLowerCase() == $scope.recordToProcess.Chinese_Translation__c.toLowerCase()))){ //Updated by Vikram Singh under CR-11147
+                                $scope.isUnChanged = true;
+                                return false;
+                            }
+                        });
+                        $log.info('validation Check');
+                        if($scope.isUnChanged){
+                            $scope.resetForm();
+                            return false;
+                        }
+
+                        if($scope.recordToProcess.Object_Type__c == null || $scope.recordToProcess.Object_Type__c.length == 0 || $scope.recordToProcess.Object_Type__c == '--None--')
+                        {
+                            $scope.popupAlert('Please select Object Name');
+                            $scope.isObjectNameEmpty = true;
+                            return false;
+                        }
+                        if($scope.recordToProcess.Control_Type__c == null || $scope.recordToProcess.Control_Type__c.length == 0 || $scope.recordToProcess.Control_Type__c == '--None--')
+                        {
+                            $scope.popupAlert('Please select Control Type');
+                            $scope.isControlTypeEmpty = true;
+                            return false;
+                        }else if($scope.rootObj.selectedControlType.Value__c == 'Picklist' && ($scope.recordToProcess.Field_Type__c == null || $scope.recordToProcess.Field_Type__c.length == 0 || $scope.recordToProcess.Field_Type__c == '--None--'))
+                        {
+                            $scope.popupAlert('Please select Field Type');
+                            $scope.isFieldTypeEmpty = true;
+                            return false;
+                        }else if($scope.recordToProcess.Default_Value__c == null || $scope.recordToProcess.Default_Value__c.length == 0)
+                        {
+                            $scope.popupAlert('Please provide Default Value');
+                            $scope.isDefaultValEmpty = true;
+                            return false;
+                        }
+                        else if(isDuplicate)
+                        {
+                            $scope.popupAlert('This Record is already exists.');
+                            $scope.isDuplicateRecord = true;
+                            return false;
+                        }
+                        return true;
+                    }
+
+                    $scope.loadRecordsByLanguage = function()
+                    {
+                        if($scope.existingList != null)
+                        {
+                            $.each($scope.existingList, function(k, v){
+                                v.localValue = v[$scope.rootObj.selectedLanguage.Value__c];
+                            });
+                            return false;
+                        }
+                        onActionClick();
+                        CNT_CDA_CrosswalkDataUploadPage.getCDAMultilingualCrossWalkData($scope.rootObj.selectedLanguage.MasterLabel, function(result, event)
+                        {
+                            if(event.type == 'exception')
+                            {
+                                onActionComplete();
+                                return false;
+                            }
+                            else
+                            {
+                                onActionComplete();
+                                $scope.existingList = result;
+                                $.each($scope.existingList, function(k, v){
+                                    v.localValue = v[$scope.rootObj.selectedLanguage.Value__c];
+                                });
+                                $scope.resetForm();
+                            }
+                            $scope.applyChanges();
+                            tableFixHeaderSet();
+                        });
+                    }
+
+                    $scope.resetErrors = function()
+                    {
+                        $scope.isObjectNameEmpty = false;
+                        $scope.isControlTypeEmpty = false;
+                        $scope.isFieldTypeEmpty = false;
+                        $scope.isDefaultValEmpty = false;
+                        $scope.isDuplicateRecord = false;
+                    }
+
+                    $scope.resetForm = function()
+                    {
+                        $scope.recordToProcess.Id = '';
+                        if($scope.actionButtonType != 'Save & Create New')
+                        {
+                            $scope.rootObj.selectedObjectType = $scope.rootObj.mlSettings[0];
+                            $scope.rootObj.selectedControlType = $scope.rootObj.mlSettings[0];
+                            $scope.rootObj.selectedFieldType = $scope.rootObj.mlSettings[0];
+                        }
+                        $scope.recordToProcess.Default_Value__c = '';
+                        $scope.recordToProcess.English_Translation__c = '';
+                        $scope.recordToProcess.Chinese_Translation__c = ''; //Updated by Vikram Singh under CR-11147
+                        $scope.recordToProcess.Rank__c = '';
+                        $scope.isNew = true;
+                        $scope.editIndex = -1;
+                        $scope.actionButtonType = '';
+                        $scope.resetErrors();
+                    }
+
+                    $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true},
+                        function(r)
+                        {
+                            if(r && truePart != null)
+                                truePart();
+                        });
+                    }
+
+                    $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                    {
+                        if(isYesNo)
+                            popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                                haltScreen = false;
+                                $scope.applyChanges();
+                            });
+                        else
+                            popup(msg, {'confirm':true, 'animate':true}, function(r)
+                            {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                                haltScreen = false;
+                                $scope.applyChanges();
+                            });
+                    }
+
+                    $scope.applyChanges = function()
+                    {
+                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                            $scope.$apply();
+                    }
+
+                    $scope.sortOrderChange = function(columnToSort, sortOrder)
+                    {
+                        if(columnToSort == $scope.columnSortBy)
+                        {
+                            if('asc' + sortOrder == $scope.sortOrder)
+                                $scope.sortOrder = 'desc' + sortOrder;
+                            else
+                                $scope.sortOrder = 'asc' + sortOrder;
+                            $scope.isDescending = !$scope.isDescending;
+                        }
+                        else
+                        {
+                            $scope.columnSortBy = columnToSort;
+                            $scope.sortOrder = ($scope.sortOrder.indexOf('desc') != -1 ? 'desc' : 'asc') + sortOrder;
+                        }
+                    }
+
+                    $scope.sortOrderChangeHeaderClick = function(columnToSort, sortOrder, sortOrderChange)
+                    {
+                        if(columnToSort != null)
+                            $scope.sortOrderChange(columnToSort, sortOrder);
+                        else if(sortOrderChange == 'true')
+                        {
+                            $scope.sortOrder = $scope.sortOrder.indexOf('desc') != -1 ? $scope.sortOrder.replace('desc', 'asc') : $scope.sortOrder.replace('asc', 'desc');
+                        }
+                        else if(sortOrderChange == 'false')
+                        {
+                            $scope.sortOrder = ($scope.sortOrder.indexOf('desc') != -1 ? 'desc' : 'asc') + $("#ddSortData option:selected").text().replace(/ /g,'');
+                        }
+
+                        $scope.applyChanges();
+                    }
+                    $scope.applyChanges();
+                }]);
+
+                myapp.directive('numbersOnly', function()
+                {
+                    return {
+                        require: 'ngModel',
+                        link: function(scope, element, attrs, modelCtrl)
+                        {
+                            modelCtrl.$parsers.push(function (inputValue)
+                            {
+                                // this next if is necessary for when using ng-required on your input.
+                                // In such cases, when a letter is typed first, this parser will be called
+                                // again, and the 2nd time, the value will be undefined
+                                if (inputValue == undefined) return '';
+                                var transformedInput = inputValue.replace(/[^0-9]/g, '');
+                                if (transformedInput != inputValue)
+                                {
+                                    modelCtrl.$setViewValue(transformedInput);
+                                    modelCtrl.$render();
+                                }
+                                return transformedInput;
+                            });
+                        }
+                    };
+                });
+
+                myapp.filter('highlight', function($sce) {
+                    return function(text, phrase, arg1, arg2) {
+                      if (phrase && phrase.length > 1 && text != null && (arg2 == 'Default' || arg1 == arg2)) text = text.replace(new RegExp('('+phrase+')', 'gi'),
+                        '<span class="highlighted">$1</span>')
+                        return $sce.trustAsHtml(text)
+                    }
+                });
+
+                myapp.filter('unsafe', function($sce) { return $sce.trustAsHtml; });
+
+                //*** Wait Panel Start ***//
+                // Create a namespace for our custom functions
+                YAHOO.namespace("force.com");
+
+                /**
+                 * Builds the wait panel.
+                 */
+                YAHOO.force.com.buildWaitPanel = function()
+                {
+                    document.body.className = document.body.className + " yui-skin-sam";
+                    YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                    "waitPanel",  // The id of our dialog container
+                    {
+                        width           :   "300px", // You can play with this until it is right
+                        visible         :   false,   // Should be invisible when rendered
+                        draggable       :   false,   // Make the dialog draggable
+                        close           :   false,   // Do not include a close title button
+                        modal           :   true,    // Make it modal
+                        fixedCenter     :   true,    // Keep centered if window is scrolled
+                        zindex          :   40,      // Make sure it is on top of everything
+                        constraintoviewport: true,
+
+                        // This line adds the appear/disapper fade effect
+                        effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                    });
+
+                    // header
+                    YAHOO.force.com.waitPanel.setHeader("Please wait...");// text updated by sumita  dabas issue 5222 27 august 2014
+                    // set image
+                    YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+                    // Render the dialog to the document.body level of the DOM
+                    YAHOO.force.com.waitPanel.render(document.body);
+                }
+
+                /**
+                * Callback when the action button is clicked
+                */
+                function onActionClick()
+                {
+                    // show the modal panel
+                    if(YAHOO.force.com.waitPanel != null)
+                        YAHOO.force.com.waitPanel.show();
+                    // return false to allow the action to proceed
+                    return false;
+                }
+
+                /**
+                 * Callback when the action is completed
+                 */
+                function onActionComplete()
+                {
+                    // hide the modal panel
+                    if(YAHOO.force.com.waitPanel != null)
+                        YAHOO.force.com.waitPanel.hide();
+                    window.scrollTo(0,0);
+                }
+
+                YAHOO.force.com.onDOMReady = function()
+                {
+                    // add our custom skin css to the body tag
+                    document.body.className = document.body.className + " yui-skin-sam";
+
+                    // build the wait panel
+                    YAHOO.force.com.buildWaitPanel();
+                }
+
+                // build the tree as soon as the DOM is in a usable state
+                YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);
+                //*** Wait Panel End ***//
+
+            </script>
+            <script type="text/javascript">
+                $(function()
+                {
+                   $("#settingButton").css({
+                        opacity: 0.3
+                    });
+
+                    $(".cdaMenuButton").click(function(){
+                        $clicked = $(this);
+
+                        // if the button is not already "transformed" AND is not animated
+                        if ($clicked.css("opacity") != "1" && $clicked.is(":not(animated)")) {
+
+                            $clicked.animate({
+                                opacity: 1,
+                                borderWidth: 5
+                            }, 600 );
+
+                            // each button div MUST have a "xx-button" and the target div must have an id "xx"
+                            var idToLoad = $clicked.attr("id").split('-');
+
+                            //we search trough the content for the visible div and we fade it out
+                            $("#content").find("#"+idToLoad[0]).siblings().fadeOut("fast", function(){
+                                //once the fade out is completed, we start to fade in the right div
+                                $(this).parent().find("#"+idToLoad[0]).fadeIn();
+                            })
+                        }
+
+                        //we reset the other buttons to default style
+                        $clicked.siblings(".cdaMenuButton").animate({
+                            opacity: 0.5,
+                            borderWidth: 1
+                        }, 600 );
+                    });
+                });
+
+                function makeSettingFieldEditable(objId)
+                {
+                    $('#'+objId+'Edit').css('display','none');
+                    $('#'+objId+'Update').css('display','');
+                    $('#'+objId+'Cancel').css('display','');
+                    $('.'+objId).prop('disabled', false);
+                }
+
+                function cancelEditAction(objId)
+                {
+                    $('#'+objId+'Edit').css('display','');
+                    $('#'+objId+'Update').css('display','none');
+                    $('#'+objId+'Cancel').css('display','none');
+                    $('.'+objId).prop('disabled', true);
+                }
+            </script>
+    	</head>
+    	<body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-repeat: top left;">
+            <!-- REQUIRED SLDS WRAPPER -->
+            <div class="slds-scope">
+                <!-- Heading -->
+                <!-- <div class="slds-text-heading_large">CDA Crosswalk Data Editor</div> -->
+                <!-- / Heading -->
+                <!-- PAGE HEADER -->
+                <div class="slds-page-header" role="banner" style="margin: 12px 12px; border-radius: 4px;">
+                    <div class="slds-grid">
+                        <div class="slds-col slds-has-flexi-truncate">
+                            <div class="slds-media slds-no-space slds-grow">
+                                <span class="slds-icon_container slds-icon-custom-custom62 slds-media__figure" title="CDA Crosswalk Data Editor">
+                                    <svg aria-hidden="true" class="slds-icon">
+                                        <use xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/custom-sprite/svg/symbols.svg#custom62')}"></use>
+                                    </svg>
+                                    <!-- <lightning:icon aura:id="searchSectionIcon" class="slds-section__title-action-icon slds-button__icon slds-button__icon_left" iconName="utility:switch" size="x-small" alternativeText="Open Search Section"/> -->
+                                    <span class="slds-assistive-text">Upload Multilingual Data</span>
+                                </span>
+                                <!-- HEADING AREA -->
+                                <div class="slds-media__body">
+                                    <p class="slds-breadcrumb__item slds-line-height_reset">Upload Multilingual Data</p>
+                                    <h1 class="slds-page-header__title slds-truncate" title="CDA Crosswalk Data Editor">CDA Crosswalk Data Editor</h1>
+                                </div>
+                                <!-- / HEADING AREA -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- / PAGE HEADER -->
+                <!-- Content -->
+        		<apex:form style="margin: 0px 12px;">
+                	<div id="content">
+                    	<div id="editor1">
+                        	<div id="ng-app" ng-app="CdaEditor">
+                            	<div id="controllerPage" ng-controller="controllerPage">
+                                	<apex:pageBlock >
+                                    	<apex:pageBlockSection columns="1" title="Existing Records" collapsible="false" >
+                                        	<apex:pageBlockSectionItem >
+                                            	<apex:outputLabel value="Language" />
+                                            	<apex:outputPanel >
+                                                	<select id="ddLanguage" class="select-auto-width" ng-model="rootObj.selectedLanguage" ng-change="loadRecordsByLanguage()" ng-options="v.MasterLabel for v in rootObj.mlSettings | filter:filterDropdowns('Language')">
+                                                	</select>
+                                                </apex:outputPanel>
+                                            </apex:pageBlockSectionItem>
+                                            <div ng-show="rootObj.selectedLanguage.Value__c != '--None--'">
+                                                <!-- <label>Total Records: {{existingList.length}} || </label>-->
+
+                                                <!-- <apex:pageBlockSectionItem > -->
+                                                    <label ng-show="isSortingAllowed">
+                                                    Order By:&nbsp;
+                                                    <select id="ddSortData" ng-model="columnSortBy" ng-change="orderbyChange();" ng-options="v.split('~')[0] as v.split('~')[1] for v in columnsToSort"></select>
+                                                    <input ng-model="isDescending" ng-click="sortOrderChangeHeaderClick(null, null, 'true');" type="checkbox" />&nbsp;Desc
+                                                    </label>
+                                                <!-- </apex:pageBlockSectionItem> -->
+
+                                                <!-- <apex:pageBlockSectionItem > -->
+                                                    <label>Search:&nbsp;
+                                                        <select id="ddSearchBy" ng-model="columnSearchBy" ng-change="searchByText();" ng-options="v.split('~')[0] as v.split('~')[1] for v in columnsToSearch"></select>
+                                                    </label>
+                                                    <input placeholder="Enter Atleast Two Characters To Search..." ng-change="searchByText();" ng-model="searchTxt" type="text" />
+                                                <!-- </apex:pageBlockSectionItem> -->
+                                                <div ng-show="existingList.length == 0">
+                                                    <center><hr /><label style="color:#c00;">-------------------- No Such Records Found. Please Edit Your Filter Criteria. --------------------</label></center>
+                                                </div>
+
+                                            	<div class="editorPageData" ng-show="existingList.length > 0">
+                                                	<div class="tableWrapper">
+                                                    	<table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table--header-fixed">
+                                                        	<thead>
+                                                        		<tr class="slds-text-heading_label">
+                                                                    <th scope="col"><span>#</span></th>
+                                                                    <th scope="col" ng-click="sortOrderChangeHeaderClick('Object_Label__c', 'ObjectName');"><span>Object Name<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascObjectName'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descObjectName'"></span></span><span ng-show="(columnSearchBy == ('Object_Label__c') || columnSearchBy == 'Default') && searchTxt.length > 1"  ng-bind-html="filterImage | unsafe"></span></th>
+                                                                    <th scope="col" ng-click="sortOrderChangeHeaderClick('Control_Type__c', 'ControlType');"><span>Control Type<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascControlType'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descControlType'"></span></span><span ng-show="(columnSearchBy == ('Control_Type__c') || columnSearchBy == 'Default') && searchTxt.length > 1" ng-bind-html="filterImage | unsafe"></span></th>
+                                                                    <th scope="col" ng-click="sortOrderChangeHeaderClick('Field_Label__c', 'FieldLabel');"><span>Field Name<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascFieldLabel'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descFieldLabel'"></span></span><span ng-show="(columnSearchBy == ('Field_Label__c') || columnSearchBy == 'Default') && searchTxt.length > 1" ng-bind-html="filterImage | unsafe"></span></th>
+                                                                    <th scope="col"><span>Default Value</span></th>
+                                                                    <th scope="col"><span>Local Value({{rootObj.selectedLanguage.MasterLabel}})</span></th>
+                                                                    <th scope="col">Action</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr class="dataRow" ng-repeat="(k,v) in filteredExistingList = (existingList | filter: filterRecordsByPageType) | orderBy:columnSortBy:isDescending" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                                                    <th scope="row" class="dataCell">
+                                                                        {{$index + 1}}
+                                                                    </th>
+                                                                    <td class="dataCell" ng-class="{'sortingHighlighter':columnSortBy=='Object_Label__c','':columnSortBy!='Object_Label__c'}">
+                                                                        <div ng-bind-html="v['Object_Label__c'] | highlight:searchTxt:'Object_Label__c':columnSearchBy"></div>
+                                                                    </td>
+                                                                    <td class="dataCell" ng-class="{'sortingHighlighter':columnSortBy=='Control_Type__c','':columnSortBy!='Control_Type__c'}">
+                                                                        <div ng-bind-html="v['Control_Type__c'] | highlight:searchTxt:'Control_Type__c':columnSearchBy"></div>
+                                                                    </td>
+                                                                    <td class="dataCell" ng-class="{'sortingHighlighter':columnSortBy=='Field_Label__c','':columnSortBy!='Field_Label__c'}">
+                                                                        <!--<div ng-bind-html="v['Field_Label__c'] | highlight:searchTxt:'Field_Label__c':columnSearchBy"></div>-->
+                                                                        {{v.Field_Label__c}}
+                                                                    </td>
+                                                                    <td class="dataCell" ng-class="{'sortingHighlighter':columnSortBy=='Default_Value__c','':columnSortBy!='Default_Value__c'}">
+                                                                        <!--<div ng-bind-html="v['Default_Value__c'] | highlight:searchTxt:'Default_Value__c':columnSearchBy"></div>-->
+                                                                        {{v.Default_Value__c}}
+                                                                    </td>
+                                                                    <td class="dataCell">
+                                                                        {{v.localValue}}
+                                                                    </td>
+                                                                    <td><a href="javascript:void(0)" ng-click="editRecord(v, v.Id);">Edit</a></td>
+                                                                </tr>
+                                                            </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:pageBlockSection>
+                                    <apex:pageBlockSection html-ng-show="rootObj.selectedLanguage.Value__c != '--None--'" columns="1" title="Edit Record" collapsible="false" >
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Object Type" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                        <select id="ddObject" ng-model="rootObj.selectedObjectType" ng-change="rootObj.selectedControlType = rootObj.mlSettings[0];" ng-options="v.MasterLabel for v in rootObj.mlSettings | filter:filterDropdowns('Object')" ng-class="{'errStyle':isObjectNameEmpty,'':!isObjectNameEmpty}">
+                                                        </select>
+                                                    </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Control Type" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                        <select id="ddControlType" ng-model="rootObj.selectedControlType" ng-change="rootObj.selectedFieldType = rootObj.mlSettings[0];" ng-options="v.Value__c for v in rootObj.mlSettings | filter:filterDropdowns('Control')" ng-class="{'errStyle':isControlTypeEmpty,'':!isControlTypeEmpty}">
+                                                        </select>
+                                                    </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                          <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Field Type" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                        <select id="ddFieldType" ng-model="rootObj.selectedFieldType" ng-options="v.MasterLabel for v in rootObj.mlSettings | filter:filterDropdowns('Field Type')" ng-class="{'errStyle':isFieldTypeEmpty,'':!isFieldTypeEmpty}" >
+                                                        </select>
+                                                    </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Record Order to Display" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <input numbers-Only="numbers-Only" type="text" ng-model="recordToProcess.Rank__c" />
+                                                </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Default Value" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                    <textarea class="txtAreaLangInput" ng-model="recordToProcess.Default_Value__c" ng-class="{'errStyle':isDefaultValEmpty,'':!isDefaultValEmpty}" ></textarea>
+                                                </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="English Translation" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <textarea class="txtAreaLangInput" ng-model="recordToProcess.English_Translation__c"></textarea>
+                                                </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="Chinese Translation" />
+                                            <apex:outputPanel >
+                                                <div class="requiredInput">
+                                                    <textarea class="txtAreaLangInput" ng-model="recordToProcess.Chinese_Translation__c"></textarea>    <!-- Updated by Vikram Singh under CR-11147 -->
+                                                </div>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem >
+                                            <apex:outputLabel value="" />
+                                            <apex:outputPanel >
+                                                <button type="button" class="mlBtn" ng-show="isNew" value="Create" ng-click="saveRecord('New', 'New');">Create</button>
+                                                <button type="button" class="mlBtn" ng-show="isNew" value="Save & Create New" ng-click="saveRecord('New', 'Save & Create New');">Save &amp; Create New</button>
+                                                <button type="button" class="mlBtn" ng-show="!isNew" value="Update" ng-click="saveRecord('Update', 'Update');">Update</button>
+                                                <button type="button" class="mlBtn" ng-show="!isNew" value="Cancel" ng-click="resetForm();">Cancel</button>
+                                            </apex:outputPanel>
+                                        </apex:pageBlockSectionItem>
+                                    </apex:pageBlockSection>
+                                </apex:pageBlock>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript">
+                    function tableFixHeaderSet() {
+                        var $table = $('table.demo');
+                        $table.floatThead({
+                            scrollContainer: function($table){
+                                return $table.closest('.tableWrapper');
+                            }
+                        });
+                    }
+                </script>
+            	</apex:form>
+                <!-- Content -->
+       		</div>
+       		<!-- / REQUIRED SLDS WRAPPER -->
+    	</body>
+	</html>
+</apex:page>

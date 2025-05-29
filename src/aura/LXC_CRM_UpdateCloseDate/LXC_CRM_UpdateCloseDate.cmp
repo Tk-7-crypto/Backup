@@ -1,0 +1,166 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes" access="global" controller="CNT_CRM_UpadateCloseDate">  
+    <aura:attribute name="oppRecordName" type="String" />
+    <aura:attribute name="oliList" type="OpportunityLineItem[]" />
+    <aura:attribute name="oliSchedulefieldList" type="List" default="Id,OpportunityLineItemId,Type,Revenue,Quantity,Description,ScheduleDate,CurrencyIsoCode"/>
+    <aura:attribute name="olifields" type="List" default="Id,Opportunity.CurrencyISOCode,Opportunity.Name,Opportunity.CloseDate,Gross_Q1_Value__c,Gross_Q2_Value__c,Gross_Q3_Value__c,Gross_Q4_Value__c,Gross_Q1_NY_Value__c,Gross_Q2_NY_Value__c,Gross_Q3_NY_Value__c,Gross_Q4_NY_Value__c,Opportunity.Gross_Q1_Value__c,Opportunity.Gross_Q2_Value__c,Opportunity.Gross_Q3_Value__c,Opportunity.Gross_Q4_Value__c,Opportunity.Gross_Q1_NY_Value__c,Opportunity.Gross_Q2_NY_Value__c,Opportunity.Gross_Q3_NY_Value__c,Opportunity.Gross_Q4_NY_Value__c"/>
+    <aura:attribute name="modifiedCloseDate" type="Date" />
+    <aura:attribute name="oppRecordCloseDate" type="Date" />
+    <aura:attribute name="oppRecordCurrencyISOCode" type="String" />
+    <aura:attribute name="opportunityLineItem" type="OpportunityLineItem" />
+    <aura:attribute name="tempOpportunityLineItem" type="OpportunityLineItem" />
+    <aura:attribute name="isShowconfirmationMsg" type="Boolean" default="false"/>
+    <aura:attribute name="confirmationMsg" type="String[]" />
+    <aura:attribute name="options" type="List" default="[{'label': 'Update Expected Close Date only', 'value': 'option1'},{'label': 'Update revenue schedule dates (move all revenue schedules forward/back by same number of days as Expected Close Date)', 'value': 'option2'}]"/>
+    <aura:attribute name="isUpdateSchedule" type="String" default="option2"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <c:LXC_CRM_Spinner />
+    <div class="slds-page-header">
+        <div class="slds-media">
+            <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon-standard-opportunity" title="Opportunity Split">
+                    <lightning:icon iconName="standard:opportunity" variant="error" alternativeText="Opportunity Split Icon"/>
+                </span>
+            </div>
+            <div class="slds-media__body">
+                <p class="slds-text-body_small slds-line-height_reset">Modify Close Date and Schedules</p>
+                <h1 class="slds-page-header__title slds-truncate slds-align-middle" title="{!v.oppRecordName}"><a href="javascript:void(0);" onclick="{!c.onCancel}">{!v.oppRecordName}</a></h1>
+            </div>
+        </div>
+    </div>
+    
+    <article class="slds-card" style="margin-top:12px;">
+        <aura:if isTrue="{!v.isShowconfirmationMsg}">
+        	<ui:message title="Information" severity="info" >
+          		<aura:iteration items="{!v.confirmationMsg}" var="str">
+   					<ul class="slds-list--dotted"><li>{!str}</li></ul>
+                </aura:iteration>
+        	</ui:message>
+    	</aura:if>
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__body">
+                    <h2>
+                        <span class="slds-text-heading_small">Options</span>
+                    </h2>
+                </div>
+            </header>
+        </div>
+        <div class="slds-m-around_small slds-p-top_small slds-p-bottom_small whiteColor">
+            <lightning:radioGroup aura:id="mygroup" name="radioButtonGroup" options="{!v.options}" value="{!v.isUpdateSchedule}" onchange="{!c.handleChange}" />
+        </div>
+    </article>
+    <article class="slds-card" style="overflow: scroll;">
+        <div class="slds-m-around_small slds-p-top_small slds-p-bottom_small whiteColor" >
+            <div class="slds-grid slds-wrap slds-align_absolute-center">
+                <lightning:button label="Save" onclick="{!c.onSave}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+                <lightning:button label="Cancel" onclick="{!c.onCancel}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+            </div>
+            <div class="slds-clearfix">
+                <div class="slds-grid">
+                    <div class="slds-col slds-size_1-of-2 slds-align_absolute-center">
+                        <div class="slds-float_left">
+                            <div class="slds-card__header slds-grid">
+                                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                    <div class="slds-media__body">
+                                        <h2>
+                                            <span class="slds-text-heading_small">Current Opportunity details</span>
+                                        </h2>
+                                    </div>
+                                </header>
+                            </div>
+                            <div class="slds-form-element__label">Close Date </div>
+                            <ui:inputDate aura:id="CloseDate" class="inputDateUI" label="" displayDatePicker="true" value="{!v.oppRecordCloseDate}" change="{!c.updateCloseDate}" disabled="true"/>
+                            <aura:if isTrue="{! v.opportunityLineItem != null}">
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q1 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q1_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q2 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q2_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q3 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q3_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q4 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q4_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q1 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q1_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q2 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q2_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q3 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q3_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q4 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.opportunityLineItem.Opportunity.Gross_Q4_NY_Value__c}</div>
+                                </div>
+                            </aura:if>
+                        </div>
+                    </div>                
+                    <div class="slds-col slds-size_1-of-2 slds-align_absolute-center">
+                        <div class="slds-float_left">
+                            <div class="slds-card__header slds-grid">
+                                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                    <div class="slds-media__body">
+                                        <h2>
+                                            <span class="slds-text-heading_small"> Modified Opportunity details</span>
+                                        </h2>
+                                    </div>
+                                </header>
+                            </div>
+                            <div class="slds-form-element__label">Close Date </div>
+                            <ui:inputDate aura:id="CloseDate" label="" displayDatePicker="true" value="{!v.modifiedCloseDate}" change="{!c.updateCloseDate}" />
+                            <aura:if isTrue="{! v.opportunityLineItem != null}">
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q1 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q1_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q2 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q2_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q3 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q3_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q4 Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q4_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q1 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q1_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q2 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q2_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q3 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q3_NY_Value__c}</div>
+                                </div>
+                                <div Class="slds-form-element lightningInput">
+                                    <div Class="slds-form-element__label">Gross Q4 NY Value</div>
+                                    <div Class="form-element">{!v.oppRecordCurrencyISOCode}&nbsp;{!v.tempOpportunityLineItem.Opportunity.Gross_Q4_NY_Value__c}</div>
+                                </div>
+                            </aura:if>
+                        </div>
+                    </div>
+                </div>                                                                                                                                                                 
+            </div>
+            <div class="slds-grid slds-wrap slds-align_absolute-center">
+                <lightning:button label="Save" onclick="{!c.onSave}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+                <lightning:button label="Cancel" onclick="{!c.onCancel}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+            </div>
+        </div>
+    </article>
+</aura:component>

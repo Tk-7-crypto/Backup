@@ -1,0 +1,112 @@
+<template>
+    <template if:true={isLoading}>
+        <lightning-spinner alternative-text="Loading"></lightning-spinner>
+    </template>
+    <template if:false={isLoading}>
+        <template if:true={selectedProduct}>
+            <div class="slds-combobox_container slds-col slds-size_12-of-12">
+                <lightning-combobox label={labels.Filter_by_product} value={selectedProduct} options={productOptions}
+                    onchange={handleProductSelect}></lightning-combobox>
+            </div>
+            <div class="slds-combobox_container slds-col slds-size_12-of-12">
+                <lightning-combobox label={labels.Filter_by_chapter} value={selectedChapter} options={chapterOptions}
+                    onchange={handleChapterSelect}></lightning-combobox>
+            </div>
+            <div class="slds-input_container slds-col slds-size_12-of-12">
+                <lightning-input label={labels.Filter_by_title} value={titleFilter}
+                    onchange={handleTitleChange}></lightning-input>
+            </div>
+            <lightning-accordion allow-multiple-sections-open style="--slds-c-accordion-heading-font-size: 0.8rem;">
+                <lightning-accordion-section label={labels.More_filters}>
+                    <div class="slds-input_container">
+                        <lightning-input type="checkbox" label={labels.For_my_account}
+                            onchange={handleForThisAccFilterChange}></lightning-input>
+                        <lightning-input type="checkbox" label={labels.New_article}
+                            onchange={handleIsNewFilterChange}></lightning-input>
+                        <lightning-input type="checkbox" label={labels.Updated_article}
+                            onchange={handleIsUpdatedFilterChange}></lightning-input>
+                        <lightning-input type="checkbox" label={labels.Bookmarked_article}
+                            onchange={handleIsFavoriteFilterChange}></lightning-input>
+                    </div>
+                </lightning-accordion-section>
+            </lightning-accordion>
+
+            <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_top">
+                <template if:false={hasArticles}>
+                    <div class="slds-scoped-notification slds-media slds-media_center slds-scoped-notification_light"
+                        role="status">
+                        <div class="slds-media__figure">
+                            <lightning-icon icon-name="utility:info"></lightning-icon>
+                        </div>
+                        <div class="slds-media__body">
+                            <p>
+                                {labels.No_articles_found_for_this_product}.
+                                <lightning-button icon-name="utility:open_folder" size="small" variant="base"
+                                    label={labels.See_files} title={labels.See_files} onclick={navigateToFiles}
+                                    class="slds-m-horizontal_x-small"></lightning-button>?
+                            </p>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={hasArticles}>
+                    <ul class="slds-tree" data-id="knownledgeTree">
+                        <template for:each={filteredTreeItems} for:item="chapter">
+                            <li key={chapter.label} data-chapter={chapter.label} aria-level="1">
+                                <div class="slds-tree__item" data-chapter={chapter.label}
+                                    onclick={toggleChapterExpansion}>
+                                    <template if:true={chapter.expanded}>
+                                        <lightning-icon icon-name="utility:chevrondown"
+                                            size="xx-small"></lightning-icon>
+                                    </template>
+                                    <template if:false={chapter.expanded}>
+                                        <lightning-icon icon-name="utility:chevronright"
+                                            size="xx-small"></lightning-icon>
+                                    </template>
+                                    <span class="slds-text-title_caps"><strong>{chapter.label}</strong></span>
+                                </div>
+                                <template if:true={chapter.expanded}>
+                                    <ul>
+                                        <template for:each={chapter.items} for:item="article">
+                                            <li key={article.id} aria-level="2" aria-selected={article.selected}
+                                                role="treeitem">
+                                                <div class="slds-tree__item">
+                                                    <span onclick={handleTreeSelect}
+                                                        data-article-url-name={article.urlName}
+                                                        data-article-chapter={chapter.label}>
+                                                        {article.label}
+                                                        <template if:true={article.isUpdated}>
+                                                            <lightning-badge label="Updated"
+                                                                class="slds-theme_warning badge slds-m-left_x-small">
+                                                            </lightning-badge>
+                                                        </template>
+                                                        <template if:true={article.isNew}>
+                                                            <lightning-badge label="New"
+                                                                class="slds-theme_success badge slds-m-left_x-small">
+                                                            </lightning-badge>
+                                                        </template>
+                                                        <template if:true={article.isFavorite}>
+                                                            <lightning-icon icon-name="utility:favorite"
+                                                                class="slds-m-left_x-small" size="x-small"
+                                                                alternative-text="Favorite"
+                                                                title="Bookmarked Article"></lightning-icon>
+                                                        </template>
+                                                        <template if:true={article.forThisAcc}>
+                                                            <lightning-icon icon-name="utility:groups"
+                                                                class="slds-m-left_x-small" size="x-small"
+                                                                alternative-text="For your account"
+                                                                title="For your account"></lightning-icon>
+                                                        </template>
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+            </div>
+        </template>
+    </template>
+</template>

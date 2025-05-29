@@ -1,0 +1,250 @@
+<template>
+    <lightning-card title="Knowledge" icon-name="standard:knowledge">
+        <template if:true={showSpinner}>
+            <div class="slds-m-around_medium">
+                <lightning-spinner alternative-text="Loading" size="large"></lightning-spinner>
+            </div>
+        </template>
+        <template if:true={error}>
+            <template if:true={error.details}>
+                <template if:true={error.details.body}>
+                    {error.details.body.message}
+                </template>
+            </template>
+        </template>
+        <div class="slds-p-horizontal_small">
+            <lightning-tabset>
+                <lightning-tab label="Search" value="search">
+                    <div class="slds-combobox_container slds-combobox-addon_end" style="min-width: max-content;"
+                        onkeyup={handleKeyUp}>
+                        <lightning-input name="enter-search" variant="label-hidden" type="search" placeholder="search"
+                            class="slds-m-bottom_medium"></lightning-input>
+                    </div>
+                    <hr class="slds-m-bottom_medium slds-m-top_none" />
+                    <template if:true={suggestedArticle}>
+                        <p class="slds-m-bottom_medium">Suggested Articles</p>
+                        <template if:false={hasSuggestedArticle}>
+                            <div if:false={showSpinner}
+                                class="slds-p-vertical_xx-large slds-m-top_large slds-align_absolute-center slds-grid_vertical slds-text-align_center slds-text-color_weak">
+                                <figure class="slds-p-bottom_xx-large">
+                                    <img src="/img/search/no-results.png" class="slds-size_small" alt="">
+                                </figure>
+                                <div class="slds-text-heading_medium slds-p-bottom_large">No suggestions regarding the
+                                    Case Subject</div>
+                            </div>
+                        </template>
+                        <p if:true={hasSuggestedArticle}
+                            class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium">
+                            {nbSuggestedArticle}<span if:true={canLoadMoreSuggestions}>+</span> Result(s) </p>
+                        <div class="slds-scrollable_y" style="max-height: 40rem;">
+                            <ul class="slds-has-dividers_bottom">
+                                <template for:each={suggestedArticleList} for:item="article">
+                                    <li class="slds-p-vertical_small slds-item" key={article.Id}>
+                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                            <div class="slds-truncate">
+                                                <lightning-formatted-rich-text value={article.Title}
+                                                    data-value={article.Id} onclick={navigateToArticle}
+                                                    class="slds-p-left_none slds-p-bottom_none slds-p-right_none slds-truncate slds-text-link"
+                                                    style="cursor: pointer;"></lightning-formatted-rich-text>
+                                                <ul class="slds-list_horizontal slds-wrap slds-has-dividers_right">
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.ProductName__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType1__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType2__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType3__c}
+                                                    </li>
+                                                    <li if:true={article.IsVisibleInCsp}
+                                                        class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Visible in CSH
+                                                    </li>
+                                                    <li if:false={article.IsVisibleInCsp}
+                                                        class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Not visible in CSH
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Last Published&nbsp;
+                                                        <lightning-formatted-date-time value={article.LastPublishedDate}
+                                                            year="numeric" month="numeric" day="numeric"
+                                                            time-zone={timezone}></lightning-formatted-date-time>
+                                                    </li>
+                                                </ul>
+                                                <lightning-formatted-rich-text value={article.Question__c}
+                                                    class="slds-p-left_none slds-p-bottom_none slds-p-right_none"></lightning-formatted-rich-text>
+                                            </div>
+                                            <p class="slds-m-top_x-small">
+                                                <lightning-button-group>
+                                                <lightning-button-icon value={article.KnowledgeArticleId}
+                                                    onclick={attachArticle} icon-name="utility:link"
+                                                    alternative-text="Attach" title="Attach"
+                                                    class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                <template if:true={isDraftEmail}>
+                                                    <lightning-button-icon value={article.KnowledgeArticleId} onclick={draftEmail} icon-name="utility:email" alternative-text="Draft GenAI Email" title="Draft GenAI Email" class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                </template>
+                                                </lightning-button-group>
+                                            </p>
+                                        </div>
+                                        <lightning-formatted-rich-text value={article.Content}
+                                            class="slds-p-left_none slds-p-bottom_none slds-p-right_none"></lightning-formatted-rich-text>
+                                    </li>
+                                </template>
+                            </ul>
+                            <div if:true={canLoadMoreSuggestions} class="slds-m-top_x-small slds-text-align_center">
+                                <a onclick={handleLoadMore}>Load more</a>
+                            </div>
+                        </div>
+                    </template>
+                    <template if:false={suggestedArticle}>
+                        <p class="slds-m-bottom_medium">Search Result&nbsp;
+                            <a href="javascript:void(0);" class="slds-m-left_medium" onclick={backToSuggestions}>(Back
+                                to Suggestions)</a>
+                        </p>
+                        <template if:true={queryToShort}>
+                            Your search term must have 2 or more characters.
+                        </template>
+                        <template if:false={queryToShort}>
+                            <template if:false={hasSearchArticle}>
+                                <div if:false={showSpinner}
+                                    class="slds-p-vertical_xx-large slds-m-top_large slds-align_absolute-center slds-grid_vertical slds-text-align_center slds-text-color_weak">
+                                    <figure class="slds-p-bottom_xx-large">
+                                        <img src="/img/search/no-results.png" class="slds-size_small" alt="">
+                                    </figure>
+                                    <div class="slds-text-heading_medium slds-p-bottom_large">No results for
+                                        '{queryTerm}' in Knowledge</div>
+                                </div>
+                            </template>
+                            <p if:true={hasSearchArticle}
+                                class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium">
+                                {nbSearchArticle}<span if:true={canLoadMoreSearchResults}>+</span> Result(s) </p>
+                        </template>
+                        <div class="slds-scrollable_y" style="max-height: 40rem;">
+                            <ul class="slds-has-dividers_bottom">
+                                <template for:each={searchArticleList} for:item="article">
+                                    <li class="slds-p-vertical_small slds-item" key={article.Id}>
+                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                            <div class="slds-truncate">
+                                                <lightning-formatted-rich-text value={article.Title}
+                                                    data-value={article.Id} onclick={navigateToArticle}
+                                                    class="slds-p-left_none slds-p-bottom_none slds-p-right_none slds-truncate slds-text-link"
+                                                    style="cursor: pointer;"></lightning-formatted-rich-text>
+                                                <ul class="slds-list_horizontal slds-wrap slds-has-dividers_right">
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.ProductName__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType1__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType2__c}
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        {article.SubType3__c}
+                                                    </li>
+                                                    <li if:true={article.IsVisibleInCsp}
+                                                        class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Visible in CSH
+                                                    </li>
+                                                    <li if:false={article.IsVisibleInCsp}
+                                                        class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Visible in CSH
+                                                    </li>
+                                                    <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                        Last Published&nbsp;
+                                                        <lightning-formatted-date-time value={article.LastPublishedDate}
+                                                            year="numeric" month="numeric" day="numeric"
+                                                            time-zone={timezone}></lightning-formatted-date-time>
+                                                    </li>
+                                                </ul>
+                                                <lightning-formatted-rich-text value={article.Question__c}
+                                                    class="slds-p-left_none slds-p-bottom_none slds-p-right_none"></lightning-formatted-rich-text>
+                                            </div>
+                                            <p class="slds-m-top_x-small">
+                                            <lightning-button-group>
+                                                <lightning-button-icon value={article.KnowledgeArticleId}
+                                                    onclick={attachArticle} icon-name="utility:link"
+                                                    alternative-text="Attach" title="Attach"
+                                                    class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                <template if:true={isDraftEmail}>
+                                                    <lightning-button-icon value={article.KnowledgeArticleId} onclick={draftEmail} icon-name="utility:email" alternative-text="Draft GenAI Email" title="Draft GenAI Email" class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                </template>
+                                                </lightning-button-group>
+                                            </p>
+                                        </div>
+                                        <lightning-formatted-rich-text value={article.Content}
+                                            class="slds-p-left_none slds-p-bottom_none slds-p-right_none"></lightning-formatted-rich-text>
+                                    </li>
+                                </template>
+                            </ul>
+                            <div if:true={canLoadMoreSearchResults} class="slds-m-top_x-small slds-text-align_center">
+                                <a onclick={handleLoadMore}>Load more</a>
+                            </div>
+                        </div>
+                    </template>
+                </lightning-tab>
+                <lightning-tab label="Attached" value="attached">
+                    <p if:false={hasCaseArticle}>No article attached yet</p>
+                    <p if:true={hasCaseArticle} class="slds-text-body_small slds-text-color_weak">{nbCaseArticle}
+                        Article(s) attached </p>
+                    <div class="slds-scrollable_y" style="max-height: 40rem;">
+                        <ul class="slds-has-dividers_bottom">
+                            <template for:each={caseArticleList} for:item="article">
+                                <li class="slds-p-vertical_small slds-item" key={article.Id}>
+                                    <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                        <div class="slds-truncate">
+                                            <a data-value={article.Id} onclick={navigateToArticle} title={article.Title}
+                                                class="slds-p-left_none slds-p-bottom_none slds-p-right_none slds-truncate">{article.Title}</a>
+                                            <ul class="slds-list_horizontal slds-wrap slds-has-dividers_right">
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    {article.ProductName__c}
+                                                </li>
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    {article.SubType1__c}
+                                                </li>
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    {article.SubType2__c}
+                                                </li>
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    {article.SubType3__c}
+                                                </li>
+                                                <li if:true={article.IsVisibleInCsp}
+                                                    class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    Visible in CSH
+                                                </li>
+                                                <li if:false={article.IsVisibleInCsp}
+                                                    class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    Visible in CSH
+                                                </li>
+                                                <li class="slds-item slds-text-body_small slds-text-color_weak">
+                                                    Last Published&nbsp;
+                                                    <lightning-formatted-date-time value={article.LastPublishedDate}
+                                                        year="numeric" month="numeric" day="numeric"
+                                                        time-zone={timezone}></lightning-formatted-date-time>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <p class="slds-m-top_x-small">
+                                         <lightning-button-group>
+                                            <lightning-button-icon value={article.KnowledgeArticleId}
+                                                onclick={detachArticle} icon-name="utility:remove_link"
+                                                alternative-text="Detach" title="Detach"
+                                                class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                <template if:true={isDraftEmail}>
+                                                    <lightning-button-icon value={article.KnowledgeArticleId} onclick={draftEmail} icon-name="utility:email" alternative-text="Draft GenAI Email" title="Draft GenAI Email" class="slds-text-link_reset slds-p-right_none"></lightning-button-icon>
+                                                </template>
+                                        </lightning-button-group>
+                                        </p>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </lightning-tab>
+            </lightning-tabset>
+        </div>
+    </lightning-card>
+</template>

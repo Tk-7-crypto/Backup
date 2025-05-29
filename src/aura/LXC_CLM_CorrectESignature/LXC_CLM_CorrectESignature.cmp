@@ -1,0 +1,67 @@
+<aura:component controller="CNT_CLM_DocuSignESignature" implements="force:appHostable,lightning:isUrlAddressable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    <aura:attribute name="inputValue" type="String" />   
+    <aura:attribute name="results" type="List" /> 
+    <aura:attribute name="openDropDown" type="Boolean" default="false" />
+    <aura:attribute name="selectedOption" type="String" />
+    <aura:attribute name="newRecipientId" type="String" />
+    <aura:attribute name="label" type="String"/>
+    <aura:attribute name="objectApiName" type="String" default="IQVIA_Agreement_Team__c"/>
+    <aura:attribute name="idFieldApiName" type="String" default="Id"/>
+    <aura:attribute name="valueFieldApiName" type="String" default="Name__c"/>
+    <aura:attribute name="extendedWhereClause" type="String" default=""/>
+    <aura:attribute name="maxRecords" type="Integer" default="10"/>
+    <aura:attribute name="sendAsUserEmail" type="String"/>
+    <aura:attribute name="recipientList" type="CNT_CLM_DocuSignESignature.DocuSignRecipientsWrapper[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <lightning:navigation aura:id="navigate" />
+    <lightning:card title="Correct eSignature Recipients" iconName="standard:record_signature_task" >
+        <aura:set attribute="actions" >
+            <lightning:button variant="Neutral" label="Cancel" onclick="{!c.goto0}"/>
+            <lightning:button variant="brand" label="Update and Send" onclick="{!c.updateEnvelope}"/>
+        </aura:set>
+    </lightning:card>
+    <lightning:card >
+        <lightning:layout>
+            <lightning:layoutItem padding="around-small" flexibility="auto">
+                <div class="page-section page-main">
+                    <div class="slds-grid slds-gutters margin0 slds-p-bottom_xx-small">
+                        <table class="slds-table slds-table_cell-buffer" width="100%">
+                            <tbody>
+                                <aura:iteration items="{!v.recipientList}" var="rcpt" indexVar="index">
+                                    <tr>
+                                        <td width="5%">
+                                            <div class="slds-col">
+                                                {!index+1}
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.name}" name="input2" label="Name" placeholder="Enter Name" disabled ="{!rcpt.disabled == 'true'}" required="true" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <td width="15%">
+                                            <div class="slds-col">
+                                                <lightning:input value="{!rcpt.userType}" name="input1" label="Type" placeholder="Enter User Type" disabled ="{!rcpt.disabled == 'true'}" style="font-weight: bold;"/>
+                                            
+                                            </div>
+                                        </td>
+                                        <td width="20%">
+                                            <div class="slds-col">
+                                                <lightning:input type="email" value="{!rcpt.email}" name="input3" label="Email" disabled ="{!rcpt.disabled == 'true'}" required="true" placeholder="Enter email address" style="font-weight: bold;"/>
+                                            </div>
+                                        </td>
+                                        <td width="5%" id="{!'tdSo'+(index+1)}" >
+                                            <div class="slds-col">
+                                                <lightning:input type= "number" value="{!rcpt.signingOrder}" name="{!'inputSigningOrder'+(index+1)}" label="Routing Order" required="true" disabled ="{!rcpt.disabled == 'true'}" style="width:60px; font-weight: bold;" pattern="[0-9]*"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </aura:iteration>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </lightning:layoutItem>
+        </lightning:layout>
+    </lightning:card>
+</aura:component>

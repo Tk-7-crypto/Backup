@@ -1,0 +1,99 @@
+<aura:component controller="CNT_CRM_RelationshipList"
+                implements="flexipage:availableForRecordHome,force:hasRecordId,force:appHostable,force:LightningQuickAction"
+                access="global">
+    
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="rowToRemove" type="AccountContactRelation"/>
+    <aura:attribute name="modalPromise" type="Aura.Action"/>
+    <aura:attribute name="noDataReturned" type="Boolean"/>
+    <aura:attribute name="initError" type="String"/>
+    <aura:attribute name="sortedBy" type="String"/>
+    <aura:attribute name="sortedDirection" type="String"/>
+    <aura:attribute name="defaultSortDirection" type="String"/>
+    <aura:attribute name="showSpinner" type="Boolean"/>
+    <aura:attribute name="columns" type="List" default="[]"/>
+    <aura:attribute name="data" type="List" default="[]"/>
+    <aura:attribute name="headerTitle" type="Aura.Component[]">
+        <b><h2>IQVIA Account Team - Inactive</h2></b>
+    </aura:attribute>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <aura:handler event="force:refreshView" action="{!c.init}"/>
+    <aura:handler event="force:showToast" action="{!c.handleEditEvent}" />
+    
+    <lightning:overlayLibrary aura:id="overlayLib" />
+
+    <aura:if isTrue="{!v.showSpinner}">
+    	<lightning:spinner aura:id="cmpSpinner" variant="brand" size="medium"/>
+    </aura:if>
+    <aura:if isTrue="{!$Browser.formFactor == 'DESKTOP'}">
+        <lightning:card title="{!v.headerTitle}" iconName="standard:group_loading" class="slds-card slds-card_boundary">
+            <lightning:datatable columns="{!v.columns}" 
+                                 data="{!v.data}" 
+                                 keyField="Id"
+                                 hideCheckboxColumn="true"
+                                 showRowNumberColumn="false"
+                                 onrowaction="{!c.handleRowAction}"
+                                 sortedBy="{!v.sortedBy}"
+                                 sortedDirection="{!v.sortedDirection}"
+                                 defaultSortDirection="{!v.defaultSortDirection}"
+                                 onsort="{!c.updateColumnSorting}"/>
+            <aura:If isTrue="{!v.noDataReturned}">
+                <br/>
+                <b><p align="center">No data to display.</p></b>
+            </aura:If>
+        </lightning:card>
+    </aura:if>
+    <aura:if isTrue="{!$Browser.formFactor == 'PHONE'}">
+        <div>
+            <ul class="slds-has-dividers_bottom-space slds-theme_default">
+                <li class="slds-item slds-theme_default">
+                    <div align="center">
+                        <p>{!v.headerTitle}</p>
+                    </div>
+                </li>
+                <aura:iteration items="{!v.data}" var="employee">
+                    <li class="slds-item" onclick="{!c.viewRelationshipMobile}" data-record="{!employee.Id}">
+                        <lightning:tile label="{!employee.ContactName}">
+                            <aura:set attribute="media">
+                                <lightning:icon iconName="standard:avatar_loading"/>
+                            </aura:set>
+                            <dl class="slds-list_horizontal slds-wrap">
+                                <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                    <p class="slds-truncate" title="Function">Function:</p>
+                                </dt>
+                                <dd class="slds-item_detail slds-truncate">
+                                    <p class="slds-truncate" title="{!employee.Function__c}">{!employee.Function__c}</p>
+                                </dd>
+                                <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                    <p class="slds-truncate" title="Focus">Focus:</p>
+                                </dt>
+                                <dd class="slds-item_detail slds-truncate">
+                                    <p class="slds-truncate" title="{!employee.Focus__c}">{!employee.Focus__c}</p>
+                                </dd>
+                                <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                    <p class="slds-truncate" title="User Country">User Country:</p>
+                                </dt>
+                                <dd class="slds-item_detail slds-truncate">
+                                    <p class="slds-truncate" title="{!employee.User_Country__c}">{!employee.User_Country__c}</p>
+                                </dd>
+                                <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                    <p class="slds-truncate" title="Geographic Responsibility">Geographic Responsibility:</p>
+                                </dt>
+                                <dd class="slds-item_detail slds-truncate">
+                                    <p class="slds-truncate" title="{!employee.Geographic_Responsibility__c}">{!employee.Geographic_Responsibility__c}</p>
+                                </dd>
+                                <dt class="slds-item_label slds-text-color_weak slds-truncate">
+                                    <p class="slds-truncate" title="Segment Responsibility">Segment Responsibility:</p>
+                                </dt>
+                                <dd class="slds-item_detail slds-truncate">
+                                    <p class="slds-truncate" title="{!employee.Responsibility__c}">{!employee.Responsibility__c}</p>
+                                </dd>
+                            </dl>
+                        </lightning:tile>
+                    </li>
+                </aura:iteration>
+            </ul>
+        </div>
+    </aura:if>
+</aura:component>

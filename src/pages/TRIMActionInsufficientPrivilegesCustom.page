@@ -1,0 +1,150 @@
+<apex:page controller="AddAccountTeamMemberController" id="ThePage" >
+    <script>   
+        function YUIShowLoading() {
+            document.getElementById('loading').className = 'loading-visible';
+        }
+        
+        function YUIHideLoading() {
+            document.getElementById('loading').className = 'loading-invisible';
+        }
+        function navigateToDetailPage(redirectToAccount, accId, redirectToContact, conId) {
+            if( (typeof sforce != 'undefined') && sforce && (!!sforce.one) ) {
+                if(redirectToAccount == true || redirectToAccount == 'true')
+                    sforce.one.navigateToSObject(accId);
+                else if(redirectToContact == true || redirectToContact == 'true')
+                    sforce.one.navigateToSObject(conId);
+            }
+            else {
+               if(redirectToAccount == true || redirectToAccount == 'true')
+                   window.parent.location = "/" + accId;
+               else if(redirectToContact == true || redirectToContact == 'true')
+                   window.parent.location = "/" + conId;
+            } 
+        }
+    </script>
+    
+    <head>
+        <style>
+            div.loading-invisible {
+                display:none;
+            }
+            
+            div.loading-visible {
+                z-index: 1000; 
+                border: medium none; 
+                margin: 0px; 
+                padding: 0px; 
+                width: 100%; 
+                height: 100%; 
+                top: 0px; 
+                left: 0px; 
+                background-color: rgb(0, 0, 0); 
+                opacity: 0.6; 
+                filter: alpha(opacity = 60); /* for IE */
+                cursor: wait; 
+                position: fixed; 
+                display: block;
+            }
+        </style>
+    </head>
+    <apex:form id="Form" >
+        <div id="loading" class="loading-invisible">
+            <div style="z-index: 1001; position: fixed; padding: 15px; margin: 0px; width: 30%; top: 40%; left: 35%; text-align: center; color: rgb(255, 255, 255); border: medium none; background-color: rgb(0, 0, 0); cursor: wait; opacity: 0.5;">
+                <h1>&nbsp;Please Wait... &nbsp;</h1> 
+            </div>
+        </div>
+        <apex:outputField value="{!Con.Id}" rendered="false"/>
+        <apex:OutputField value="{Acc.Id}" rendered="false"/>
+        <apex:pageMessages id="ErrorMessages" />
+        <apex:sectionHeader title="Request Access to this Contact" rendered="{!ConFlag && VisibleFlag}"/>
+        <apex:sectionHeader title="Request Access to this Account" rendered="{!AccFlag && VisibleFlag}"/>
+        <!-- Starting Contact Share Details -->
+        <apex:pageblock title="Review Contact Details" id="PB" rendered="{!ConFlag && VisibleFlag}">   
+            <apex:pageBlockButtons location="bottom" >                
+                <apex:commandButton value="Cancel" action="{!cancel}" />
+                <input type="button" value="Confirm Share" class="btn" onclick="ShareRecord();" />
+            </apex:pageBlockButtons>
+            
+            <br/>
+            <table width="600" style="border: 1px solid #666666;">
+                <tr>
+                    <td>
+                        <apex:pageBlockSection title="Verify Contact Details" columns="1">
+                            <apex:facet name="header">
+                                <span style="color:Grey">Verify Contact Details</span>
+                            </apex:facet>  
+                            <apex:outputText ><b>You are requesting access to a Contact outside your normal territory. Please View Details and Verify if this is Correct Contact.</b></apex:outputText>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection title="Contact Details" columns="2">
+                            <apex:facet name="header">
+                                <span style="color:Grey">Contact Details</span>
+                            </apex:facet> 
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="First Name  :  "></apex:outputLabel>
+                                <apex:outputText >{!Con.FirstName} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Last Name  :  "></apex:outputLabel>
+                                <apex:outputText >{!Con.LastName} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Email  :  "></apex:outputLabel>
+                                <apex:outputText >{!Con.Email} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Account  :  "></apex:outputLabel>
+                                <apex:outputLink value="/{!Con.AccountId}" target="_blank"> {!Con.Account.Name} </apex:outputLink>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                    </td>
+                </tr>
+            </table>
+            
+        </apex:pageblock>
+        <!-- Ending Contact Share Details -->
+        <!--Starting Account Share Details -->
+        <apex:pageblock title="Review Account Details" id="PBACC" rendered="{!AccFlag && VisibleFlag}">   
+            <apex:pageBlockButtons location="bottom">                
+                <apex:commandButton value="Cancel" action="{!cancel}" />
+                <input type="button" value="Confirm Share" class="btn" onclick="ShareRecord();" /> 
+            </apex:pageBlockButtons>
+            <br/>
+            <table width="600" style="border: 1px solid #666666;">
+                <tr>
+                    <td>
+                        <apex:pageBlockSection title="Verify Account Details" columns="1">
+                            <apex:facet name="header">
+                                <span style="color:Grey">Verify Account Details</span>
+                            </apex:facet> 
+                            <apex:outputText ><b>You are requesting access to an account outside your normal territory. Please View Details and Verify if this is Correct Account.</b></apex:outputText>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection title="Account Details" columns="2">
+                            <apex:facet name="header">
+                                <span style="color:Grey">Account Details</span>
+                            </apex:facet> 
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Name  :  "></apex:outputLabel>
+                                <apex:outputText >{!Acc.Name} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Account Country  :  "></apex:outputLabel>
+                                <apex:outputText >{!Acc.AccountCountry__c} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="SAP ID  :  "></apex:outputLabel>
+                                <apex:outputText value="{!Acc.SAPID__c}" escape="False"> </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem > 
+                                <apex:outputLabel value="Account Owner  :  "></apex:outputLabel>
+                                <apex:outputText >{!Acc.Owner.Name} </apex:outputText>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                    </td>
+                </tr>
+            </table>
+        </apex:pageblock>
+        <!-- ENding Account Share Details -->
+        <apex:actionFunction name="ShareRecord" action="{!addATM}" reRender="Form,PB,PBACC"  status="waitStatus" timeout="180000" oncomplete="navigateToDetailPage('{!AccFlag}','{!Acc}','{!ConFlag}','{!Con}');"/> 
+        <apex:actionStatus id="waitStatus" onstart="YUIShowLoading();" onstop="YUIHideLoading();"  />
+    </apex:form>
+</apex:page>

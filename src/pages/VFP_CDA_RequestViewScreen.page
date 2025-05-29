@@ -1,0 +1,1619 @@
+<apex:page id="editPage" showHeader="false" standardController="CDA_Request__c" standardStylesheets="false" lightningStyleSheets="true" extensions="EXT_CDA_RequestViewController" action="{!redirectHistoricalDataLayout}" language="en_US" docType="html-5.0">    <!-- Updated by Vikram Singh under CR-11691 -->
+    <apex:includeLightning />
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <style type="text/css">
+                .helpText {
+                    width: 27em !important;
+                }
+                .negotiatorDetails .requiredBlock {
+                    display: none !important;
+                }
+                .myBtnDisabled {
+                    /*color : rgba(255, 0, 0, 0.62) !important;*/
+                    color: red !important;
+                }
+                .opQiLegalEntity a{
+                    pointer-events: none;
+                    text-decoration: none;
+                }
+                .slds-scope .slds-media__body{
+                    color: rgb(62, 62, 60) !important;
+                }
+                .slds-scope .slds-form-element__control{
+                    color: rgb(43, 40, 38) !important;
+                }
+                .readonly{
+                    position: fixed;
+                    display: none !important;
+                    width: 100%;
+                    height: 100%;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: rgba(0,0,0,0);
+                    z-index: 2;
+                }
+                .additionalContacts {
+                    table-layout: auto !important;
+                }
+            </style>
+            <script src="{!$Resource.CDAJQuery}" type="text/javascript"></script>   <!-- *** Jquery library reference *** -->
+            <script src="{!URLFOR($Resource.CDACustomPopup, 'popup.js')}" type="text/javascript"></script>  <!-- *** JQuery Custom Popup Library reference *** -->
+            <link href="{!URLFOR($Resource.CDACustomPopup, 'popup.css')}" rel="stylesheet"/>    <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <script>
+                // Added by Babita Dadarwal under CR-11659 Start
+                $( document ).ready(function() {
+                    if('{!$CurrentPage.parameters.status}' == 'Sent for Recipient Signature') {
+                        popupAlert('{!$Label.CDA_The_CDA_is_sent_for_Signature}', function () {
+                            // window.location = '/apex/VFP_CDA_RequestViewScreen?id={!$CurrentPage.parameters.id}';
+                            navigateToRequestViewScreen();
+                        });
+                    }
+                    //
+                    console.log('isLookupReportUser: '+{!isLookupReportUser}+', isCurrentUserARequestOwner: '+{!isCurrentUserARequestOwner}+', isNegotiator: '+{!isNegotiator});
+                    if('{!isLookupReportUser}' == 'true' || ('{!isNegotiator}' == 'false' && '{!isCurrentUserARequestOwner}' == 'false')) {
+                        $("#overlay").show();
+                    }
+                });
+                // Added by Babita Dadarwal under CR-11659 End
+
+                function setFocusOnLoad() {}    //Added by Vikram Singh under Item #190
+
+                //Navigation to Request Edit Page
+                navigateToRequestEditScreen = function() {
+                    var recordId = "{!$CurrentPage.parameters.id}";
+                    var componentAttributes = {"recordId" : recordId};
+                    var componentDef = "c:LXC_CDA_RequestEditScreen";
+                    if(SfdcApp && SfdcApp.projectOneNavigator) {
+                        SfdcApp.projectOneNavigator.fireContainerEvent("force:navigateToComponent", {componentDef : componentDef, componentAttributes : componentAttributes});
+                    }
+                }
+
+                //Navigation to Request View Page
+                navigateToRequestViewScreen = function() {
+                    sforce.one.navigateToURL('/apex/VFP_CDA_RequestViewScreen?id={!$CurrentPage.parameters.id}', true);
+                }
+
+                //Navigation to Custom Landing Page
+                navigateToLandingScreen = function() {
+                    var componentDef = "c:LXC_CDA_LandingPage";
+                    if(SfdcApp && SfdcApp.projectOneNavigator) {
+                        SfdcApp.projectOneNavigator.fireContainerEvent("force:navigateToComponent", {componentDef : componentDef});
+                    }
+                }
+
+                popupAlert = function (msg, truePart) {
+                    popup(msg, {
+                        'animate': true
+                    }, function (r) {
+                        if (r && truePart != null)
+                            truePart();
+                        }
+                    );
+                    $.each($(".aButtons button"), function(k, v) {
+                        $(v).attr( "class", "slds-button slds-button_outline-brand" );
+                    });
+                    window.scrollTo(0, 0);
+                }
+
+                popupConfirm = function (msg, truePart, falsePart, isYesNo) {
+                    if (isYesNo)
+                        popup(msg, {
+                            'verify': true,
+                            'animate': true
+                        }, function (r) {
+                            if (r)
+                                truePart();
+                            else
+                                falsePart();
+                            }
+                        );
+                    else
+                        popup(msg, {
+                            'confirm': true,
+                            'animate': true
+                        }, function (r) {
+                            if (r)
+                                truePart();
+                            else
+                                falsePart();
+                        }
+                    );
+                    $.each($(".aButtons button"), function(k, v) {
+                        $(v).attr( "class", "slds-button slds-button_outline-brand" );
+                    });
+                    window.scrollTo(0, 0);
+                }
+
+                // Added by Ajinkya Pande under Item #162 Start
+                var isTextAreaFocus = false;
+                popupPrompt = function (msg, truePart, falsePart) {
+                    isTextAreaFocus = true;
+                    popup(msg, {
+                        'input' : true,
+                        'animate': true
+                    }, function (r) {
+                        if(r) {
+                            truePart(r);
+                        } else {
+                            falsePart();
+                        }
+                        isTextAreaFocus = false;
+                    });
+                    $.each($(".aButtons button"), function(k, v) {
+                        $(v).attr( "class", "slds-button slds-button_outline-brand" );
+                    });
+                    window.scrollTo(0, 0);
+                }
+                // Added by Ajinkya Pande under Item #162 End
+
+                function uploadDocument(attachmentType) {
+                    // window.location = '/apex/VFP_CDA_CustomDocumentUploadPage?id=' + '{!CDA_Request__c.id}' + '&attachmentType=' + attachmentType;
+                    sforce.one.navigateToURL('/apex/VFP_CDA_CustomDocumentUploadPage?id={!$CurrentPage.parameters.id}' + '&attachmentType=' + attachmentType, true);
+                }
+
+                function submitPopup() {
+                    var successMessage = '{!$Label.CDA_The_CDA_request_has_been_received_and_the_Recipient_s_point_of_contact_will}';
+                    var successMessageForExternal = '{!$Label.The_CDA_request_was_submitted_and_sent_to_a_CDA_negotiator_for_review}';
+                    var successMessageForPdfSign = '{!$Label.The_CDA_has_been_submitted_and_sent_to_the_recipient_for_signature}';
+                    var successMessageForOGC = '{!$Label.CDA_The_CDA_request_has_been_sent_to_the_CDA_Negotiator_to_review_and_obtain_app}'; //Added by Ajinkya Pande under Item #35
+                    var successMessageForProcessBatch = '{!$Label.CDA_Your_CDA_request_has_been_submitted_for_processing_You_will_receive_an_emai}';  //Added by Vikram Singh under CR-11525
+
+                    if((!{!isUserHavingApttusLicense} || ({!isUserHavingApttusLicense} && !{!isNegotiator})) && '{!CDA_Request__c.CDA_Source__c}' != 'External') {  //Added by Vikram Singh under CR-11525
+                        successMessage = successMessageForProcessBatch;    //Added by Vikram Singh under CR-11525
+                    }else if('{!CDA_Request__c.Competitor_System_Access__c}' == 'Yes') { //Added by Ajinkya Pande under Item #35    //Updated by Vikram Singh under CR-11525
+                        successMessage = successMessageForOGC; //Added by Ajinkya Pande under Item #35
+                    } else if('{!CDA_Request__c.CDA_Source__c}' == 'External') { //Updated by Ajinkya Pande under Item #35
+                        successMessage = successMessageForExternal;
+                    } else if('{!CDA_Request__c.CDA_Source__c}' == 'IQVIA' && '{!CDA_Request__c.CDA_Format__c}' == 'PDF' && '{!CDA_Request__c.Competitor_System_Access__c}' != 'Yes') {  //Modified by Vikram Singh under CR-11577
+                        successMessage = successMessageForPdfSign;
+                    }
+
+                    popupAlert(successMessage, function() {
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    });
+                }
+
+                //Added by Vikram Singh under CR-11525 Start
+                function confirmSubmissionPopup() {
+                    popupConfirm('{!$Label.CDA_Are_you_sure_you_want_to_submit_the_request}', function() {
+                        showLoading();
+                        submitRequest();
+                    }, function() {});
+                    $.each($(".aButtons button"), function(k, v){
+                        if($(v).text() == 'Ok')
+                            $(v).html('Yes');
+                    });
+                }
+                //Added by Vikram Singh under CR-11525 End
+
+                function saveForLaterPopup() {
+                    popupAlert('{!$Label.CDA_The_CDA_request_has_been_saved_and_is_available_for_further_editing}', function() {
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    });
+                }
+
+                function sendForReviewPopup()  {
+                    popupAlert('{!$Label.CDA_CDA_was_send_to_the_recipient_for_review}', function() {
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    });
+                }
+
+                function confirmForLanguageReviewPopup() {
+                    if ('{!CDA_Request__c.CDA_Language__c}' == 'English') {
+                        popupAlert('{!$Label.CDA_The_MyCDA_Legal_POC_assignment_process_is_only_for_non_English_languages}', function () { });
+                    } else {
+                        // showLoading();
+                        sendForLanguageReview();
+                    }
+                }
+
+                function sendForLanguageReviewPopup() {                    
+                    popupAlert('{!$Label.CDA_Please_confirm_the_documentation_requires_non_English_review_processing_the}', function () {
+                        navigateToLandingScreen();
+                    });
+                }
+
+                function voidEnvelopeAndResubmitPopup() {
+                    popupConfirm('{!$Label.CDA_Are_you_sure_you_want_to_recall_and_resubmit_the_request}', function() {
+                        showLoading();
+                        voidEnvpandResubmitRequest();
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    }, function() {});
+                    $.each($(".aButtons button"), function(k, v){
+                        if($(v).text() == 'Ok')
+                            $(v).html('Acknowledge');
+                    });
+                }
+
+                function voidEnvelopeAndCancelPopup() {
+                    popupConfirm('{!$Label.CDA_Are_you_sure_you_want_to_recall_and_cancel_the_request}', function() {
+                        showLoading();
+                        voidAndCancelRequest();
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    }, function() {});
+                    $.each($(".aButtons button"), function(k, v){
+                        if($(v).text() == 'Ok')
+                            $(v).html('Acknowledge');
+                    });
+                }
+
+                function updateStatusPopup() {
+                    var cdaNewStatus = $("[id$='cdaStatusUpdateId']").val();
+                    if({!!isCompletedDocAttached} && cdaNewStatus == 'Contract Executed') {
+                        popupAlert('You can\'t update status until "Completed Document" is attached. The format of document should be CDA-XXXXXX_Completed with extension pdf/doc/docx. e.g. CDA-<CDA Number>_Completed.pdf');
+                    } else {
+                        showLoading();
+                        updateCdaStatus();
+                    }
+                }
+
+                //Added by Babita Dadarwal under CR-11458 start
+                function showPartiallyExecutedCdaPopup() {
+                    popupConfirm('{!$Label.CDA_IMPORTANT_Only_use_this_option_when_a_CDA_is_an_IQVIA_template_is_already}', function() {
+                        uploadDocument('Partially Executed CDA Document');
+                    }, function() {});
+                }
+                //Added by Babita Dadarwal under CR-11458 End
+
+                function cancelbyRequestorPopup() {
+                    popupConfirm('{!$Label.CDA_Are_you_sure_you_want_to_cancel_the_request}', function(){
+                        showLoading();
+                        cancelbyRequestor();
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    }, function() {});
+                    $.each($(".aButtons button"), function(k, v) {
+                        if($(v).text() == 'Ok')
+                            $(v).html('Acknowledge');
+                    });
+                }
+
+                // Added by Ajinkya Pande under Item #162 Start
+                function respondToRequestorPopup() {
+                    popupPrompt('{!$Label.CDA_Reply_Response}', function(msg) {
+                        showLoading();
+                        respondToRequestorEmail(msg);
+                    }, function() {});
+                }
+
+                function successRespondToRequestPopup() {
+                    popupAlert('{!$Label.CDA_Reply_Response_Sent}', function() {
+                        showLoading();
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    });
+                }
+                // Added by Ajinkya Pande under Item #162 End
+
+                // Added by Ajinkya Pande under Item #1002 Start
+                function sendNotificationEmailPopup() {
+                    popupAlert('{!$Label.CDA_Executed_agreement_notification_emails_have_been_sent}', function() {
+                        // window.location = '/apex/VFP_CDA_CustomLandingPage';
+                        navigateToLandingScreen();
+                    });
+                    $.each($(".aButtons button"), function(k, v) {
+                        if($(v).text() == 'Ok')
+                            $(v).html('Acknowledge');
+                    });
+                }
+                // Added by Ajinkya Pande under Item #1002 End
+
+                var manualValidation = function(validationType) {
+                    var isShowError = false;
+                    var countErrors = 0;
+                    $('[id$=errMsg]').hide();
+                    $('[id$=errMsg]').html('<div class="message errorM3" role="alert"><table border="0" cellpadding="1" cellspacing="1" class="messageTable" style="padding:0px;margin:0px;"><tr valign="top"><td><img alt="ERROR" class="msgIcon" src="/s.gif" title="ERROR"/></td><td class="messageCell"><div class="messagetext"><span style="color:#cc0000"><h4>Errors</h4></span></div></td></tr><tr><td></td><td><span><ul></ul></span></td></tr></table></div>')
+
+                    if(validationType == 'AuthSignerUpdate' && $("[id$='recipientAuthorizedSignerOptions']").val() == 'No') {
+                        var recipientAuthorizedSignerFirstNameVal = $("[id$='recipientAuthorizedSignerFirstName']").val();
+                        var recipientAuthorizedSignerLastNameVal = $("[id$='recipientAuthorizedSignerLastName']").val();
+                        var recipientAuthorizedSignerTitleVal = $("[id$='recipientAuthorizedSignerTitle']").val();
+                        var recipientAuthorizedSignerEmailAddressVal = $("[id$='recipientAuthorizedSignerEmailAddress']").val();
+                        var recipientAuthorizedSignerConfirmEmailAddressVal = $("[id$='recipientAuthorizedSignerConfirmEmailAddress']").val();
+
+                        if(recipientAuthorizedSignerFirstNameVal != undefined && (recipientAuthorizedSignerFirstNameVal == '' || recipientAuthorizedSignerFirstNameVal == null)) {
+                            $("[id$='RecipientAuthorizedSignerFirstNameError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer First Name: You must enter a value</li>');
+                            }
+                        }
+                        if(recipientAuthorizedSignerLastNameVal != undefined && (recipientAuthorizedSignerLastNameVal == '' || recipientAuthorizedSignerLastNameVal == null)) {
+                            $("[id$='RecipientAuthorizedSignerLastNameError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Last Name: You must enter a value</li>');
+                            }
+                        }
+                        if(recipientAuthorizedSignerTitleVal != undefined && (recipientAuthorizedSignerTitleVal == '' || recipientAuthorizedSignerTitleVal == null)) {
+                            $("[id$='RecipientAuthorizedSignerTitleError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Title: You must enter a value</li>');
+                            }
+                        }
+                        if(recipientAuthorizedSignerEmailAddressVal != undefined && (recipientAuthorizedSignerEmailAddressVal == '' || recipientAuthorizedSignerEmailAddressVal == null)) {
+                            $("[id$='recipientAuthorizedSignerEmailAddressError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Email Address: You must enter a value</li>');
+                            }
+                        } else if(recipientAuthorizedSignerEmailAddressVal != undefined && (recipientAuthorizedSignerEmailAddressVal != '' || recipientAuthorizedSignerEmailAddressVal != null) && !isValidEmail(recipientAuthorizedSignerEmailAddressVal)){
+                            $("[id$='recipientAuthorizedSignerEmailAddressError']").html('<strong>Error:</strong> Invalid Email Address');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Email Address: Invalid Email Address</li>');
+                            }
+                        }
+                        if(recipientAuthorizedSignerConfirmEmailAddressVal != undefined && (recipientAuthorizedSignerConfirmEmailAddressVal == '' || recipientAuthorizedSignerConfirmEmailAddressVal == null)) {
+                            $("[id$='recipientAuthorizedSignerConfirmEmailAddressError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Confirm Email Address: You must enter a value</li>');
+                            }
+                        } else if (recipientAuthorizedSignerConfirmEmailAddressVal != undefined && recipientAuthorizedSignerEmailAddressVal != undefined && (recipientAuthorizedSignerConfirmEmailAddressVal.toLowerCase() != recipientAuthorizedSignerEmailAddressVal.toLowerCase())) {
+                            $("[id$='recipientAuthorizedSignerConfirmEmailAddressError']").html('<strong>Error:</strong> Email does not match the confirm Email');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">Recipient Authorized Signer Confirm Email Address: Email does not match the confirm Email.</li>');
+                            }
+                        }
+                    }
+
+                    //Added by Vikram Singh under CR-11146 Start
+                    if(validationType == 'ResponseDocType') {
+                        var cdaRequestResponseDocTypeVal = $("[id$='cdaRequestResponseDocType']").val();
+
+                        if(cdaRequestResponseDocTypeVal != undefined && (cdaRequestResponseDocTypeVal == '' || cdaRequestResponseDocTypeVal == null)) {
+                            $("[id$='cdaRequestResponseDocTypeError']").html('<strong>Error:</strong> You must enter a value');
+                            isShowError = true;
+                            countErrors++;
+                            if($('[id$=errMsg] ul').html() != null) {
+                                $('[id$=errMsg] ul').html($('[id$=errMsg] ul').html()+'<li style="padding-top:5px">What documents would you like to provide: You must enter a value</li>');
+                            }
+                        }
+                    }
+                    //Added by Vikram Singh under CR-11146 End
+
+                    if(isShowError) {
+                        if(countErrors == 1)
+                            $('[id$=errMsg] h4').html('Error');
+                        $('[id$=errMsg]').show();
+                        hideLoading();
+                    }
+                    if(!isShowError){
+                        if(validationType == 'AuthSignerUpdate') {
+                            updateAuthSignDetails();
+                        }
+                        //Added by Vikram Singh under CR-11146 Start
+                        if(validationType == 'ResponseDocType') {
+                            setAndUpdateResponseDocumentType();
+                        }
+                        //Added by Vikram Singh under CR-11146 End
+                    }
+                }
+
+                function showCharCount(myTA, maxSize, sizePanelId) {
+                    $('[id$="'+ sizePanelId +'"]').html('*' + (maxSize - myTA.value.length) + ' characters remaining');
+                }
+            </script>
+            <apex:slds />
+            <apex:includeLightning />
+        </head>
+        <body style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; background-repeat: top left;">
+            <div id="overlay" class="readonly"></div>
+            <div class="slds-scope">
+                <c:VFC_CDA_LoadingImage />
+                <div id="systemDownMessageCmp" />
+                <script>
+                	showLoading();
+                	$Lightning.use("c:LXA_CDA_SystemDownTime", function() {
+                        $Lightning.createComponent("c:LXC_CDA_DownTimeMessage", {isShowHeader: true, isMessageDownType: true}, "systemDownMessageCmp", function(cmp) {hideLoading();});
+                    });
+                </script>
+                <!-- PAGE HEADER -->
+    			<div class="slds-page-header" role="banner" style="margin: -10px 12px 12px; border-radius: 4px;">
+    				<div class="slds-grid">
+    					<div class="slds-col slds-has-flexi-truncate">
+                            <div class="slds-media slds-no-space slds-grow">
+                                <span class="slds-icon_container slds-icon-custom-custom62 slds-media__figure" title="CDA Request">
+                                    <svg aria-hidden="true" class="slds-icon">
+                                        <use xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/custom-sprite/svg/symbols.svg#custom62')}"></use>
+                                    </svg>
+                                    <span class="slds-assistive-text">CDA Request Icon</span>
+                                </span>
+        						<!-- HEADING AREA -->
+                                <div class="slds-media__body">
+                                    <p class="slds-breadcrumb__item slds-line-height_reset">CDA Request</p>
+                                    <h1 class="slds-page-header__title slds-truncate" title="{!If(CDA_Request__c.CDA_Id__c=='','New CDA Request',CDA_Request__c.Name) }">{!If(CDA_Request__c.CDA_Id__c=='','New CDA Request',CDA_Request__c.Name) }</h1>
+    							</div>
+                                <!-- / HEADING AREA -->
+        					</div>
+                        </div>
+    				</div>
+    			</div>
+    			<!-- / PAGE HEADER -->
+                <apex:form id="editForm" style="margin: 0px 12px;">
+                    <apex:Pagemessages id="errMsg" />
+                    <apex:actionFunction name="updateAuthSignDetails" action="{!updateAuthSignerDetails}" reRender="errMsg"/>
+                    <apex:actionFunction name="isTheRecipientAuthorizedToSign" oncomplete="hideLoading();" reRender="errMsg, authSignerDetails" >   <!-- Updated by Vikram Singh under CR-11146 -->
+                        <apex:param name="isAuthorizedSigner" value="" assignTo="{!isAuthorizedSigner}" />
+                    </apex:actionFunction>
+                    <apex:actionFunction name="voidEnvpandResubmitRequest" action="{!voidDocusignEnvpAndResubmit}" reRender="errMsg" oncomplete="hideLoading();"/>
+                    <apex:actionFunction name="voidAndCancelRequest" action="{!voidDocusignEnvpAndCancel}" reRender="errMsg" oncomplete="hideLoading();"/>
+                    <apex:actionFunction name="updateCdaStatus" action="{!updateCdaStatus}"  reRender="errMsg, basicInfoBlockSection" oncomplete="hideLoading();"/>  <!-- Updated by Vikram Singh under Issue-11192 -->
+                    <apex:actionFunction name="cancelbyRequestor" action="{!cancelbyRequestor}" reRender="errMsg" oncomplete="hideLoading();"/>
+                    <!-- Added by Ajinkya Pande under Item #162 Start -->
+                    <apex:actionFunction name="respondToRequestorEmail" action="{!respondToRequestorEmail}" reRender="errMsg" oncomplete="successRespondToRequestPopup();hideLoading();">
+                      <apex:param name="replyResponse" assignTo="{!cdaRequest.Requestor_Reply_Response__c}" value="" />
+                    </apex:actionFunction>
+                    <!-- Added by Ajinkya Pande under Item #162 End -->
+                    <apex:actionFunction name="setAndUpdateResponseDocumentType" action="{!setAndUpdateResponseDocumentType}" oncomplete="hideLoading();" reRender="errMsg, pbsDocType, actionSection" /> <!-- Added By Vikram Singh under CR-11146 -->
+                    <apex:actionFunction name="submitRequest" action="{!submitRequest}" reRender="errMsg" oncomplete="submitPopup();hideLoading();"/> <!-- Added by Vikram Singh under CR-11525 -->
+                    <apex:actionFunction name="sendForLanguageReview" action="{!sendForLanguageReview}" reRender="errMsg" oncomplete="sendForLanguageReviewPopup();hideLoading();" />
+
+                    <apex:pageBlock title="{!$Label.CDA_Information_Label}" id="InformationBlock">
+                        <!-- Added By Vikram Singh under CR-11146 Start -->
+                        <apex:pageBlockSection id="pbsDocType">
+                            <apex:pageBlockSectionItem id="docTypeViewMode" rendered="{!!isCdaRequestResponseDocTypeEditable && isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator)}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.What_documents_would_you_like_to_provide__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.What_documents_would_you_like_to_provide__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel >
+                                            <apex:outputField styleClass="slds-form-element__static" rendered="{! isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator)}" value="{!cdaRequestResponseDocTypeEdit.What_documents_would_you_like_to_provide__c}" />
+                                            <apex:commandButton value="{!IF(ISBLANK(cdaRequestResponseDocTypeEdit.What_documents_would_you_like_to_provide__c), $Label.CDA_Select, $Label.CDA_Change)}" action="{!editCdaRequestResponseDocType}" onclick="showLoading();" oncomplete="hideLoading();" rerender="errMsg, pbsDocType" />
+                                        </apex:outputPanel>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem id="docTypeEditMode" rendered="{!isCdaRequestResponseDocTypeEditable && isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator)}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.What_documents_would_you_like_to_provide__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.What_documents_would_you_like_to_provide__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel layout="block" style="display: -webkit-inline-box;">
+                                            <div class="requiredInput">
+                                                <div class="requiredBlock"></div>
+                                                <apex:inputField styleClass="slds-form-element__static" id="cdaRequestResponseDocType" rendered="{! isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator)}" value="{!cdaRequestResponseDocTypeEdit.What_documents_would_you_like_to_provide__c}" />
+                                                <div class="errorMsg" id="cdaRequestResponseDocTypeError"></div>
+                                            </div>
+                                            <apex:commandButton style="margin-left: 5%;" styleClass="slds-button slds-button_brand" value="{!$Label.CDA_Update}" onclick="showLoading();" oncomplete="manualValidation('ResponseDocType');" />
+                                        </apex:outputPanel>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <!-- Added By Vikram Singh under CR-11146 End -->
+                        <!-- Upadted by Vikram Singh under Item #183 Start -->
+                        <apex:outputPanel id="actionSection"><!-- Added By Vikram Singh under CR-11146 -->
+                            <!-- Updated by Babita Dadarwal under Cr-11458 Start -->
+                            <apex:PageblockSection title="{!$Label.CDA_Actions}" id="pbsActionSection" columns="1" rendered="{! CDA_Request__c.Status__c != 'In Draft' }">    <!-- Upadted by Vikram Singh under CR-11146 --> <!-- Updated by Vikram Singh under CR-11525 -->
+                                <!-- Added by Vikram Singh under CR-11525 Start -->
+                                <apex:pageBlockSectionItem rendered="{!isSubmitHasToRender && isSubmitEnabeled}">
+                                    <apex:outputLabel style="font-size: 15px !important;" value="{!$Label.CDA_submit_the_request}" rendered="{!isSubmitHasToRender && isSubmitEnabeled}" />
+                                    <apex:commandButton id="cdaSubmitButton" styleClass="slds-button slds-button_success" value="{!$Label.CDA_Submit}" rendered="{!isSubmitHasToRender && isSubmitEnabeled}" onclick="confirmSubmissionPopup();return false;" title="{!$Label.CDA_submit_the_request}"/>
+                                </apex:pageBlockSectionItem>
+                                <!-- Added by Vikram Singh under CR-11525 End -->
+                                <apex:pageBlockSectionItem rendered="{!showUploadPartiallyExecutedCdaButton }">
+                                     <apex:outputLabel value="{!$Label.CDA_Upload_Partially_Executed_CDA}" />
+                                     <apex:commandButton onclick="showPartiallyExecutedCdaPopup();return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" />
+                                </apex:pageBlockSectionItem>
+                                <!-- Updated by Babita Dadarwal under Cr-11458 End -->
+                                <apex:pageBlockSectionItem rendered="{!isCompetitor && NOT(isManagementApprovalDocumentAttached) && NOT(isCDAExecutive) }">
+                                    <apex:outputLabel value="{!$Label.CDA_Management_Approval_Document}" rendered="{!NOT(isManagementApprovalDocumentAttached)}" />
+                                    <apex:commandButton onclick="uploadDocument('Management Approval Document');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isManagementApprovalDocumentAttached)}" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!isCustomerConsenttoDiscloseRender && NOT(isCustomerConsenttoDiscloseAttached) }">
+                                    <apex:outputLabel value="{!$Label.CDA_Customer_Consent_to_Disclose}" rendered="{!NOT(isCustomerConsenttoDiscloseAttached)}" />
+                                    <apex:commandButton onclick="uploadDocument('Customer Consent to Disclose');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isCustomerConsenttoDiscloseAttached)}" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!isCdaTypeAuditor && NOT(isAuditScopeAgendaAttached) }">
+                                    <apex:outputLabel value="{!$Label.CDA_Audit_Scope_Agenda}" rendered="{!NOT(isAuditScopeAgendaAttached)}" />
+                                    <apex:commandButton onclick="uploadDocument('Audit Scope Agenda');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isAuditScopeAgendaAttached)}" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!isSponsorConsenttoDiscloseRender && NOT(isSponsorConsenttoDiscloseAttached) }">
+                                    <apex:outputLabel value="{!$Label.CDA_Sponsor_Consent_to_Disclose}" />
+                                    <apex:commandButton onclick="uploadDocument('Sponsor Consent to Disclose');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isSponsorConsenttoDiscloseAttached)}" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!isUserHavingApttusLicense && isUserHavingCongaPermissionSet && isNegotiator && isCDASourceQuintilesIMS && !isGeneratedDocumentAttached && isAllRequiredDocAttached }">  <!-- Updated by Vikram Singh under CR-11525 -->
+                                    <apex:outputLabel value="{!IF(isRegenrateTextRequired, $Label.CDA_Regenerate_CDA_Document, $Label.CDA_Generate_CDA_Document)}" />
+                                    <apex:commandButton onclick="showLoading();" value="{!IF(isRegenrateTextRequired, $Label.CDA_Regenerate, $Label.CDA_Generate)}" styleClass="slds-button slds-button_success" action="{!generateCDADoc}" oncomplete="hideLoading();" rerender="errMsg,actionSection,buttonSection,notesAndAttachments" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!isCDASourceExternal && NOT(isExternalDocumentAttached) }">
+                                    <apex:outputLabel value="{!$Label.CDA_External_Document_Upload}" />
+                                    <apex:commandButton onclick="uploadDocument('External Document');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isExternalDocumentAttached)}" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!(isResponseDocTypeRedlined || isResponseDocTypeRedlinedAndCleaned) && isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator) }"> <!-- Updated by Ajinkya Pande under Item #1003 --><!-- Upadted by Vikram Singh under CR-11146 -->
+                                    <apex:outputLabel value="{!$Label.CDA_Red_Line_Document_Upload}" />
+                                    <apex:commandButton onclick="uploadDocument('Red Line Document');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem rendered="{!(isResponseDocTypeCleaned || (isResponseDocTypeRedlinedAndCleaned && isRedLineDocumentAttached)) && isRedlineUploadHasToRender && (isRedLineDocumentRequired || isRegenrateDocByNegotiator) }"> <!-- Updated by Ajinkya Pande under Item #1003 --><!-- Upadted by Vikram Singh under CR-11146 -->
+                                    <apex:outputLabel value="{!$Label.CDA_Clean_Document_Upload}" />
+                                    <apex:commandButton onclick="uploadDocument('Cleaned Document');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" /> <!-- update by Ajinkya Pande under Item-1003 -->
+                                </apex:pageBlockSectionItem>
+                                <!-- Added by Ajinkya under Item #243b Start -->
+                                <apex:pageBlockSectionItem rendered="{!isStatusAwaitingOGC && isNegotiator && NOT(isAwaitingOCGDocumentAttached) }">
+                                    <apex:outputLabel value="{!$Label.CDA_OGC_Approval_Document_Upload}" rendered="{!NOT(isAwaitingOCGDocumentAttached)}" />
+                                    <apex:commandButton onclick="uploadDocument('AwaitingOGC Approval Document');return false;" value="{!$Label.CDA_Upload_Document}" styleClass="slds-button slds-button_success" rendered="{!NOT(isAwaitingOCGDocumentAttached)}"/>
+                                </apex:pageBlockSectionItem>
+                                <!-- Added by Ajinkya under Item #243b End -->
+                                <apex:pageBlockSectionItem rendered="{!((isResponseDocTypeRedlined && isRedLineDocumentAttached) || (isResponseDocTypeCleaned && isCleanDocumentAttached) || (isResponseDocTypeRedlinedAndCleaned  && isRedLineDocumentAttached && isCleanDocumentAttached)) && isNegotiator && isRedLineDocumentRequired && CDA_Request__c.Status__c != 'Acquiring Internal IQVIA Signature' && (((isCDASourceExternal || isProtectedWordFormat) && (isMiddleStatus || isStatusAwaitingOGC)) || isRegenrateDocByNegotiator)}"> <!-- Updated by Ajinkya Pande under Item #1003 --><!-- Updated by Vikram Singh under CR-11146 -->
+                                    <apex:outputLabel value="{!$Label.CDA_Send_For_Review}" /> <!-- Updated by Ajinkya Pande under Item #1003 -->
+                                    <apex:commandButton action="{!sendForReview}" value="{!$Label.CDA_Send_For_Review}" styleClass="slds-button slds-button_success" onclick="showLoading();" oncomplete="sendForReviewPopup();" /> <!-- Updated by Ajinkya Pande under Item #1003 --><!-- Updated by Vikram Singh under CR-11146 -->
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!((isResponseDocTypeRedlined && isRedLineDocumentAttached) || (isResponseDocTypeCleaned && isCleanDocumentAttached) || (isResponseDocTypeRedlinedAndCleaned  && isRedLineDocumentAttached && isCleanDocumentAttached)) && isNegotiator && isRedLineDocumentRequired && CDA_Request__c.Status__c != 'Acquiring Internal IQVIA Signature' && (((isCDASourceExternal || isProtectedWordFormat) && (isMiddleStatus || isStatusAwaitingOGC)) || isRegenrateDocByNegotiator)}">
+                                    <apex:outputLabel value="{!$Label.CDA_Assign_to_Legal_POC}" />
+                                    <apex:commandButton value="{!$Label.CDA_Assign_to_Legal_POC}" styleClass="slds-button slds-button_success"
+                                        onclick="confirmForLanguageReviewPopup();return false;" />
+                                </apex:pageBlockSectionItem>
+
+                                <!-- Updated by Ajinkya Pande under Item #243b start-->
+                                <apex:pageBlockSectionItem rendered="{! isNegotiator && isSendForSignature && (isStatusSignRequestDenied || (isStatusAwaitingOGC && isAwaitingOCGDocumentAttached))}">
+                                    <apex:outputLabel value="{!$Label.CDA_Send_For_Signature}" />
+                                    <apex:commandButton action="{!sendForSignature}" styleClass="slds-button slds-button_success" value="{!$Label.CDA_Send_For_Signature}"/>
+                                </apex:pageBlockSectionItem>
+                                <!-- Updated by Ajinkya Pande under Item #243b End-->
+
+                                <apex:pageBlockSectionItem rendered="{!If(isCdaTypeAuditor && isProjSpeciIndiYes && isBusinessAreaRDS, false, If(isBroadCDA, (NOT(isManagerApprovalDocUplaoded) && NOT(isCDAExecutive)), (NOT(isManagerApprovalDocUplaoded) && isCdaTypeVendor && isCDASourceExternal && NOT(isCDAExecutive) && !IsRDSandQ2BusinessArea)))  }">
+                                    <apex:outputLabel value="{!$Label.CDA_Manager_s_Approval_Document}" />
+                                    <apex:commandButton onclick="uploadDocument('Manager Approval');return false;" styleClass="slds-button slds-button_success" value="Upload"/>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem rendered="{!isUserHavingApttusLicense && isUserHavingCongaPermissionSet && isNegotiator && isGeneratedDocumentAttached && isPDFTypeCDARequest && !isSubmitHasToRender && !isEndStatus}">
+                                    <apex:outputLabel value="Generate Doc. Agreement" />
+                                    <apex:commandButton onclick="showLoading();" action="{!generateCDADoc}" styleClass="slds-button slds-button_success" value="Generate" reRender="dummyId">
+                                        <apex:param name="docBtnHit" value="true" assignTo="{!isGenerateDocAgreementBtnHit}"/>
+                                    </apex:commandButton>
+                                </apex:pageBlockSectionItem>
+                            </apex:PageblockSection>
+                        </apex:outputPanel><!-- Added By Vikram Singh under CR-11146 -->
+                        <!-- Upadted by Vikram Singh under Item #183 End -->
+
+                        <apex:pageBlockSection title="{!$Label.CDA_Basic_Information}" columns="2" id="basicInfoBlockSection">
+                            <!-- Added by Vikram Singh under CR-11188 Start -->
+                            <apex:pageBlockSectionItem id="qiBusinessPartSI">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Sharing_Confidential_Info}" cHlpTxt="{!$Label.CDA_IQVIA_Business_Helptext}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="qiBusinessPart" value="{!CDA_Request__c.QuintilesIMS_Business__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <!-- Added by Vikram Singh under CR-11188 End -->
+							
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Id__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Id__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Name}" id="CDAId" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem id="CDATypeSI">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <apex:outputPanel rendered="{!CDA_Request__c.QuintilesIMS_Business__c != 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.CDA_Type__c.Label}" cHlpTxt="{!$Label.CDA_Customer_CDA_with_the_party_that_would_contract_engage_QuintilesIMS}"/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!CDA_Request__c.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="Region" cHlpTxt="{!$Label.CDA_Select_the_appropriate_region_for_which_your_Master_CDA_is_required_for}"/>
+                                    </apex:outputPanel>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.CDA_Type__c}" id="CDAType" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem id="CDAEffectiveDateSI">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.CDA_Effective_Date__c.Label}" cHlpTxt="{!$Label.CDA_Effective_Date_HT}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.CDA_Effective_Date__c}" id="CDAEffectiveDate" /> {!dateFormatString}</apex:outputPanel>
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <!-- Modified by Vikram Singh under CR-11188 End -->
+
+                            <apex:pageBlockSectionItem id="statusViewMode" rendered="{! !showStatusEditable}" >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Status__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Status__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!cdaRequestStatusEdit.Status__c}" id="cdaStatus" />
+                                            <!-- Added By Babita Dadarwal under CR-11270 start -->
+                                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" style="margin: 0 0 1% 3%" value="{!$Label.CDA_Edit_Status}" onclick="showLoading();editCdaStatus();return false;" rendered="{!isNegotiator && isStatusEditable}" /> <!-- Updated by Vikram Singh under CR-11146 -->
+
+                                            <apex:actionFunction name="editCdaStatus" action="{!editCdaStatus}" rerender="errMsg, basicInfoBlockSection, statusViewMode" oncomplete="hideLoading();showExecutedRequestPopupAlert();"/>
+                                            <Script type="text/javascript">
+                                                function showExecutedRequestPopupAlert() {
+                                                    if({!showExecutedRequestPopup}) {
+                                                        popupAlert('{!$Label.CDA_Request_is_Already_Executed}', function() {
+                                                            navigateToRequestViewScreen();
+                                                        });
+                                                    }
+                                                }
+                                            </Script>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem id="statusEditMode" rendered="{! showStatusEditable && isNegotiator}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Status__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Status__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:inputField styleClass="slds-form-element__static" value="{!cdaRequestStatusEdit.Status__c}" id="cdaStatusUpdateId" />
+                                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Update}" onclick="updateStatusPopup();return false;" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem rendered="{!IF(CDA_Request__c.CDA_Type__c ='Customer' || CDA_Request__c.CDA_Type__c ='Vendor' || CDA_Request__c.CDA_Type__c ='CEVA', true, false) || CDA_Request__c.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Disclosure_Period__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Disclosure_Period__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Disclosure_Period__c}" id="DisclosurePeriod" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Language__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Language__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.CDA_Language__c}" id="cdaLanguage" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Requestor_Carbon_Copies__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Requestor_Carbon_Copies__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Requestor_Carbon_Copies__c}" id="RequestorCarbonCopies" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Source__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Source__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.CDA_Source__c}" id="CDASource" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem rendered="{!CDA_Request__c.CDA_Source__c != 'External'}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.CDA_Format__c.Label}" cHlpTxt="{!$Label.CDA_Format_Helptext}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.CDA_Format__c}" id="CDAFormat" rendered="{!CDA_Request__c.CDA_Source__c != 'External'}" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem HelpText="{! $ObjectType.CDA_Request__c.fields.Customer_Specified_Vendor_Template__c.InlineHelpText}" id="customerSpecificTemaplteSection" rendered="{!CDA_Request__c.CDA_Type__c == 'CEVA'}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Customer_Specified_Vendor_Template__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Customer_Specified_Vendor_Template__c.InlineHelpText}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Customer_Specified_Vendor_Template__c}" id="customerSpecificTemaplte" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                        </apex:pageBlockSection>
+
+                        <!-- Competitor flag section start -->
+                        <apex:pageBlockSection id="FlagInfoBlockSection2" columns="2" rendered="{!CDA_Request__c.QuintilesIMS_Business__c != 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                            <apex:pageBlockSectionItem helpText="{!$Label.CDA_1_direct_competitor_2_a_third_party_whose_business_it_is_to_provide_ser}" rendered="{! (CDA_Request__c.QuintilesIMS_Business__c != $Label.CDA_Research_Development_Solutions_RDS_Legacy_Quintiles && CDA_Request__c.QuintilesIMS_Business__c != 'Q Squared')}" >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Competitor_Flag__c.Label}" cHlpTxt="{!$Label.CDA_1_direct_competitor_2_a_third_party_whose_business_it_is_to_provide_ser}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputText styleClass="slds-form-element__static" id="competitorFlagId" rendered="{!CDA_Request__c.Competitor_Flag__c == 'No' || CDA_Request__c.Competitor_Flag__c == 'Yes'}" value="{!CDA_Request__c.Competitor_Flag__c}" />
+                                        <apex:outputText styleClass="slds-form-element__static" id="competitorFlagId1" rendered="{!CDA_Request__c.Competitor_Flag__c != 'No' || CDA_Request__c.Competitor_Flag__c != 'Yes'}" value="" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem helpText="{!$Label.CDA_1_direct_competitor_2_a_third_party_whose_business_it_is_to_provide_ser}" rendered="{! NOT(CDA_Request__c.QuintilesIMS_Business__c == $Label.CDA_Research_Development_Solutions_RDS_Legacy_Quintiles && CDA_Request__c.CDA_Type__c == 'Vendor') }">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Project_Specific_Indicator__c.Label}" cHlpTxt="{!$Label.CDA_Project_Specific_Indicator_Helptext}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="specificIndicatorId" value="{!CDA_Request__c.Project_Specific_Indicator__c}" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <!-- Competitor flag section end -->
+
+                        <!-- Added by Vikram Singh under CR-11764 Start -->
+                        <apex:pageBlockSection id="pbsOriginatingRequestorFlagId" columns="2">
+                            <apex:pageBlockSectionItem helpText="{!$Label.Originating_Requestor_Flag_Helptext}" rendered="{!isRequestorAdmin && !ISBLANK(CDA_Request__c.Originating_Requestor_Flag__c)}">    <!-- Updated by Vikram Singh under CR-11884 -->
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.Originating_Requestor_Flag_Label}" cHlpTxt="{!$Label.Originating_Requestor_Flag_Helptext}"/>
+                                	<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="originatingRequestorFlagId" value="{!CDA_Request__c.Originating_Requestor_Flag__c}" rendered="{!isRequestorAdmin}" />
+                                	</div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:PageblockSection>
+                        <!-- Added by Vikram Singh under CR-11764 End -->
+
+                        <!-- Auditor section start -->
+                        <apex:outputPanel id="auditorInfoSection" styleClass="opAuditorInfo">
+                            <apex:PageblockSection title="{!$Label.CDA_Auditor_Info}" id="pbsAuditorInfoSection" columns="2" rendered="{!isCdaTypeAuditor}">
+                                <apex:pageBlockSectionItem HelpText="Customer Consent to Disclose" id="sectionForCustomerConsenttoDisclose">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Customer_Consent_Disclose_Info}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Customer_Consent_to_Disclose__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Customer_Consent_to_Disclose__c}" id="CustomerConsenttoDisclose" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Audit_Type__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Audit_Type__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Audit_Type__c}" id="AuditType" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCustomerLegalEntityToRender}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Name__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Name__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Customer_Legal_Entity_Name_Formula__c}" id="CustomerLegalEntityName" rendered="{!isCustomerLegalEntityToRender}" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCustomerLegalEntityToRender}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Address__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Address__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Cust_Legal_Entity_Address__c}" id="CustomerLegalEntityAddress" rendered="{!isCustomerLegalEntityToRender}" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!!isCustomerLegalEntityToRender}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Customer_Legal_Entity_Name_Other__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Customer_Legal_Entity_Name_Other__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Customer_Legal_Entity_Name_Other__c}" id="CustomerLegalEntityNameOther" rendered="{!!isCustomerLegalEntityToRender}" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!!isCustomerLegalEntityToRender}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Address_Other__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Cust_Legal_Entity_Address_Other__c.InlineHelpText}"/>
+                                    	<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Cust_Legal_Entity_Address_Other__c}" id="CustomerLegalEntityAddressOther" rendered="{!!isCustomerLegalEntityToRender}" />
+                                    	</div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                            </apex:PageblockSection>
+                        </apex:outputPanel>
+                        <!-- Auditor section end -->
+
+                        <!-- Modified by Vikram Singh under CR-11764 Start -->
+                        <apex:outputPanel rendered="{!isCompetitor}" id="CompetitorDetailspanel" styleClass="opCompetitorDetails">
+                            <apex:PageblockSection title="{!$Label.CDA_Competitor_Details}" id="CompetitorDetailsSection" columns="2">
+                                <apex:pageBlockSectionItem rendered="{!!isDataAndServices}" >
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_In_what_capacity_will_the_Competitor_be_working_with_QuintilesIMS}" cHlpTxt="{!$Label.CDA_Competitor_Capacity_HT}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Competitor_Contracting_Capacity__c}" id="CompetitorContractingCapacity" label="" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isCompetitorContractingCapacityCollaborator && !isDataAndServices)}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Business_line_or_Services_involved}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Colaboration_Business_Line_Services__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Colaboration_Business_Line_Services__c}" id="ColaborationBusinessLineServices" rendered="{!isCompetitorContractingCapacityCollaborator}" label="{!$Label.CDA_Business_line_or_Services_involved}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! ((isCompetitorContractingCapacityCustomer || isCompetitorContractingCapacityCollaborator) && !isDataAndServices && CDA_Request__c.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise')}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.What_is_the_Study_Sponsor_situation__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.What_is_the_Study_Sponsor_situation__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.What_is_the_Study_Sponsor_situation__c}" id="Sponsorsituation" rendered="{!isCompetitorContractingCapacityCustomer || isCompetitorContractingCapacityCollaborator}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isCdaTypeVendor && !isDataAndServices && CDA_Request__c.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise')}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Competitor_Originating_from_Sponsor__c.Label}" cHlpTxt=""/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Competitor_Originating_from_Sponsor__c}" id="CompetitorOriginatingfromSponsor" rendered="{!isCdaTypeVendor}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isSponsorLegalEntityToRender && !isDataAndServices)}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Has_QuintilesIMS_received_Study_Sponsor_Consent_to_Disclose_Sponsor_informat}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Sponsor_Consent_to_Disclose__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Sponsor_Consent_to_Disclose__c}" id="SponsorConsenttoDiscloser" Label="" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isSponsorLegalEntityToRender && !isDataAndServices)}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Sponsor_Legal_Entity__c}" id="SponsorLegalEntityName" rendered="{!isSponsorLegalEntityToRender}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isSponsorLegalEntityToRender && !isDataAndServices)}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity_Address__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity_Address__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Sponsor_Legal_Entity_Address__c}" id="SponsorLegalEntityAddress" rendered="{!isSponsorLegalEntityToRender}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isSponsorLegalEntityOtherToRender && !isDataAndServices)}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity_Name_Other__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Sponsor_Legal_Entity_Name_Other__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Sponsor_Legal_Entity_Name_Other__c}" id="SponsorLegalEntityNameOther" rendered="{!isSponsorLegalEntityOtherToRender}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_i_Will_the_Recipient_obtain_access_to_a_QuintilesIMS_System}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Competitor_System_Access__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Competitor_System_Access__c}" id="CompetitorSystemAccess" label="" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCompetitorSystemAccessRequired}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Describe_the_System_in_which_access_is_required}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Systems_To_Be_Accessed__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Systems_To_Be_Accessed__c}" id="SystemToBeAccessed" label="" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCompetitorSystemAccessRequired}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Purpose_why_QuintilesIMS_is_working_with_the_Competitor}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Purpose_for_Working_for_a_Competitor__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Purpose_for_Working_for_a_Competitor__c}" id="Purposeforworkingwithacompetitor" label="" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem rendered="{! (isCompetitorSystemAccessRequired && !isDataAndServices && CDA_Request__c.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise')}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Description_of_work_QuintilesIMS_is_engaged_to_provide_Customer}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Description_of_work_provided_to_Customer__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Description_of_work_provided_to_Customer__c}" id="DescriptionofworkprovidedtoCustomer" label="" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{! (isCompetitorSystemAccessRequired && !isDataAndServices && CDA_Request__c.Competitor_Contracting_Capacity__c != 'Vendor – Corporate / Enterprise')}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Description_of_Work_to_be_provided_to_Customer_by_the_competitor}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Desc_of_Work_provided_to_Cust_By_Comp__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Desc_of_Work_provided_to_Cust_By_Comp__c}" id="DescofWorkprovidedtoCustByComp" label="" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCompetitorSystemAccessRequired}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.QI_information_disclosed_to_competitor__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.QI_information_disclosed_to_competitor__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.QI_information_disclosed_to_competitor__c}" id="QIinformationdisclosedtocompetitor" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!isCompetitorSystemAccessRequired}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Competitor_information_disclosed_to_QI__c.Label}" cHlpTxt="{! $ObjectType.CDA_Request__c.fields.Competitor_information_disclosed_to_QI__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Competitor_information_disclosed_to_QI__c}" id="CompetitorinformationdisclosedtoQI" rendered="{!isCompetitorSystemAccessRequired}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                            </apex:PageblockSection>
+                        </apex:outputPanel>
+						
+                        <!-- CDA Coverage Section (protocol number) Start -->
+                        <apex:pageBlockSection id="isProtocolNumberKnownSection" rendered="{!isProtocolHasToRender}" title="{!$Label.CDA_CDA_Coverage_Level}">
+                            <apex:pageBlockSectionItem rendered="{!!isDataAndServices}" >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Is_Protocol_Number_Known__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Is_Protocol_Number_Known__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="isProtocolNumberKnown" value="{!CDA_Request__c.Is_Protocol_Number_Known__c}" rendered="{!!isDataAndServices}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem rendered="{!!isDataAndServices && isProtocolNumberKnown && !ISBLANK(CDA_Request__c.Protocol_Number__c)}" helpText="{!$ObjectType.CDA_Request__c.fields.Protocol_Number__c.InlineHelpText}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Protocol_Number__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Protocol_Number__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="protocolNumber" value="{!CDA_Request__c.Protocol_Number__c}" label=""/>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.Is_Protocol_Title_Known__c.Label}" /> -->
+                            <apex:pageBlockSectionItem id="isProtocolTitleKnownSI" rendered="{!!isDataAndServices && isProtocolNumberNotKnown && !ISBLANK(CDA_Request__c.Is_Protocol_Title_Known__c)}" helpText="{! $ObjectType.CDA_Request__c.fields.Is_Protocol_Title_Known__c.InlineHelpText}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Is_Protocol_Title_Known__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Is_Protocol_Title_Known__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="isProtocolTitleKnown" value="{!CDA_Request__c.Is_Protocol_Title_Known__c}" label="" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem id="protocolTitleSI" rendered="{!!isDataAndServices && isProtocolTitleKnown && !ISBLANK(CDA_Request__c.Protocol_Title_Long_Textarea__c)}" helpText="{!$ObjectType.CDA_Request__c.fields.Protocol_Title_Long_Textarea__c.InlineHelpText}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Protocol_Title_Long_Textarea__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Protocol_Title_Long_Textarea__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="protocolTitle" value="{!CDA_Request__c.Protocol_Title_Long_Textarea__c}" label="" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <!-- Updated by Vikram Singh under CR-11529 Start -->
+                            <apex:pageBlockSectionItem id="projectDescriptionSI" rendered="{!isDataAndServices || (isProtocolTitleNotKnown && !ISBLANK(CDA_Request__c.Project_Description_Long_Textarea__c))}" helpText="{!$ObjectType.CDA_Request__c.fields.Project_Description_Long_Textarea__c.InlineHelpText}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Project_Description_Long_Textarea__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Project_Description_Long_Textarea__c.InlineHelpText}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" id="projectDescription" value="{!CDA_Request__c.Project_Description_Long_Textarea__c}" label="" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                        </apex:pageBlockSection>
+                        <!-- CDA Coverage Section (protocol number) End -->
+                            <apex:pageBlockSection rendered="{!isRequestorAdmin && CDA_Request__c.Originating_Requestor_Flag__c == 'Yes'}" title="{!$Label.Originating_Requestor_s_Information}">
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_First_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_First_Name__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="originatingRequestorFirstName" value="{!CDA_Request__c.Originating_Requestor_First_Name__c}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_Last_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_Last_Name__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="originatingRequestorLastName" value="{!CDA_Request__c.Originating_Requestor_Last_Name__c}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_IQVIA_Email__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Originating_Requestor_IQVIA_Email__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="originatingRequestorEmail" value="{!CDA_Request__c.Originating_Requestor_IQVIA_Email__c}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem helpText="{! $ObjectType.CDA_Request__c.fields.Requestor_Admin_Email_Flag__c.InlineHelpText}" rendered="{!isRequestorAdmin}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.Requestor_Admin_Email_Flag_Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Requestor_Admin_Email_Flag__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="requestorAdminEmailFlag" value="{!CDA_Request__c.Requestor_Admin_Email_Flag__c}" rendered="{!isRequestorAdmin}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                  
+                        <apex:PageblockSection title="{!$Label.CDA_QI_Legal_Entity_Details}" id="QILegalEntitySection" columns="2" rendered="{!isNegotiator || isRequestorExtended || isPrivilegedBusinessAreaSelected || CDA_Request__c.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                            <apex:pageBlockSectionItem id="pbsiQILegalEntityName" HelpText="{!IF(isNegotiator, $ObjectType.CDA_Request__c.fields.QI_Legal_Entity_Name__c.InlineHelpText, $Label.CDA_QI_Legal_Entity_Name_Fixed_Helptext)}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.QI_Legal_Entity_Name__c.Label}" cHlpTxt="{!IF(isNegotiator, $ObjectType.CDA_Request__c.fields.QI_Legal_Entity_Name__c.InlineHelpText, $Label.CDA_QI_Legal_Entity_Name_Fixed_Helptext)}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel styleClass="opQiLegalEntity" layout="block">
+                                            <apex:outputText styleClass="slds-form-element__static" id="QILegalEntityName" value="{!CDA_Request__c.QI_Legal_Entity_Name__r.Name}" />
+                                        </apex:outputPanel>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem HelpText="{!$Label.CDA_QI_Legal_Entity_Governing_Law}" id="sectionForGoverningLaw" rendered="{!isNegotiator}">    <!-- Updated by Vikram Singh under CR-12108 -->
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_QI_Legal_Entity_Governing_Law_Label}" cHlpTxt="{!$Label.CDA_QI_Legal_Entity_Governing_Law}"/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputText styleClass="slds-form-element__static" value="{!CDA_Request__c.Location_of_Governing_Law__r.Name}" id="GoverningLaw" />    <!-- Updated by Vikram Singh under CR-11576 -->
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem HelpText="{!$Label.CDA_QI_Legal_Entity_Address}" id="sectionForQILegalEntityAddress" rendered="{! CDA_Request__c.QI_Legal_Entity_Name__c != null}">  <!-- Updated by Vikram Singh under CR-11146 --><!-- Updated by Vikram Singh under CR-11377, CR-12214 -->
+                                <!-- <apex:outputLabel value="{!$Label.CDA_QI_Legal_Entity_Address_Label}"></apex:outputLabel> -->   <!-- Updated by Vikram Singh under CR-11377 -->
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_QI_Legal_Entity_Address_Label}" cHlpTxt=""/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputText styleClass="slds-form-element__static" value="{!selectedQILegalEntityAddress}" id="QILegalEntityAddress" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            
+                        </apex:PageblockSection>
+                        
+                        <apex:pageBlockSection columns="2">
+                        	<apex:pageBlockSectionItem HelpText="IQVIA Contact Name:" id="sectionForIQVIAContactName" rendered="{! CDA_Request__c.IQVIA_Contact_Name__c != null}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element slds_size_1-of-1">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="IQVIA Contact Name:" cHlpTxt=""/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputText styleClass="slds-form-element__static" value="{! CDA_Request__c.IQVIA_Contact_Name__c }" id="IQVIAContactName" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+
+                        <apex:PageblockSection title="{!$Label.CDA_Contact_Details}" id="contactDetailsSection" rendered="{!isRecipientAccountToRender || isRecipientAccountOtherToRender}" columns="2">
+                            <!-- Updated by Babita Dadarwal under Issue-11240 Start -->
+                            <apex:pageBlockSectionItem id="RecipientAccountNamepb" HelpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Account__c.InlineHelpText}" rendered="{!isRecipientAccountToRender}">
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel layout="block">
+                                            <apex:outputField styleClass="slds-form-element__static" id="RecipientAccountName" value="{!CDA_Request__c.Recipient_Account_Name_Formula__c}" />
+                                        </apex:outputPanel>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            <!-- Updated by Babita Dadarwal under Issue-11240 End -->
+
+                            <apex:pageBlockSectionItem rendered="{!isRecipientAccountToRender}">
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Address__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Address__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Account_Address__c}" id="RecipientAccountAddress" rendered="{!isRecipientAccountToRender}" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem rendered="{!isRecipientAccountOtherToRender}">
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Name_Other__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Name_Other__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Account_Name_Other__c}" id="RecipientAccountNameOther" rendered="{!isRecipientAccountOtherToRender}" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem rendered="{!isRecipientAccountOtherToRender}">
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Address_Other_formula__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Account_Address_Other_formula__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Account_Address_Other_formula__c}" id="RecipientAccountAddressOther" rendered="{!isRecipientAccountOtherToRender}" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:PageblockSection>
+
+                        <apex:PageblockSection title="{!$Label.CDA_Recipient_Point_of_Contact_Information}" id="RecipientPointofContactInformationSection" columns="2">
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_First_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_First_Name__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Point_of_Contact_First_Name__c}" id="RecipientPointofContactFirstName" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Last_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Last_Name__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Point_of_Contact_Last_Name__c}" id="RecipientPointofContactLastName" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Email_Address__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Email_Address__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Point_of_Contact_Email_Address__c}" id="RecipientPointofContactEmailAddress" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Title__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Title__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Point_of_Contact_Title__c}" id="RecipientPointofContactTitle" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Telephone_Num__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Point_of_Contact_Telephone_Num__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Point_of_Contact_Telephone_Num__c}" id="RecipientPointofContactTelephone" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="Additional IQVIA contacts?"
+                                        cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Additional_Contact_Flag__c.InlineHelpText}" />
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Additional_Contact_Flag__c}"
+                                            id="RecipientPointofContactAdditionalContact" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:PageblockSection>
+
+                        <!-- Additional Contacts Section start -->
+                        <apex:pageBlockSection id="pbsContacts" rendered="{!CDA_Request__c.Additional_Contact_Flag__c == 'Yes' && (cdaAdditionalContactWrapperList != null && cdaAdditionalContactWrapperList != '')}" columns="1" title="{!$Label.CDA_Additional_IQVIA_contacts}" collapsible="false">
+                            <apex:variable var="rowNum" value="{!0}" />
+                            <apex:pageBlockTable id="pbtContacts" value="{!cdaAdditionalContactWrapperList}" var="con"  styleClass="additionalContacts">
+                                <apex:column width="8%;">
+                                    <apex:facet name="header">#</apex:facet>
+                                    <apex:variable var="rowNum" value="{!rowNum + 1}" /> {!rowNum}
+                                </apex:column>
+                                
+                                <apex:column width="25%px;">
+                                    <apex:facet name="header">{!$Label.CDA_First_Name}</apex:facet>
+                                    {!con.acFirstName}
+                                </apex:column>
+
+                                <apex:column width="25%;">
+                                    <apex:facet name="header">{!$Label.CDA_Last_Name}</apex:facet>
+                                    {!con.acLastName}
+                                </apex:column>
+
+                                <apex:column width="40%;">
+                                    <apex:facet name="header">{!$Label.CDA_Email}</apex:facet>
+                                    {!con.acEmail}
+                                </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:pageBlockSection>
+                        <!-- Additional Contacts Section end -->
+						
+                        <!-- Site Contact Details Start -->
+                        <apex:pageBlockSection id="siteContacts" rendered="{!CDA_Request__c.IsSiteSignatorySameAsSiteContact__c == 'No'}" columns="2" title="Site Contact Details" collapsible="false">
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="Site Contact First Name" cHlpTxt=""/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Site_Contact_First_Name__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="Site Contact Last Name" cHlpTxt=""/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Site_Contact_Last_Name__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    <c:VFC_CDA_LightningHelpText cLblTxt="Site Contact Email Address" cHlpTxt=""/>
+                                    <div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Site_Contact_Email_Address__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <!-- Site Contact Details End -->
+                        
+                        <!-- Modified by Vikram Singh under CR-11146 Start -->
+                        <apex:outputPanel layout="block" rendered="{!!isAuthSignEditable && isNegotiator && (isMiddleStatus || isStatusAwaitingOGC)}" style="text-align:center;display:block;">
+                            <apex:commandButton action="{!editAuthSignerDetails}" value="{!$Label.CDA_Edit_Authorize_Signer_Details}" onclick="showLoading()" oncomplete="hideLoading()" rerender="errMsg, authSignerDetails, RecipientPointofContactInformationSection" rendered="{!!isAuthSignEditable && isNegotiator && (isMiddleStatus || isStatusAwaitingOGC)}" />
+                        </apex:outputPanel>
+						
+                        <apex:outputPanel id="authSignerDetails">
+                            <apex:outputPanel layout="block;" style="margin-top:10px;" id="opAuthSignerDetails" rendered="{! isNegotiator && (isMiddleStatus || isStatusAwaitingOGC)}">
+                                <!-- Editable section start -->
+                                <apex:pageBlockSection title="{!$Label.CDA_Recipient_Authorized_Signer_Details}" rendered="{!isAuthSignEditable}">
+
+                                    <apex:pageBlockSectionItem id="recipientAuthorizedSignerSI" helpText="{!$Label.CDA_By_sending_the_CDA_directly_to_the_person_that_is_authorized_to_sign}" rendered="{!isAuthSignEditable}">
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_By_sending_the_CDA_directly_to_the_person_that_is_authorized_to_sign_on_beha}" cHlpTxt="{!$Label.CDA_By_sending_the_CDA_directly_to_the_person_that_is_authorized_to_sign}"/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                <apex:selectList styleClass="slds-form-element__static" id="recipientAuthorizedSignerOptions" size="1" multiselect="false" value="{!isAuthorizedSigner}" onchange="showLoading(); isTheRecipientAuthorizedToSign(this.options[this.selectedIndex].text);">
+                                                    <apex:selectoption itemLabel="Yes" itemValue="Yes"/>
+                                                    <apex:selectoption itemLabel="No" itemValue="No"/>
+                                                </apex:selectList>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.InlineHelpText}" rendered="{!isAuthSignEditable && isAuthorizedSigner == 'No'}">
+                                        <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.Label}"/> -->
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.InlineHelpText}"/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField styleClass="slds-form-element__static" id="recipientAuthorizedSignerFirstName" value="{!cdaRequestAuthSignEdit.Recipient_Authorized_Signer_First_Name__c}" />
+                                                        <div class="errorMsg" id="RecipientAuthorizedSignerFirstNameError"></div>
+                                                    </div>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Last_Name__c.InlineHelpText}" rendered="{!isAuthSignEditable && isAuthorizedSigner == 'No'}">
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Last_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Last_Name__c.InlineHelpText}"/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField styleClass="slds-form-element__static" id="recipientAuthorizedSignerLastName" value="{!cdaRequestAuthSignEdit.Recipient_Authorized_Signer_Last_Name__c}" />
+                                                        <div class="errorMsg" id="RecipientAuthorizedSignerLastNameError"></div>
+                                                    </div>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Email_Addres__c.InlineHelpText}" rendered="{!isAuthSignEditable && isAuthorizedSigner == 'No'}">
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Recipient_Authorized_Signer_Email_Address}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Email_Addres__c.InlineHelpText}"/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputText styleClass="slds-form-element__static" id="recipientAuthorizedSignerEmailAddress" value="{!cdaRequestAuthSignEdit.Recipient_Authorized_Signer_Email_Addres__c}" html-autocomplete="off" />
+                                                        <div class="errorMsg" id="recipientAuthorizedSignerEmailAddressError"></div>
+                                                    </div>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem rendered="{!isAuthSignEditable && isAuthorizedSigner == 'No'}">
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Recipient_Authorized_Signer_Email_Confirmation}" cHlpTxt=""/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputText styleClass="slds-form-element__static" id="recipientAuthorizedSignerConfirmEmailAddress" value="{!confirmRecipientAuthorizedSignerEmailAddress}" html-autocomplete="off" />
+                                                        <div class="errorMsg" id="recipientAuthorizedSignerConfirmEmailAddressError"></div>
+                                                    </div>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Title__c.InlineHelpText}" rendered="{!isAuthSignEditable && isAuthorizedSigner == 'No'}">
+                                    	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                    		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Title__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Title__c.InlineHelpText}"/>
+                                    		<div class="slds-form-element__control slds-has-divider--bottom">
+                                                    <div class="requiredInput">
+                                                        <div class="requiredBlock"></div>
+                                                        <apex:inputField styleClass="slds-form-element__static" id="recipientAuthorizedSignerTitle" value="{!cdaRequestAuthSignEdit.Recipient_Authorized_Signer_Title__c}" />
+                                                        <div class="errorMsg" id="RecipientAuthorizedSignerTitleError"></div>
+                                                    </div>
+                                    		</div>
+                                    	</apex:outputPanel>
+                                    </apex:pageBlockSectionItem>
+
+                                    <apex:pageBlockSectionItem />
+                                </apex:pageBlockSection>
+                                <apex:outputPanel rendered="{!isAuthSignEditable}" style="text-align:center;display:block;">
+                                    <apex:commandButton styleClass="slds-button slds-button_brand" value="{!$Label.CDA_Update}" onclick="showLoading()" oncomplete="manualValidation('AuthSignerUpdate');" rerender="errMsg, authSignerDetails" rendered="{!isAuthSignEditable}" />    <!-- Updated by Vikram Singh under CR-11146 -->
+                                </apex:outputPanel>
+                                <!-- Editable section end -->
+                        </apex:outputPanel>
+                        <!-- Authorized to Sign section end -->
+
+                        <apex:PageblockSection title="{!$Label.CDA_Recipient_Authorized_Signer_Details}" id="recipientAuthorizedSignerDetailsSection" columns="2"  rendered="{!CDA_Request__c.Recipient_Authorized_Signer_First_Name__c != null && !isAuthSignEditable}">
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_First_Name__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Authorized_Signer_First_Name__c}" id="RecipientAuthorizedSignerFirstName" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Last_Name__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Last_Name__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Authorized_Signer_Last_Name__c}" id="RecipientAuthorizedSignerLastName" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Email_Addres__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Email_Addres__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Authorized_Signer_Email_Addres__c}" id="RecipientAuthorizedSignerEmailAddres" label="{!$Label.CDA_Recipient_Authorized_Signer_Email_Address}"/>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Title__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Authorized_Signer_Title__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Recipient_Authorized_Signer_Title__c}" id="RecipientAuthorizedSignerTitle" />
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:PageblockSection>
+                    </apex:outputPanel>
+
+                        <!--Internal Processing Notes Section Start -->
+                        <apex:pageBlockSection title="{!$Label.CDA_Internal_Processing_Notes}" id="internalProcessingNotesSection" columns="2">
+                            <apex:pageBlockSectionItem >
+                            	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                            		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Internal_Processing_Notes__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Internal_Processing_Notes__c.InlineHelpText}"/>
+                            		<div class="slds-form-element__control slds-has-divider--bottom">
+                                        <apex:outputPanel >
+                                            <apex:inputTextArea disabled="{! NOT(isNegotiator)}" styleClass="slds-form-element__static" id="internalProcessingNotes" value="{!cdaRequestIntNotesEdit.Internal_Processing_Notes__c}" cols="50" rows="5" rendered="{! isInternalNotesEditable}" html-maxlength="255" onchange="showCharCount(this, 255, '{!$Component.ipnTASize}');" onmousedown="showCharCount(this, 255, '{!$Component.ipnTASize}');" onkeyup="showCharCount(this, 255, '{!$Component.ipnTASize}');" onkeydown="showCharCount(this, 255, '{!$Component.ipnTASize}');" onclick="showCharCount(this, 255, '{!$Component.ipnTASize}');" />
+                                            <apex:outputPanel rendered="{!isInternalNotesEditable}" style="color:#01136f; font-size:12px;" id="ipnTASize" >*255 characters remaining</apex:outputPanel><br/>
+                                            <apex:outputField styleClass="slds-form-element__static" value="{!cdaRequestIntNotesEdit.Internal_Processing_Notes__c}" rendered="{!NOT(isInternalNotesEditable)}" /><br/>
+                                            <apex:commandButton styleClass="slds-button slds-button_outline-brand slds-m-top_medium" style="bottom: 10px;" value="{!$Label.CDA_Update_Notes}" action="{!updateInternalNotes}" onclick="showLoading()" oncomplete="hideLoading()" rerender="errMsg, internalProcessingNotesSection" rendered="{!isNegotiator }" />
+                                        </apex:outputPanel>
+                            		</div>
+                            	</apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <!--Internal Processing Notes Section End -->
+
+                        <!-- Negotiator section start -->
+                        <apex:outputPanel layout="block;" id="negotiatorDetails" styleClass="negotiatorDetails">
+                            <!-- Editable section start -->
+                            <apex:pageBlockSection title="{!$Label.CDA_Negotiator_Details}" rendered="{!isNegotiator && showNegotiatorEditable}">
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:selectList html-class="slds-size_1-of-1" value="{!negotiatorAssigned}" multiselect="false" size="1" style="margin-bottom: 0;">
+                                                <apex:selectOptions value="{!negotiatorList}"/>
+                                            </apex:selectList>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:inputField styleClass="slds-form-element__static" id="negotiatorOffice" value="{!cdaRequest.Negotiating_Office__c}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:inputField styleClass="slds-form-element__static" id="recipientAffiliates" value="{!cdaRequest.Recipient_Affiliates__c}" />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:inputField styleClass="slds-form-element__static" id="imsAffiliates" value="{!cdaRequest.QuintilesIMS_Affiliates_Value__c}" /><br />
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:commandButton style="margin-left: 45%;" styleClass="slds-button slds-button_outline-brand" action="{!updateNegotiatorDetails}" value="{!$Label.CDA_Update}" onclick="showLoading()" oncomplete="hideLoading()" rerender="errMsg, negotiatorDetails" rendered="{!isNegotiator}" />  <!-- Updated by Vikram Singh under CR-11146 -->
+                            </apex:pageBlockSection>
+                            <!-- Editable section end -->
+
+                            <!-- Read only section start -->
+                            <apex:pageBlockSection title="{!$Label.CDA_Negotiator_Details}" rendered="{!!showNegotiatorEditable}">
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Requestor_Name}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="requestorName" value="{!CDA_Request__c.CreatedBy.Name}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Requestor_Email}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="requestorEmail" value="{!CDA_Request__c.CreatedBy.Email}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem rendered="{!cdaLegalPOC != null}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Legal_POC_Name}" cHlpTxt="" />
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="legalPOCName" value="{!cdaLegalPOC.Legal_POC_Full_Name__c}" label="" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem rendered="{!cdaLegalPOC != null}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Legal_POC_Email_Address}" cHlpTxt="" />
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="legalPOCEmail" value="{!cdaLegalPOC.Legal_POC_Email_Address__c}" label="" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem id="createdDate">
+                                    <!-- <apex:outputLabel value="{!$Label.CDA_Created_Date}"/> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Created_Date}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.createddate}" /> {!dateFormatString}</apex:outputPanel>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem >
+                                    <!-- <apex:outputLabel value="{!$Label.CDA_Last_Modified_By}" /> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Last_Modified_By}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="modifiedBy" value="{!CDA_Request__c.LastModifiedBy.Name}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem id="modifiedDate">
+                                    <!-- <apex:outputLabel value="{!$Label.CDA_Last_Modified_Date}"/> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Last_Modified_Date}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.LastModifieddate}" /> {!dateFormatString}</apex:outputPanel>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem id="statusStartDate">
+                                    <!-- <apex:outputLabel value="{!$Label.CDA_Status_Start_Date}"/> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Status_Start_Date}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Status_Start_Date__c}" /> {!dateFormatString}</apex:outputPanel>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem id="sendForReviewDate">
+                                    <!-- <apex:outputLabel value="{!$Label.CDA_Date_Sent_For_Review}"/> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$Label.CDA_Date_Sent_For_Review}" cHlpTxt=""/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Date_Sent_for_Review__c}" /> {!dateFormatString}</apex:outputPanel>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem id="sendForLanguageReviewDate" rendered="{!cdaLegalPOC != null}">
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="Date Sent For Language Review" cHlpTxt="" />
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputPanel ><apex:outputField styleClass="slds-form-element__static" value="{!CDA_Request__c.Date_Sent_For_Language_Review__c}" /> {!dateFormatString}</apex:outputPanel>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.InlineHelpText}">
+                                    <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.Label}" /> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Negotiator_Assigned_List__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="negotiatorAssigned" value="{!cdaRequest.Negotiator_Assigned_List__c}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.InlineHelpText}">
+                                    <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.Label}" /> -->
+                                    <apex:outputPanel layout="block" styleClass="slds-form-element">
+                                        <c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Negotiating_Office__c.InlineHelpText}"/>
+                                        <div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="negotiatorOffice" value="{!cdaRequest.Negotiating_Office__c}" label=""/>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.InlineHelpText}">
+                                    <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.Label}" /> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.Recipient_Affiliates__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="recipientAffiliates" value="{!cdaRequest.Recipient_Affiliates__c}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+
+                                <apex:pageBlockSectionItem helpText="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.InlineHelpText}">
+                                    <!-- <apex:outputLabel value="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.Label}" /> -->
+                                	<apex:outputPanel layout="block" styleClass="slds-form-element">
+                                		<c:VFC_CDA_LightningHelpText cLblTxt="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.Label}" cHlpTxt="{!$ObjectType.CDA_Request__c.fields.QuintilesIMS_Affiliates_Value__c.InlineHelpText}"/>
+                                		<div class="slds-form-element__control slds-has-divider--bottom">
+                                            <apex:outputField styleClass="slds-form-element__static" id="imsAffiliates" value="{!cdaRequest.QuintilesIMS_Affiliates_Value__c}" label=""/>
+                                		</div>
+                                	</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <br />
+                            </apex:pageBlockSection>
+                            <apex:outputPanel layout="block" rendered="{! isNegotiator && !showNegotiatorEditable  && CDA_Request__c.Status__c != 'In Draft' && CDA_Request__c.Status__c != 'Awaiting Requestor Submission'}">
+                                <apex:commandButton style="margin-left: 45%;" styleClass="slds-button slds-button_outline-brand" action="{!editNegotiatorDetails}" value="{!$Label.CDA_Edit_Details}" onclick="showLoading()" oncomplete="hideLoading()" rerender="errMsg, negotiatorDetails" rendered="{!isNegotiator}" title="{!$Label.CDA_It_will_update_the_negotiator_details_section}"/> <!-- Updated by Vikram Singh under CR-11146 -->
+                            </apex:outputPanel>
+                            <!-- Read only section end -->
+                        </apex:outputPanel>
+                        <!-- Negotiator section end -->
+                        <br />
+                        <apex:pageBlockButtons id="buttonSection">
+                            <!--<apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Save_For_Later}" onclick="saveForLaterPopup(); return false;" rendered="{!isStartStatus || isMiddleStatus}" title="{!$Label.CDA_Save_Request_for_later_use}"/>-->
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" onclick="navigateToRequestEditScreen()" value="{!$Label.CDA_Edit}" rendered="{!!isEndStatus}" title="{!$Label.CDA_Edit_requestor_request_information}"/>
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Recall_Cancel_Request}" rendered="{!isStatusSendForSign && isEnvelopeActive && isNegotiator}"  onclick="voidEnvelopeAndCancelPopup();return false;" title="{!$Label.CDA_void_Envelope_And_Cancel_the_request}"/>    <!-- Updated by Vikram Singh under Issue-11192 -->
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Recall_Resubmit_Request}" rendered="{!isStatusSendForSign && isEnvelopeActive && isNegotiator}" onclick="voidEnvelopeAndResubmitPopup();return false;" title="{!$Label.CDA_void_Envelope_And_Requestor_can_edit_request}"/>    <!-- Updated by Vikram Singh under Issue-11192 -->
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" action="{!sendRecipientEmail}" value="{!$Label.CDA_Send_Executed_Email}" onclick="showLoading();" oncomplete="sendNotificationEmailPopup();hideLoading();" rendered="{! isNegotiator && isSendCompletionEmailEnable}" title="{!$Label.CDA_Send_Executed_mail_to_requestor_and_recipient_upon_contract_executed}"/><!-- Updated by Ajinkya Pande under Item #1002 -->
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" onclick="navigateToLandingScreen()" value="{!$Label.CDA_Cancel}" title="{!$Label.CDA_It_will_delete_the_request_when_request_is_new_else_it_will_return_to_landin}"/>
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Cancel_By_Requestor}" onclick="cancelbyRequestorPopup();return false;" rendered="{!(isStartStatus || isMiddleStatus || isStatusSendForSign || isStatusReturnedToRequestor) && !isNegotiator}" title="{!$Label.CDA_Cancel_By_Requestor_Title}"></apex:commandButton> <!-- Updated by Ajinkya Pande under Item #249 -->
+                            <apex:commandButton styleClass="slds-button slds-button_outline-brand" value="{!$Label.CDA_Requestor_Reply_Response}" onclick="respondToRequestorPopup();return false;" rendered="{!isMiddleStatus && isNegotiator && CDA_Request__c.Status__c != 'Validating Recipient Provided Document'}" title="{!$Label.CDA_This_button_is_used_when_Negotiator_must_deny_a_request_because_additional}"></apex:commandButton> <!-- Added by Ajinkya Pande under Item #162 -->
+                        </apex:pageBlockButtons>
+
+                    </apex:pageBlock>
+
+                </apex:form>
+                <apex:outputPanel id="notesAndAttachments">
+                    <apex:relatedList list="CombinedAttachments" rendered="{!$ObjectType.CombinedAttachment.accessible}" id="notesId" />
+                </apex:outputPanel>
+                <apex:outputPanel id="docusignEnvelopes">
+                    <apex:relatedList list="DocuSign_Status__r" rendered="{! isNegotiator}" id="docusignId" />
+                </apex:outputPanel>
+                <apex:outputPanel id="objectHistories">
+                    <apex:relatedList list="Histories" rendered="{! isNegotiator}" id="historyId" />
+                </apex:outputPanel>
+                <apex:outputPanel id="objectActivityHistories">
+                    <apex:relatedList list="ActivityHistories" rendered="{! isNegotiator}" id="activityHistoryId" />
+                </apex:outputPanel>
+            </div>
+        </body>
+    </html>
+</apex:page>

@@ -1,0 +1,216 @@
+<template>
+	<div class="c-container slds-is-relative" style="min-height:300px">
+		<template if:true={isLoading}>
+			<lightning-spinner alternative-text="Loading..." size="medium" variant="brand"></lightning-spinner>
+		</template>
+		<template if:false={isLoading}>
+			<template if:true={collectionData}>
+				<template if:true={isUnsaveData}>
+					<div class="slds-scoped-notification slds-media slds-media_center slds-theme_info" role="status">
+						<div class="slds-media__body">
+							<p class="slds-text-align_center">
+								<lightning-icon icon-name="utility:info" alternative-text="info" size="x-small"
+									class="gray-utility-icon"></lightning-icon>
+								{collectionData.config.unsavedDataInformationMessage}
+							</p>
+						</div>
+					</div>
+				</template>
+				<div>
+					<header class="slds-modal__header">
+						<h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+							{collectionData.config.headerText}
+						</h2>
+						<div class="slds-grid keyMessage">
+							<template lwc:if={collectionData.config.keyMessage}>
+								<br>
+								<lightning-icon icon-name="utility:info" size="x-small"
+									style="margin-right: 10px; margin-top:2px;"></lightning-icon>
+								{collectionData.config.keyMessage}
+							</template>
+						</div>
+					</header>
+				</div>
+				<template for:each={collectionData.tables} for:item="table">
+					<div key={table.tableNumber} class="tableContainer slds-theme_shade">
+						<div class="slds-grid header">
+							<div class={dynamicClassForHeading}>
+								&nbsp;
+							</div>
+							<div class={dynamicClassForHeading}>
+								<h2 class="heading">
+									{collectionData.config.tableHeading}
+									<template if:true={collectionData.config.showTableNumber}>
+										&nbsp; {table.tableNumber}
+									</template>
+								</h2>
+							</div>
+							<div class={dynamicClassForButton}
+								style="align-self: end; margin-top: 5px">
+								<template if:false={showFixedRow}>
+									<template if:true={table.displayCloneButton}>
+										<lightning-button variant="brand-outline"
+											label={collectionData.config.cloneTableButtonLabel}
+											title={collectionData.config.cloneTableButtonLabel} onclick={handleCloneTable}
+											class="slds-m-right_small" data-table-number={table.tableNumber} slot="actions"
+											icon-name="utility:add">
+										</lightning-button>
+									</template>
+									<template if:true={collectionData.config.enableNewRow}>
+										<lightning-button data-table-number={table.tableNumber}
+											label={collectionData.config.newRowButtonLabel}
+											title={collectionData.config.newRowButtonLabel} class="slds-m-right_small"
+											icon-name="utility:add" onclick={handleNewRowClick}>
+										</lightning-button>
+									</template>
+								
+								</template>
+							</div>
+						</div>
+						<template if:true={showFixedRow}>
+						<div class="slds-grid header" style="padding-bottom:10px">
+							<div class="slds-size_8-of-12">
+								<table class="slds-table slds-table_cell-buffer"
+									aria-labelledby="element-with-table-label other-element-with-table-label"
+									style="table-layout:fixed">
+									<thead>
+										<tr class="slds-line-height_reset">
+											<template for:each={collectionData.config.columns} for:item="column">
+												<template if:true={column.showOnlyOnce}>
+													<template if:true={column.width}>
+														<th scope="col" key={column.apiName} width = {column.width} style="display: table;">
+															<div class="slds-truncate slds-text-align_center">
+																{column.label}
+															</div>
+														</th>
+													</template>
+													<template if:false={column.width}>
+														<th scope="col" key={column.apiName}>
+															<div class="slds-truncate slds-text-align_center">
+																{column.label}
+															</div>
+														</th>
+													</template>
+												</template>
+											</template>
+										</tr>
+									</thead>
+									<template if:true={table.fixedRow}>
+										<c-lwc-owf-generic-collection-tool-row key={table.fixedRow.rowNumber}
+											row={table.fixedRow} columns={collectionData.config.columns}
+											table-number={table.tableNumber} onupdateaction={handleUpdateAction}>
+										</c-lwc-owf-generic-collection-tool-row>
+									</template>
+								</table>
+							</div>
+							<div class="slds-size_4-of-12 slds-text-align_right"
+								style="align-self: end; margin-top: 5px">
+								<template if:true={table.displayCloneButton}>
+									<lightning-button variant="brand-outline"
+										label={collectionData.config.cloneTableButtonLabel}
+										title={collectionData.config.cloneTableButtonLabel} onclick={handleCloneTable}
+										class="slds-m-right_small" data-table-number={table.tableNumber} slot="actions"
+										icon-name="utility:add">
+									</lightning-button>
+								</template>
+								<template if:true={collectionData.config.enableNewRow}>
+									<lightning-button data-table-number={table.tableNumber}
+										label={collectionData.config.newRowButtonLabel}
+										title={collectionData.config.newRowButtonLabel} class="slds-m-right_small"
+										icon-name="utility:add" onclick={handleNewRowClick}>
+									</lightning-button>
+								</template>
+							</div>
+						</div>
+						</template>
+						<table class="slds-table slds-table_cell-buffer tablebordered slds-no-row-hover"
+							aria-labelledby="element-with-table-label other-element-with-table-label"
+							style="table-layout:fixed">
+							<template lwc:if={collectionData.config.displayTemplate}>
+							</template>
+							<template lwc:else>
+								<thead>
+									<tr class="slds-line-height_reset">
+										<template if:true={collectionData.config.showRowNumber}>
+											<th style="width: 50px;">
+											</th>
+										</template>
+										<template for:each={collectionData.config.columns} for:item="column">
+											<template if:false={column.showOnlyOnce}>
+												<template if:false={column.width}>
+													<th scope="col" key={column.apiName}>
+														<div class="slds-truncate slds-text-align_center" title ={column.label}>
+															{column.label} &nbsp;
+															<template if:true={column.helpText}>
+															<lightning-helptext content={column.helpText}></lightning-helptext>
+														</template>
+														</div>
+														
+													</th>
+												</template>
+												<template if:true={column.width}>
+													<th scope="col" key={column.apiName} width = {column.width} style="display: table;">
+														<div class="slds-truncate slds-text-align_center" title ={column.label}>
+															{column.label} &nbsp;
+															<template if:true={column.helpText}>
+															<lightning-helptext content={column.helpText}></lightning-helptext>
+														</template>
+														</div>
+														
+													</th>
+												</template>
+											</template>
+										</template>
+										<template if:true={displayActionColumn}>
+											<th style={actionColumnWidth}>
+												&nbsp;
+											</th>
+										</template>
+									</tr>
+									<template if:true={collectionData.config.showSumOfRows}>
+										<tr class="slds-line-height_reset">
+											<template for:each={table.sums} for:item="sum">
+												<th scope="col" key={sum.column}>
+													<div class="slds-truncate slds-text-align_center">
+														{sum.value}
+													</div>
+												</th>
+											</template>
+											<template if:true={collectionData.config.showSumOfRows}>
+												<th style={actionColumnWidth}>
+													&nbsp;
+												</th>
+											</template>
+										</tr>
+									</template>
+								</thead>
+							</template>
+							<template for:each={table.rows} for:item="row">
+								<template if:false={row.isDeleted}>
+									<c-lwc-owf-generic-collection-tool-row key={row.rowNumber} row={row}
+										columns={collectionData.config.columns} table-number={table.tableNumber}
+										enable-delete-button={collectionData.config.enableDeleteRow}
+										template-name={collectionData.config.displayTemplate}
+										enable-clear-row={collectionData.config.enableClearRow}
+										display-delete-first-row={collectionData.config.displayDeleteFirstRow}
+										show-row-number={collectionData.config.showRowNumber}
+										ondeleteaction={handleDeleteAtion} onclearaction={handleClearAction}
+										onupdateaction={handleUpdateAction}>
+									</c-lwc-owf-generic-collection-tool-row>
+								</template>
+							</template>
+						</table>
+					</div>
+				</template>
+				<footer class="slds-modal__footer">
+					<div class="slds-grid slds-grid_align-center">
+						<button class="slds-button slds-button_brand" disabled={disableSave} onclick={saveCollectionData}
+							title="Continue">Save</button>
+						<button class="slds-button slds-button_outline-brand" onclick={navigateToRecord}
+							title="Cancel">Cancel</button>
+					</div>
+				</footer>
+			</template>
+		</template>
+	</div>
+</template>

@@ -1,0 +1,26 @@
+<apex:page extensions="CNT_CRM_CloneBNF" standardController="BNF2__c" showHeader="false" sidebar="false">
+    <script>
+    var previousOnload = window.onload; 
+    window.onload = function() { 
+        if (previousOnload) { 
+            previousOnload(); 
+        }
+        var fieldApiToIdMapJSONString = '{!fieldApiToIdMapJSONString}';
+        var fieldApiToIdMap = JSON.parse(fieldApiToIdMapJSONString);   
+        var Opportunity = JSON.parse('{!JSENCODE(opportunityJSONString)}');
+        var vStage = Opportunity.StageName; 
+        var vOpptyId = Opportunity.Id; 
+        var vprofileName = "{!$Profile.Name}"; 
+        var vOppRecordTypeId = Opportunity.RecordTypeId;
+        var bnfRec = JSON.parse('{!bnfJSONString}');
+        var bnfId = bnfRec.Id;
+        var bnfRecordTypeId = bnfRec.RecordTypeId;
+        if(bnfRec.RecordTypeId == null){
+            bnfRecordTypeId = "{!BNFRecordTypeId}";
+        }    
+        var url = "/" + bnfId + "/e?clone=1&retURL=/" + vOpptyId + "&saveURL=/apex/BNFOpptyList?id=" + vOpptyId + "&" + fieldApiToIdMap["Addendum__c"] + "=1&" + fieldApiToIdMap["BNF_Status__c"] + "=New&nooverride=true&" + fieldApiToIdMap["Legacy_ID__c"] + "=&nooverride=true"; 
+        url += "&" + fieldApiToIdMap["Revised_BNF_Date__c"]+ "=&"+ fieldApiToIdMap["Is_PO_Required__c"] +"=&"+ fieldApiToIdMap["Pass_thru_schedules__c"] +"=&"+  fieldApiToIdMap["Retainer_Opportunity_Number__c"] + "=&RecordType=" + bnfRecordTypeId + "&" + fieldApiToIdMap["Invoice_Default_Day__c"] + "=1"; 
+        window.parent.location.href = url;
+    };
+    </script>
+</apex:page>

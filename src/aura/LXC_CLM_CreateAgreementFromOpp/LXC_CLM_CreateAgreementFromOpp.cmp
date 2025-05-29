@@ -1,0 +1,72 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickActionWithoutHeader,lightning:actionOverride,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome" 
+    controller="CNT_CLM_CreateAgreementFromOpp" access="global" extends="c:LXC_CLM_BaseComponent">
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="agrRecordTypes" type="RecordType[]"/>
+    <aura:attribute name="selectedRecordType" type="String"/>
+    <aura:attribute name="selectedRecordTypeDevName" type="String"/>
+    <aura:attribute name="defaultValues" type="Object"/>
+    <aura:attribute name="disableNextButton" type="Boolean" default="false" />
+	<aura:attribute name="isOpen" type="Boolean" default="false"/>
+    <aura:attribute name="isQuoteExist" type="Boolean" default="false" />
+    <aura:attribute name="hasError" type="Boolean" default="false" />    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>    
+    
+    <aura:if isTrue="{!!v.hasError}">
+        <div id="maincontainer" >
+            <header class="slds-modal__header">
+                <h2 id="modal-heading-01" class="slds-text-heading_medium">{!$Label.c.CLM_CL00011_Create_New_Agreement}</h2>
+            </header>
+            <div class="slds-m-top_small">
+                <h3>{!$Label.c.CLM_CL00011_Select_RecordType_Pathway} </h3>
+            </div>
+            <br/>
+            <aura:iteration items="{!v.agrRecordTypes}" var="agrRecordType">
+                <div class="data-row slds-p-right_large">
+                    <div>
+                        <lightning:input type="radio" label="{!agrRecordType.Name}" name="options" value="{!agrRecordType.Id}" id="{!agrRecordType.DeveloperName}" onchange="{!c.onRadioSelect}"/>
+                    </div>
+                    <br/>
+                </div>        
+            </aura:iteration>
+            <aura:if isTrue="{!not(empty(v.agrRecordTypes))}">
+                <footer class="slds-modal__footer slds-align_absolute-center ">
+                    <button class="slds-button slds-button_brand " onclick="{!c.createRecord}" disabled="{!v.disableNextButton}">{!$Label.c.CLM_CL00011_Next}</button>
+                    <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.closeQuickAction}">{!$Label.c.CLM_CL0007_Cancel}</button>
+                </footer>
+            </aura:if>
+        </div>
+    </aura:if>
+    <aura:if isTrue="{!v.hasError}">
+        <div class="errorMessage slds-text-color_error slds-text-title_bold">
+            {!$Label.c.CLM_CL00026_OPPORTUNITY_STAGE_ERROR}
+        </div>
+    </aura:if> 
+    <aura:if isTrue="{!v.isQuoteExist}">
+        <div style="height: 300px;">
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container slds-align_absolute-center">
+                    <header class="slds-modal__header slds-modal__header_empty" style="width:640px;">
+                        <lightning:buttonIcon iconName="utility:close" class="slds-modal__close" onclick="{!c.closeQuickAction}"/>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" style="height: 300px; width:650px;">
+                        <h3>{!$Label.c.CLM_CL_0007_Quote_Exist_On_Opp_Validation}</h3>
+                    </div>
+                </div>
+            </section>
+        </div> 
+    </aura:if>
+    <aura:if isTrue="{!v.isOpen}">
+        <div style="height: 640px;">
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container slds-align_absolute-center">
+                    <header class="slds-modal__header slds-modal__header_empty" style="width:1080px;">
+                        <lightning:buttonIcon iconName="utility:close" class="slds-modal__close" onclick="{!c.closeFlowModal}"/>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" style="height: 640px; width:1080px;">
+                        <lightning:flow aura:id="flowData"/>
+                    </div>
+                </div>
+            </section>
+        </div> 
+    </aura:if>
+</aura:component>

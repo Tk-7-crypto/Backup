@@ -1,0 +1,189 @@
+<template>
+    <lightning-card>
+        <div class="slds-align--absolute-center ">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <h3 slot="title">
+            <lightning-icon icon-name="standard:product" size="small" class="slds-m-right_small"></lightning-icon>
+            Categorization
+        </h3>
+        <div slot="actions">
+            <lightning-button label="Preview" onclick={openNewSubTabPriviewHandler} class="slds-m-left_small"></lightning-button>
+            <lightning-button label="Edit" onclick={handleEdit} class="slds-m-right_small"></lightning-button>
+        </div>
+
+        <template if:true={caseRecord.data}>
+            <div class="slds-form slds-p-horizontal_small slds-p-vertical_x-small" role="list">
+                <div class="slds-form__row">
+                    <div class="slds-form__item" role="listitem">
+                        <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                            <span class="slds-form-element__label">Asset</span>
+                            <div class="slds-form-element__control">
+                                <div class="slds-form-element__static">
+                                    {caseRecord.data.fields.ProductName__c.value}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-form__row">
+                    <div class="slds-form__item" role="listitem">
+                        <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                            <span class="slds-form-element__label">Weekly/Monthly</span>
+                            <div class="slds-form-element__control">
+                                <div class="slds-form-element__static">
+                                    {caseRecord.data.fields.SubType1__c.value}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-form__row">
+                    <div class="slds-form__item" role="listitem">
+                        <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                            <span class="slds-form-element__label">Extract</span>
+                            <div class="slds-form-element__control">
+                                <div class="slds-form-element__static">
+                                    {caseRecord.data.fields.SubType2__c.value}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <template if:true={showSubtype3}>
+                    <div class="slds-form__row">
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                                <span class="slds-form-element__label">Market Type</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {caseRecord.data.fields.SubType3__c.value}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={showOtherAuditsAndTheirFrequencies}>
+                    <div class="slds-form__row">
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                                <span class="slds-form-element__label">Other audits and their frequencies</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {caseRecord.data.fields.Other_audits_and_their_frequencies__c.value}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <div class="slds-form__row">
+                    <div class="slds-form__item" role="listitem">
+                        <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                            <span class="slds-form-element__label">Media Date</span>
+                            <div class="slds-form-element__control">
+                                <div class="slds-form-element__static">
+                                    {caseRecord.data.fields.Media_Date_Label__c.value}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <template if:true={showReasonForLateRequestReRun}>
+                    <div class="slds-form__row">
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_horizontal">
+                                <span class="slds-form-element__label">Reason for Late Request Re-Run</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static">
+                                        {caseRecord.data.fields.Reason_for_Late_Request_Re_Run__c.value}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </lightning-card>
+
+
+    <template if:true={isEditCategorization}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-align--absolute-center">
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                    </lightning-spinner>
+                </template>
+            </div>
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button
+                        class="slds-button slds-button_icon slds-button_icon-inverse slds-modal__close slds-button_icon-x"
+                        onclick={closeModal} title="Close">
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-text-heading_medium">Edit Categorization</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" data-id="formCategorization">
+                    <lightning-combobox label="Asset" value={selectedProduct} options={products}
+                        onchange={handleProductChange} placeholder="Select an Asset"></lightning-combobox>
+
+                    <template if:true={subType1Options.length}>
+                        <lightning-combobox label="Weekly/Monthly" value={selectedSubType1} options={subType1Options}
+                            onchange={handleSubType1Change} placeholder="Select a SubType1"></lightning-combobox>
+                    </template>
+
+                    <template if:true={subType2Options.length}>
+                        <lightning-combobox label="Extract" value={selectedSubType2} options={subType2Options}
+                            onchange={handleSubType2Change} placeholder="Select a SubType2"></lightning-combobox>
+                    </template>
+
+                    <template if:true={subType3Options.length}>
+                        <template if:true={showSubtype3}>
+                            <lightning-combobox label="Market Type" value={selectedSubType3} options={subType3Options}
+                                onchange={handleSubType3Change} placeholder="Select a SubType3"></lightning-combobox>
+                        </template>
+                    </template>
+
+                    <template if:true={showOtherAuditsAndTheirFrequencies}>
+                        <lightning-input label="Other audits and their frequencies" required="true" maxlength="254"
+                            value={otherAuditsAndTheirFrequenciesValue}
+                            onchange={handleOtherAuditsAndTheirFrequenciesChange}></lightning-input>
+                    </template>
+
+                    <template if:true={mediaDateOptions.length}>
+                        <lightning-combobox label="Media Date" value={selectedMediaDate} options={mediaDateOptions}
+                            onchange={handleMediaDateChange} placeholder="Select a Media Date"></lightning-combobox>
+                    </template>
+
+                    <template if:true={showReasonForLateRequestReRun}>
+                        <lightning-combobox label="Reason for Late Request Re-Run"
+                            value={selectedReasonForLateRequestReRun} options={reasonForLateRequestReRunOptions}
+                            onchange={handleReasonForLateRequestReRunChange} placeholder="Select a reason"
+                            required="true"></lightning-combobox>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeModal} variant="neutral" class="slds-m-right_small"></lightning-button>
+                    <lightning-button label="Save" onclick={handleSubmit} variant="brand"></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+
+        <template if:true={showAdditionalInfo}>
+            <c-lwc_csm_create_categorizaton_additional_info case-id={recordId} subtype2={selectedSubType2}
+                asset-name={selectedProductName}
+                maintenance-type={caseRecord.data.fields.Maintenance_Type__c.value}
+                case-type={caseRecord.data.fields.Case_Type__c.value}
+                oncancel={handleAdditionalInfoCancel} onsubmit={handleAdditionalInfoSubmit}>
+            </c-lwc_csm_create_categorizaton_additional_info>
+        </template>
+    </template>
+</template>

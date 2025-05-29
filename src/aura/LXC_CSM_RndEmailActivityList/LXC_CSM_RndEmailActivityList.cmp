@@ -1,0 +1,72 @@
+<aura:component controller="CNT_CSM_RndEmailActivityList" implements="lightning:isUrlAddressable,force:appHostable,force:hasRecordId,flexipage:availableForAllPageTypes" access="global" >
+    <aura:attribute name="data" type="Object"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="selectedRowsCount" type="Integer" default="0"/>
+    <aura:attribute name="maxRowSelection" type="Integer" default="5"/>
+    <aura:attribute name="selection" type="List" access="PRIVATE"/>
+    <aura:attribute name="rowKeys" type="List" access="PRIVATE"/>
+    <aura:attribute name="selectedRows" type="List" access="PRIVATE"/>
+    <aura:attribute name="isModalOpen" type="boolean" default="false"/>
+    <aura:attribute name="options" type="List" access="PRIVATE"/>
+    <aura:attribute name="selectedValue" type="String" access="PRIVATE"/>
+    <aura:attribute name="optionStatus" type="List" access="PRIVATE"/>
+    <aura:attribute name="sltStatusValue" type="String" access="PRIVATE"/>
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <lightning:workspaceAPI aura:id="workspace" /> 
+    <lightning:overlayLibrary aura:id="overlayLib"/>
+    <lightning:card variant="narrow">
+        <aura:set attribute="title">
+            <lightning:icon iconName="standard:case" variant="warning"/>  Update Email Activities
+        </aura:set>
+        <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12"> 
+                <div style="height: 400px;">
+                    <lightning:datatable aura:id="ltngDatatableCmp" columns="{!v.columns}" data="{!v.data}" keyField="activityId" showRowNumberColumn="true" onrowselection="{!c.updateSelectedText}" maxRowSelection="{!v.maxRowSelection}"/>
+                </div>
+            </lightning:layoutItem>
+            <div class="slds-p-around_medium slds-form">
+                <div class="slds-form-element">
+                    <lightning:button label="Update selected Rows" variant="brand" onclick="{!c.updateRowSelection}"/>
+                </div>
+            </div>
+        </lightning:layout>
+    </lightning:card>
+    <aura:if isTrue="{!v.isModalOpen}">
+        
+        <!-- Modal/Popup Box starts here-->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{!c.closeModel}" alternativeText="close" variant="bare-inverse" class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Activities</h2>
+                </header>
+                <!--Modal/Popup Box Body Starts here-->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <p>
+                        <lightning:select name="actStatusId" label="Activity Status" aura:id="actStatusId" value="{!v.sltStatusValue}">
+                        <option value="">--None--</option>
+                        <aura:iteration items="{!v.optionStatus}" var="opt">
+                            <option text="{!opt}" value="{!opt}"/>
+                        </aura:iteration>
+                        </lightning:select>
+                        
+                        <lightning:select name="emailCatId" label="Email Categorization" aura:id="emailCatId" value="{!v.selectedValue}">
+                        <option value="">--None--</option>
+                        <aura:iteration items="{!v.options}" var="option">
+                            <option text="{!option}" value="{!option}"/>
+                        </aura:iteration>
+                        </lightning:select>
+                    </p>
+                </div>
+                <!--Modal/Popup Box Footer Starts here-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" label="Cancel" title="Cancel" onclick="{!c.closeModel}"/>
+                    <lightning:button variant="brand" label="Update" title="Update" onclick="{!c.updateEmailActivity}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>    
+</aura:component>

@@ -1,0 +1,68 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:hasRecordId" controller="CNT_CRM_OpportunitySplit">
+    <aura:attribute name="opportunitySplitRecords" type="OpportunitySplit[]" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+    <aura:attribute name="splitType" type="String" default="Overlay"/>
+    <aura:attribute name="fieldsToShow" type="List" default="Id,OpportunityId,SplitOwnerId,SplitOwner.Name,SplitTypeId,SplitType.DeveloperName,SplitPercentage,SplitAmount,SplitNote,CurrencyIsoCode"/>
+    <aura:attribute name="fieldsToShowLabel" type="List" default="Team Member,Percent(%),Amount"/>
+    <aura:attribute name="hasSplitVisible" type="Boolean"/>
+    <article class="slds-card slds-card_boundary forceRelatedListCardDesktop" aria-describedby="header"  data-aura-class="forceRelatedListCardDesktop">
+        <div class="slds-card__header slds-grid slds-clearfix">
+            <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-opportunity" title="Opportunity Split">
+                        <lightning:icon iconName="standard:opportunity_splits" variant="error" alternativeText="Opportunity Split Icon"/>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2 id="header">
+                        <div class="slds-grid">
+                            <div class="slds-text-heading_medium">
+                                <a class="slds-card__header-link baseCard__header-title-container" href="javascript:void(0);"  onclick="{!c.viewOpportunitySplit}">
+                                    <span class="slds-text-heading--small slds-truncate slds-m-right--xx-small" title="Opportunity Splits" >Opportunity Splits</span>
+                                    <span class="slds-text-heading--small slds-shrink-none slds-m-right--xx-small" title="(1)" > ({!v.opportunitySplitRecords.length})</span>
+                                </a>
+                            </div>                            
+                        </div>
+                    </h2>
+                </div>
+            </header>
+            <div class="slds-float_left">
+                <lightning:button label="Edit Opportunity Split" onclick="{!c.editOpportunitySplit}" class="slds-button slds-button_neutral" disabled="{!!v.hasSplitVisible}"/>
+            </div>
+        </div>
+    </article>
+    <aura:if isTrue="{!v.opportunitySplitRecords.length > 0}">
+        <table class="slds-table slds-table--bordered slds-table--striped slds-table--cell-buffer slds-table--fixed-layout">
+            <thead>
+                <tr class="slds-text-heading--label slds-text-title_caps">
+                    <aura:iteration items="{!v.fieldsToShowLabel}" var="headerLabel">
+                        <th scope="col">
+                            <aura:if isTrue="{!headerLabel =='Amount'}">
+                                <div class="slds-truncate" title="{!headerLabel + '(' + v.opportunitySplitRecords[0].CurrencyIsoCode + ')'}">{!headerLabel + '(' + v.opportunitySplitRecords[0].CurrencyIsoCode + ')'}</div>
+                                <aura:set attribute="else">
+                                    <div class="slds-truncate" title="{!headerLabel}">{!headerLabel}</div>  
+                                </aura:set>
+                            </aura:if>
+                        </th>
+                    </aura:iteration>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.opportunitySplitRecords}" var="oppSplit">
+                    <tr class="slds-hint-parent">
+                        <td>
+                            <div class="slds-truncate" title="{!oppSplit.SplitOwner.Name}">{!oppSplit.SplitOwner.Name}</div>
+                        </td>
+                        <td>
+                            <div class="slds-truncate" title="{!oppSplit.SplitPercentage}">{!oppSplit.SplitPercentage}</div>
+                        </td>
+                        <td>
+                            <div class="slds-truncate" title="{!oppSplit.SplitAmount}">{!oppSplit.SplitAmount}</div>
+                        </td>
+                    </tr>
+                </aura:iteration>
+            </tbody>
+        </table>
+    </aura:if>
+</aura:component>

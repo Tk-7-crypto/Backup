@@ -1,0 +1,160 @@
+<aura:component controller="CNT_CSM_PortalCaseHistory" implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="isLoading" type="boolean" default="false" />
+    <aura:attribute name="isShow" type="boolean" default="true" />
+    <aura:attribute name="isShowStatus" type="boolean" default="true" />
+    <aura:attribute name="record" type="Object" />
+    <aura:attribute name="CSM_CaseHistory" type="Object" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="recordError" type="String" />
+    <aura:attribute name="autoCloseCaseIsChecked" type="boolean" default="true" />
+    <aura:attribute name="showAddComment" type="boolean" default="true" />
+    <aura:attribute name="showAddAttachment" type="boolean" default="true" />
+    <aura:attribute name="showHistoryCreator" type="boolean" default="true" />
+    <force:recordData aura:id="recordLoader" recordId="{!v.recordId}" layoutType="FULL" targetRecord="{!v.record}" fields="['Status','Origin']" mode="EDIT" targetFields="{!v.simpleRecord}" targetError="{!v.recordError}" recordUpdated="{!c.handleRecordUpdated}" />
+    <aura:if isTrue="{!not(empty(v.recordError))}">
+        <div class="recordError">{!v.recordError}</div>
+    </aura:if>
+    <article class="slds-card slds-card_boundary">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon iconName="standard:messaging_conversation" size="small" alternativeText="History" />
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <aura:if isTrue="{!v.isLoading}">
+                <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <aura:if isTrue="{! v.simpleRecord.Status ne 'Closed'}">
+                <aura:if isTrue="{! v.showAddAttachment }">
+                    <lightning:fileUpload label="{!$Label.c.Attach_files}" title="{!$Label.c.Upload_files}" name="fileUploader" multiple="true" recordId="{!v.recordId}" onuploadfinished="{!c.handleUploadFinished}" />
+                </aura:if>
+                <div class="mb-3 mt-3">
+                    <aura:if isTrue="{! v.showAddComment }">
+                        {!$Label.c.Add_a_Comment}
+                        <lightning:textarea class="worknoteTextarea" aura:id="commentBody" name="commentBody" label="" value="" placeholder="{!$Label.c.Please_Share_a_comment_with_us_about_this_case}" required="false" />
+                    </aura:if>
+                    <aura:if isTrue="{! v.simpleRecord.Status eq 'Resolved with Customer' || v.simpleRecord.SubStatus__c eq 'Customer Confirmation to Close'}">
+                        <lightning:input type="checkbox" label="{!$Label.c.Resolution_approved}" aura:id="autoCloseCaseCheck" name="autoCloseCaseCheck" checked="{!v.autoCloseCaseIsChecked}" />
+                    </aura:if>
+                    <aura:if isTrue="{! v.showAddComment }">
+                    <div class="slds-no-flex">
+                        <lightning:button label="{!$Label.c.Save}" onclick="{!c.handleSave}" disabled="{! v.isLoading }" />
+                    </div>
+                    </aura:if> 
+                    <div class="text-right">
+                        <div class="text-left" style="display: inline-grid;" dir="rtl">
+                                <lightning:input type="toggle" aura:id="showHideEmail" label="{!'Show '+$Label.c.Email}" onchange="{!c.displayEmail}" disabled="{! v.isLoading }" checked="true" />
+                                <lightning:input type="toggle" aura:id="showHideStatus" label="{!$Label.c.Show_Status_Update}" onchange="{!c.displayStatus}" disabled="{! v.isLoading }" checked="true" />
+                        </div>
+                    </div>
+                </div>
+            </aura:if>
+            <ul class="slds-feed__list">
+                <aura:iteration items="{!v.CSM_CaseHistory}" var="history" indexVar="index">
+                    <li class="slds-feed__item">
+                        <article class="slds-post">
+                            <header class="slds-post__header slds-media">
+                                <div class="slds-media__body">
+                                    <div class="slds-size_1-of-1">
+
+                                        <div class="slds-container_fluid">
+                                            <div class="slds-grid slds-grid_vertical-stretch slds-size_1-of-1">
+                                                <div class="slds-col">
+                                                    <aura:if isTrue="{! v.showHistoryCreator }">
+                                                        <a href="javascript:void(0);" title="{!history.createdByName}"><b>{!history.createdByName}</b></a>
+                                                    </aura:if>
+                                                </div>
+                                                <div class="slds-col_bump-right">
+                                                    <lightning:formattedDateTime value="{!history.lastModifiedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="preamble_sub slds-container_fluid">
+                                            <div class="slds-grid slds-grid_vertical-stretch slds-size_1-of-1">
+                                                <aura:if isTrue="{!history.objName eq 'CaseComment' }">
+                                                    <lightning:icon iconName="standard:post" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Case comment" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        {!$Label.c.Case_comment}
+                                                    </div>
+                                                </aura:if>
+                                                <aura:if isTrue="{!history.objName eq 'ContentDocumentLink' }">
+                                                    <lightning:icon iconName="standard:file" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Case attachment" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        {!$Label.c.Case_attachment}
+                                                    </div>
+                                                </aura:if>
+                                                <aura:if isTrue="{!history.objName eq 'CaseHistory' }">
+                                                    <lightning:icon iconName="standard:case_change_status" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Case status updated" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        {!$Label.c.A_field_has_been_updated}
+                                                    </div>
+                                                </aura:if>
+                                                <aura:if isTrue="{!history.objName eq 'EmailMessage' }">
+                                                    <lightning:icon iconName="standard:email" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Email" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        {!$Label.c.Email}
+                                                    </div>
+                                                </aura:if>
+                                                <aura:if isTrue="{!history.objName eq 'CallLog' }">
+                                                    <lightning:icon iconName="standard:log_a_call" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Call logged" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        {!$Label.c.Call_logged}
+                                                    </div>
+                                                </aura:if>
+                                                <aura:if isTrue="{!history.objName eq 'CSMChatHistory' }">
+                                                    <lightning:icon iconName="standard:live_chat" class="slds-m-right_x-small slds-var-m-bottom_xxx-small" size="x-small" alternativeText="Live Chat" />
+                                                    <div class="slds-col slds-var-p-right_large">
+                                                        Live Chat History
+                                                    </div>
+                                                </aura:if>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </header>
+                            <div class="slds-post__content slds-text-longform" style="overflow: auto">
+                                <aura:if isTrue="{!history.objName eq 'CaseComment' }">
+                                    <p>
+                                        <ui:outputTextArea value="{!history.value}" />
+                                    </p>
+                                </aura:if>
+                                <aura:if isTrue="{!history.objName eq 'ContentDocumentLink' }">
+                                    <lightning:fileCard fileId="{! history.id}" description="{! history.value}" />
+                                </aura:if>
+                                <aura:if isTrue="{!history.objName eq 'CaseHistory' }">
+                                    <p>
+                                        <aura:unescapedHtml value="{! history.value}" />
+                                    </p>
+                                </aura:if>
+                                <aura:if isTrue="{!history.objName eq 'EmailMessage' }">
+                                    <p>
+                                        <aura:unescapedHtml value="{! history.value}" />
+                                    </p>
+                                </aura:if>
+                                <aura:if isTrue="{!history.objName eq 'CallLog' }">
+                                    <p>
+                                        <aura:unescapedHtml value="{! history.value}" />
+                                    </p>
+                                </aura:if>
+                                <aura:if isTrue="{!history.objName eq 'CSMChatHistory' }">
+                                    <p>
+                                        <aura:unescapedHtml value="{! history.value}" />
+                                    </p>
+                                </aura:if>
+                            </div>
+                        </article>
+                    </li>
+                </aura:iteration>
+            </ul>
+        </div>
+    </article>
+</aura:component>

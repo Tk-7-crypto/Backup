@@ -1,0 +1,266 @@
+<apex:page title="{!$Label.Agreement_Line_Item} {!agli.Name} " standardController="Agreement_Line_Item__c" extensions="SCM_AgreementLineItemViewcontroller" id="pg" lightningStylesheets="true">
+    <apex:slds /> 
+    <script>
+        function doAlert() {
+            var canChange = '{!canChangeProduct}';
+            if(canChange == 'false') {
+                alert('{!$Label.Active_Agg_Product_Can_Not_Changed}');
+                return false;
+            }
+            else 
+                return true;
+        }
+
+        function alertmessage() {
+            var agreementActivated = '{!isAggActivated}';
+            if(agreementActivated == 'true' ) {
+                 alert('{!$Label.Active_Agg_Product_Can_Not_Cancelled}');
+                 return false;
+            }
+            else
+                return true;
+        }
+        
+        var timeout = 300;
+        var closetimer  = 0;
+        var ddmenuitem  = 0;   
+        function mopen(id,thisid)
+        {   
+            mcancelclosetime();
+            var toppos=GetTopLeft(thisid);
+            if(ddmenuitem) ddmenuitem.style.visibility = 'hidden';
+            ddmenuitem = document.getElementById(id);
+            ddmenuitem.style.visibility = 'visible';
+            ddmenuitem.style.top =(parseInt(toppos.Top)+30) + 'px';
+        }
+
+        function mclose()
+        {
+            if(ddmenuitem) ddmenuitem.style.visibility = 'hidden';
+        }
+
+        function mclosetime()
+        {
+            closetimer = window.setTimeout(mclose, timeout);
+        }
+        
+        function mcancelclosetime()
+        {
+            if(closetimer)
+            {
+                window.clearTimeout(closetimer);
+                closetimer = null;
+            }
+        }
+
+        function GetTopLeft(elm)
+        {
+            var y = 0;
+            y = elm.offsetTop;
+            elm = elm.offsetParent;
+            while(elm != null)
+            {
+                y = parseInt(y) + parseInt(elm.offsetTop);
+                elm = elm.offsetParent;
+            }
+            return {Top:y};
+        }
+
+        function confirmation() {
+            if(confirm('Are you sure?'))
+            {    
+                deleteAggProd();
+                return false;
+            }    
+            else
+            {
+                YUIHideLoading();
+                return false;
+            }
+        }
+
+        function netPriceCheck(){
+            if('{!agli.Net_Price__c}' == null || '{!agli.Net_Price__c}' == '')
+            {
+                alert('Please enter net price before Re-Establish Revenue Schedule');
+                return false;
+            }
+            return true;
+        }
+
+        function addLoadEvent(func) 
+        { 
+          var oldonload = window.onload; 
+          if (typeof window.onload != 'function') 
+          { 
+             window.onload = func; 
+          } 
+          else
+          { 
+              window.onload = function()  
+              { 
+                if (oldonload) 
+                { 
+                   oldonload(); 
+                } 
+                func(); 
+              } 
+           } 
+        } 
+        
+        addLoadEvent(function() 
+        { 
+            if( '{!UserProfileName}' != 'system administrator' && '{!recordTypeName}' != 'Japan Agreement')
+            {
+                var el = document.getElementById('pg:LineItemDef_body');            
+                mytable = el.children;
+                
+                mytablebody = mytable[0].getElementsByTagName("tbody")[0];
+                myrow       = mytablebody.getElementsByTagName("tr");
+                
+                for(var i= 1; i<mytablebody.getElementsByTagName("tr").length;i++)
+                {
+                        myrow[i].getElementsByTagName("td")[0].children[1].onclick = null;
+                }
+                myTableHover = document.getElementById('pg:LineItemMarketDef_HoverList_body').getElementsByTagName("table")[0];         
+                mytablebodyHoverList = document.getElementById('pg:LineItemMarketDef_HoverList_body').getElementsByTagName("table")[0].getElementsByTagName("tbody")[0];
+                myrowHoverList = mytablebodyHoverList.getElementsByTagName("tr"); 
+                for(var i= 1; i<mytablebodyHoverList.getElementsByTagName("tr").length;i++)
+                {
+                
+                    myrowHoverList[i].getElementsByTagName("td")[0].children[1].onclick = null;
+                }
+            } 
+            if(document.getElementById('pg:frm:viewmode:AmendmentOverviewBlockSection:COHistryPG:ChangeOrder:pb:pbSection') != null && document.getElementById('pg:frm:viewmode:AmendmentOverviewBlockSection:COHistryPG:ChangeOrder:pb:pbSection').childNodes)
+                document.getElementById('pg:frm:viewmode:AmendmentOverviewBlockSection:COHistryPG:ChangeOrder:pb:pbSection').childNodes[0].style.backgroundColor = "#7EB47E";        
+            else
+                document.getElementById('pg:frm:viewmode:AmendmentOverviewBlockSection').style.display='none';
+        });   
+    
+    </script>
+    <style>
+        img.helpOrb{
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+    
+    <table width="100%">
+          <tr><td></td></tr>
+          <tr>
+              <td align="right">
+                  <div class="links" >
+                  <a href="/{!$CurrentPage.parameters.id}/p?retURL=/{!$CurrentPage.parameters.id}" class="configLinks" title="{!$Label.Printable_View} ({!$Label.New_Window})" target="_blank"><font color="015BA7">{!$Label.Printable_View}</font></a> 
+                  | <a href="javascript:openPopupFocusEscapePounds(%27https://help.salesforce.com/apex/htdoor?loc=help&target=co_edit.htm&section=CustomObjects&language=en_US&release=184.19&instance={!$Label.SFDC_Org_Instance}%27, %27Help%27, 1024, 768, %27width=1024,height=768,resizable=yes,toolbar=yes,status=yes,scrollbars=yes,menubar=yes,directories=no,location=yes,dependant=no%27, false, false);" title="{!$Label.Help_for_this_Page} ({!$Label.New_Window})">
+                  <span class="helpLink">{!$Label.Help_for_this_Page}</span><img src="/s.gif" alt="" class="helpIcon"/></a>
+                  </div>
+              </td>                  
+          </tr>      
+      </table>
+      <apex:sectionHeader title="{!$Label.Agreement_Line_Item}" subtitle="{!agli.Name}"/>
+      <div id="LineItemMarketDef{!agli.Id}" style="position:absolute;visibility:hidden;width:75%;margin-left:12px;z-index:1500;top:140px;" onmouseover="mcancelclosetime()" 
+        onmouseout="mclosetime()">
+            <apex:relatedList list="Agreement_Line_Item_ATCs__r" subject="{!agli.Id}"  id="LineItemMarketDef_HoverList" rendered="{!$ObjectType.Agreement_Line_Item_ATCs__c.Accessible}"/>
+      </div>
+      <div id="AgliDiscounts{!agli.Id}" style="position:absolute;visibility:hidden;width:75%;margin-left:12px;z-index:1500;top:140px;" onmouseover="mcancelclosetime()" 
+        onmouseout="mclosetime()">
+            <apex:relatedList list="Agreement_Line_Item_Discounts__r" rendered="{!$ObjectType.Agreement_Line_item_Discount__c.Accessible}" subject="{!agli.Id}" title="{!$Label.Agreement_Line_Item_Discounts}"/>
+      </div>
+      <div id="AgliHistory{!agli.Id}" style="position:absolute;visibility:hidden;width:75%;margin-left:12px;z-index:1500;top:140px;" onmouseover="mcancelclosetime()" 
+        onmouseout="mclosetime()">
+            <c:SCM_GenericHistoryComponent recordLimit1="20" myObject1="{!Agreement_Line_Item__c}"/>
+      </div>
+      <apex:outputPanel layout="block" style="margin-top:0 px;z-index:1500;" id="reldiv">
+          <apex:outputPanel layout="block" style="position:relative !important;visibility: visible;display:block;line-height:2em;text-align:left;" styleclass="listHoverLinks">
+              <apex:outputLink style="top:0px;" styleClass="linklet" value="#LineItemMarketDef" id="theLink01" onmouseout="mclosetime();" onmouseover="mopen('LineItemMarketDef{!agli.Id}',this)"><span class="listTitle">{!$Label.Line_Item_Market_Definition} <span class="count">[{!relatedListSize['Agreement_Line_Item_ATCs__r']}]</span></span> </apex:outputLink> <span class="pipe"> | </span>                                            
+              <apex:outputLink style="top:0px;" styleClass="linklet" value="#LineItemDiscount" id="theLink03" onmouseout="mclosetime();" onmouseover="mopen('AgliDiscounts{!agli.Id}',this)"><span class="listTitle">{!$Label.Agreement_Line_Item_Discounts} <span class="count">[{!relatedListSize['Agreement_Line_Item_Discounts__r']}]</span></span> </apex:outputLink> <span class="pipe"> | </span>
+              <apex:outputLink style="top:0px;" styleClass="linklet" value="#LineItemHistory" id="theLink02" onmouseout="mclosetime();" onmouseover="mopen('AgliHistory{!agli.Id}',this)"><span class="listTitle">{!$Label.Agreement_Line_Item_History} <span class="count">[{!relatedListSize['Histories']}]</span></span> </apex:outputLink> <span class="pipe"> | </span>                                                                                          
+          </apex:outputPanel>
+      </apex:outputpanel>
+      <apex:form id="frm">
+          <apex:pagemessages id="errMsg"/>
+          <c:JQueryBlockUI />
+          <apex:actionFunction name="deleteAggProd"  action="{!delAgli}" rerender="frm" oncomplete="YUIHideLoading();"/>    
+          <apex:actionFunction name="cancelAgli" action="{!cancelUncancel}"/> 
+          <apex:pageblock title="{!$Label.Agreement_Line_Item_Detail}" id="viewmode" mode="maindetail">
+              <apex:pageBlockButtons rendered="{!if(Agreement_Line_Item__c.Status__c == 'Cancelled' && $Profile.Name !='System Administrator',false,true)}" >
+                  <apex:commandButton value="Edit" id="editButton" action="{!editAgli}" rendered="{!AND(NOT(CONTAINS(UserProfileName,'client service')),isUpdateAgliAllowed)}"/>
+                  <apex:commandButton value="Delete" id="delButton" onclick="YUIShowLoading(); return confirmation();" rendered="{!AND(NOT(CONTAINS(UserProfileName,'client service')),isUpdateAgliAllowed)}"/>
+                  <apex:commandbutton value="Clone" action="{!cloneRecord}" id="cloneButton" rendered="{!isCreateAgliAllowed}"/>
+                  <apex:commandbutton value="Select Market Def" id="selectMarketdef" action="{!selectMarketdef}" rendered="{!AND(NOT(CONTAINS(UserProfileName,'client service')),isUpdateAgliAllowed)}"/>
+              </apex:pageBlockButtons>
+              <br/><br/>
+                 <apex:outputPanel id="custmMsg" rendered="{!isFrmSave}">
+                 <div style="border:1px solid #3BB9FF; background-color:#FFFFCC; border-radius: 7px;">
+                 
+                    <div style="margin-left:5px;">
+                        <apex:image url="{!$Resource.WarningImage}" style="margin-bottom: -8px;margin-top:15px;" />
+                    </div>
+                    <div style="margin-left:35px;margin-top:-15px;">    
+                        <apex:outputText value="{!$Label.LIUpdateMessage}" rendered="{!isFrmSave}" style="font-family: verdana;font-size: 11px;"/>
+                    
+                        <apex:outputPanel rendered="{!!isItalyUser}" >
+                            <apex:outputLink value="/{!agli.AgreementId__c}" target="_parent">
+                                <font color="#0014a8">
+                                    <apex:outputText style="font-family: verdana;font-size: 11px;font-weight: bold;" value="click here"/>
+                                </font>
+                                </apex:outputLink>  
+                        </apex:outputPanel>  
+                        <apex:outputPanel rendered="{!isItalyUser}">                     
+                         <apex:outputLink value="/{!agli.AgreementId__c}" target="_parent">
+                               <font color="#0014a8">                                  
+                                   <apex:outputText style="font-family: verdana;font-size: 11px;font-weight: bold;" value="clicca qui" />
+                               </font>
+                           </apex:outputLink>  
+                        </apex:outputPanel> 
+                     </div>                                    
+                    <br/>
+                </div>
+                <br/><br/>
+             </apex:outputPanel> 
+             <apex:pageBlockSection title="Amendment Overview" columns="1" id="AmendmentOverviewBlockSection">
+              </apex:pageBlockSection>
+              <apex:pageblockSection id="idjapanUserBlock" title="Information" columns="2">         
+                <apex:outputfield value="{!agli.Name}" />
+                <apex:outputField value="{!agli.AgreementId__c}"/>              
+                <apex:outputfield value="{!agli.ProductId__c}" />
+                <apex:outputField value="{!agli.Contract_Start_Date__c}" />
+                <apex:outputfield value="{!agli.Delivery_Rpt_Frequency__c}" />
+                <apex:outputField value="{!agli.Contract_End_Date__c}" />
+                <apex:outputfield value="{!agli.Delivery_Media__c}" />
+                <apex:outputfield value="{!agli.Termination_Date__c}" />
+                <apex:outputfield value="{!agli.Co_promotion_contract__c}" />
+                <apex:outputfield value="{!agli.Data_Period_Start__c}" />
+                <apex:outputfield value="{!agli.Option_Detail__c}" />
+                <apex:outputfield value="{!agli.Data_Period_End__c}" />
+                <apex:outputlabel value="" />
+                <apex:outputfield value="{!agli.Attach_Number__c}" />
+            </apex:pageblockSection>
+            <apex:pageblockSection id="idjapanUserBlockPrice" title="Price" columns="2">
+                <apex:outputfield value="{!agli.List_Price__c}" />
+                <apex:outputfield value="{!agli.Net_Price__c}" />
+                <apex:outputfield value="{!agli.Additional_Price__c}" />
+                <apex:outputfield value="{!agli.Discount_Ratio__c}" />              
+                <apex:outputfield value="{!agli.Discount_Price__c}" />              
+                <apex:outputfield value="{!agli.CurrencyIsoCode}" />                            
+                <apex:outputfield value="{!agli.Description__c}" />
+                <apex:outputLabel value=""></apex:outputLabel>
+                <apex:pageblocksectionitem >
+                    <apex:outputLabel value="Created By"/>
+                    <apex:outputPanel ><apex:outputField value="{!agli.CreatedById}"/><apex:outputText style="padding-left:1%" value="{!createdBy }"/></apex:outputPanel>
+                </apex:pageblocksectionitem>
+                <apex:pageblocksectionitem >
+                    <apex:outputLabel value="Last Modified By"/>
+                    <apex:outputPanel ><apex:outputField value="{!agli.LastModifiedById}"/><apex:outputText style="padding-left:1%" value="{!lastModifiedBy }"/></apex:outputPanel>
+                </apex:pageblocksectionitem>
+            </apex:pageblockSection>
+          </apex:pageblock>
+    </apex:form>
+    
+    <a name="LineItemMarketDef" id="LineItemMarketDef"></a>
+        <apex:relatedList list="Agreement_Line_Item_ATCs__r" rendered="{!$ObjectType.Agreement_Line_Item_ATCs__c.Accessible}" id="LineItemDef"/>
+    <a name="LineItemDiscount" id="LineItemDiscount"></a>
+        <apex:relatedList list="Agreement_Line_Item_Discounts__r" rendered="{!$ObjectType.Agreement_Line_item_Discount__c.Accessible}" title="Agreement Product Discounts"/>
+    <a name="LineItemHistory" id="LineItemHistory"></a>
+        <c:SCM_GenericHistoryComponent recordLimit1="20" myObject1="{!Agreement_Line_Item__c}"/>
+</apex:page>

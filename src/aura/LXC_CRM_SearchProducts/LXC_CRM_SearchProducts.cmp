@@ -1,0 +1,158 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="flexipage:availableForAllPageTypes,force:hasRecordId">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="pickListFieldsMap" type="Object"/>
+    <aura:attribute name="opportunityRecord" type="Opportunity"/>
+    <aura:attribute name="quoteRecord" type="Quote__c"/>
+    <aura:attribute name="source" type="String"/>
+    <aura:attribute name="fieldsAPIList" type="String[]" default="Name,ProductCode,Offering_Segment__c,Territory__c,Offering_Group__c,Offering_Type__c,COE_Name__c,Product_Group__c,Unit_Name__c,Hierarchy_Level__c,Billing_System__c,ProductGroup__c,Hierarchy_Global_Code_Description__c,US_Practice__c,Global_Product_Code__c,PSA_PROJECT_REQUIRED__c,Hierarchy_Chain__c"/>
+    <aura:attribute name="pbeFilterFieldList" type="String[]" default="CurrencyIsoCode"/>
+    <aura:attribute name="defaultProductFilterObj" type="Default_Product_Search__c"/>
+    <aura:attribute name="pbeFieldList" type="String[]" default="Id,CurrencyIsoCode,Product2.Name,Product2.Hierarchy_Level__c,Product2.Description,Product2.ProductCode,Product2.CanUseRevenueSchedule,Product2.Material_Type__c,Product2.Billing_System__c,Product2.Offering_Group_Code__c,Product2.Delivery_Type__c,Product2.Offering_Type__c,Product2.Offering_Group__c,Product2.Offering_Segment__c,Product2.COE_Name__c,Product2.Product_Group__c,Product2.Unit_Name__c,Product2.ProductGroup__c,Product2.Territory__c,Product2.Excluded_From_Pricing_Assistant__c,Product2.Material_Group_1__c,Product2.Therapy_Class__c"/>
+    <aura:attribute name="isResolvedProductSearch" type="Boolean" default="false"/>
+    <aura:attribute name="resolveLineItem" type="OpportunityLineItem"/>
+    <aura:attribute name="actionType" type="String"/>
+    <aura:attribute name="resolveScreen" type="String"/>
+    <aura:attribute name="Sales_with_BNF" type="Boolean" default="false"/>
+    <aura:attribute name="logicOptions" type="List" default="[{'label': 'AND', 'value': 'AND'},{'label': 'OR', 'value': 'OR'}]"/>
+    <aura:attribute name="andORLogic" type="String" default="AND"/>
+    <aura:handler event="c:LXE_CRM_ResolveProductEvent" action="{!c.searchResolvedProduct}"/>
+    <aura:handler event="c:LXE_CRM_HideResolveTabEvent" action="{!c.hideResolveProduct}"/>
+    <aura:handler event="c:LXE_CRM_PopulateFieldSearchProductEvent" action="{!c.setSearchedField}" />
+    <div class="slds-p-top_small" >
+        <div class="slds-card__body slds-card__body_inner searchBox">
+            <div class="slds-grid">
+                <div class="slds-text-heading_medium">Search Products</div>
+            </div>  
+            <div class="slds-grid">
+                <span>&nbsp;</span>
+            </div>
+            <div class="slds-grid slds-wrap slds-align_absolute-center slds-max-x-small-hide">
+                <lightning:button label="Save Filter" onclick="{!c.saveFilter}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+                <lightning:button label="Search" onclick="{!c.filterProducts}" class="slds-button slds-button_neutral .slds-size_1-of-3" />
+                <lightning:button label="Clear Filter" onclick="{!c.clearFilter}" class="slds-button slds-button_neutral .slds-size_1-of-3"/>
+            </div>            
+            <table onkeypress="{!c.keyCheck}"> 
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="Billing System" label="Billing System" value="{!v.defaultProductFilterObj.Default_Billing_System__c}" >
+                            <aura:iteration items="{!v.pickListFieldsMap.billing_system__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Billing_System__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="PSA Project Required" label="PSA Project Required" value="{!v.defaultProductFilterObj.Default_PSA_PROJECT_REQUIRED__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.psa_project_required__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_PSA_PROJECT_REQUIRED__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr><td><lightning:input label="Product Name" name="ProductName" value="{!v.defaultProductFilterObj.Default_Name}" /></td></tr>
+                <tr>
+                    <td style="display:flex;">
+                        <lightning:radioGroup name="radioButtonGroup" label="" options="{! v.logicOptions }" value="AND" onchange="{! c.handleChange }" type="button"/>
+                        <lightning:helptext class="helptext" content="Used to filter records based on conditions between Product code and Product Name"/>
+                    </td>
+                </tr>
+                <tr><td><lightning:input label="Product Code" name="ProductCode" value="{!v.defaultProductFilterObj.Default_ProductCode}" /></td></tr>
+                <tr>
+                    <td>
+                        <lightning:select name="Territory" label="Territory" value="{!v.defaultProductFilterObj.Default_Territory__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.territory__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Territory__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="Offering Group" label="Offering Group" value="{!v.defaultProductFilterObj.Default_Offering_Group__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.offering_group__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Offering_Group__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="Offering Segment" label="Offering Segment" value="{!v.defaultProductFilterObj.Default_Offering_Segment__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.offering_segment__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Offering_Segment__c}"/>
+                            </aura:iteration>
+                        </lightning:select>    
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <lightning:select name="Offering Type" label="Business Area" value="{!v.defaultProductFilterObj.Default_Offering_Type__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.offering_type__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Offering_Type__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="COE Name" label="Business Line" value="{!v.defaultProductFilterObj.Default_COE_Name__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.coe_name__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_COE_Name__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:select name="Product Group" label="Portfolio" value="{!v.defaultProductFilterObj.Default_Product_Group__c}">
+                            <aura:iteration items="{!v.pickListFieldsMap.product_group__c}" var="pickValue">
+                                <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_Product_Group__c}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:input label="Product Line" name="Unit Name" value="{!v.defaultProductFilterObj.Default_Unit_Name__c}" />
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:input label="Product Group" name="Product Group" value="{!v.defaultProductFilterObj.Default_ProductGroup__c}" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <lightning:input label="Hierarchy Global Code Description" name="Hierarchy Global Code Description" value="{!v.defaultProductFilterObj.Df_Hierarchy_Global_Code_Description__c}" />
+                    </td>
+                </tr>
+                <tr class = "slds-max-small-hide">
+                    <td>
+                        <lightning:input label="Global Product Code" name="Global Product Code" value="{!v.defaultProductFilterObj.Default_Global_Product_Code__c}" />
+                    </td>
+                </tr>
+                <aura:if isTrue="{!v.Sales_with_BNF}">
+                    <tr class = "slds-max-small-hide">
+                        <td>
+                            <lightning:select name="US Practice" label="US Practice" value="{!v.defaultProductFilterObj.Default_US_Practice__c}">
+                                <aura:iteration items="{!v.pickListFieldsMap.us_practice__c}" var="pickValue">
+                                    <option value="{!pickValue}" text="{!pickValue}" selected="{!pickValue == v.defaultProductFilterObj.Default_US_Practice__c}"/>
+                                </aura:iteration>
+                            </lightning:select>
+                        </td>
+                    </tr>
+                </aura:if>
+                <tr class='slds-hide'>
+                    <td>
+                        <lightning:input label="Hierarchy Chain" name="Hierarchy Chain" value="{!v.defaultProductFilterObj.Default_Hierarchy_Chain__c}" />
+                    </td>
+                </tr>
+            </table> 
+        </div>
+        <div class="slds-align_absolute-center">
+            <lightning:button label="Search" onclick="{!c.filterProducts}" class="slds-button slds-button_neutral" aura:id="searchButton"/>
+            <lightning:button label="Clear Filter" onclick="{!c.clearFilter}" class="slds-button slds-button_neutral"/>
+        </div>
+    </div>  
+</aura:component>

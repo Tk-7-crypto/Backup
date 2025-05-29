@@ -1,0 +1,91 @@
+<apex:page Controller="SCM_SelectTemplateController" id="pg" lightningStylesheets="true">
+    <apex:slds /> 
+    <c:JQueryBlockUI /> 
+    <script>
+        var deselectedRadio = null;
+        function setSelectedProdId(elem1) {
+            if(deselectedRadio != null) {
+                deselectedRadio.parentNode.parentNode.bgColor='white';
+                deselectedRadio.checked = false;
+            }     
+            if(elem1.checked) {
+                elem1.parentNode.parentNode.bgColor='#E0FFFF';
+                            
+            
+                var targetTemplateId = document.getElementById('pg:frm:DocId');
+                targetTemplateId.setAttribute("value", elem1.value);
+                deselectedRadio = elem1;
+                
+            }else{
+                elem1.parentNode.parentNode.bgColor='white';
+                var targetTemplateId = document.getElementById('pg:frm:DocId');
+                targetTemplateId.setAttribute("value", '');
+            }       
+        }
+        
+        function validateInput(){       
+            var targetElem = document.getElementById('pg:frm:DocId');         
+            var templateId = targetElem.value;        
+            if(templateId == ''){
+            alert("Please select a Template");
+            }
+            else
+            {
+            YUIShowLoading();
+            GenerateDocs();
+            }
+        }
+
+        function goToOpportunity() {
+            window.location.href = '/{!Opportunity.Id}';
+        }
+    </script>
+    <apex:form id="frm">
+        <apex:sectionHeader title="" subtitle="{!Opportunity.Name}" rendered="{!isForOpportunity }"/>
+        
+        <apex:outputpanel id="frmPanel">    
+            <apex:pageBlock rendered="{!hasError}" id="errorpb">
+                <apex:pagemessages id="errorBlock"/><br/>
+            </apex:pageBlock>
+                
+            <apex:pageBlock >
+                <apex:pageBlockButtons location="bottom">
+                    <apex:commandButton value="Generate" onclick="validateInput();" reRender="attachmentInfo,errorBlock" rendered="{!NOT(OR(hasDocGenerated,isPreview))}"/>
+                    <apex:actionFunction action="{!generate}" name="GenerateDocs" reRender="frm,templatepbsectionId,pb,attachmentInfo" oncomplete="YUIHideLoading();">
+                        <apex:param name="sessionId" assignTo="{!sessionId}" value="{!$Api.Session_ID}" />
+                        <apex:param name="serverUrl" assignTo="{!serverUrl}" value="{!$Api.Partner_Server_URL_430}" />
+                    </apex:actionFunction>
+                    <apex:commandButton value="Return" onclick="goToOpportunity()" reRender="errorpb" rendered="{!isForOpportunity}"/>
+                </apex:pageBlockButtons>
+                <apex:outputLabel value="Document generation successful." style="font-weight: bold;" rendered="{!hasDocGenerated}"/>
+                <apex:pageBlockSection title="Document Detail" columns="1" id="attachmentInfo" rendered="{!hasDocGenerated}">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="File Name" />
+                        <apex:outputLabel value="{!atch.Name}" />
+                    </apex:pageBlockSectionItem>  
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Size" />
+                        <apex:outputLabel value="{!atch.BodyLength}" />
+                    </apex:pageBlockSectionItem>  
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="" />
+                        <apex:outputLink value="/servlet/servlet.FileDownload?file={!atch.Id}" target="_blank">Click here to view this file</apex:outputLink>
+                    </apex:pageBlockSectionItem>  
+                </apex:pageBlockSection>
+
+                <apex:pageBlockSection title="Templates" columns="1" id="templatepbsectionId" rendered="{!!hasDocGenerated}">
+                    <apex:pageBlockSectionItem >
+                        <apex:pageBlockTable value="{!templateWrpList}" var="template">
+                            <apex:column headerValue="Select">
+                                <input type="radio" value="{!template.Id}" id="isChecked" onclick="setSelectedProdId(this);"/>
+                            </apex:column>
+                            <apex:column headerValue="Name" value="{!template.tempName}"/>
+                            <apex:column headerValue="Guidance" value="{!template.guidance}"/>
+                        </apex:pageBlockTable>  
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+        </apex:outputpanel> 
+        <apex:inputHidden id="DocId" value="{!tempId}" />
+    </apex:form>
+</apex:page>

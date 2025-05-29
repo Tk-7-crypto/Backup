@@ -1,0 +1,93 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" controller="CNT_APTMS_DocuSignAccountSetting">
+    
+    <aura:handler name="init" value="{! this }" action="{! c.init }"/>
+    <aura:attribute name="userName" type="String" />
+    <aura:attribute name="name" type="String" />
+    <aura:attribute name="userEmail" type="String" />
+    <aura:attribute name="baseURL" type="String" />
+    <aura:attribute name="accountId" type="String" />
+    <aura:attribute name="clientId" type="String" />
+    <aura:attribute name="secretKey" type="String" />
+    <aura:attribute name="privateKey" type="String" />
+    <aura:attribute name="publicKey" type="String" />
+    <aura:attribute name="accessToken" type="String" />
+    <aura:attribute name="expireAfter" type="String" />
+    <aura:attribute name="expireWarn" type="String" />
+    <aura:attribute name="reminderDelay" type="String" />
+    <aura:attribute name="redirectURI" type="String" />
+    <aura:attribute name="reminderFrequency" type="String" />
+    <aura:attribute name="code" type="String"/>
+    <aura:attribute type="DocuSign_Auth_Data__c[]" name="docuSignList"/>
+    <aura:attribute name="docuSigncolumns" type="List"/>
+    <lightning:card >
+        <!-- begin header  -->
+        <aura:set attribute="title">
+            <lightning:icon iconName="standard:job_family" title="DocuSign Authentication"/> 
+            {!$Label.c.CLM_CL_0005_DocuSign_Authentication}
+        </aura:set>
+        
+        <!-- begin body  -->
+        <article class="slds-card">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning:card aura:id="authData">          
+                        <div class="slds-card__body slds-card__body_inner" >
+                            <div class="slds-box">
+                                <div style="padding:0.5rem;background:#1A6FD8;border-radius: 5px;" class="slds-align_absolute-center">
+                                    <p class="slds-text-color_inverse">{!$Label.c.CLM_CL_0005_Please_provide_DocuSign_credentials}</p>
+                                </div>
+                                <lightning:card aura:id="noValidUserData" class="margin20 slds-hide">
+                                    <p style="color:red">{!$Label.c.CLM_CL_0005_Please_provide_below_details}</p>
+                                </lightning:card>
+                                <div class="slds-card__body slds-card__body_inner ">
+                                    <lightning:accordion allowMultipleSectionsOpen="true" activeSectionName="authDetails">
+                                        <lightning:accordionSection name="authDetails" label="Auth Details">
+                                            <lightning:input type="text" name="userEmail" label="User Email" value="{!v.userEmail}" maxlength="50" />
+                                            <lightning:input type="text" name="userName" label="Docusign Admin User API ID" value="{!v.userName}" maxlength="50" />
+                                            <lightning:input type="text" name="name" label="DocuSign Connected App Name" value="{!v.name}" maxlength="50" />
+                                            <lightning:input type="text" name="accountId" label="Docusign Account ID" value="{!v.accountId}" />
+                                            <lightning:input type="text" name="clientId" label="Integration Key" value="{!v.clientId}" />
+                                        	<lightning:input type="text" name="baseURL" label="Docusign Account Base URI " value="{!v.baseURL}"/>
+                                            <lightning:textarea name="privateKey" label="Private Key" value="{!v.privateKey}"/>
+                                            <lightning:textarea name="publicKey" label="Public Key" value="{!v.publicKey}"/>
+                                        </lightning:accordionSection>
+                                        <lightning:accordionSection name="docusignFeatureInputs" label="Reminders and Expiration">
+                                            <lightning:input type="text" name="expireAfter" label="Days before request expires" value="{!v.expireAfter}" />
+                                            <lightning:input type="text" name="expireWarn" label="Days to warn signers before expiration" value="{!v.expireWarn}" />
+                                            <lightning:input type="text" name="reminderDelay" label="Days before sending first reminder" value="{!v.reminderDelay}" />
+                                            <lightning:input type="text" name="reminderFrequency" label="Days between reminders" value="{!v.reminderFrequency}" />
+                                        </lightning:accordionSection>
+                                    </lightning:accordion>
+                                    <lightning:card>
+                                        <div class="page-footer page-section slds-align_absolute-center">
+                                            <lightning:button variant="brand-outline"  label="Cancel" onclick="{!c.handleCancel}"/>
+                                            <lightning:button variant="brand" label="Authenticate" onclick="{!c.insertAuthData}"/>
+                                        </div> 
+                                    </lightning:card>
+                                </div>
+                            </div>
+                        </div>       
+                    </lightning:card>
+                    <lightning:card aura:id="noValidData" class="margin20 slds-hide">
+                        <p style="color:black;">{!$Label.c.CLM_CL_0005_Please_provide_valid_data_in_DocuSign_Account_Setting}</p>
+                    </lightning:card> 
+                </div>
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning:card>
+                        <div class="slds-card__body slds-card__body_inner">
+                            <div class="slds-box">
+                                <div  style="padding:0.5rem;background:#1A6FD8;border-radius: 5px;" class="slds-align_absolute-center">
+                                    <p class="slds-text-color_inverse">{!$Label.c.CLM_CL_0005_Available_Docusign_Auth_Data}</p>
+                                </div>
+                                <lightning:datatable data="{! v.docuSignList }"
+                                                     columns="{! v.docuSigncolumns }"
+                                                     keyField="id"
+                                                     hideCheckboxColumn="true"/>
+                            </div>
+                        </div>    
+                    </lightning:card>
+                </div>
+            </div>
+        </article>  
+    </lightning:card>
+</aura:component>

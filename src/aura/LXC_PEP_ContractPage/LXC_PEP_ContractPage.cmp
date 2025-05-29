@@ -1,0 +1,267 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId"
+                access="global"
+                controller="CNT_PEP_SignSOW">
+    <aura:attribute name="Payment_method" type="String"/> 
+    <aura:attribute name="Paymentsave_method" type="String"/>
+    <aura:attribute name="SOW_status" type="String"/>
+    <aura:attribute name="SignSOW_online" type="String"/>
+    <aura:attribute name="showRenewButton" type="Boolean" default="false"/>
+    <aura:attribute name="nonStandardContract" type="String" default="false"/>
+    <aura:attribute name="renewalStatus" type="String"/>
+    <aura:attribute name="PONumber" type="String"/>
+    <aura:attribute name="displayMessage" type="String"/>
+    <aura:attribute name="isModalOpen" type="boolean" default="false"/>
+    
+    <aura:attribute name="record" type="Object" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:attribute name="recordError" type="String" />
+    
+    <aura:handler  name="init" value="{!this}" action="{!c.doInit}"/>    
+    
+    <force:recordData aura:id="recordLoader" 
+                      layoutType="FULL" 
+                      recordId="{!v.recordId}" 
+                      targetFields="{!v.simpleRecord}" 
+                      targetError="{!v.recordError}"
+                      mode="EDIT" />
+    
+    <div class="container">
+        <div class="slds-p-bottom_x-large">
+            <p class="slds-m-top_small">
+                <aura:if isTrue="{!v.SOW_status == 'Signed'}"> 
+                    <aura:if isTrue="{!v.Payment_method == 'Invoice – with PO'}">
+                        <lightning:button label="Add PO Number"
+                                          iconName="utility:new_window"
+                                          variant="brand"
+                                          onclick="{!c.newPopup3}"/>
+                    </aura:if>
+                    <aura:if isTrue="{!v.showRenewButton}">
+                        <aura:if isTrue="{!v.nonStandardContract}">
+                            <aura:if isTrue="{!v.renewalStatus=='Renewed'}">
+                                <lightning:button label="Renewed"
+                                                  iconName="utility:new_window"
+                                                  variant="brand"
+                                                  onclick="{!c.redirectToChildContract}"/>
+                            </aura:if>
+                            <aura:if isTrue="{!(v.renewalStatus == 'Renewal Requested' || v.renewalStatus == 'Renewal Contracting') }" >
+                                <lightning:button label="Renewal In Progress"
+                                                  iconName="utility:new_window"
+                                                  variant="brand"
+                                                  onclick="{!c.newPopup6}"/> 
+                            </aura:if>
+                            <aura:if isTrue="{!(v.renewalStatus=='null' || v.renewalStatus=='Time to Renew')}">
+                                <lightning:button label="Renew Program"
+                                                  iconName="utility:new_window"
+                                                  variant="brand"
+                                                  onclick="{!c.newPopup5}"/> 
+                            </aura:if>
+                            <aura:set attribute="else">
+                                <aura:if isTrue="{!v.renewalStatus=='Renewed'}">
+                                    <lightning:button label="Renewed"
+                                                      iconName="utility:new_window"
+                                                      variant="brand"
+                                                      onclick="{!c.redirectToChildContract}"/>
+                                </aura:if>
+                                <aura:if isTrue="{!(v.renewalStatus == 'Renewal Requested' || v.renewalStatus == 'Renewal Contracting') }" >
+                                    <lightning:button label="Renewal In Progress"
+                                                      iconName="utility:new_window"
+                                                      variant="brand"
+                                                      onclick="{!c.redirectToChildContract}"/> 
+                                </aura:if>
+                                <aura:if isTrue="{!(v.renewalStatus=='null' || v.renewalStatus=='Time to Renew')}">
+                                    <lightning:button label="Renew Program"
+                                                      iconName="utility:new_window"
+                                                      variant="brand"
+                                                      onclick="{!c.newPopup4}"/> 
+                                </aura:if>                                   
+                            </aura:set>
+                        </aura:if>
+                    </aura:if>
+                </aura:if>
+                <aura:if isTrue="{!v.nonStandardContract == 'false'}" > 
+                    <aura:if isTrue="{!v.SOW_status != 'Signed'}" > 
+                        <lightning:button label="Select Payment Method"
+                                          iconName="utility:new_window"
+                                          variant="brand"
+                                          onclick="{!c.newPopup}"/>
+                    </aura:if>
+                    <aura:if isTrue="{!v.SOW_status != 'Signed'}" >
+                        <aura:if isTrue="{!v.Payment_method != 'null'}" > 
+                            <lightning:button label="Sign SOW"
+                                              iconName="utility:new_window"
+                                              variant="brand"
+                                              onclick="{!c.newPopup2}"/>
+                        </aura:if>
+                    </aura:if>
+                    <aura:if isTrue="{!v.Payment_method == 'null'}" > 
+                        <lightning:button label="Sign SOW"
+                                          iconName="utility:new_window"
+                                          variant="brand"
+                                          onclick="{!c.newPopup2}"
+                                          disabled="true"/>
+                    </aura:if>
+                </aura:if>
+            </p>
+        </div>
+    </div>
+    
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox1" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container">
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <!-- div1 to display error message -->
+                <div aura:id="div1"></div>
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_Upon_Completion} </p><br/>
+                    <p>{!$abel.c.PRM_Payment_Charge}</p>
+                </div>
+                <br/>
+                <div class="slds-checkbox">
+                    <p>
+                        <ui:inputRadio aura:id="r1" text="Invoice" name="Others"  change="{!c.onGroup}"/>&nbsp;&nbsp; Invoice
+                        <div>
+                            <p><small>{!$Label.c.PRM_By_selecting_this_option}</small></p>
+                        </div>  
+                        <br/>
+                        <ui:inputRadio aura:id="r0" text="Invoice – I will issue a PO" name="Others"  change="{!c.onGroup}"/>&nbsp;&nbsp; Invoice – I will issue a PO
+                        <div>
+                            <p><small>{!$Label.c.PRM_Please_return_to_this_page}</small></p>
+                        </div>
+                        <br/>
+                    </p>
+                    <br/>
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button label="Cancel" onclick="{!c.closeNewModal}" />
+                    <lightning:button class="slds-button slds-button--brand" label="Submit" onclick="{!c.saveModal}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox2" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container"> 
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <div class="slds-media__body slds-align-middle">
+                    <p><div aura:id="div3"></div></p><br/>
+                    <p>{!$Label.c.PRM_Statement_of_Work}</p>
+                </div>
+                <br/>
+                <div class="slds-checkbox">
+                    <p><ui:inputRadio aura:id="r2" text="Sign Now" name="Others2"  change="{!c.onSelectSOW}"/>&nbsp;&nbsp; Sign Now
+                        <div>
+                            <p><small>{!$Label.c.PRM_Select_this_option}</small></p>
+                        </div>
+                        <br/>
+                        <ui:inputRadio aura:id="r3" text="Email me the SOW" name="Others2"  change="{!c.onSelectSOW}"/>&nbsp;&nbsp; Email me the SOW<br/></p>
+                    <div>
+                        <p><small>{!$Label.c.PRM_Another_representative}</small></p>
+                    </div>   
+                    <br/>
+                </div>
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_Provide_PO_Number}</p>
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button aura:id="cancelButton" label="Cancel" onclick="{!c.closeNewModal2}" />
+                    <lightning:button aura:id="proceedButton" class="slds-button slds-button--brand" label="Proceed" onclick="{!c.signSOW}" />
+                    <lightning:button aura:id="closeButton" class="slds-hide" label="Close" onclick="{!c.closeNewModal2}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox3" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container">
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_Purchase_Order_Number}</p><br/>
+                    <p><div aura:id="div2"></div></p><br/>
+                    <p>{!$Label.c.PRM_You_indicated} </p>
+                    <p>{!$Label.c.PRM_Please_input}</p>
+                    <lightning:input name="input" value="{! v.PONumber }" label="" />
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button label="Cancel" onclick="{!c.closeNewModal3}" />
+                    <lightning:button class="slds-button slds-button--brand" label="Submit" onclick="{!c.addPONum}" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox4" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container">
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_By_proceeding}</p><br/>
+                    <p>{!$Label.c.PRM_select_payment_method}</p>
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button label="Cancel" onclick="{!c.closeNewModal4}" />
+                    <lightning:button class="slds-button slds-button--brand" label="Proceed" onclick="{!c.renewContract}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox5" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container">
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_Thank_you_for_electing}</p><br/>
+                    <p>{!$Label.c.PRM_Our_records_indicate}</p><br/>
+                    <p>{!$Label.c.PRM_Please_click_Renew}</p>
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button label="Cancel" onclick="{!c.closeNewModal5}" />
+                    <lightning:button class="slds-button slds-button--brand" label="Renew" onclick="{!c.renewNonStandardContract}" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox6" class="slds-modal slds-modal_small">
+        <div class="slds-modal__container">
+            <div class="slds-box slds-theme_default slds-small-size_8-of-12 slds-large-size_6-of-12">
+                <div class="slds-media__body slds-align-middle">
+                    <p>{!$Label.c.PRM_Thank_you_for_electing}</p><br/>
+                    <p>{!$Label.c.PRM_Our_team} </p><br/>                    
+                </div>
+                <br/>
+                <div align="center">
+                    <lightning:button label="Ok" onclick="{!c.closeNewModal6}" />                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <aura:if isTrue="{!v.isModalOpen}">
+        <aura:if isTrue="{!v.nonStandardContract == 'false'}" >    
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h3 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{!$Label.c.PRM_Self_Service_Program_Enrollment}</h3>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <p style="font-size:.8125rem; font-family: Montserrat">{!$Label.c.PRM_Complete_Enrollment}
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="brand"
+                                      label="OK"
+                                      title="OK"
+                                      onclick="{!c.closeModel}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+        </aura:if>
+    </aura:if>
+</aura:component>

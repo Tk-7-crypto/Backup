@@ -1,0 +1,48 @@
+<apex:page controller="CNT_TPA_Retrigger_Reason" action="{!retriggerReason}">
+    <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=9" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <apex:slds />
+            
+        <apex:includeScript value="{!URLFOR($Resource.TPA_JQuery112Library, 'jquery-1.12.3.js')}" />
+         
+   		<script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+        <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+    </head>
+    <script>
+        var isLegalEntityNotPresent = {!isLegalEntityNotPresent};
+        var isCommercialIdNotPresent = {!isCommercialIdNotPresent};
+    	function popupAlert(msg, truePart) {
+        	popup(msg, {'animate':true}, 
+            	function(r) {
+                	if(r && truePart != null)
+                    	truePart();
+                }
+            );
+        }
+        function getParameterByName(name) {
+        	name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        } 
+        
+        var isRecordRetriggerReady = {!isRecordRetriggerReady};
+		$(function(){
+        	recordId = getParameterByName('id');
+            if(isLegalEntityNotPresent) {
+                popupAlert('If ‘Offering of Other’ has been verified with Client to be true - You may need to assign an IQVIA Legal Entity and a Commercial Owner to move this forward.<br><br> &emsp; Step 1: Update the Offering Legal Entity<br> &emsp; Step 2:  Regenerate a refreshed TLLA<br> &emsp;  Step 3: Update the ‘Reviewer’s Email’, ‘Save’, and ‘Retrigger Commercial Review‘</pre><br><br>See your Manual Review Email ‘Trigger Description’ for full instructions.',function(){window.location = '/' + recordId;});
+            }
+            else if(isCommercialIdNotPresent) {
+                popupAlert('Step 1: Update and Save the ‘Commercial Owner Decision’ to ‘Resolved – Assign to Commercial Owner’<br>  Step 2: Update the ‘Reviewer’s Email’ field to the Offering Owner, Save, then click ‘Retrigger Commercial Review’.',function(){window.location = '/' + recordId;}); 
+            }
+            else if(isRecordRetriggerReady) {
+               popupAlert('You have successfully retriggered a Commercial Review Email Notification that will allow the associated Commercial Owner(s) and/or Additional Email contact(s) to update this combination and any other Manual Review within their TPA\'s Manual Review link.',function(){window.location = '/' + recordId;}); 
+            }
+            else{
+                popupAlert('Please update Commercial owner email in \'reviewer\'s email\' field to retrigger.',function(){window.location = '/' + recordId;});
+            }
+        
+        });
+    	
+    </script>
+</apex:page>

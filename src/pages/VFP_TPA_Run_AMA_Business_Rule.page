@@ -1,0 +1,89 @@
+<apex:page tabStyle="TPA_Request__c" title="Wait" controller="CNT_TPA_Run_AMA_Business_Rule" lightningStylesheets="true" showHeader="false">
+    <apex:slds />
+    <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+
+    <body>
+        <c:VFC_TPA_LoadingImage />
+            <div id="content" style="height:60%;width:100%;margin-top:25px !important;">
+                
+                 <apex:form style="width:100%">
+                    <apex:actionFunction name="sendEmail" action="{!sendMails}" rerender=""  oncomplete="onCompleteJSFunction();" />
+            </apex:form> 
+        </div>
+        <div id="footer">
+            <div class="copyright_wrapper">
+                <div class="copyright">
+                    &nbsp;
+                </div>
+            </div>
+            <div class="bottom-bg"></div>
+        </div>
+    </body>
+    <script type="text/javascript">
+        sforce.connection.sessionId = '{!$Api.Session_ID}';
+        var isError = false;
+        var errorText = '';
+        var amaErrorMessage = '{!amaErrorMessage}';
+        function verifyAMADetails() {
+            try {
+                var agrId = getParameterByName('id').trim();
+                if(amaErrorMessage != null && amaErrorMessage != '') {
+                    popupAlert(amaErrorMessage, function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+                    return true;
+                }
+                else{
+                    showLoading();
+                    sendEmail();
+                }
+
+                
+                
+            }    
+            catch (error) {    
+                console.log(error);
+                popupAlert('Invalid Page Request.');
+                isError = true;
+                errorText = 'Invalid Page Request.';
+            }
+        }
+        verifyAMADetails();
+        
+        function onCompleteJSFunction() {
+            var agrId = getParameterByName('id').trim();
+            hideLoading();
+            popupAlert('You have successfully revised the AMA fields.', function(){window.location.href = location.protocol + '//' + location.hostname + '/' + agrId;});
+
+        }
+
+        function popupAlert(msg, truePart) {
+            popup(msg, {'animate':true}, 
+            function(r) {
+                if(r && truePart != null)
+                    truePart();
+            });
+            $.each($(".aButtons button"), function(k, v) {
+                    console.log('test' + $(v).text());
+                                        if($(v).text() == 'Ok')
+                                            $(v).html('OK');
+                                        else if($(v).text() == 'Cancel' && isTranslationNeeded)
+                                            $(v).html('{!$Label.TPA_Cancel}');
+            });
+        }
+        
+        $(document).ready(function() {
+            if(isError)
+                $('#msg').text(errorText);
+        });
+        
+        //*** function to read Query strings Start ***//
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+        //*** function to read Query strings End ***//
+    </script>
+</apex:page>

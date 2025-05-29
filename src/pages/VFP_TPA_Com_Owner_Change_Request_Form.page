@@ -1,0 +1,1131 @@
+<apex:page controller="CNT_TPA_Com_Owner_Chnge_Request_Form" showHeader="false" sidebar="false" cache="false" id="pg" lightningStylesheets="true" standardStylesheets="false"> 
+    <apex:slds />
+    <apex:outputPanel >
+        <html>
+        
+            <head>        
+                <meta http-equiv="X-UA-Compatible" content="IE=9" />
+                <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+                
+                <!-- *** Angular-JS Library reference ** -->
+                <apex:includeScript value="{!$Resource.AngularJS}"/>
+                <!-- *** Angular-JS Library reference ** -->
+                
+                <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+                <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+                <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+                    
+                    <!-- *** Jquery library reference *** -->
+                        <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+                <!-- *** Jquery library reference *** --> 
+                
+                <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+                
+                <!-- *** JQuery UI Library reference *** -->
+                    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+                <!-- *** JQuery UI Library reference *** -->
+                
+                <!-- *** JQuery Custom Popup Library reference *** -->
+                <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+                <!-- *** JQuery Custom Popup Library reference *** -->
+                    
+                <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+                <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+                <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+
+                <link href="{!URLFOR($Resource.TpaMultiSelect_Updated_Version, 'select2.min.css')}" rel="stylesheet" type="text/css" /> <!-- *** Multi Select Control CSS reference *** -->
+                <!-- *** Multi Select Control CSS reference *** -->
+                <!-- *** Multi Select Control Javascript Library reference *** -->
+                <script src="{!URLFOR($Resource.TpaMultiSelect_Updated_Version, 'select2.min.js')}" type="text/javascript" /> <!-- *** Multi Select Control Javascript Library reference *** -->
+                                
+                <!-- *** Yahoo Javascript Library reference *** -->
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+                <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/dragdrop/dragdrop-min.js')}" />
+                <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/treeview-min.js')}" /> 
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/menu-min.js')}" />
+                <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo/yahoo-min.js')}" />
+                <!-- *** Yahoo Javascript Library reference *** -->
+                    
+                    <!-- *** Yahoo Css Library reference *** -->
+                        <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/assets/skins/sam/skin.css')}" />
+                            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+                                <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+                                    <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+                                        <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+                                            
+                                            <style>
+                                            
+                                            .bPageBlock         .detailList tr td , .select2-container-multi .select2-choices {
+                                                border: none !important;
+                                            }
+                .slds-scope .slds-select.select2-container-multi {
+                    height: inherit;
+                }
+                .select2-container{
+                    width: 283px !important;
+                }
+                .select2-results__option--selected { 	display: none; }
+                a > .colLabel{
+                    font-size: 11px;
+                    color: #1b96ff;
+                    padding-left: 6px;
+                    font-weight: bold;
+                    text-decoration: underline;
+                    text-decoration-color: #1b96ff;
+                    
+                }
+                .select2{
+                    text-wrap:wrap;
+                }
+                .lookupIconNewonlyForDisplay{
+                    cursor: auto !important;
+                    
+                }
+                .lookupIconNew {
+                    background-image: url(/img/setup/search-icon.png) !important;
+                    height: 1rem;
+                    display: inline-block;
+                    padding: 1rem 1rem 0 0;
+                    overflow: hidden;
+                    vertical-align: middle;
+                    background-image: url(/apexpages/slds/latest/assets/icons/utility/search_60.png);
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    position: inherit;
+                    right: 10px;
+                    top: .5rem;
+                    left: 18rem;
+                    color: rgb(112, 110, 107);
+                    cursor: pointer;
+                }
+                
+               
+                </style>
+
+
+                <!-- *** Yahoo Css Library reference *** -->
+                                                                                                
+                <!-- ****** AngularJS script Start ****** -->
+                <script type="text/javascript">
+                                                                                                        
+                <!-- Angular JS Application Name -->
+                    var myapp = angular.module('TpaAccessRequest', ['ui.bootstrap']);
+                
+                <!-- Page Controller Start -->
+                    $(document).ready(function(){
+                        var today = new Date();
+                        var dd = today.getDate();
+                        var mm = today.getMonth()+1; //January is 0!
+                        var yyyy = today.getFullYear();
+                        if(dd<10){
+                            dd='0'+dd
+                        } 
+                        if(mm<10){
+                            mm='0'+mm
+                        } 
+                        
+                        today = yyyy+'-'+mm+'-'+dd;
+                        document.getElementById("leaveStartDate").setAttribute("min", today);
+                        document.getElementById("leaveEndDate").setAttribute("min", today);
+                        
+                    });
+                var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$modal', '$log', '$window', function ($scope, $filter, $modal, $log, $window) 
+                {
+                    $scope.$log = $log;
+                    $scope.ComOwnerChangeRequestObj = {};
+                    $scope.ComOwnerChangeRequestObj.ComOwnerEmail = '';
+                    $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                    $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                    $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                    //*** Error Flags ***//                        
+                    $scope.isError = false;
+                    $scope.isVendorDestructionConfirmationFNameError = false;
+                    $scope.isVendorDestructionConfirmationLNameError = false;
+                    $scope.isLeaveStartDateError = false;
+                    $scope.isLeaveEndDateError = false;
+                    //$scope.actionReq = 'Add';
+                    $scope.actionReq = '';
+                    $scope.validEmailDomains = '{!validEmailDomains}';
+                    $scope.runOffSpecificLogic = {!isRunoffSpecificTempComChangeLogic};
+                    $scope.ifofferingPresent = false;
+                    $scope.existingTempraryComList = {!jsonAssignedTPProcessorList};
+                    $scope.editingRecord = false; 
+                    
+                    
+                    $scope.offeringsList = {!jsonOfferingList};
+                    $scope.comIDList = []; 
+                    $.each($scope.offeringsList, function(k,v)
+                           {
+                               if(v.Commercial_Owner_Email__c != null){
+                                   angular.forEach(v.Commercial_Owner_Email__c.split(';'), function(value, key) {
+                                       if( !$scope.comIDList.includes(value)) {
+                                           $scope.comIDList.push(value);
+                                       }
+                                   });
+                                   
+                               }
+                               
+                           });
+                    $scope.$log.info('$scope.existingTempraryComList = ' + JSON.stringify($scope.existingTempraryComList));
+                    
+                    $scope.getDateInJS = function(dateInJS){
+                        if(typeof dateInJS == 'number'){
+                            console.log('Date')
+                            dateInJS = new Date(dateInJS);
+                            var dateJstoStr = '' + (dateInJS.getMonth() + 1) + '-' + dateInJS.getDate() + '-' + dateInJS.getFullYear() ;
+                            console.log(dateJstoStr)
+                            return dateJstoStr;
+                        }
+                        return dateInJS;
+                    }
+                    
+                    $scope.getDateforEditFormate = function(dateInJS){
+                        if(dateInJS != null && dateInJS != undefined){
+                            console.log('Date')
+                            dateInJS = new Date(dateInJS);
+                            
+                            var dd = dateInJS.getDate();
+                            var mm = dateInJS.getMonth()+1; //January is 0!
+                            var yyyy = dateInJS.getFullYear();
+                            
+                            if(dd<10){
+                                dd='0'+dd
+                            } 
+                            if(mm<10){
+                                mm='0'+mm
+                            }
+                            var dateJstoStr = '' + yyyy + '-' + mm + '-' + dd ;
+                            console.log('Date:  ' + dateJstoStr)
+                            return dateJstoStr;
+                        }
+                        return dateInJS;
+                    }
+                    
+                    $scope.selectOfferingsByComID = function()
+                    {
+                        $scope.offtoShow = {};
+                        $scope.ifofferingPresent = false;
+                        $scope.ListOFOffAlreadySelected = ''; 
+                        
+                        if($scope.existingUseOffCombMap != null && $scope.existingUseOffCombMap != undefined){
+                            $.each($scope.existingUseOffCombMap, function(k,v){
+                                $scope.ListOFOffAlreadySelected += v.Offering_Names__c;
+                            });
+                        }
+                        
+                        $.each($scope.offeringsList, function(k,v){
+                            if(v.IMS_Secondary_Data_Assets__r != null) {
+                                $.each(v.IMS_Secondary_Data_Assets__r.records , function(k1, v1){   
+                                    if((v1.Commercial_Manager_Email__c != null && v1.Commercial_Manager_Email__c.toLowerCase().includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail.toLowerCase()))
+                                       || (v1.Secondary_Commercial_Reviewer_Email__c != null && v1.Secondary_Commercial_Reviewer_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail))){
+                                        $scope.$log.info('$scope.name = ' + v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim());
+                                        if($scope.ListOFOffAlreadySelected == '' || !($scope.ListOFOffAlreadySelected.includes(v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim() + ';')))  {
+                                            $scope.WrapperClass = {};
+                                            $scope.WrapperClass.ischecked = true;
+                                            $scope.offtoShow[v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim()] = $scope.WrapperClass;
+                                            $scope.ifofferingPresent = true;
+                                        }                                                                                                      
+                                    }
+                                });
+                            }
+                            else if((v.Commercial_Owner_Email__c != null && v.Commercial_Owner_Email__c.toLowerCase().includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail.toLowerCase()))
+                                    || (v.Secondary_Commercial_Reviewer_Email__c != null && v.Secondary_Commercial_Reviewer_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail))){
+                                if($scope.ListOFOffAlreadySelected == '' || !($scope.ListOFOffAlreadySelected.includes(v.Asset_Name__c.trim())))     {
+                                    $scope.WrapperClass = {};
+                                    $scope.WrapperClass.ischecked = true;
+                                    $scope.offtoShow[v.Asset_Name__c.trim()] = $scope.WrapperClass;
+                                    
+                                    $scope.ifofferingPresent = true;
+                                }                                                                                                                                                                                                           
+                            }
+                        });
+                        $scope.selectedALLCheckedORNot = true;
+                        
+                        $scope.applyChanges();
+                    }
+                    
+                    $scope.deleteRecord = function(key, obj)
+                    {
+                        $scope.popupConfirm('Are you sure you want to delete this record ?',   
+                                            function(){
+                                                onActionClick();
+                                                CNT_TPA_Com_Owner_Chnge_Request_Form.deleteCurrentRecord(JSON.stringify(obj.Id).replace(/null/i, "\"\""), function(result, event)
+                                                                                                         {
+                                                                                                             $scope.$log.warn(result);
+                                                                                                             if(event.type == 'exception')
+                                                                                                             {    
+                                                                                                                 onActionComplete(); 
+                                                                                                                 $scope.$log.info('Error: ' + event.message);
+                                                                                                                 $scope.submitStatus = 'error';
+                                                                                                                 return false;                                    
+                                                                                                             }
+                                                                                                             else{
+                                                                                                                 onActionComplete(); 
+                                                                                                                 delete $scope.existingUseOffCombMap[key];
+                                                                                                                 $scope.ComOwnerChangeRequestObj.Id = '';
+                                                                                                                 $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                                                                                                                 $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                                                                                                                 $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                                                                                                                 $scope.$log.info('$scope.existingUseOffCombMap: ' + $scope.existingUseOffCombMap);
+                                                                                                                 
+                                                                                                             }
+                                                                                                             $scope.applyChanges();
+                                                                                                         });
+                                            },
+                                            function(){},
+                                            true);
+                    }
+                    
+                    $scope.editRecord = function(obj)
+                    {
+                        $scope.isReviewYourRequest = false;
+                        $scope.ComOwnerChangeRequestObj.Id = angular.copy(obj.Id);
+                        $scope.ComOwnerChangeRequestObj.ComOwnerEmail = angular.copy(obj.Commercial_Owner_Email__c);
+                        $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = angular.copy(obj.Temporary_Commercial_Owner_Email__c);
+                        $scope.ComOwnerChangeRequestObj.LeaveStartDate = $scope.getDateforEditFormate(angular.copy(obj.Out_of_Office_Leave_Start_Date__c));
+                        $scope.ComOwnerChangeRequestObj.LeaveEndDate = $scope.getDateforEditFormate(angular.copy(obj.Out_of_Office_Leave_End_Date__c));
+                        
+                        $scope.editingRecord = true; 
+                        $scope.offtoShow = {};
+                        $scope.ListOFOffAlreadySelected = ''; 
+                        
+                        if($scope.existingUseOffCombMap != null && $scope.existingUseOffCombMap != undefined){
+                            $.each($scope.existingUseOffCombMap, function(k,v)
+                                   {
+                                       if(v.Id != obj.Id)
+                                           $scope.ListOFOffAlreadySelected += v.Offering_Names__c;
+                                       
+                                   });
+                        }
+                        
+                        $scope.$log.info('$scope.ListOFOffAlreadySelected = ' + $scope.ListOFOffAlreadySelected);
+                        var selectedOfferings = angular.copy(obj.Offering_Names__c);
+                        $.each($scope.offeringsList, function(k,v){
+                            if(v.IMS_Secondary_Data_Assets__r != null) {
+                                $.each(v.IMS_Secondary_Data_Assets__r.records , function(k1, v1)
+                                       {   
+                                           if((v1.Commercial_Manager_Email__c != null && v1.Commercial_Manager_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail))
+                                              || (v1.Secondary_Commercial_Reviewer_Email__c != null && v1.Secondary_Commercial_Reviewer_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail)) ){
+                                               var OffName = v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim() + ';';
+                                               $scope.$log.info('OffName: ' + OffName);
+                                               if($scope.ListOFOffAlreadySelected == '' || !($scope.ListOFOffAlreadySelected.includes(OffName)))    {    
+                                                   $scope.ifofferingPresent = true;                                                                                                
+                                                   $scope.WrapperClass = {};
+                                                   if(selectedOfferings != undefined && selectedOfferings.includes(OffName)){
+                                                       $scope.WrapperClass.ischecked = true;
+                                                       $scope.offtoShow[v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim()] = $scope.WrapperClass;
+                                                   }
+                                                   else {
+                                                       $scope.WrapperClass.ischecked = false;
+                                                       $scope.offtoShow[v.Asset_Name__c.trim() + '->' + v1.Secondary_Asset_Name__c.trim()] = $scope.WrapperClass;
+                                                   }
+                                               }
+                                           }
+                                       });
+                            }
+                            else if((v.Commercial_Owner_Email__c != null && v.Commercial_Owner_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail))
+                                    || (v.Secondary_Commercial_Reviewer_Email__c != null && v.Secondary_Commercial_Reviewer_Email__c.includes($scope.ComOwnerChangeRequestObj.ComOwnerEmail))){
+                                if($scope.ListOFOffAlreadySelected == '' || !($scope.ListOFOffAlreadySelected.includes(v.Asset_Name__c.trim())))    {   
+                                    $scope.ifofferingPresent = true;                                                                                                
+                                    $scope.WrapperClass = {};
+                                    if(selectedOfferings != undefined && selectedOfferings.includes(v.Asset_Name__c.trim())){
+                                        $scope.WrapperClass.ischecked = true;
+                                        $scope.offtoShow[v.Asset_Name__c.trim()] = $scope.WrapperClass;
+                                    }
+                                    else{
+                                        $scope.WrapperClass.ischecked = false;
+                                        $scope.offtoShow[v.Asset_Name__c.trim()] = $scope.WrapperClass;
+                                    }                                                                                                 
+                                    
+                                }
+                                
+                            }
+                        });                                                                
+                    }
+                    
+                    $scope.reviewYourRequestClicked= function()
+                    {
+                        if($scope.validateForm())
+                            return false;
+                        $scope.isReviewYourRequest = true;
+                        $scope.ComOwnerChangeRequestObj.OfferingNames = '';
+                        angular.forEach($scope.offtoShow,function(v,k){
+                            if(v.ischecked == true){
+                                $scope.ComOwnerChangeRequestObj.OfferingNames += ((k) + ';'); 
+                            }
+                        });
+                        
+                    }
+                    
+                    
+                    $scope.fetchExistingRecord= function()
+                    {
+                        onActionClick();
+                        CNT_TPA_Com_Owner_Chnge_Request_Form.getJSONAssignedTPProUseOffCombMap(JSON.stringify($scope.ComOwnerChangeRequestObj.ComOwnerEmail).replace(/null/i, "\"\""), function(result, event)
+                                                                                               {
+                                                                                                   $scope.$log.warn(result);
+                                                                                                   if(event.type == 'exception')
+                                                                                                   {    
+                                                                                                       onActionComplete(); 
+                                                                                                       $scope.$log.info('Error: ' + event.message);
+                                                                                                       $scope.submitStatus = 'error';
+                                                                                                       return false;                                    
+                                                                                                   }
+                                                                                                   else{
+                                                                                                       onActionComplete(); 
+                                                                                                       $scope.existingUseOffCombMap = result;
+                                                                                                       $.each($scope.existingUseOffCombMap , function(k, v)
+                                                                                                              {
+                                                                                                                  v.Out_of_Office_Leave_Start_Date__c = $scope.getDateInJS(angular.copy(v.Out_of_Office_Leave_Start_Date__c));
+                                                                                                                  v.Out_of_Office_Leave_End_Date__c = $scope.getDateInJS(angular.copy(v.Out_of_Office_Leave_End_Date__c));
+                                                                                                              });
+                                                                                                       $scope.selectOfferingsByComID();
+                                                                                                       $scope.ComOwnerChangeRequestObj.Id = '';
+                                                                                                       $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                                                                                                       $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                                                                                                       $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                                                                                                   }
+                                                                                                   if($scope.actionReq == 'Add'){
+                                                                                                        $scope.reviewRelatedOffClicked = true;
+                                                                                                    }else{
+                                                                                                        $scope.reviewexistingReqClicked = true;
+                                                                                                    }
+                                                                                                   $scope.applyChanges();
+                                                                                               },{escape: false});
+                    }
+                    
+                    
+                    $scope.validateForm = function()
+                    {
+                        $scope.errorMsg = '';
+                        if($scope.ComOwnerChangeRequestObj.ComOwnerEmail == null || $scope.ComOwnerChangeRequestObj.ComOwnerEmail.trim().length == 0)
+                        {
+                            $scope.errorMsg += '<li>Commercial Owner Email must not be empty.</li>';
+                            $scope.isComOwnerEmailError = true;
+                        }
+                        else if(!$scope.isValidEmail($scope.ComOwnerChangeRequestObj.ComOwnerEmail)){
+                            $scope.errorMsg += '<li>Commercial Owner Email must be valid Email Address.</li>';
+                            $scope.isComOwnerEmailError = true;
+                        }
+                            else if(!$scope.isValidDomain($scope.ComOwnerChangeRequestObj.ComOwnerEmail)){
+                                var lstValidDomains = $scope.validEmailDomains.split(';');
+                                $scope.errorMsg += '<li>Commercial Owner Email Domain is Invalid it must end with ';
+                                if(lstValidDomains.length < 2)
+                                    $scope.errorMsg += lstValidDomains;
+                                else{
+                                    var validDomains = lstValidDomains.splice(0, lstValidDomains.length - 1); 
+                                    $scope.errorMsg += `${validDomains.join(', ')} or ${lstValidDomains}.</li>`;
+                                }
+                                $scope.isComOwnerEmailError = true;
+                            }
+                                else
+                                    $scope.isComOwnerEmailError = false;
+                        
+                        if($scope.ComOwnerChangeRequestObj.TempCommOwnerEmail == null || $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail.trim().length == 0)
+                        {
+                            $scope.errorMsg += '<li>Temporary Commercial Owner Email must not be empty.</li>'; 
+                            $scope.isTempCommOwnerEmailError = true;
+                        }
+                        else if(!$scope.isValidEmail($scope.ComOwnerChangeRequestObj.TempCommOwnerEmail)){
+                            $scope.errorMsg += '<li>Temporary Commercial Owner Email must be valid Email Address.</li>';
+                            $scope.isTempCommOwnerEmailError = true;
+                        }
+                            else if(!$scope.isValidDomain($scope.ComOwnerChangeRequestObj.TempCommOwnerEmail)){
+                                var lstValidDomains = $scope.validEmailDomains.split(';');
+                                $scope.errorMsg += '<li>Temporary Commercial Owner Email Domain is Invalid it must end with ';
+                                if(lstValidDomains.length < 2)
+                                    $scope.errorMsg += lstValidDomains;
+                                else{
+                                    var validDomains = lstValidDomains.splice(0, lstValidDomains.length - 1); 
+                                    $scope.errorMsg += `${validDomains.join(', ')} or ${lstValidDomains}.</li>`;
+                                }
+                                $scope.isTempCommOwnerEmailError = true;
+                            }
+                                else
+                                    $scope.isTempCommOwnerEmailError = false;
+                        
+                        if($scope.ComOwnerChangeRequestObj.LeaveStartDate == null || $scope.ComOwnerChangeRequestObj.LeaveStartDate.trim().length == 0)
+                        {
+                            $scope.errorMsg += '<li>Leave Start Date must not be empty.</li>';
+                            $scope.isLeaveStartDateError = true;
+                        }
+                        else
+                            $scope.isLeaveStartDateError = false;
+                        if($scope.ComOwnerChangeRequestObj.LeaveEndDate == null || $scope.ComOwnerChangeRequestObj.LeaveEndDate.trim().length == 0)
+                        {
+                            $scope.errorMsg += '<li>Leave End Date must not be empty.</li>';
+                            $scope.isLeaveEndDateError = true;
+                        }
+                        
+                        if($scope.ComOwnerChangeRequestObj.LeaveEndDate != null && $scope.ComOwnerChangeRequestObj.LeaveStartDate != null && $scope.ComOwnerChangeRequestObj.LeaveStartDate > $scope.ComOwnerChangeRequestObj.LeaveEndDate)
+                        {
+                            $scope.errorMsg += '<li>Leave Start date can not be greater then Leave end Date.</li>';
+                            $scope.isLeaveEndDateError = true;
+                        }
+                        
+                        if($scope.errorMsg.trim().length > 0)
+                        {
+                            $scope.isError = true;
+                            $scope.errorMsg = '<ul>' + $scope.errorMsg + '</ul>';
+                        }
+                        else
+                        {
+                            $scope.errorMsg = '';
+                            $scope.isError = false;
+                        }
+                        $scope.applyChanges();
+                        
+                        console.log('ComOwnerChangeRequestObj.ComOwnerEmail: ' + $scope.ComOwnerChangeRequestObj.ComOwnerEmail);
+                        console.log('ComOwnerChangeRequestObj.TempCommOwnerEmail: ' + $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail);
+                        console.log('ComOwnerChangeRequestObj.LeaveStartDate: ' + $scope.ComOwnerChangeRequestObj.LeaveStartDate);
+                        console.log('ComOwnerChangeRequestObj.LeaveEndDate: ' + $scope.ComOwnerChangeRequestObj.LeaveEndDate);
+                        return $scope.isError;
+                    }
+                    
+                    //****** tpa request events start ******//
+                    
+                    //*** loadForm function invokes when page loads (As Constructor) start ***//
+                    $scope.loadForm = function() {
+                        if(getParameterByName('CSId').trim().length > 0){
+                            $scope.assignedTPProcessorObj = {!assignedTPProcessorObj};
+                            
+                            if($scope.assignedTPProcessorObj != null){
+                                $scope.ComOwnerChangeRequestObj.ComOwnerEmail = $scope.assignedTPProcessorObj.Commercial_Owner_Email__c
+                                $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = $scope.assignedTPProcessorObj.Temporary_Commercial_Owner_Email__c
+                                $scope.ComOwnerChangeRequestObj.LeaveStartDate = $scope.assignedTPProcessorObj.Out_of_Office_Leave_Start_Date__c
+                                $scope.ComOwnerChangeRequestObj.LeaveEndDate = $scope.assignedTPProcessorObj.Out_of_Office_Leave_End_Date__c
+                            }
+                        }
+                    }                        
+                    
+                    $scope.postSubmitActivity = function(redirectionURL)
+                    {
+                        var q = encodeURIComponent(redirectionURL);
+                        var uri_dec = decodeURIComponent(redirectionURL);
+                        $scope.$log.info('redirectionURL: ' + redirectionURL); 
+                        window.location.href = uri_dec;
+                    }
+                    
+                    $scope.isValidDomain = function(emailId){
+                        var lstDomains = $scope.validEmailDomains.split(';')
+                        let isValid = false;
+                        for(let domain of lstDomains){
+                            if(emailId.endsWith(domain)){
+                                isValid = true;
+                            }
+                        }
+                        return isValid;
+                    }
+                    
+                    $scope.isValidEmail = function(sEmail)
+                    {
+                        var filter = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //Added by Babita Dadarwal under Issue-08272
+                        var diacriticscharacterfilter = /([\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+/g;
+                        
+                        if (filter.test(sEmail) && !diacriticscharacterfilter.test(sEmail)) { 
+                            return true;
+                        }
+                        else
+                            return false;
+                    }
+                    
+                    //*** function to cancelForm request ***//
+                    $scope.cancelForm = function(){
+                        $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                        $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                        $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                        angular.forEach($scope.offtoShow,function(v,k){
+                            v.ischecked = false;
+                        });
+                        $scope.isReviewYourRequest = false;
+                        
+                    }
+                    
+                    $scope.actionChanged = function(){
+                        $scope.ifofferingPresent = false;
+                        $scope.editingRecord = false;
+                        $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                        $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                        $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                        $scope.offtoShow = {};
+                        $scope.reviewexistingReqClicked = false;
+                        $scope.isReviewYourRequest = false;
+                        $scope.existingUseOffCombMap = {};
+                        $scope.reviewRelatedOffClicked = false;
+                        $scope.applyChanges();
+                        
+                    }
+
+                    $scope.updateSelection= function(selectedALLCheckedORNot){
+                        angular.forEach($scope.offtoShow,function(v,k){
+                            if(selectedALLCheckedORNot == true){
+                                v.ischecked = true;
+                            }else{
+                                v.ischecked = false;
+                            }
+                        });
+                        $scope.applyChanges();
+                    }
+                    
+                    
+                    $scope.submitForm = function()
+                    {
+                        $scope.applyChanges();
+                        if($scope.validateForm())
+                            return false;
+                        $scope.TPProcessorObj = {};
+                        $scope.TPProcessorObj.Commercial_Owner_Email__c = $scope.ComOwnerChangeRequestObj.ComOwnerEmail.toLowerCase();
+                        $scope.TPProcessorObj.Temporary_Commercial_Owner_Email__c = $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail.toLowerCase();
+                        $scope.TPProcessorObj.Out_of_Office_Leave_Start_Date__c = $scope.ComOwnerChangeRequestObj.LeaveStartDate;
+                        $scope.TPProcessorObj.Out_of_Office_Leave_End_Date__c = $scope.ComOwnerChangeRequestObj.LeaveEndDate;
+                        
+                        $scope.TPProcessorObj.Offering_Names__c = '';
+                        
+                        console.log('offtoShow: ' + JSON.stringify($scope.offtoShow));
+                        
+                        angular.forEach($scope.offtoShow,function(v,k){
+                            if(v.ischecked == true){
+                                $scope.TPProcessorObj.Offering_Names__c += ((k) + ';'); 
+                            }
+                            
+                        });
+                        
+                        
+                        if($scope.assignedTPProcessorObj != null){
+                            $scope.TPProcessorObj.Id = $scope.assignedTPProcessorObj.Id;
+                        }
+                        if($scope.ComOwnerChangeRequestObj.Id != null && $scope.ComOwnerChangeRequestObj.Id != '' && $scope.ComOwnerChangeRequestObj.Id != undefined ){
+                            $scope.TPProcessorObj.Id = $scope.ComOwnerChangeRequestObj.Id;
+                        }
+                        
+                        $scope.$log.info(JSON.stringify($scope.TPProcessorObj));
+                        onActionClick();
+                        CNT_TPA_Com_Owner_Chnge_Request_Form.saveRequest(JSON.stringify($scope.TPProcessorObj).replace(/null/i, "\"\""), function(result, event)
+                                                                         {
+                                                                             $scope.$log.warn(result);
+                                                                             if(event.type == 'exception')
+                                                                             {    
+                                                                                 onActionComplete(); 
+                                                                                 $scope.$log.info('Error: ' + event.message);
+                                                                                 $scope.submitStatus = 'error';
+                                                                                 return false;                                    
+                                                                             }
+                                                                             else
+                                                                             {
+                                                                                 $scope.existingUseOffCombMap = result;
+                                                                                 $.each($scope.existingUseOffCombMap , function(k, v)
+                                                                                        {
+                                                                                            v.Out_of_Office_Leave_Start_Date__c = $scope.getDateInJS(angular.copy(v.Out_of_Office_Leave_Start_Date__c));
+                                                                                            v.Out_of_Office_Leave_End_Date__c = $scope.getDateInJS(angular.copy(v.Out_of_Office_Leave_End_Date__c));
+                                                                                        });
+                                                                                 $scope.ComOwnerChangeRequestObj.TempCommOwnerEmail = '';
+                                                                                 $scope.ComOwnerChangeRequestObj.LeaveStartDate = '';
+                                                                                 $scope.ComOwnerChangeRequestObj.LeaveEndDate = '';
+                                                                                 $scope.vendor_Approved__1 = '';
+                                                                                 $scope.vendor_Approved__2 = '';
+                                                                                 $scope.vendor_Approved__3 = '';
+                                                                                 $scope.isReviewYourRequest = false;
+                                                                                 $scope.editingRecord = false;
+                                                                                 $scope.reviewRelatedOffClicked = false;
+                                                                                 $scope.actionReq = 'Edit';
+                                                                                 $scope.selectOfferingsByComID();
+                                                                                 $scope.fetchExistingRecord();
+                                                                                 
+                                                                                 onActionComplete(); 
+                                                                                 $scope.applyChanges();
+                                                                             }
+                                                                         },{escape: false});
+                        
+                        
+                    }  
+                    
+                    $scope.isError = false;
+                    $scope.errorMsg = '';
+                    
+                    //*** function triggers and applies all angular scope changes explicitly ***//
+                    $scope.applyChanges = function()
+                    {
+                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                            $scope.$apply();
+                    }
+                    //****** Angular Apply All Changes Event End ******//
+                    $scope.renderBootstrapTooltip = function()
+                    {
+                        applyBootstrapTooltip('right', '.rightTooltip');
+                        applyBootstrapTooltip('left', '.leftTooltip');
+                        applyBootstrapTooltip('bottom', '.bottomTooltip');
+                        applyBootstrapTooltip('top', '.topTooltip');
+                    }
+                    
+                    //****** Utility Events Start ******//
+                    
+                    $scope.popupAlert = function(msg, truePart)
+                    {
+                        popup(msg, {'animate':true}, 
+                              function(r)
+                              {
+                                  if(r && truePart != null)
+                                      truePart();
+                              });
+                    }
+                    
+                    $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                    {
+                        if(isYesNo)
+                            popup(msg, {'verify':true, 'animate':true}, function(r)
+                                  {
+                                      if(r)
+                                          truePart();
+                                      else
+                                          falsePart();
+                                      haltScreen = false;
+                                      $scope.applyChanges();
+                                  });                        
+                        else
+                            popup(msg, {'confirm':true, 'animate':true}, function(r)
+                                  {
+                                      if(r)
+                                          truePart();
+                                      else
+                                          falsePart();
+                                      haltScreen = false;
+                                      $scope.applyChanges();
+                                  });
+                        $('.aButtons button').each(function(){
+                            if($(this).attr('value') == 'cancel')
+                                $(this).html('Return');
+                            if($(this).attr('value') == 'ok')
+                                $(this).html('OK');
+                        });
+                    }
+                    //****** Utility Events End ******//
+                    $scope.loadForm();
+                }]);
+                
+                //Shut down popup code
+                var popupAlert = function(msg, truePart)
+                {
+                    popup(msg, {'animate':true}, 
+                          function(r){
+                              if(r && truePart != null)
+                                  truePart();                    
+                          });
+                }
+                
+                <!-- Page Controller End -->
+                    //*** function to read Query strings Start ***//
+                    function getParameterByName(name) 
+                {
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " ")) ;
+                }
+                //*** function to read Query strings End ***//
+                
+                //*** Wait Panel Start ***//
+                // Create a namespace for our custom functions
+                YAHOO.namespace("force.com");
+                YAHOO.force.com.buildWaitPanel = function() 
+                {
+                    document.body.className = document.body.className + " yui-skin-sam";
+                    YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                        "waitPanel",  // The id of our dialog container
+                        { 
+                            width           :   "300px", // You can play with this until it is right
+                            visible         :   false,   // Should be invisible when rendered
+                            draggable       :   false,   // Make the dialog draggable
+                            close           :   false,   // Do not include a close title button
+                            modal           :   true,    // Make it modal
+                            fixedCenter     :   true,    // Keep centered if window is scrolled
+                            zindex          :   40,      // Make sure it is on top of everything
+                            constraintoviewport: true,
+                            
+                            // This line adds the appear/disapper fade effect
+                            effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                        });
+                    
+                    // header
+                    YAHOO.force.com.waitPanel.setHeader("Please wait...");
+                    // set image
+                    YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+                    // Render the dialog to the document.body level of the DOM
+                    YAHOO.force.com.waitPanel.render(document.body);
+                }
+                
+                /**
+                * Callback when the action button is clicked
+                */
+            function onActionClick() 
+            {
+                // show the modal panel
+                if(YAHOO.force.com.waitPanel != null)
+                    YAHOO.force.com.waitPanel.show();
+                // return false to allow the action to proceed
+                return false;
+            }
+            
+            /**
+                 * Callback when the action is completed
+                 */
+            function onActionComplete() 
+            {
+                if(YAHOO.force.com.waitPanel != null)
+                    YAHOO.force.com.waitPanel.hide();
+                window.scrollTo(0,0);
+            }
+            
+            YAHOO.force.com.onDOMReady = function() 
+            {
+                // add our custom skin css to the body tag
+                document.body.className = document.body.className + " yui-skin-sam";  
+                
+                // build the wait panel
+                YAHOO.force.com.buildWaitPanel();
+            }
+            
+            // build the tree as soon as the DOM is in a usable state
+            YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady); 
+            //*** Wait Panel End ***//
+            
+            </script>
+            <!-- ****** AngularJS script End ****** -->
+            <style type="text/css">
+                .hideGlobalHeader
+                {
+                display: none !important;
+                }
+            </style>
+            </head>
+            <body id="pageBody" oncontextmenu="return false;" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+                <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+                <apex:form html-class="slds-form slds-form_horizontal">
+                    <div id="ng-app" ng-app="TpaAccessRequest" class="slds-p-around_small">
+                        <div id="controllerPage" ng-controller="controllerPage">
+                            <apex:pageBlock >
+                                <div ng-show="isError" class="slds-theme_error" role="alert" style="display:none;">
+                                    <div class="message errorM3 slds-notify__content " role="alert">
+                                        <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <h2 class="slds-text-heading_small">
+                                                            <div class="messageText">
+                                                                <span><h4>Error</h4></span>
+                                                            </div>
+                                                        </h2>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3"></div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-col">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5">
+                                                        <ul>
+                                                            <li><span ng-bind-html-unsafe="errorMsg"></span></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                    <div class="slds-col slds-size_1-of-5"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Error Message Box End -->
+                                
+                                <apex:pageBlock >
+                                    
+                                    <div class="slds-section slds-is-open " style="background-color:white; margin: 10px; padding:10px">
+                                        <br/>
+                                        <div class="slds-align_absolute-center" >
+                                            <div >
+                                                <label ><span style="font-size: 15px;"><b>Temporary Change of Commercial Owner Request Form</b>  </span></label>
+                                            </div>
+                                            <br/>
+                                            
+                                        </div>
+                                        <br/>
+                                        <div style="padding-left: 1%;">
+                                            <apex:panelGrid columns="2"  >
+                                                <label class="slds-form-element__label"  style= "font-size: 14px; "><b>Action Requested</b></label>
+                                                <div class="slds-form-element__control"   >
+                                                    <span class="slds-radio">
+                                                        <input type="radio" id="usPrescLvlDataYes" class="noOutline" name="usPrescLvlData" value="Edit" ng-model="actionReq"  ng-click="actionChanged()"/>
+                                                        <label class="slds-radio__label" for="usPrescLvlDataYes" >
+                                                            <span class="slds-radio_faux"></span>
+                                                            <span class="slds-form-element__label" style= "font-size: 14px; ">Edit - Cancel Existing Request</span>
+                                                        </label>
+                                                    </span>
+                                                    <span class="slds-radio">
+                                                        <input type="radio" id="usPrescLvlDataNo" class="noOutline" name="usPrescLvlData" value="Add" ng-model="actionReq"  ng-click="actionChanged()"/>
+                                                        <label class="slds-radio__label" for="usPrescLvlDataNo">
+                                                            <span class="slds-radio_faux"></span>
+                                                            <span class="slds-form-element__label" style= "font-size: 14px; ">Add New Request </span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+                                            </apex:panelGrid>
+                                        </div>
+                                        
+                                        
+                                        
+                                        
+                                        <div aria-hidden="false" class="slds-section__content">
+                                            <table class="list slds-table ">
+                                                <tr ng-if="actionReq == 'Add'">
+                                                    <td colspan="4">
+                                                        <label style="color: rgb(27 162 255);"><b>Step 1: Please provide Your Commercial Owner Email then Click Review related Offering Button</b>
+                                                        </label>
+                                                    </td>
+                                                </tr>
+                                                
+                                                <tr ng-if= "actionReq == 'Edit' || actionReq == 'Add'">
+                                                    <td class="dataCell slds-size_1-of-4" >
+                                                        <b>Commercial Owner email</b>
+                                                    </td>
+                                                    <td class="dataCell slds-size_1-of-4">
+                                                        <div id="opPanel" class="slds-form-element__control">
+                                                            <div class="requiredInput">
+                                                                <div class="requiredBlock"></div>
+                                                                <input class="slds-input" type="text" id="reqNo" ng-model="ComOwnerChangeRequestObj.ComOwnerEmail" ng-class="{'errStyle':isTempCommOwnerEmailError,'':!isTempCommOwnerEmailError}" ng-change=""/>                                                           
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="dataCell slds-size_1-of-4"></td>
+                                                    <td class="dataCell slds-size_1-of-4"></td>
+                                                </tr>
+                                                
+                                                <tr ng-if= "actionReq == 'Edit' || actionReq == 'Add'">
+                                                    <td></td>
+                                                    <td >
+                                                        <div align="right">
+                                                            <button class="slds-button slds-button_brand" style="font-weight:bold;margin-top: -0.25rem;" onclick="return false;" ng-click="fetchExistingRecord();"> {{actionReq == 'Edit' ? 'REVIEW EXISTING REQUEST' : 'REVIEW RELATED OFFERINGS'}}</button> 
+                                                        </div>
+                                                    </td>
+                                                    
+                                                </tr>
+                                                <tr ng-if= "actionReq == 'Edit' || actionReq == 'Add'" >
+                                                    <td colspan="4">
+                                                        <div>
+                                                            <hr style=" border-color: rgb(27 162 255);margin-bottom: 0rem !important; margin-top: 6px;"></hr>
+                                                        <hr style=" border-color: rgb(27 162 255);margin-bottom: 10px !important; margin-top: 6px;"></hr>
+                                            </div>  
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr ng-if="reviewRelatedOffClicked">
+                                        <td colspan="4">
+                                            <label style="color: rgb(27 162 255);"><b>Step 2: Please select your offerings and enter the coverage dates, along with the email address of the Commercial Owner who will temporarily review your TPAs during your absence:
+                                                </b>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding-left: 2%;" class="dataCell slds-size_1-of-4" ng-if="editingRecord == true || reviewRelatedOffClicked" >
+                                            <b>Temporary Commercial Owner email:</b>
+                                        </td>
+                                        <td class="dataCell slds-size_1-of-4" ng-if="editingRecord == true || reviewRelatedOffClicked" >
+                                            <div id="opPanel" class="slds-form-element__control">
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                    <input class="slds-input" type="text" id="reqNo" ng-model="ComOwnerChangeRequestObj.TempCommOwnerEmail" ng-class="{'errStyle':isTempCommOwnerEmailError,'':!isTempCommOwnerEmailError}"/>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding-left: 2%;" class="dataCell" ng-show="editingRecord == true || reviewRelatedOffClicked">
+                                            <b>Out of Office / Leave Start Date:</b>
+                                        </td>
+                                        <td class="dataCell" ng-show="editingRecord == true || reviewRelatedOffClicked">
+                                            <div id="opPanel" class="slds-form-element__control">
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                    <input type="date" id="leaveStartDate" ng-model="ComOwnerChangeRequestObj.LeaveStartDate"  /> 
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="dataRow" >
+                                        <td style="vertical-align: text-top; padding-left: 2%" class="dataCell" ng-if="runOffSpecificLogic == true && (ifofferingPresent == true && (reviewRelatedOffClicked || (actionReq == 'Edit' &&  editingRecord)))">
+                                            <b>Select Offerings for Temporary Coverage:
+                                            </b>
+                                        </td>
+                                        <td ng-if="runOffSpecificLogic == true && (ifofferingPresent == true && (reviewRelatedOffClicked || (actionReq == 'Edit' &&  editingRecord)))">
+                                            <table id="manualReviewApproval" class="slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" role="grid" >
+                                                <thead class="slds-theme_shade"> 
+                                                    <tr class="slds-text-heading slds-line-height_reset ">
+                                                        <th class="headerRow slds-cell-wrap" style="width: 26%; text-align: center;"><span><apex:outputLabel value="Select All" /></span>
+                                                        <span ><input type="checkbox"  class="dasscb noOutline " id="ddd"
+                                                            ng-model="selectedALLCheckedORNot" ng-click="updateSelection(selectedALLCheckedORNot)"
+                                                            /></span></th>
+                                                        <th class="headerRow slds-cell-wrap" style="padding-bottom: 7% !important;"><apex:outputLabel value="Offerings" /></th>
+                                                    </tr>
+                                                </thead>
+                                                <tr class="dataRow" ng-repeat="(key, data) in offtoShow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                                    <td class="dataCell slds-align_absolute-center" ><input type="checkbox"
+                                                                                class="dasscb noOutline "
+                                                                                id="ddd"
+                                                                                ng-model="data.ischecked" 
+                                                                                /></td>
+                                                    <td class="dataCell" style="text-wrap: wrap;">{{key}}</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td class="dataCell" ng-show="editingRecord == true || reviewRelatedOffClicked" style="vertical-align: text-top ; padding-left: 2%;">
+                                            <b>Out of Office / Leave End  Date:</b>
+                                        </td>
+                                        <td class="dataCell" ng-show="editingRecord == true || reviewRelatedOffClicked" style="vertical-align: text-top">
+                                            <div id="opPanel" class="slds-form-element__control">
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                    <input type="date" id="leaveEndDate" ng-model="ComOwnerChangeRequestObj.LeaveEndDate" /> 
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                    </tr>
+                                    <tr class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} " >
+                                        
+                                    </tr>
+                                    <tr ng-show="editingRecord == true || actionReq == 'Add'" class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                        
+                                        
+                                    </tr>
+                                    <tr  ng-show="reviewRelatedOffClicked || editingRecord" >
+                                        <td></td>
+                                        <td >
+                                            <div align="right">
+                                                <button class="slds-button slds-button_brand" style="font-weight:bold;margin-top: -0.25rem;" onclick="return false;" ng-click="reviewYourRequestClicked();"> REVIEW YOUR REQUEST</button> 
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="tableWrapper" ng-if="isReviewYourRequest == true">
+                                    <sapn ><b>Review Results of Your Request Below:</b></sapn>
+                                    <table id="manualReviewApproval" class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" role="grid">
+                                        <thead class="slds-theme_shade"> 
+                                            <tr class="slds-text-heading slds-line-height_reset ">
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="#" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Commercial Email ID" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Temp Commercial Email ID" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Start Date" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="End Date" /></th>
+                                                <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Offering Name" /></th>
+                                            </tr>
+                                        </thead>
+                                        <tr class="dataRow" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                            <td class="dataCell">1</td>
+                                            <td class="dataCell">{{ComOwnerChangeRequestObj.ComOwnerEmail}}</td>
+                                            <td class="dataCell">{{ComOwnerChangeRequestObj.TempCommOwnerEmail}}</td>
+                                            <td class="dataCell">{{ComOwnerChangeRequestObj.LeaveStartDate}}</td>
+                                            <td class="dataCell">{{ComOwnerChangeRequestObj.LeaveEndDate}}</td>
+                                            <td class="dataCell" style="text-wrap: wrap;">{{ComOwnerChangeRequestObj.OfferingNames}}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <br />
+                            <br />
+                            <div ng-if="reviewRelatedOffClicked && isReviewYourRequest == true">
+                                <hr style=" border-color: rgb(27 162 255);margin-bottom: 0rem !important; margin-top: 6px;"></hr>
+                            <hr style=" border-color: rgb(27 162 255);margin-bottom: 10px !important; margin-top: 6px;"></hr>
+                        <span><label style="color: rgb(27 162 255);"><b>Step 3: Once all fields are completed, the 'Submit Request' button will become available.
+                            </b>
+                            </label> </span>
+                            <br />
+                            <br />
+                    </div>   
+                            <div ng-if="(editingRecord == true || reviewRelatedOffClicked) && isReviewYourRequest == true">
+                                <label>
+                                    <b>Acknowledgements:</b> 
+                                </label>
+                            </div>
+                            <div style="margin-left: 10px;" ng-show="(editingRecord == true || reviewRelatedOffClicked) && isReviewYourRequest == true">
+                                <div class="slds-checkbox">
+                                    <input style="margin-left:0.3em;float:left;" type="checkbox" class="dasscb noOutline" id="cbClientApproval2" ng-model="vendor_Approved__1"/>
+                                    <label class="slds-checkbox__label" for="cbClientApproval2">
+                                        <span class="slds-checkbox_faux "></span>
+                                        <span class="slds-form-element__label " > Submitting this form will temporarily change any Offering you are assigned to the Temporary Commercial Owner and for the time period you provide.  </span>
+                                    </label>
+                                </div>
+                                
+                                <div style="margin-top:10px;" ng-show="editingRecord == true || reviewRelatedOffClicked">       
+                                    <div class="slds-checkbox">
+                                        <input style="margin-left:0.3em;float:left;" type="checkbox" class="dasscb noOutline" id="cbClientApproval" ng-model="vendor_Approved__2"/> 
+                                        <label class="slds-checkbox__label" for="cbClientApproval">
+                                            <span class="slds-checkbox_faux "></span>
+                                            <span class="slds-form-element__label " > As the primary Commercial Owner, you will receive the "For Your Records" emails when a review is completed by your temporary assigned owner.</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="margin-top:10px; margin-bottom: 20px;" ng-show="editingRecord == true || reviewRelatedOffClicked">       
+                                    <div class="slds-checkbox">
+                                        <input style="margin-left:0.3em;float:left;" type="checkbox" class="dasscb noOutline" id="cbClientApproval3" ng-model="vendor_Approved__3"/> 
+                                        <label class="slds-checkbox__label" for="cbClientApproval3">
+                                            <span class="slds-checkbox_faux "></span>
+                                            <span class="slds-form-element__label " >This form is intended for requesting a temporary change of Commercial Ownership during your absence. For a permanent change of Commercial Owner, please contact your local TP Processor or email TP-US@iqvia.com. </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                    </div>
+                    <div align="center">
+                        <button class="slds-button slds-button_outline-brand" style="font-weight:bold;color:red !important;" onclick="return false;" ng-show="ComOwnerChangeRequestObj.ComOwnerEmail.length != 0 && 
+                                                                                                                                                              ComOwnerChangeRequestObj.TempCommOwnerEmail.length != 0 && 
+                                                                                                                                                              ComOwnerChangeRequestObj.LeaveStartDate.length != 0 && 
+                                                                                                                                                              ComOwnerChangeRequestObj.LeaveEndDate.length != 0  && vendor_Approved__3 && vendor_Approved__2 && vendor_Approved__1" ng-click="cancelForm();">CANCEL</button> 
+                        
+                        <button class="slds-button slds-button_outline-brand slds-m-top_small" style="font-weight:bold" onclick="return false;" ng-show="ComOwnerChangeRequestObj.ComOwnerEmail.length != 0 && 
+                                                                                                                                                         ComOwnerChangeRequestObj.TempCommOwnerEmail.length != 0 && 
+                                                                                                                                                         ComOwnerChangeRequestObj.LeaveStartDate.length != 0 && 
+                                                                                                                                                         ComOwnerChangeRequestObj.LeaveEndDate.length != 0 && vendor_Approved__3 && vendor_Approved__2 && vendor_Approved__1" ng-click="submitStatus='submitted';submitForm();">SUBMIT YOUR REQUEST</button> 
+                        
+                        
+                    </div>
+                    <br/>
+                    <!-- <hr ng-if="runOffSpecificLogic == true" style="border-color: rgb(27 162 255);margin-bottom: 1rem !important;margin-top: 6px;border-width: 8px;"></hr> -->
+                    <sapn ng-if="runOffSpecificLogic == true && actionReq == 'Edit' && reviewexistingReqClicked && ((existingUseOffCombMap | json) != null && (existingUseOffCombMap | json) != undefined && (existingUseOffCombMap | json) != '{}')" ><b>Existing Records</b></sapn>
+                    <div class="tableWrapper" ng-show="runOffSpecificLogic == true && actionReq == 'Edit' && reviewexistingReqClicked && ((existingUseOffCombMap | json) != null && (existingUseOffCombMap | json) != undefined && (existingUseOffCombMap | json) != '{}')">
+                        <table id="manualReviewApproval" class="slds-table slds-table--bordered slds-table_col-bordered slds-border_left slds-border_right" role="grid">
+                            <thead class="slds-theme_shade"> 
+                                <tr class="slds-text-heading slds-line-height_reset ">
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="#" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Commercial Email ID" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Temp Commercial Email ID" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Start Date" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="End Date" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Offering Name" /></th>
+                                    <th class="headerRow slds-cell-wrap"><apex:outputLabel value="Action" /></th>
+                                </tr>
+                            </thead>
+                            <tr class="dataRow" ng-repeat="(key, data) in existingUseOffCombMap" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                <td class="dataCell">{{$index + 1}}</td>
+                                <td class="dataCell">{{data.Commercial_Owner_Email__c}}</td>
+                                <td class="dataCell">{{data.Temporary_Commercial_Owner_Email__c}}</td>
+                                <td class="dataCell">{{data.Out_of_Office_Leave_Start_Date__c}}</td>
+                                <td class="dataCell">{{data.Out_of_Office_Leave_End_Date__c}}</td>
+                                <td class="dataCell" style="text-wrap: wrap;">{{data.Offering_Names__c}}</td>
+                                <td><a href="javascript:void(0)" style="text-decoration: underline;" ng-click="editRecord(data);">Edit</a>
+                                    <a href="javascript:void(0)" style="text-decoration: underline;" ng-click="deleteRecord(key, data);">Cancel</a>
+                                </td>
+                                
+                            </tr>
+                        </table>
+                    </div>
+                    <sapn class="slds-align_absolute-center slds-text-heading_medium" ng-if="runOffSpecificLogic == true && actionReq == 'Edit' && reviewexistingReqClicked && ((existingUseOffCombMap | json) == null || (existingUseOffCombMap | json) == undefined || (existingUseOffCombMap | json) == '{}')" >Note : No existing or scheduled requests found
+                    </sapn>
+
+                </div>
+            </apex:pageBlock>
+        </apex:pageBlock>                
+    </div>
+</div>
+</apex:form>
+</body>
+</html>
+</apex:outputPanel>
+</apex:page>

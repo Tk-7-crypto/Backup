@@ -1,0 +1,154 @@
+<template>
+    <div class="slds-box slds-p-around_none">
+        <article class="slds-card">
+            <div class="slds-page-header">
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-title">
+                        <div class="slds-media__body" style="display: grid;">
+                            <div class="slds-card__header slds-grid">
+                                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                    <div class="slds-media__figure">
+                                        <lightning-icon icon-name="standard:file" title="File"
+                                            size="small"></lightning-icon>
+                                    </div>
+                                    <template lwc:if={isViewAll}>
+                                        <div class="slds-media__body">
+                                            <h4 class="slds-card__header-title">
+                                                <a class="slds-card__header-link baseCard__header-title-container" onclick={handleViewAll} target="_blank">
+                                                    <span class="slds-card__header-link" title="Files">Files ({count})</span>
+                                                </a>
+                                            </h4>
+                                        </div>
+                                    </template>
+                                    <template lwc:else>
+                                        <div class="slds-media__body">
+                                            <h4 class="slds-card__header-title">
+                                                <span class="slds-card__header-link" title="Files">Files ({count})</span>
+                                            </h4>
+                                        </div>
+                                    </template>
+                                    <div class="slds-no-flex" style="margin-left: 10px;">
+                                        <button class="slds-button slds-button_neutral" title="Add Files"
+                                            onclick={openModal} style="height: 32px;">
+                                            Add Files
+                                        </button>
+                                    </div>
+                                    <template if:true={showModal}>
+                                        <div class="slds-modal slds-fade-in-open">
+                                            <div class="slds-modal__container">
+                                                <div class="slds-modal__header">
+                                                    <h2 class="slds-text-heading_medium">Add Files</h2>
+                                                </div>
+                                                <div class="slds-modal__content slds-p-around_medium">
+                                                    <lightning-combobox label="Description" value={description} options={descriptionOptions} onchange={handleDescription} required></lightning-combobox>
+                                                    <lightning-file-upload label="Upload Files" name="fileUploader" 
+                                                        record-id={recordId} file-field-name="Description" file-field-value={description} onuploadfinished={handleUploadFinished} disabled={isUploadDisabled}>
+                                                    </lightning-file-upload>
+                                                </div>
+                                                <div class="slds-modal__footer">
+                                                    <lightning-button label="Cancel" onclick={closeModal}></lightning-button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-backdrop slds-backdrop_open"></div>
+                                    </template>
+                                </header>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-card__body slds-scrollable_x slds-m-around_none">
+                <template if:true={uploadedFiles}>
+                    <div class="slds-m-around_none slds-border_top">
+                        <lightning-datatable 
+                            key-field="Id"
+                            data={uploadedFiles}
+                            columns={columns}
+                            onrowaction={onRowActionHandler}
+                            hide-checkbox-column="true"
+                            wrap-text-max-lines=1
+                            column-widths-mode="auto"
+                            >
+                        </lightning-datatable>
+                    </div>
+                    <template if:true={isEditModalOpen}>
+                        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                            <div class="slds-modal__container">
+                                <header class="slds-modal__header">
+                                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeEditModal}>
+                                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                                        <span class="slds-assistive-text">Close</span>
+                                    </button>
+                                    <h2 class="slds-text-heading_medium">
+                                        Edit {oldFileTitle}
+                                    </h2>
+                                </header>
+                                <div class="slds-modal__content slds-p-around_medium">
+                                    <lightning-record-edit-form object-api-name="ContentDocument" record-id={editRecordId} onsubmit={handleSave}>
+                                        <lightning-messages> </lightning-messages>
+                                        <lightning-input-field field-name="Title" value={fileTitle} onchange={handleTitleUpdate}></lightning-input-field>
+                                        <lightning-combobox 
+                                            name="Description" 
+                                            label="Description"
+                                            value={description} 
+                                            placeholder="Select an option" 
+                                            options={descriptionOptions}
+                                            onchange={handleDescriptionUpdate}>
+                                        </lightning-combobox>
+                                        <div class="slds-form-element slds-p-top_medium">
+                                            <label class="slds-form-element__label">Created</label>
+                                            <div class="slds-form-element__control">
+                                                <span class="slds-form-element__static">{fileCreatedDate}</span>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element slds-p-top_medium">
+                                            <label class="slds-form-element__label">Last Modified Date</label>
+                                            <div class="slds-form-element__control">
+                                                <span class="slds-form-element__static">{fileLastModifiedDate}</span>
+                                            </div>
+                                        </div>
+                                    </lightning-record-edit-form>
+                                </div>
+                                <footer class="slds-modal__footer">
+                                    <button class="slds-button slds-button_neutral" onclick={closeEditModal}>Cancel</button>
+                                    <button type = "submit" class="slds-button slds-button_brand" onclick={handleSave}>Save</button>
+                                </footer>
+                            </div>
+                        </section>
+                        <div class="slds-backdrop slds-backdrop_open"></div> 
+                    </template>
+                    <template if:true={isDeleteModalOpen}>
+                        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                            <div class="slds-modal__container">
+                                <header class="slds-modal__header">
+                                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeDeleteModal}>
+                                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small">
+                                        </lightning-icon>
+                                        <span class="slds-assistive-text">Close</span>
+                                    </button>
+                                    <h2 class="slds-text-heading_medium">Delete File?</h2>
+                                </header>
+                                <div class="slds-modal__content slds-p-around_medium">
+                                    <p>Deleting a file also removes it from any records or posts it's attached to.</p>
+                                </div>
+                                <footer class="slds-modal__footer">
+                                    <button class="slds-button slds-button_neutral" onclick={closeDeleteModal}>Cancel</button>
+                                    <button class="slds-button slds-button_destructive" onclick={confirmDelete}>Delete</button>
+                                </footer>
+                            </div>
+                        </section>
+                        <div class="slds-backdrop slds-backdrop_open"></div>
+                    </template>
+                </template>
+            </div>
+        </article>
+        <template if:true={isViewAll}>
+            <footer class="slds-card__footer">
+                <a class="slds-card__footer-action" onclick={handleViewAll} target="_blank">View All
+                    <span class="slds-assistive-text">Files</span>
+                </a>
+            </footer>
+        </template>
+    </div>
+</template>

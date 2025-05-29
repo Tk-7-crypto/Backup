@@ -1,0 +1,53 @@
+<!--
+   Name      :     LXC_PSA_CREATE_BD_PROJECT_OPP_SCREEN 
+   Date      :     8-April-2019
+   Usage     :     Validate Opportunity for BD Project before redirecting to LI org 
+   Author    :     Suman Sharma
+-->
+<aura:component controller="CNT_PSA_CREATE_BD_PROJECT_OPP_SCREEN" implements="force:lightningQuickActionWithoutHeader,force:hasRecordId">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="oppId" type="Id" />
+    <aura:attribute name="showErrorMessage" type="Boolean" default="false"/>
+    <aura:attribute name="isMDMUnvalidated" type="Boolean" default="false"/>
+    <aura:attribute name="errorMessage" type="String"/>
+    <aura:attribute name="errorArray" type="List"/>
+    <aura:attribute name="isLoading" type="Boolean" default="true"/>
+    <aura:dependency resource="markup://force:navigateToSObject" type="EVENT"/>
+    <aura:if isTrue="{!v.isLoading }">
+        <lightning:spinner alternativeText="{!$Label.c.Loading}"/>
+    </aura:if>
+    <aura:if isTrue="{!v.showErrorMessage }">
+        <div class="demo-only" style="height: 840px;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create BD Project Validation</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <!-- Show the message to ui -->
+                        <div class="slds-notify__content errorMessage">
+                            <aura:if isTrue="{!v.isMDMUnvalidated}">
+                                <p>Atleast one MDM validated address is required to create a BD project. Please click here to contact the MDM team: <a href="javascript:void(0)" onclick="{!c.redirectToMDMTeam}">https://quintiles.service-now.com/via/?id=sc_cat_item&amp;sys_id=4b0859dddb28c8107cf37e77f4961900</a></p>
+                            
+                            <aura:set attribute="else">
+                                <p >{!v.errorMessage}</p> 
+                                <aura:iteration var="error" items="{!v.errorArray}">
+                                    {!error}
+                                </aura:iteration>
+                            </aura:set>
+                                </aura:if>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning:button variant="brand" label="Back to opportunity" title="Back to opportunity" onclick="{!c.BackToOpportunity}"/>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </aura:if>
+</aura:component>

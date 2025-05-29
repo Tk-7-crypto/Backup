@@ -1,0 +1,117 @@
+<apex:page controller="MI_BNF_ADD_Product" showheader="false" sidebar="false" >
+  <c:JQueryBlockUI />
+ <apex:form id="addProductForm">
+ <script>
+ 
+ //Single Checkbox Selection for Invoice
+ function SingleSelect(regex,current,HiddenVariableId)
+ {
+        re = new RegExp(regex);
+
+        for(i = 0; i < document.forms[0].elements.length; i++) {
+        
+            elm = document.forms[0].elements[i];
+        
+            if (elm.type == 'checkbox')
+            {
+                elm.checked = false;
+            }
+        }
+        current.checked = true;
+        document.getElementById(HiddenVariableId).value =current.value;
+      
+        
+}
+
+//updated by Ghanshayam Saini - chrome issue in window.open
+// Return to Parent window after adding product on Invoice
+function callParent(HiddenVariableId) 
+{ 
+   window.close();
+
+   window.opener.document.location.href = '/apex/MI_BNFOpptyListLockedGrid?compid=' + document.getElementById(HiddenVariableId).value;
+
+   return false;
+}  
+// Return to Parent window when Cancel Press
+ function CancelAction()
+ {
+   window.close();
+   window.opener.YUIHideLoading();
+
+   return false;
+ }
+ //updated by Ghanshayam Saini - chrome issue in window.open
+ 
+function CheckBoxCheck(HiddenVariableId)
+{
+    var Checkvalue=document.getElementById(HiddenVariableId).value;
+    
+    if(Checkvalue=='')
+    {
+        alert('No BNF Selected');
+        
+        return false;
+    }
+    else
+    {
+        YUIShowLoading();
+        addproduct();
+        return true;
+    }
+    
+}
+ 
+ 
+ </script>
+  <apex:inputHidden value="{!selectedInvoice}" id="ChkValue" />
+   <apex:outputPanel id="ChildBNFDetails">
+             <apex:actionFunction action="{!save}" status="MyStatus" name="addproduct" rerender="divproduct" oncomplete="callParent('{!$Component.addProductForm.ChkValue}');">
+                                            
+             </apex:actionFunction>
+              <apex:actionStatus startText="" id="MyStatus"></apex:actionStatus>
+              <apex:outputpanel id="divproduct"></apex:outputpanel>
+            <apex:pageBlock title="BNF List" id="OppBNFList">
+          
+              <apex:pageBlockButtons >
+                <apex:commandButton onclick="CheckBoxCheck('{!$Component.addProductForm.ChkValue}');return false;" value="Add to BNF" id="addcbnf"/>
+                 <apex:commandButton action="{!cancel}" value="Cancel" id="btncancel" oncomplete="CancelAction();"/>
+               </apex:pageBlockButtons>
+           
+             <apex:dataTable style="width:100%;" border="0" value="{!MIBNF_CompList}" var="cbnf" id="theTable" cellspacing="3" cellpadding="6" bgcolor="#DCDCDC">
+
+                                 <apex:column width="100px" headerValue="">
+                                       <input type="checkbox" id="chk{!cbnf.id}" value="{!cbnf.id}" name="chk{!cbnf.id}" onclick="SingleSelect('chk',this,'{!$Component.addProductForm.ChkValue}');"/>
+                                                       
+                                    </apex:column>
+                                <apex:column width="240px" headerValue="Name">
+                                           <apex:outputfield value="{!cbnf.Name}" />
+                            
+                                    </apex:column>
+                                    
+                                    <apex:column headerValue="Description">
+                                           <apex:outputfield value="{!cbnf.BNF_Description__c}" />
+                            
+                                    </apex:column>
+                                                                  
+                                    <apex:column headerValue="Contract Start Date">
+                                        <apex:outputfield value="{!cbnf.MIBNF__r.Contract_Start_Date__c}"/>
+                            
+                                    </apex:column>
+                                        <apex:column headerValue="Contract End Date" > <apex:outputfield value="{!cbnf.MIBNF__r.Contract_End_Date__c} "/>                                                          
+                                    </apex:column>
+                                    <apex:column headerValue="BNF Status" >                                      
+                                                                    
+                                        <apex:outputfield value="{!cbnf.BNF_Status__c}"/>
+                            
+                                    </apex:column>
+                                    <apex:column headerValue="Contract Value">
+                                        <apex:outputfield value="{!cbnf.Contract_Value__c}"/>
+                            
+                                    </apex:column>
+                                  
+                                    </apex:dataTable>
+</apex:pageBlock>
+</apex:outputPanel>
+</apex:form>
+</apex:page>

@@ -1,0 +1,38 @@
+<aura:component controller="CNT_CSM_PortalThemeLayout"
+    implements="forceCommunity:availableForAllPageTypes,force:hasSObjectName" access="global">
+    <aura:attribute name="isTPAAccess" type="boolean" default="false" />
+    <aura:attribute name="tpaAppPermissionSets" type="List"
+        default="['TPA Customer Community Plus Login User','CSM Customer Community Plus Login User','Customer Community Plus Login User','Super User Profile CCP','TPA Processor Profile CCP','US TP Processor Profile CCP']" />
+    <aura:attribute name="headerContent" type="String" default="" />
+    <aura:attribute name="bodyContent" type="String" default="" />
+    <aura:attribute name="allowed" type="boolean" default="true" />
+    <aura:attribute name="contact" type="Contact" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:if isTrue="{! v.allowed}">
+        <aura:if isTrue="{! v.contact.Portal_Case_Type__c eq 'R&amp;D'}">
+            <c:lwc_csm_csh_create_case_rnd_biotech></c:lwc_csm_csh_create_case_rnd_biotech>
+            <aura:set attribute="else">
+                <div class="csm-container">
+                    <h1 class="header-text slds-p-top_xx-large">{!$Label.c.Create_a_new_case}</h1>
+                </div>
+                <div class="container-fluid">
+                    <c:LXC_CSM_PortalCreateCase />
+                </div>
+                <c:LXC_CSM_CommunityModalMessage isModalOpen="{!v.isTPAAccess}" headerContent="{!v.headerContent}"
+                    bodyContent="{!v.bodyContent}" />
+            </aura:set>
+        </aura:if>
+        <aura:set attribute="else">
+            <div class="container pt-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="text-center alert alert-warning" role="alert">
+                            <h3 class="card-title h3">{!$Label.c.You_can_t_create_a_case}</h3>
+                            <p>{!$Label.c.You_do_not_have_permission_to_create_a_case}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aura:set>
+    </aura:if>
+</aura:component>

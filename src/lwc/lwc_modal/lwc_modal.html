@@ -1,0 +1,75 @@
+<!--
+  c-lwc_modal
+    attemnpt to abstract away some of the boilerplate html within modals
+
+  Attributes
+    show-modal        - boolean indicator, when true renders modal
+    onclose           - method to call when X header close button is clicked
+    hide-header-close - supply to hide X close button
+    hide-modal-footer - supply to not render modal-footer
+    size              - one of 'small', 'medium', 'large'
+    modal-heading     - optional, heading to use (when not implementing slot='modal-heading')
+
+  Slots / Examples
+    <c-lwc_modal show-modal={booleanIndicator} onclose={onclosemethod}>
+      <span slot="modal-heading">
+        Heading!
+      </span>
+      <span slot="modal-content" class="slds-p-around_medium slds-text-align_center">
+        <p>Content</p>
+      </span>
+      <span slot="modal-footer">
+        <button class="slds-button slds-button_neutral" onclick={onclosemethod}>Cancel</button>
+        <button class="slds-button slds-button_brand" onclick={onokmethod}>OK</button>
+      </span>
+    </c-lwc_modal>
+  -->
+<template>
+  <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+    aria-describedby="modal-content-id-1" class={modalSectionClasses}
+    if:true={showModal}>
+    <div class="slds-modal__container">
+      <header class={modalHeaderClass}>
+        <!--
+          slot for option to override entire modal-header and close button
+        -->
+        <slot name="modal-heading-container">
+          <!-- render header close button unless hideHeaderClose attribute is present -->
+          <button onclick={handleModalClose} class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+            title="Close" if:true={showHeaderClose}>
+            <lightning-icon icon-name="utility:close" alternative-text="Close" variant="inverse"></lightning-icon>
+          </button>
+          <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+            <!--
+              slot for modal heading
+            -->
+            <slot name="modal-heading">
+              {modalHeading}
+            </slot>
+          </h2>
+        </slot>
+      </header>
+
+      <div class="slds-modal__content">
+        <!--
+          modal content
+        -->
+        <slot name="modal-content"></slot>
+      </div>
+
+      <!--
+        modal-footer-wrapper slot to allow overwriting entire footer
+      -->
+      <slot name="modal-footer-wrapper">
+        <!-- render footer unless hideModalFooter attribute is present -->
+        <footer class={modalFooterClass} if:true={showModalFooter}>
+          <!--
+            modal footer slot
+          -->
+          <slot name="modal-footer"></slot>
+        </footer>
+      </slot>
+    </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open" if:true={showModal}></div>
+</template>

@@ -1,0 +1,337 @@
+<!-- 
+TPA Generate Documents from APTTUS Server
+-->
+<apex:page showHeader="false" sidebar="false" cache="false" controller="CNT_TPA_SelectTemplate" action="{!initLightning}">
+    
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <apex:slds />
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" /> 
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_LightningResource, 'css/generate-document.css')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_LightningResource, 'js/generate-document.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_JQuery112Library, 'jquery-1.12.3.js')}" />
+            
+            <!-- Library reference to fill controlling and dependent picklist from api by making client side call -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript" />
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript" />
+            
+            
+            
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            
+            <style type="text/css">
+                html body.sfdcBody {
+                    padding:0 0 0 0;
+                }
+                .doc{
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/doc.png')}");
+                }
+                .docx{
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/docx.png')}"); 
+                }
+                .pdf{
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/pdf.png')}"); 
+                }
+                .pdfa{  
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/pdfa.png')}");
+                }
+                .inline-pdf{
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/pdf-inline.png')}");
+                }
+                .rtf{
+                    padding-top:45Px;
+                    margin-left:10Px;
+                    background-image:url("{!URLFOR($Resource.TPA_LightningResource,'images/doctype/rtf.png')}"); 
+                }
+                .downloadtable {
+                    font-family: arial, sans-serif;
+                    border-collapse: collapse;
+                    width: 50%;
+                }
+                .slds-table {
+                    border: 1px solid #d8dde6;
+                }
+            </style>       
+        </head>
+        
+        <body>
+            <apex:form id="generateDocument" >
+                    <c:VFC_TPA_LoadingImage />
+                <!-- Reqired field for API -->
+                <div class="slds">
+                    <!-- Spinner Object to Show lightning spinning -->
+                    <div class="spinner">
+                        <img class="slds-spinner--medium spinnerImg " src="https://www.lightningdesignsystem.com/assets/images/spinners/slds_spinner_brand.gif" alt="..." />
+                    </div>
+                    
+                    <div class="slds-page-header" role="banner">
+                        <!-- LAYOUT GRID -->
+                        <div class="slds-grid">
+                            <!-- GRID COL -->
+                            <div class="slds-col">
+                                <!-- Page Heading  -->
+                                <p class="slds-text">{!usecase}</p>
+                                <h1 class="slds-text-heading--medium">{!objTpaRequest.Name}</h1>
+                            </div>
+                        </div>
+                        <div class="myapp">
+                            <!-- Show Options to generate Document -->
+                            <apex:outputPanel id="generateoptionpanel" > 
+                                <div aria-labelledby="outputoptions"  class="{!if(isDocumentGenerated,'hideoption','')}">
+                                    <fieldset class="slds-box slds-theme--default slds-container--large">
+                                        <b><p class="slds-text-heading_medium">Select Output Format</p></b>
+                                        <br/>
+                                        <span>
+                                            <!--<apex:selectRadio id="idOutputFormat" styleClass="outputFormats" onClick="selectFormat(this.value);">
+                                                <apex:selectOptions value="{!getDocFormats}" />
+                                            </apex:selectRadio>-->
+                                            
+                                            <fieldset style="border: none;">
+                                                <table role="presentation" class="outputFormats">
+                                                    <tbody>
+                                                        <tr>
+                                                            <apex:repeat value="{!getDocFormatList}" var="format">
+                                                                <td>
+                                                                    <span class="slds-radio">
+                                                                        <input type="radio" id="rd{!format}" class="clsDocFormat" name="rdDocFormat" value="{!format}" onclick="selectFormat(this.value);" />
+                                                                        <label for="rd{!format}" class="slds-radio__label" style="cursor: pointer;"><span class="slds-radio_faux"></span></label>
+                                                                        <label for="rd{!format}" class="slds-radio__label doctype-card doc hide-lable">{!format}</label>
+                                                                    </span>
+<!--                                                                     <span class="slds-radio"> -->
+<!-- 																      <input type="radio" id="rd{!format}rd{!format}" name="rdDocFormat" value="{!format}" onclick="selectFormat(this.value);"/> -->
+<!-- 																      <label class="slds-radio__label" for="rd{!format}rd{!format}"> -->
+<!-- 																        <span class="slds-radio_faux"></span> -->
+<!-- 																        <span class="slds-form-element__label slds-icon_large"> -->
+<!-- 																        	<span><apex:image height="" url="{!URLFOR($Resource.TPA_docxsvg)}"/></span> -->
+<!-- 																        	<span class="slds-icon_container" xmlns:xlink="http://www.w3.org/1999/xlink"> -->
+<!-- 								                                                <svg aria-hidden="true" class="slds-icon slds-icon-text-default slds-icon_large"> -->
+<!-- 								                                                    <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/doctype-sprite/svg/symbols.svg#word')}"></use> -->
+<!-- 								                                                    <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/doctype-sprite/svg/symbols.svg#pdf')}"></use> -->
+<!-- 								                                                </svg> -->
+<!-- 								                                            </span> -->
+<!-- 																        </span> -->
+<!-- 																      </label> -->
+<!-- 																    </span> -->
+                                                                </td>
+                                                            </apex:repeat>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </fieldset>
+                                        </span>
+                                    </fieldset>
+                                    
+                                    <!-- Display Templates   -->                                      
+                                    <fieldset class="slds-box slds-theme--default slds-container--large">
+                                        <legend id="ouputoptions" class="slds-text-heading--medium slds-p-vertical--medium"> </legend>
+                                        <b><p class="slds-text-heading_medium">Select template from the list below and click Generate</p></b>
+                                        
+                                        <div id="accountList" class="slds-p-vertical--medium">
+                                            <div class="slds-scrollable--x">
+                                                <table class="slds-table slds-table--bordered slds-table--col-bordered">   
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">Name</th>
+                                                            <th scope="col">Guidance</th>
+                                                            <th scope="col">Category</th>
+                                                            <th scope="col">Subcategory</th>
+                                                        </tr>
+                                                    </thead>
+                                                    
+                                                    <tbody>
+                                                        <apex:repeat value="{!templates}" var="templateInfo" rendered="{!hasTemplates}">
+                                                            <tr id="{!templateInfo.id}" style="cursor:pointer;" class="temContent" onclick="selectTemplate({Id:'{!templateInfo.Id}',Name:'{!templateInfo.Name}'})">
+                                                                <td>{!templateInfo.Name}</td>
+                                                                <td>{!templateInfo.Apttus__Guidance__c}</td>
+                                                                <td>{!templateInfo.Apttus__Category__c}</td>
+                                                                <td>{!templateInfo.Apttus__Subcategory__c }</td>
+                                                            </tr>
+                                                        </apex:repeat>   
+                                                    </tbody>
+                                                </table>
+                                                <apex:outputText value="{!$Label.TPA_No_Templates_to_display}" rendered="{!NOT(hasTemplates)}" />
+                                            </div>
+                                        </div>                                        
+                                    </fieldset>
+                                    
+                                    <!-- Action Buttons  -->
+                                    <apex:outputPanel id="btnPanel"> 
+                                        <div class="slds-scope">
+                                            <fieldset class="slds-box slds-theme--default slds-container--large">
+                                                <div class="slds-grid slds-grid_align-end">
+                                                    <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                    <div>
+                                                        &nbsp;
+                                                        <button id="btnGenerate" class="slds-button slds-button--brand slds-m-top--medium" onclick="showLoading();generateDocument();return false;"><b>{!$Label.TPA_Generate}</b></button>
+                                                    </div>
+                                                    <div>    
+                                                        &nbsp;
+                                                        <button class="slds-button slds-button--neutral slds-m-top--medium" onclick="showLoading();returnBack();return false;"><b>Return</b></button>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>
+                            </apex:outputpanel>
+                        </div>
+                        
+                    </div>     
+                </div>
+                                
+                <script>
+                    initTableSelector();
+                    initDocumentoutputFormats();
+                    //disableActionButtons();
+                    var selectedTemplate = null;
+                    var selectedFormat = '';
+                    var recordId = '';
+                    var templateKeyword = '';
+                    Visualforce.remoting.timeout = 120000;
+                    var submitDocumentMethod = '{!$RemoteAction.CNT_TPA_SelectTemplate.generateDocument}';
+                    var isLegalEntityPresent = {!isLegalEntityPresent};
+                    var lstTpaAddTerm = JSON.parse('{!jsonlstTpaAdditionalTerm}');
+                
+                    $(function(){ 
+                        resetButtons();
+                        recordId = getParameterByName('id');
+                        templateKeyword = getParameterByName('templateKeyword');
+                        if(!isLegalEntityPresent){
+                            popupAlert('Please select correct legal entity in Offering.', 
+                            function(){window.location.href = '/' + recordId;
+                            showLoading();});
+
+                        } else if(lstTpaAddTerm != null && lstTpaAddTerm.length > 0) {
+                            popupConfirm('The \'verbiage\' updated manually in the \'TPA Additional Terms\' related list on the TPA Record will be displayed in the TLLA. <br /> If not required, please click \'Cancel\' below and delete the verbiage from the related list.', function() {}, function() {
+                                    window.location.href = '/' + recordId;
+                                    showLoading();
+                            });
+                        }
+                        
+                    });
+                
+                    window.addEventListener( "pageshow", function ( event ) {
+                        var historyTraversal = event.persisted || ( typeof window.performance != "undefined" && window.performance.navigation.type === 2 );
+                        if ( historyTraversal ) {
+                            // Handle page restore.
+                            window.location.reload();
+                        }
+                    });
+                
+                    function selectTemplate(arg) {console.log(arg);
+                        selectedTemplate = arg;
+                        resetButtons();
+                    }
+                
+                    function resetButtons() {
+                        if(selectedFormat != null && selectedFormat.length > 0 && selectedTemplate != null && selectedTemplate.Id.length > 0) {
+                            $('#btnGenerate').removeAttr("disabled");
+                        } else {
+                            $('#btnGenerate').attr("disabled", true);
+                        }
+                    }
+            
+                    function resetSelection() {
+                        $('.clsDocFormat').each(function () { $(this).attr('checked', false); });
+                        $('.temContent').each(function () { $(this).removeClass('selectedTr'); });
+                        $('.temContent>td').each(function () { $(this).removeClass('selectedTd'); });
+                        selectedFormat = '';
+                        selectedTemplate = null;
+                        resetButtons();
+                    }
+                
+                    function selectFormat(arg) {
+                        selectedFormat = arg;
+                        resetButtons();
+                    }
+                
+                    function returnBack() {
+                        if(recordId != null && recordId.length > 0) {
+                            window.location = '/' + recordId;
+                        }
+                    }
+                
+                    function generateDocument() {
+                        var reqObj = {};
+                        reqObj.templateId = selectedTemplate.Id;
+                        reqObj.requestId = recordId;
+                        reqObj.docFormat = selectedFormat;
+                        reqObj.templateKeyword = templateKeyword;
+                       
+                        
+                            Visualforce.remoting.Manager.invokeAction(submitDocumentMethod, JSON.stringify(reqObj), function(result, event) {
+                            console.warn(result);
+                            if(event.type == 'exception') {
+                                hideLoading();
+                                console.info('Error: ' + event.message);
+                                return false;
+                            } else {
+                                if(result == "Document has got created successfully.") {
+                                    popupAlert(selectedTemplate.Name + ' document has been generated successfully.', function(){window.location = '/' + recordId;});
+                                }
+                                if(result == "Read timed out") {
+                                    popupAlert("Document is taking long time to generate. \nYour request has been submitted so please check the attachments after few minutes.", function(){window.location = '/' + recordId;});
+                                }
+                                //window.location = '/' + recordId;
+                                //endWaiting();
+                                hideLoading();
+                                resetSelection();
+                            }
+                        },
+                        { buffer: true, escape: true, timeout: 120000 });
+
+                        
+
+                    }
+                
+                    function getParameterByName(name) {
+                        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                        return results == null ? "" : results[1].replace(/\+/g, " ");
+                    }                    
+
+                    function popupAlert(msg, truePart) {
+                        popup(msg, {'animate':true}, 
+                        function(r) {
+                            if(r && truePart != null)
+                                truePart();
+                        });
+                    }
+
+                    function popupConfirm(msg, truePart, falsePart, isYesNo) {
+                        if(isYesNo) {
+                            popup(msg, {'verify':true, 'animate':true}, function(r) {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                            });
+                        }
+                        else {
+                            popup(msg, {'confirm':true, 'animate':true}, function(r) {
+                                if(r)
+                                    truePart();
+                                else
+                                    falsePart();
+                            });
+                        }
+                    }
+                </script>
+            </apex:form>
+        </body>  
+    </html>
+</apex:page>

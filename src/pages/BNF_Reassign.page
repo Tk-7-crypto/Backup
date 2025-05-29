@@ -1,0 +1,44 @@
+<apex:page controller="BNF_Reassign_Extension">  
+    <apex:form > 
+	   <apex:sectionHeader title="Reassign Approval Request" description="" subtitle="Purchase/BNF: {!BNF.Name}" rendered="{!!isMassReassign && !isOwnerQueue}"/>  
+	   <apex:sectionHeader title="Mass Reassign Approval Request" subtitle="BNF/MIBNF" rendered="{!isMassReassign}"/>  
+	   <apex:pageBlock title="Reassign Approval Request">
+	   		<apex:pageMessages ></apex:pageMessages>
+	   		<apex:pageBlockSection collapsible="false" title="" columns="2" showHeader="false" id="bsection" >
+	            <apex:pageBlockSectionItem rendered="{!!isMassReassign && !isOwnerQueue}">
+	                    <apex:outputLabel value="Related To"/>
+	                    <apex:outputLink value="/{!BNF.id}">{!BNF.Name}</apex:outputLink>
+	            </apex:pageBlockSectionItem>
+	            <apex:pageBlockSectionItem rendered="{!!isMassReassign && !isOwnerQueue}">
+	                    <apex:outputLabel value="Created By"/>
+	                 	<apex:outputField value="{!BNF.createdById}" />
+	            </apex:pageBlockSectionItem>            
+	             <apex:pageBlockSectionItem rendered="{!!isOwnerQueue}" > 
+	             		<apex:outputLabel value="Reassign Approver"/>
+	                    <apex:inputField value="{!BNF.Reassigned_Revenue_Analyst__c}" required="true"/>
+	            </apex:pageBlockSectionItem>
+	            <apex:pageBlockSectionItem rendered="{!!isMassReassign && !isOwnerQueue}">
+	                    <apex:outputLabel value="Assigned Approver"/>
+	                     <apex:outputField value="{!BNF.Revenue_Analyst__c}" /> 
+	            </apex:pageBlockSectionItem>
+	            <apex:pageBlockSectionItem rendered="{!!isOwnerQueue}">
+	                    <apex:outputLabel value="Comments"/>
+	                    <apex:inputTextarea value="{!ApproverComments}" /> 
+	            </apex:pageBlockSectionItem>       
+	       </apex:pageBlockSection>
+	         <apex:pageBlockButtons >
+                <apex:actionFunction name="reassign" action="{!Reassign_Request}" oncomplete="setTimeout(reload() , 1000);"></apex:actionFunction>
+	         	<apex:commandButton value="Reassign Approval Request" onclick="this.disabled = true; callReassign();" /> 
+	            <apex:commandButton value="{!buttonBack}" action="{!Cancel}" immediate="true"/>
+	         </apex:pageBlockButtons>
+	    </apex:pageBlock>
+    </apex:form>
+    <script>
+      function callReassign(){
+        reassign();
+      }
+      function reload(){
+          window.location = '/{!recordId}';
+        }
+    </script>
+</apex:page>

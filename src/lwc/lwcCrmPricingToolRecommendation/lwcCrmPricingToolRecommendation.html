@@ -1,0 +1,86 @@
+<template>
+
+    <template if:true={showSpinner}>
+        <div style="position: absolute;width: 100vh;height:100vh;">
+            <lightning-spinner alternative-text="Loading..."></lightning-spinner>
+        </div>
+    </template>
+
+    <template if:true={error}>
+        <h2 class="slds-notify slds-notify_alert slds-alert_error">{errorMsg}</h2>
+    </template>
+
+    <lightning-card>
+        <h3 slot="title">
+            <lightning-icon icon-name="standard:pricing_workspace" size="medium"></lightning-icon>
+            &nbsp; Recommened Pricing Tool
+        </h3>
+        <div class="slds-p-horizontal_small">
+            <p>Pricing Tool recommendation is based upon Opportunity data and Products entered on the opportunity. Please modify and <b><u>refresh this page</u></b> to revise recommendations.</p>
+            <p class=" slds-text-title_bold">
+                <lightning-button variant="base" label={RecommenedPricingTool} title={RecommenedPricingTool}
+                    name={RecommenedPricingTool} data-id="recommened" onclick={openPricingTool}>
+                </lightning-button>
+            </p>
+        </div>
+    </lightning-card>
+    <br/>
+
+    <lightning-card>
+        <h3 slot="title">
+            <lightning-icon icon-name="standard:pricing_workspace" size="medium"></lightning-icon>
+            &nbsp; Other Pricing Tool
+        </h3>
+        <div class="slds-p-horizontal_small">
+            <template for:each={OtherPricingTool} for:item="tool">
+                <p class="slds-text-title_bold" key={tool}>
+                    <lightning-button variant="base" label={tool} title={tool} name={tool} data-id="other"
+                        onclick={openPricingTool}>
+                    </lightning-button>
+                </p>
+            </template>
+        </div>
+    </lightning-card>
+
+    <template if:true={openPopup}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_xxsmall">
+            <div class="slds-modal__container">
+                <div class="slds-clearfix">
+                    <lightning-button-icon icon-name="utility:close" size="large" variant="bare-inverse" title="Close"
+                        alternative-text="Close window" onclick={closePopup} class="slds-float_right">
+                    </lightning-button-icon>
+                </div>
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Set Reason</h2>
+                </header>
+                <template if:true={showSpinner}>
+                    <lightning-spinner alternative-text="Loading..."></lightning-spinner>
+                </template>
+                <div class="slds-modal__content slds-modal_small slds-p-around_medium" id="modal-content-id-1">
+                    <p><b>Please select a reason for not choosing the recommended pricing tool with the picklist field appearing</b><br/></p>
+                        <lightning-record-edit-form record-id={recordId} object-api-name="Opportunity"
+                            onsuccess={handleSuccess} onerror={handleError} onsubmit={handleSubmit} onload={handleOnLoad}>
+                            <lightning-messages></lightning-messages></br>
+                            <lightning-input-field field-name="Reason_for_choosing_Other_Pricing_Tool__c" onchange={handlePricingToolChange}>
+                            </lightning-input-field>
+                            <template if:true={showReasonDetailSection}>
+                                <lightning-input-field field-name="Other_Pricing_Tool_Details__c" class= "otherToolDetail">
+                                </lightning-input-field>
+                            </template>
+                            <br/><br/><br/><br/><br/><br/>
+                            <footer class="slds-modal__footer">
+                                <lightning-button class="slds-m-left_x-small" label="Skip" title="Skip"
+                                    onclick={skipReason}></lightning-button>
+                                <lightning-button class="slds-m-left_x-small" label="Cancel" title="Cancel"
+                                    onclick={closePopup}></lightning-button>
+                                <lightning-button class="slds-m-left_x-small" label="Save" variant="brand" type="submit"
+                                    title="Save"></lightning-button>
+                            </footer>
+                        </lightning-record-edit-form>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

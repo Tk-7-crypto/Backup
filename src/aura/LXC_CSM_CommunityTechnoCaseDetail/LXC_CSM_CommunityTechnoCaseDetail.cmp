@@ -1,0 +1,633 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="CNT_CSM_PortalCaseDetails">
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="editMaillCC" type="Boolean" />
+    <aura:attribute name="editMaillCCButton" type="Boolean" default="true" />
+    <aura:attribute name="mailCCValue" type="String" />
+    <aura:attribute name="errorMessageCheck" type="Boolean" />
+    <aura:attribute name="errorMessage" type="String" default="Error" />
+    <aura:attribute name="simpleRecord" type="Object" />
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}" />
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}" />
+    <aura:attribute name="Spinner" type="boolean" default="false" />
+    <aura:attribute name="helpText_Urgency" type="String" default="Urgency measures the time sensitivity of an incident, problem, or change impact. High: very time" />
+    <aura:attribute name="fullRecord" type="Object" />
+    <aura:attribute name="showRequestFollowButton" type="Boolean" default="false" />
+    <aura:attribute name="followUpDescription" type="String" />
+    <aura:attribute name="isOpenModal" type="Boolean" default="false" />
+    <aura:attribute name="isCaseFollowed" type="Boolean" default="false" />
+    <aura:attribute name="isFollowerCase" type="Boolean" default="false" />
+    <aura:attribute name="followerCase" type="Object" />
+    <aura:attribute name="variant" type="String" default="linear" />
+    <aura:attribute name="hideUpdateButton" type="Boolean" default="true" />
+    <aura:attribute name="productsAccessingDTMSInformation" type="List" default="['CRA Central','Risk Based Monitoring']" />
+    <aura:attribute name="showDTMSInformation" type="Boolean" default="false" />
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}" />
+    <div class="slds-p-around_small">
+        <article class="slds-card slds-card_boundary">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                    <div class="slds-page-header__col-title">
+                        <div class="slds-media">
+                            <div class="slds-media__figure">
+                                <lightning:icon iconName="standard:case" alternativeText="{!$Label.c.Case_Information}" />
+                            </div>
+                            <div class="slds-media__body">
+                                <div class="slds-page-header__name">
+                                    <div class="slds-page-header__name-title">
+                                        <h1>
+                                            <span class="slds-page-header__title slds-truncate" title="{!v.simpleRecord.CaseNumber}">{!v.simpleRecord.CaseNumber}
+                                            </span>
+                                            <aura:if isTrue="{! v.simpleRecord.Status eq 'Closed'}">
+                                                <span class="badge badge-success">{!v.simpleRecord.Status}</span>
+                                                <aura:set attribute="else">
+                                                    <aura:if isTrue="{! v.simpleRecord.Status eq 'New'}">
+                                                        <span class="badge badge-info">{!v.simpleRecord.Status}</span>
+                                                        <aura:set attribute="else">
+                                                            <span class="badge badge-warning">{!v.simpleRecord.Status}</span>
+                                                        </aura:set>
+                                                    </aura:if>
+                                                </aura:set>
+                                            </aura:if>
+                                        </h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-no-flex">
+                        <c:LXC_CSM_FollowOrUnFollowRecord recordId="{!v.recordId}" />
+                        <c:LXC_CSM_AddOrRemoveFavoriteRecord record="{! v.simpleRecord }" />
+                    </div>
+                </header>
+            </div>
+            <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap">
+                <div class="slds-form" style="width: 100%">
+                    <div class="slds-form__row">
+                        <div class="slds-form__item" role="listitem">
+                            <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent slds-form-element_1-col">
+                                <span class="slds-form-element__label">{!$Label.c.Subject}</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static slds-text-longform">
+                                        {!v.simpleRecord.Subject}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-readOnly-path">
+                        <lightning:path aura:id="path" recordId="{!v.recordId}" variant="{!v.variant}" hideUpdateButton="{!v.hideUpdateButton}" />
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+    <div class="slds-grid slds-wrap">
+        <!-- left col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3 slds-p-around_small">
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <article class="slds-card slds-card_boundary">
+                <div class="slds-card__header slds-grid">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-size--1-of-2">
+                            <div class="slds-media">
+                                <div class="slds-media__figure">
+                                    <lightning:icon iconName="standard:display_text" size="small" alternativeText="{!$Label.c.Case_Information}" />
+                                </div>
+                                <div class="slds-media__body">
+                                    <h2 class="slds-card__header-title">
+                                        <div class="slds-card__header-link slds-truncate">
+                                            <span>{!$Label.c.Case_Information}</span>
+                                        </div>
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                        <aura:if isTrue="{!v.showRequestFollowButton}">
+                            <div class="slds-size--1-of-2 slds-clearflix ">
+                                <div class="slds-float_right">
+                                    <aura:if isTrue="{!v.isFollowerCase}">
+                                        <lightning:button label="{!$Label.c.Already_Following_Case}" onclick="{!c.openCloneCaseDescriptionForm }" />
+                                        <aura:set attribute="else">
+                                            <lightning:buttonStateful labelWhenOff="{!$Label.c.Follow_Case}" labelWhenOn="{!$Label.c.Followed_Case}" iconNameWhenOff="utility:add" iconNameWhenOn="utility:check" state="{!v.isCaseFollowed}" onclick="{!c.openCloneCaseDescriptionForm }" />
+                                        </aura:set>
+                                    </aura:if>
+                                </div>
+                            </div>
+                        </aura:if>
+                    </header>
+                </div>
+                <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap">
+
+                    <div class="slds-form" style="width: 100%" role="list">
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Case_Number}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.CaseNumber}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Asset}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Asset.Name}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Status}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.Status}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.SubStatus}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.SubStatus__c}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Sub_Type}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.SubType1__c}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Urgency}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Urgency__c}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <aura:if isTrue="{! or(v.simpleRecord.Asset.CSH_Enable_SubType123__c,v.simpleRecord.Asset.Product2.CSH_Enable_SubType123__c)}">
+                            <div class="slds-form__row">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                        <span class="slds-form-element__label">{!$Label.c.Sub_Type} 2</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">
+                                                {!v.simpleRecord.SubType2__c}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                        <span class="slds-form-element__label">{!$Label.c.Sub_Type} 3</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">
+                                                {!v.simpleRecord.SubType3__c}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Priority}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Priority}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Impact}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Techno_Impact__c}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Case_Owner}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.Owner.Name}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Last_modified_by}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            {!v.simpleRecord.LastModifiedBy.Name}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Case_Origin}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.Origin}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Release_Date}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputDate value="{!v.simpleRecord.Release_Date__c}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Mail_CC_List}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static slds-form-element__control">
+                                            <aura:if isTrue="{!(v.editMaillCCButton)}">
+                                                {!v.mailCCValue}
+                                                <lightning:buttonIcon iconName="utility:edit" variant="bare" onclick="{!c.handleEdit}" alternativeText="Edit" class="editButton" />
+                                            </aura:if>
+                                            <aura:if isTrue="{!(v.editMaillCC)}">
+                                                <div class="slds-grid slds-grid_vertical-align-center">
+                                                    <div class="slds-col ">
+                                                        <lightning:textarea name="input4" placeholder="Enter value with semicolon"
+                                                            aura:id="leadEMail" variant="label-hidden" value="{!v.mailCCValue}" style="width: 100%;" />
+                                                        <lightning:helptext content="{!$Label.c.Please_enter_email_addresses_separated_by_semicolon}" class="popover" />
+                                                        <aura:if isTrue="{!v.errorMessageCheck}">
+                                                            <div class="slds-form-element__control">
+                                                                <div class="slds-form-element__static">
+                                                                    {!v.errorMessage}
+                                                                </div>
+                                                            </div>
+                                                        </aura:if>
+                                                    </div>
+                                                    <div class="slds-col slds-grow-none">
+                                                        <lightning:buttonIcon iconName="utility:save" variant="bare" alternativeText="Save" onclick="{!c.saveMailCC}" size="large" class="saveIcon" />
+                                                    </div>
+                                                </div>
+                                            </aura:if>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem"></div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Country_of_the_requester}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.fullRecord.fields.Country_of_the_requester2__c.displayValue}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Urgent_For_Customer}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputCheckbox aura:id="output" value="{!v.simpleRecord.UrgentForCustomer__c}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <aura:if isTrue="{!v.showDTMSInformation}">
+                            <div class="slds-form__row">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                        <span class="slds-form-element__label">{!$Label.c.Sponsors}</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">
+                                                {!v.simpleRecord.DTMS_Sponsors__c}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                        <span class="slds-form-element__label">{!$Label.c.Studies}</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">
+                                                {!v.simpleRecord.DTMS_Studies__c}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </aura:if>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Environment_Type}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputText aura:id="outputText" value="{!v.simpleRecord.EnvironmentType__c}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.To_be_evaluated_for_fix_in_version}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputText aura:id="outputText" value="{!v.simpleRecord.To_be_evaluated_for_fix_in_version__c}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_stacked slds-hint-parent slds-form-element_1-col">
+                                    <span class="slds-form-element__label">{!$Label.c.Description}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static slds-text-longform">
+                                            <lightning:formattedText value="{!v.simpleRecord.Description}" />
+                                            <br />
+                                            <br />
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <aura:if isTrue="{!not(empty(v.simpleRecord.Resolution__c))}">
+                <article class="border-success slds-card slds-card_boundary">
+                    <div class="slds-card__header slds-grid">
+                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                            <div class="slds-media__figure">
+                                <lightning:icon iconName="standard:goals" size="small" alternativeText="{!$Label.c.Resolution}" />
+                            </div>
+                            <div class="slds-media__body">
+                                <h2 class="slds-card__header-title">
+                                    <div class="slds-card__header-link slds-truncate">
+                                        <span>{!$Label.c.Resolution}</span>
+                                    </div>
+                                </h2>
+                            </div>
+                        </header>
+                    </div>
+                    <div class="slds-card__body slds-card__body_inner">
+                        <lightning:formattedText value="{!v.simpleRecord.Resolution__c}" />
+                    </div>
+                </article>
+            </aura:if>
+        </div>
+        <!-- end  left col-->
+        <!-- right col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3 slds-p-around_small">
+            <article class="slds-card slds-card_boundary">
+                <div class="slds-card__header slds-grid">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:people" size="small" alternativeText="Contact Information" />
+                        </div>
+                        <div class="slds-media__body">
+                            <h2 class="slds-card__header-title">
+                                <div class="slds-card__header-link slds-truncate" title="Contact Information">
+                                    <span>{!$Label.c.Contact_Information}</span>
+                                </div>
+                            </h2>
+                        </div>
+                    </header>
+                </div>
+                <div class="slds-card__body slds-card__body_inner">
+                    <div class="slds-form" style="width: 100%" role="list">
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Account}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.Account.Name}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Contact}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.Contact.Name}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Phone_Number}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.Phone_Number__c}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.On_Behalf_of}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{!v.simpleRecord.OnBehalfOf__r.Name}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article class="slds-card slds-card_boundary">
+                <div class="slds-card__header slds-grid">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:date_time" size="small" alternativeText="Date Information" />
+                        </div>
+                        <div class="slds-media__body">
+                            <h2 class="slds-card__header-title">
+                                <div class="slds-card__header-link slds-truncate">
+                                    <span>{!$Label.c.Date_Information}</span>
+                                </div>
+                            </h2>
+                        </div>
+                    </header>
+                </div>
+                <div class="slds-card__body slds-card__body_inner">
+                    <div class="slds-form" style="width: 100%" role="list">
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Creation}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputDateTime value="{!v.simpleRecord.CreatedDate}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Last_Update}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputDateTime value="{!v.simpleRecord.LastModifiedDate}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                    <span class="slds-form-element__label">{!$Label.c.Scheduled_Date}</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">
+                                            <ui:outputDateTime value="{!v.simpleRecord.ScheduledDatetime__c}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <!-- end  right col-->
+        <!-- left col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3 slds-p-around_small">
+            <c:LXC_CSM_PortalCaseHistory recordId="{!v.recordId}" />
+        </div>
+        <!-- end  left col-->
+        <!-- right col-->
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3 slds-p-around_small">
+            <c:LXC_CSM_RelatedList objectName="Case" recordId="{!v.recordId}" type="CombinedAttachments" title="{!$Label.c.Attachments}" iconName="standard:file" />
+            <c:LXC_CSM_RelatedList objectName="Case" recordId="{!v.recordId}" type="EmailMessages" title="{!$Label.c.Emails}" iconName="standard:email" />
+            <c:LXC_CSM_RelatedList objectName="Case" recordId="{!v.recordId}" type="CaseArticles" title="{!$Label.c.articles}" iconName="standard:article" />
+            <c:LXC_CSM_CaseHierarchy recordId="{!v.recordId}" fromCSH="true" />
+        </div>
+    </div>
+    <aura:if isTrue="{!v.isOpenModal}">
+        <div aura:id="modaldialog" role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" style="z-index: 9050">
+            <div class="slds-modal__container">
+                <aura:if isTrue="{!or(v.isCaseFollowed, v.isFollowerCase)}">
+                    <div class="slds-modal__header" style="background-color: white; ">
+                        <h2 class="slds-text-heading--medium slds-text-color_week">{!$Label.c.Case_being_followed}</h2>
+                    </div>
+                    <aura:set attribute="else">
+                        <div class="slds-modal__header" style="background-color: white; border: none;"></div>
+                    </aura:set>
+                </aura:if>
+                <div class="slds-modal__content slds-p-left--medium slds-p-right--medium slds-is-relative">
+                    <div class="slds-grid slds-wrap slds-grid--pull-padded slds-m-bottom_none slds-m-top_medium">
+                        <aura:if isTrue="{!and(!v.isCaseFollowed, !v.isFollowerCase)}">
+                            <div class="slds-col--padded slds-size--1-of-1">
+                                <lightning:textarea name="description" value="{!v.followUpDescription}" aura:id="followUpDescriptionInput" required="true" label="{!$Label.c.Description}" placeholder="{!$Label.c.Why_you_would_like_to_follow_up_on_this_case}" />
+                            </div>
+                            <aura:set attribute="else">
+                                <div class="slds-form" style="width: 100%" role="list">
+                                    <div class="slds-form__row">
+                                        <div class="slds-form__item" role="listitem">
+                                            <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                                <span class="slds-form-element__label" style="max-width:none;">{!$Label.c.Case_Number}</span>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-form-element__static">
+                                                        {!v.followerCase.CaseNumber}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form__item" role="listitem">
+                                            <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent">
+                                                <span class="slds-form-element__label">{!$Label.c.Status}</span>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-form-element__static">
+                                                        {!v.followerCase.Status}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slds-form__row">
+                                        <div class="slds-form__item" role="listitem">
+                                            <div class="slds-form-element slds-form-element_edit slds-form-element_readonly slds-form-element_horizontal slds-hint-parent slds-form-element_1-col">
+                                                <span class="slds-form-element__label">{!$Label.c.Description}</span>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-form-element__static slds-text-longform">
+                                                        <lightning:formattedText value="{!v.followerCase.Description}" />
+                                                        <br />
+                                                        <br />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aura:set>
+                        </aura:if>
+                    </div>
+                    <div class="slds-modal__footer slds-m-top_none" style="background-color: white; border: none; box-shadow: none;">
+                        <lightning:button variant="brand" label="{!$Label.c.Close}" onclick="{!c.closeForm}" />
+                        <aura:if isTrue="{!v.isCaseFollowed}">
+                            <lightning:button variant="brand" label="{!$Label.c.See_Follow_Case}" onclick="{!c.seeFollowCase}" />
+                        </aura:if>
+                        <aura:if isTrue="{!v.isFollowerCase}">
+                            <lightning:button variant="brand" label="{!$Label.c.See_Following_Case}" onclick="{!c.seeFollowCase}" />
+                        </aura:if>
+                        <aura:if isTrue="{!and(!v.isFollowerCase, !v.isCaseFollowed)}">
+                            <lightning:button variant="brand" label="{!$Label.c.Save}" onclick="{!c.cloneCaseForFollowUp}" />
+                        </aura:if>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop_open" aura:id="backdrop"></div>
+    </aura:if>
+</aura:component>

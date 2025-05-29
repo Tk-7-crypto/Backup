@@ -1,0 +1,582 @@
+<apex:page standardController="Master_BNF__c" extensions="Master_BNF_Extension" action="{!Init_View}" renderAs="{!ChooseRender}" name="{!Master_BNF__c.Name}">
+
+<apex:form id="theform">
+<apex:actionFunction name="GetSalesOrgCodes" reRender="SalesOrgCodePanel,Debug" status="SalesOrgStatus"/>
+<!-------------------------------------------------------------------->
+<!-----------  Hidden output fields included to get field names ------>
+<!-------------------------------------------------------------------->
+<apex:outputField value="{!Master_BNF__c.RecordType.Name}" rendered="false"/>  
+
+
+<apex:sectionHeader title="{!IF(NewBnfWizardStep3Rendered,BnfType + ' Master BNF
+New Master BNF Wizard : Step 2 : Edit Header and Create '+BnfType+' Master BNF',BnfType + ' Master BNF '+Master_BNF__c.Name)}">   
+<apex:outputPanel id="ExportLinkPanel">
+<table width="100%"><tr><td align="right"><apex:outputLink value="/apex/MasterBNFView2?id={!Master_BNF__c.Id}&pdf=1" rendered="{!RenderForPdf&&NOT(NewBnfWizardStep3Rendered)&&NOT(EditHeaderRendered)&&NOT(AddMoreOppsRendered)&&NOT(EditOppsRendered)}" target="_new">Export to PDF</apex:outputLink></td></tr></table>
+</apex:outputPanel>
+</apex:sectionHeader>
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN pageblock to display MBNF header ---------------->
+<!-------------------------------------------------------------------->      
+<apex:outputPanel id="HeaderDetailsPanel">
+<apex:pageBlock title="{!BnfType} Master BNF Header" id="MBNF_Header" rendered="{!NOT(EditHeaderRendered)}">
+<apex:pageBlockButtons location="top" rendered="{!RenderForPdf}">
+<apex:image value="/img/lock_small.gif" rendered="{!BnfLocked}"/>
+<apex:outputText value="BNF Locked Pending Approval/Rejection" rendered="{!BnfLocked}"></apex:outputText>
+<apex:commandButton value="Edit Header" action="{!ShowEditHeader}" reRender="EditHeaderPanel,HeaderDetailsPanel,AddMoreOppsPanel,ExportLinkPanel,Debug" immediate="true" rendered="{!NOT(BnfLocked)}"></apex:commandButton>
+</apex:pageBlockButtons>        
+<apex:pageBlockSection columns="2" showHeader="true" title="Purchase Information">
+<apex:outputField value="{!Master_BNF__c.Client__c}" />
+<apex:outputField value="{!Master_BNF__c.Revenue_Analyst__c}" />
+<apex:outputField value="{!Master_BNF__c.Client_PO_Number__c}" rendered="{!RenderedForInvoice}"/>
+
+<apex:outputField value="{!Master_BNF__c.SAP_PC_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Therapy_Area__c}" rendered="{!RenderedForInvoice}" />
+<apex:outputField value="{!Master_BNF__c.SAP_Base_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.IMS_Sales_Org__c}" />
+<apex:outputField value="{!Master_BNF__c.Revised_BNF__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Sales_Org_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Revised_BNF_Reasons__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Fair_Value_Type__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Revised_BNF_Comment__c}" rendered="{!RenderedForInvoice}" />
+<apex:outputField value="{!Master_BNF__c.Billing_Currency__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Revised_BNF_Date__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.SAP_Contract__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.SAP_Master_Contract__c}" rendered="{!RenderedForInvoice}"/>
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="Master BNF Type"></apex:outputLabel>
+<apex:outputText value="{!BnfType}"></apex:outputText>
+</apex:pageBlockSectionItem>
+
+
+</apex:pageblockSection>
+<apex:pageBlockSection columns="2" title="Retainer/Down Payment, Subscription and Specification Information" rendered="{!RenderedForInvoice}" >
+<apex:outputField value="{!Master_BNF__c.Is_this_a_retainer_downpayment__c}" />
+<apex:outputField value="{!Master_BNF__c.Subscription_Type__c}" />
+<apex:outputField value="{!Master_BNF__c.Retainer_Data_Value__c}" />
+<apex:outputField value="{!Master_BNF__c.Specification__c}" />
+<apex:outputField value="{!Master_BNF__c.Description__c}" />
+<apex:outputField value="{!Master_BNF__c.Print_Shop__c}" />
+</apex:pageBlockSection>
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN ADDRESS PAGEBLOCK ------------------------------->
+<!--------------------------------------------------------------------> 
+
+<!-----------  BEGIN BILL TO/SHIP TO  PAGEBLOCK SECTION  ------------->
+
+<apex:pageBlockSection columns="2" showHeader="true" title="Address Information" rendered="{!RenderedForInvoice}">
+<apex:outputField value="{!Master_BNF__c.Bill_To_Account__c}" />
+<apex:outputField value="{!Master_BNF__c.Ship_To_Account__c}" />
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}">
+<apex:outputLabel for="BillTo" value="Bill To: Contact"/>
+<apex:outputField id="BillTo" value="{!Master_BNF__c.Bill_To__c}"/>
+</apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="ShipTo" value="Ship To: Contact"/>
+<apex:outputField id="ShipTo" value="{!Master_BNF__c.Ship_To__c}"/>
+</apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Bill_To_Address__c}" />
+<apex:outputField value="{!Master_BNF__c.Ship_To_Address__c}" />
+<apex:outputField value="{!Master_BNF__c.Bill_To_City__c}" />
+<apex:outputField value="{!Master_BNF__c.Ship_To_City__c}" />
+<apex:outputField value="{!Master_BNF__c.Bill_To_State_Province__c}"/>
+<apex:outputField value="{!Master_BNF__c.Ship_To_State_Province__c}"/>
+<apex:outputField value="{!Master_BNF__c.Bill_To_Zip_Postal_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Ship_To_Zip_Postal_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Bill_To_Country__c}" />
+<apex:outputField value="{!Master_BNF__c.Ship_To_Country__c}" />
+
+<!-----------  END BILL TO/SHIP TO  PAGEBLOCK SECTION  --------------->
+ 
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+
+<!-----------  BEGIN CARBON COPY/SECOND COPY PAGEBLOCK SECTION  ------>
+
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_Account__c}" />
+<apex:outputField value="{!Master_BNF__c.Second_Copy_Account__c}" />
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}">
+<apex:outputLabel for="BillTo" value="Carbon Copy: Contact"/>
+<apex:outputField id="BillTo" value="{!Master_BNF__c.Carbon_Copy__c}"/>
+</apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="ShipTo" value="Second Copy: Contact"/>
+<apex:outputField id="ShipTo" value="{!Master_BNF__c.Second_Copy__c}"/>
+</apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_Address__c}" />
+<apex:outputField value="{!Master_BNF__c.Second_Copy_Address__c}" />
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_City__c}" />
+<apex:outputField value="{!Master_BNF__c.Second_Copy_City__c}" />
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_State_Province__c}"/>
+<apex:outputField value="{!Master_BNF__c.Second_Copy_State_Province__c}"/>
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_Zip_Postal_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Second_Copy_Zip_Postal_Code__c}" />
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy_Country__c}" />
+<apex:outputField value="{!Master_BNF__c.Second_Copy_Country__c}" />
+
+<!-----------  END CARBON COPY/SECOND COPY PAGEBLOCK SECTION  -------->
+
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+
+<!-----------  BEGIN COVERSHEET PAGEBLOCK SECTION  ------------------->
+
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_Account__c}" />
+<apex:pageblockSectionItem ></apex:pageblockSectionItem>
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="Cover Sheet: Contact"/>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet__c}"/>
+</apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_Address__c}" />
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_City__c}" />
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_State_Province__c}"/>
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_Zip_Postal_Code__c}" />
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.Cover_Sheet_Country__c}" />
+<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+</apex:pageBlockSection>
+<!-----------  END COVERSHEET PAGEBLOCK SECTION  --------------------->
+
+<!------  BEGIN INVOICE/BILLING INFORMATION PAGEBLOCKSECTION  ---------->
+<apex:pageBlockSection columns="2" showHeader="true" title="Invoice/Billing Information">
+<apex:outputField value="{!Master_BNF__c.Invoice_Description__c}"/>
+<apex:outputField value="{!Master_BNF__c.Delivery_Date__c}" rendered="{!RenderedForInvoice}"/>
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="{!$ObjectType.Master_BNF__c.fields.Comments__c.label}"></apex:outputLabel>
+<div style="font-family: Arial Unicode MS">{!Master_BNF__c.Comments__c}
+</div>
+</apex:pageBlockSectionItem>
+
+<apex:outputField value="{!Master_BNF__c.Additional_Delivery_Date_Information__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Additional_Billing_Date_Information__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Contract_Start_Date__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Invoice_Default_Day__c }" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Contract_End_Date__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Contract_Type__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Payment_Terms__c}" rendered="{!RenderedForInvoice}"/>
+<apex:outputField value="{!Master_BNF__c.Contract_Term__c}" rendered="{!RenderedForInvoice}"/>
+</apex:pageBlockSection>
+<!------  END INVOICE/BILLING INFORMATION PAGEBLOCKSECTION  ---------->
+
+<apex:pageBlockSection columns="2" title="BNF Status">
+<apex:outputField value="{!Master_BNF__c.Name}"/>
+<apex:pageBlockSectionItem >
+<apex:outputLabel value="BNF Status"></apex:outputLabel>
+<apex:outputPanel ><apex:outputField value="{!Master_BNF__c.BNF_Status__c}"/><apex:outputText escape="false">&nbsp;</apex:outputText> <apex:image value="{!StatusImage}"/></apex:outputPanel>
+</apex:pageBlockSectionItem>
+<apex:outputField value="{!Master_BNF__c.BNF_Status__c}"/>
+<apex:outputField value="{!Master_BNF__c.CreatedById}"/>
+<apex:outputField value="{!Master_BNF__c.LastModifiedById}"/>
+<apex:outputField value="{!Master_BNF__c.CreatedDate}"/>
+<apex:outputField value="{!Master_BNF__c.LastModifiedDate}"/>
+</apex:pageBlockSection>
+</apex:pageBlock>
+</apex:outputPanel>          
+<!-------------------------------------------------------------------->
+<!-----------  END pageblock to display MBNF header  ----------------->
+<!--------------------------------------------------------------------> 
+
+<!-------------------------------------------------------------------->
+<!---------  BEGIN Popup pageblock to edit Master BNF header  -------->
+<!-------------------------------------------------------------------->
+    <apex:outputPanel id="EditHeaderPanel">        
+            <apex:pageBlock title="Edit Master BNF Header" id="EditHeader" rendered="{!EditHeaderRendered}">    
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!Back3}" value="Previous" rendered="{!NewBnfWizardStep3Rendered && RenderedForInvoice}" immediate="true"/>
+                <apex:commandButton action="{!InvoiceBack3}" value="Previous" rendered="{!NewBnfWizardStep3Rendered && NOT(RenderedForInvoice)}" immediate="true"/>
+                <apex:commandButton action="{!SaveHeader}" value="Create Master BNF" reRender="EditHeaderPanel,HeaderDetailsPanel,ExportLinkPanel,Debug" rendered="{!NewBnfWizardStep3Rendered}"/>
+                <apex:commandButton action="{!SaveHeader}" value="Save" reRender="EditHeaderPanel,HeaderDetailsPanel,OppDetails,ExportLinkPanel,Debug" rendered="{!NOT(NewBnfWizardStep3Rendered)}"/>
+                <apex:commandButton value="Cancel" action="{!HideEditHeader}" reRender="EditHeaderPanel,HeaderDetailsPanel,OppDetails,ExportLinkPanel,Debug" immediate="true" rendered="{!NOT(NewBnfWizardStep3Rendered)}"/>               
+            </apex:pageBlockButtons>   
+            <apex:pageMessages ></apex:pageMessages>     
+            <apex:pageBlockSection columns="2" showHeader="true" title="Purchase Information">
+                <apex:outputField value="{!Master_BNF__c.Client__c}" />
+                <apex:inputField value="{!Master_BNF__c.Revenue_Analyst__c}" required="true" />
+                <apex:inputField value="{!Master_BNF__c.Client_PO_Number__c}" rendered="{!RenderedForInvoice}"/>
+                
+                <apex:inputField value="{!Master_BNF__c.SAP_PC_Code__c}" />
+                <apex:inputField value="{!Master_BNF__c.Therapy_Area__c}" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.SAP_Base_Code__c}" />
+                
+                <apex:pageBlockSectionItem >         
+                <apex:outputLabel value="{!$ObjectType.Master_BNF__c.fields.IMS_Sales_Org__c.label}"> </apex:outputLabel>
+                <apex:actionRegion > 
+                <div class="requiredInput"><div class="requiredBlock" />
+                <apex:selectList value="{!Master_BNF__c.IMS_Sales_Org__c}" size="1">     
+                 <apex:actionSupport action="{!DoNothing}" event="onchange" reRender="SalesOrgCodePanel,Debug" status="SalesOrgStatus"/>         
+                <apex:selectOptions value="{!SalesOrgs}" />  
+                </apex:selectList>
+                </div>
+                </apex:actionRegion>
+                </apex:pageBlockSectionItem>      
+                <apex:inputField value="{!Master_BNF__c.Revised_BNF__c}" rendered="{!RenderedForInvoice}" />              
+                <apex:pageBlockSectionItem >
+                <apex:outputLabel value="{!$ObjectType.Master_BNF__c.fields.Sales_Org_Code__c.label}"></apex:outputLabel>
+                <apex:outputPanel id="SalesOrgCodePanel">
+                <div class="requiredInput"><div class="requiredBlock" />
+                <apex:selectList id="SalesOrgCodeSelectList" size="1" value="{!Master_BNF__c.Sales_Org_Code__c}"><apex:selectOptions value="{!SalesOrgCodes}"></apex:selectOptions></apex:selectList>
+                    <apex:actionStatus id="SalesOrgStatus">
+                        <apex:facet name="start" >Processing...
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet> 
+                    </apex:actionStatus>   
+                 </div>                             
+                </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+              <!--  </apex:outputPanel> -->
+                
+                <apex:inputField value="{!Master_BNF__c.Revised_BNF_Reasons__c}" rendered="{!RenderedForInvoice}" />
+                <apex:inputField value="{!Master_BNF__c.Fair_Value_Type__c}" required="true" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.Revised_BNF_Comment__c}" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.Billing_Currency__c}" required="true" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.Revised_BNF_Date__c}" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.SAP_Contract__c}" rendered="{!RenderedForInvoice}"/>
+                <apex:inputField value="{!Master_BNF__c.SAP_Master_Contract__c}" rendered="{!RenderedForInvoice}"/>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="2" title="Retainer/Down Payment, Subscription and Specification Information" rendered="{!RenderedForInvoice}">
+            <apex:inputField value="{!Master_BNF__c.Is_this_a_retainer_downpayment__c}" required="true" />
+            <apex:inputField value="{!Master_BNF__c.Subscription_Type__c}" />
+            <apex:inputField value="{!Master_BNF__c.Retainer_Data_Value__c}" required="true" />
+            <apex:inputField value="{!Master_BNF__c.Specification__c}" />
+            <apex:inputField value="{!Master_BNF__c.Description__c}" />
+            <apex:inputField value="{!Master_BNF__c.Print_Shop__c}" required="true"/>
+            </apex:pageBlockSection>
+            
+           <!-----------  BEGIN BILL TO/SHIP TO  PAGEBLOCK SECTION  ------------->
+            
+            <apex:pageBlockSection columns="2" showHeader="true" title="Address Information" rendered="{!RenderedForInvoice}">
+            <apex:inputField value="{!Master_BNF__c.Bill_To_Account__c}" />
+            <apex:inputField value="{!Master_BNF__c.Ship_To_Account__c}" />
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}">
+            <apex:outputLabel for="BillTo" value="Bill To: Contact"/>
+            <apex:inputField id="BillTo" value="{!Master_BNF__c.Bill_To__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem >
+            <apex:outputLabel for="ShipTo" value="Ship To: Contact"/>
+            <apex:inputField id="ShipTo" value="{!Master_BNF__c.Ship_To__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Bill_To_Address__c}" />
+            <apex:inputField value="{!Master_BNF__c.Ship_To_Address__c}" />
+            <apex:inputField value="{!Master_BNF__c.Bill_To_City__c}" />
+            <apex:inputField value="{!Master_BNF__c.Ship_To_City__c}" />
+            <apex:inputField value="{!Master_BNF__c.Bill_To_State_Province__c}"/>
+            <apex:inputField value="{!Master_BNF__c.Ship_To_State_Province__c}"/>
+            <apex:inputField value="{!Master_BNF__c.Bill_To_Zip_Postal_Code__c}" />
+            <apex:inputField value="{!Master_BNF__c.Ship_To_Zip_Postal_Code__c}" />
+            <apex:inputField value="{!Master_BNF__c.Bill_To_Country__c}" />
+            <apex:inputField value="{!Master_BNF__c.Ship_To_Country__c}" />
+            
+            <!-----------  END BILL TO/SHIP TO  PAGEBLOCK SECTION  --------------->
+             
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+            
+            <!-----------  BEGIN CARBON COPY/SECOND COPY PAGEBLOCK SECTION  ------>
+            
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_Account__c}" />
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_Account__c}" />
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}">
+            <apex:outputLabel for="BillTo" value="Carbon Copy: Contact"/>
+            <apex:inputField id="BillTo" value="{!Master_BNF__c.Carbon_Copy__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem >
+            <apex:outputLabel for="ShipTo" value="Second Copy: Contact"/>
+            <apex:inputField id="ShipTo" value="{!Master_BNF__c.Second_Copy__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_Address__c}" />
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_Address__c}" />
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_City__c}" />
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_City__c}" />
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_State_Province__c}"/>
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_State_Province__c}"/>
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_Zip_Postal_Code__c}" />
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_Zip_Postal_Code__c}" />
+            <apex:inputField value="{!Master_BNF__c.Carbon_Copy_Country__c}" />
+            <apex:inputField value="{!Master_BNF__c.Second_Copy_Country__c}" />
+            
+            <!-----------  END CARBON COPY/SECOND COPY PAGEBLOCK SECTION  -------->
+            
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem rendered="{!RenderedForInvoice}"><apex:outputPanel ><apex:outputText escape="false" value="&nbsp"/></apex:outputPanel><apex:outputPanel ></apex:outputPanel></apex:pageBlockSectionItem>
+            
+            <!-----------  BEGIN COVERSHEET PAGEBLOCK SECTION  ------------------->
+            
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_Account__c}" />
+            <apex:pageblockSectionItem ></apex:pageblockSectionItem>
+            <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Cover Sheet: Contact"/>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet__c}"/>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_Address__c}" />
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_City__c}" />
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_State_Province__c}"/>
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_Zip_Postal_Code__c}" />
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            <apex:inputField value="{!Master_BNF__c.Cover_Sheet_Country__c}" />
+            <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <!------  BEGIN INVOICE/BILLING INFORMATION PAGEBLOCKSECTION  ---------->
+            <apex:pageBlockSection columns="2" showHeader="true" title="Invoice/Billing Information">
+            <apex:inputField value="{!Master_BNF__c.Invoice_Description__c}" />
+            <apex:inputField value="{!Master_BNF__c.Delivery_Date__c}" required="true" rendered="{!RenderedForInvoice}"/>
+            <apex:inputField value="{!Master_BNF__c.Comments__c}" />
+            <apex:inputField value="{!Master_BNF__c.Additional_Delivery_Date_Information__c}" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Additional_Billing_Date_Information__c}" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Contract_Start_Date__c}" required="true" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Invoice_Default_Day__c}" required="true" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Contract_End_Date__c}" required="true" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Contract_Type__c}" required="true" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Payment_Terms__c}" required="true" rendered="{!RenderedForInvoice}" />
+            <apex:inputField value="{!Master_BNF__c.Contract_Term__c}" required="true" rendered="{!RenderedForInvoice}" />
+            </apex:pageBlockSection>
+            <!------  END INVOICE/BILLING INFORMATION PAGEBLOCKSECTION  ---------->
+            
+
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+<!-------------------------------------------------------------------->
+<!-----------  END Popup pageblock to edit Master BNF header  -------->
+<!-------------------------------------------------------------------->
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN pageblock to add more opportunities  ------------>
+<!-------------------------------------------------------------------->   
+<apex:outputPanel id="AddMoreOppsPanel">  
+<apex:pageBlock title="Select Opportunities and Add to Master BNF" rendered="{!AddMoreOppsRendered}">
+
+    <apex:pageMessages id="EditOppsMessages"/> 
+    <table width="350"><tr>
+    <td width="300">
+     <apex:inputField value="{!ProxyOcr.OpportunityId}" />
+    </td><td width="50">
+     <apex:commandButton value="Add Opportunity" action="{!SaveAddedOpp}" rerender="OppDetails,AddMoreOppsPanel,EditOpps,error,EditOppsMessages,RelatedBnfList,ExportLinkPanel,Debug">
+     </apex:commandButton>
+     </td>
+     <td>     <apex:commandButton value="Cancel" action="{!HideAddMoreOpps}" rerender="OppDetails,AddMoreOppsPanel,EditOpps,error,EditOppsMessages,ExportLinkPanel" immediate="true"/></td>
+     </tr>
+    </table><br/>
+   
+    
+</apex:pageBlock>  
+</apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-------------  END pageblock to add more opportunities  ------------>
+<!--------------------------------------------------------------------> 
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN pageblock to display Opportunities  ------------->
+<!--------------------------------------------------------------------> 
+<apex:outputPanel id="OppDetails">
+<apex:pageBlock title="Opportunity List" id="OppList" rendered="{!OppListRendered}">
+<apex:pageBlockButtons location="top" rendered="{!RenderForPdf}" id="OppListPageBlockButtons">
+<apex:image value="/img/lock_small.gif" rendered="{!BnfLocked}"/>
+<apex:outputText value="BNF Locked Pending Approval/Rejection" rendered="{!BnfLocked}"></apex:outputText>
+<apex:commandButton value="Edit Opportunities" action="{!ShowEditOpps}" reRender="OppDetails,EditOpps,AddMoreOppsPanel,ExportLinkPanel,Debug" rendered="{!NOT(BnfLocked)}" immediate="true"></apex:commandButton>
+<apex:commandButton value="Add Opportunity" action="{!ShowAddMoreOpps}" reRender="OppDetails,EditOpps,AddMoreOppsPanel,ExportLinkPanel,Debug" rendered="{!NOT(AddMoreOppsRendered) && NOT(BnfLocked)}"></apex:commandButton>
+</apex:pageBlockButtons>
+    <apex:repeat id="ddd" value="{!OpportunityContainer_Array}" var="OC" >
+    
+        <apex:pageBlockSection title="Opportunity # {!OC.Opportunity.Opportunity_Number__c}" columns="2" collapsible="false" > 
+
+        <apex:outputField value="{!OC.OCR.OpportunityId}" />
+        <apex:outputField value="{!OC.Opportunity.Contract_Start_Date__c}" />
+        <apex:outputField value="{!OC.Opportunity.Opportunity_Number__c}" />
+        <apex:outputField value="{!OC.Opportunity.Contract_End_Date__c}" />
+        <apex:outputField value="{!OC.Opportunity.Amount}" />   
+        <apex:outputField value="{!OC.Opportunity.SAP_Contract__c}"/>    
+        <apex:outputField value="{!OC.Opportunity.StageName}" />
+        <apex:outputField value="{!OC.Opportunity.SAP_Master_Contract__c}"/>    
+ 
+        </apex:pageBlockSection>
+        <apex:pageBlockSection showHeader="false" columns="1" rendered="{!RenderedForInvoice}" >
+        <apex:panelGrid columns="1" id="theGrid" rules="all" border="1"  width="100%">
+
+         <apex:repeat id="LineItemArray" value="{!OC.OLI_Array}" var="OLI" >
+        
+         <apex:pageBlockSection collapsible="false" title="Line Item {!OLI.PricebookEntry.Product2.ProductCode}" columns="6" showHeader="true" > 
+           <apex:outputField value="{!OLI.PricebookEntry.Product2Id}"/>
+         <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Sales Price"></apex:outputLabel>
+         <apex:outputField value="{!OLI.TotalPrice}"/>
+         </apex:pageBlockSectionItem>
+         <apex:outputField value="{!OLI.PricebookEntry.Product2.ProductCode}"/>         
+         <apex:outputField value="{!OLI.Product_Start_Date__c}"/>
+         <apex:outputField value="{!OLI.Product_End_Date__c}"/>
+         <apex:outputField value="{!OLI.Delivery_Media__c}"/>
+         <apex:outputField value="{!OLI.Proj_Rpt_Frequency__c}"/>
+         <apex:outputField value="{!OLI.Billing_Frequency__c}"/>
+         <apex:outputField value="{!OLI.Product_Invoice_Text__c}"/>
+         <apex:outputField value="{!OLI.ListPrice}"/>
+         <apex:outputField value="{!OLI.Discount_Percentage_Formula__c}"/>
+         <apex:outputField value="{!OLI.Discount_Amount_Formula__c}"/>
+         <apex:outputField value="{!OLI.Discount_Reason__c}"/>
+         <apex:outputField value="{!OLI.Nbr_of_Users__c}"/>
+         <apex:outputField value="{!OLI.Billing_Date__c}" />
+         <apex:outputField value="{!OLI.Sale_Type__c}"/>
+         <apex:outputField value="{!OLI.Revenue_Type__c}"/>
+         <!-- Update by: Sneha Date: 21 Dec, 2012 -- Theraphy Area Added ER-0303 -->
+         <apex:outputField value="{!OLI.Therapy_Area__c}"/>
+         <apex:outputField value="{!OLI.Invoice_Lag_to_Data_Period__c}"/>
+         <apex:outputField value="{!OLI.Revised_Price__c}"/>
+         <apex:outputField value="{!OLI.Cancel__c}"/>
+        </apex:pageBlockSection>
+         </apex:repeat>
+         </apex:panelGrid>
+        </apex:pageBlockSection>
+
+    </apex:repeat>  
+  
+</apex:pageBlock>
+</apex:outputPanel> 
+<!-------------------------------------------------------------------->
+<!-----------  END pageblock to display Opportunities  --------------->
+<!--------------------------------------------------------------------> 
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN Popup pageblock to edit opportunities  ---------->
+<!--------------------------------------------------------------------> 
+<apex:outputPanel id="EditOpps" layout="none">
+        <apex:pageBlock title="Edit Opportunities" id="EditOppsPageBlock" rendered="{!EditOppsRendered}" >
+        <apex:pageBlockButtons >
+                <apex:commandButton action="{!SaveOppList}"  value="Save" reRender="EditOpps,OppDetails,MBNF_Header,RelatedBnfList,ExportLinkPanel,Debug"  />
+                <apex:commandButton value="Cancel" action="{!CancelEditOpps}" reRender="EditOpps,OppDetails,MBNF_Header,ExportLinkPanel,Debug" immediate="true"/>               
+        </apex:pageBlockButtons>
+        <apex:pageMessages />
+        <apex:repeat id="ddd" value="{!OpportunityContainer_Array}" var="OC" >
+        <apex:pageBlockSection title="Opportunity # {!OC.Opportunity.Opportunity_Number__c}" columns="2" collapsible="false" > 
+
+        <apex:outputField value="{!OC.OCR.OpportunityId}" />
+        <apex:pageBlockSectionItem >
+        <apex:outputText ></apex:outputText>
+      <!--  <apex:commandLink action="{!DeleteOpportunityRow}" rerender="EditOpps,EditOppsMessages" value="Remove from Master BNF">
+             <apex:param name="DelOppId" value="{!OC.OCR.OpportunityId}"/>
+        </apex:commandLink> -->
+        <apex:commandButton action="{!DeleteOpportunityRow}" rerender="EditOpps,EditOppsMessages,Debug" value="Remove from Master BNF" immediate="true">
+        <apex:param name="DelOppId" value="{!OC.OCR.OpportunityId}"/>
+        </apex:commandButton>
+        </apex:pageBlockSectionItem>  
+        
+        <apex:outputField value="{!OC.Opportunity.Opportunity_Number__c}" />
+        <apex:outputField value="{!OC.Opportunity.Contract_Start_Date__c}" />
+        <apex:outputField value="{!OC.Opportunity.Amount}" />
+        <apex:outputField value="{!OC.Opportunity.Contract_End_Date__c}" />
+        <apex:outputField value="{!OC.Opportunity.StageName}" />
+        <apex:outputField value="{!OC.Opportunity.SAP_Contract__c}"/>
+        <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+        <apex:outputField value="{!OC.Opportunity.SAP_Master_Contract__c}"/>
+        
+
+        </apex:pageBlockSection>
+        <apex:pageBlockSection showHeader="false" columns="1" rendered="{!RenderedForInvoice}">
+        <apex:panelGrid columns="1" id="theGrid" rules="all" border="1" width="100%">
+
+         <apex:repeat id="LineItemArray" value="{!OC.OLI_Array}" var="OLI" >
+        
+         <apex:pageBlockSection collapsible="false" title="Line Item {!OLI.PricebookEntry.Product2.ProductCode}" columns="3" showHeader="true" > 
+         <apex:outputField value="{!OLI.PricebookEntry.Product2Id}"/>
+         <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Sales Price"></apex:outputLabel>
+         <apex:outputField value="{!OLI.TotalPrice}"/>
+         </apex:pageBlockSectionItem>
+         <apex:outputField value="{!OLI.PricebookEntry.Product2.ProductCode}"/>         
+         <apex:inputField value="{!OLI.Product_Start_Date__c}"/>
+         <apex:inputField value="{!OLI.Product_End_Date__c}"/>
+         <apex:inputField value="{!OLI.Delivery_Media__c}" required="true"/>
+         <apex:inputField value="{!OLI.Proj_Rpt_Frequency__c}" required="true"/>
+         <apex:inputField value="{!OLI.Billing_Frequency__c}" required="true"/>
+         <apex:inputField value="{!OLI.Product_Invoice_Text__c}"/>
+         <apex:inputField value="{!OLI.ListPrice}"/>
+         <apex:inputField value="{!OLI.Discount_Percentage_Formula__c}"/>
+         <apex:inputField value="{!OLI.Discount_Amount_Formula__c}"/>
+         <apex:inputField value="{!OLI.Discount_Reason__c}"/>
+         <apex:inputField value="{!OLI.Nbr_of_Users__c}"/>        
+         <apex:inputField value="{!OLI.Billing_Date__c}" required="{!OLI.Revenue_Type__c == 'Ad Hoc'}"/>
+         <apex:inputField value="{!OLI.Sale_Type__c}" required="true"/>
+         <!-- Update by: Sneha Date: 21 Dec, 2012 -- Theraphy Area Added ER-0303 -->
+          <apex:inputField value="{!OLI.Therapy_Area__c}"/>
+         <apex:inputField value="{!OLI.Revenue_Type__c}"/>
+         <apex:inputField value="{!OLI.Invoice_Lag_to_Data_Period__c}"/>
+         <apex:inputField value="{!OLI.Revised_Price__c}"/>
+         <apex:inputField value="{!OLI.Cancel__c}"/>
+        </apex:pageBlockSection>
+         </apex:repeat>
+         </apex:panelGrid>
+        </apex:pageBlockSection>
+
+    </apex:repeat>  
+
+    </apex:pageBlock>
+    
+        </apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-----------  END Popup pageblock to edit opportunities  ------------>
+<!-------------------------------------------------------------------->
+
+<apex:outputPanel style="visibility:hidden">
+<apex:inputField value="{!DummyOpp.Closedate}" style="visibility:hidden"/>
+</apex:outputPanel>
+
+<!-------------------------------------------------------------------->
+<!-----------  BEGIN DEBUG DISPLAY  ---------------------------------->
+<!-------------------------------------------------------------------->
+<apex:outputPanel id="Debug" rendered="{!DebugPanelRendered}">
+<apex:pageBlock title="Debug">
+<apex:pageMessages id="EditOppsMessages"/> 
+<apex:pageBlockButtons >
+<apex:commandButton value="Edit Header" action="{!ShowEditHeader}"></apex:commandButton>
+<apex:commandButton value="Hide Header" action="{!HideEditHeader}"></apex:commandButton>
+<apex:commandButton value="Debug" action="{!SaveHeader}" reRender="EditHeaderPanel,HeaderDetailsPanel,Debug" />
+ 
+</apex:pageBlockButtons>
+Test: {!Test}<br/><br/><br/>EditOppsRendered: {!EditOppsRendered}<br/>
+<br/>OppListRendered: {!OppListRendered}<br/>
+EditHeaderRendered: {!EditHeaderRendered}<br/>
+<br/>
+Debug: {!Debug}<br/>
+<br/>
+Sold To Id: {!Master_BNF__c.Sold_To__c}<br/><br/>
+MBNF ID: {!Master_BNF__c.Id} <br/><br/>
+Rendered for invoice: {!RenderedForInvoice} <br/>
+<apex:pageBlockSection >
+<apex:outputField value="{!Master_BNF__c.Debug__c}"/>
+<!-- <apex:inputField value="{!Master_BNF__c.Debug__c}"/> -->
+<!--
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="BillTo" value="Bill To Contact"/>
+<apex:outputField id="BillTo" value="{!Master_BNF__c.Bill_To__c}"/> 
+</apex:pageBlockSectionItem>
+<apex:pageBlockSectionItem >
+<apex:outputLabel for="ShipTo" value="Sold To Contact"/>
+<apex:outputField id="SoldTo" value="{!Master_BNF__c.Sold_To__c}"/>
+</apex:pageBlockSectionItem>
+
+<apex:outputField value="{!Master_BNF__c.Bill_To__r.MailingStreet}"/>
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy__r.MailingStreet}"/>
+<apex:outputField value="{!Master_BNF__c.Bill_To__r.MailingState}"/>
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy__r.MailingState}"/>
+<apex:outputField value="{!Master_BNF__c.Bill_To__r.MailingCountry}"/>
+<apex:outputField value="{!Master_BNF__c.Carbon_Copy__r.MailingCountry}"/>-->
+</apex:pageBlockSection>
+</apex:pageBlock>
+</apex:outputPanel>
+<!-------------------------------------------------------------------->
+<!-------------  END DEBUG DISPLAY  ---------------------------------->
+<!-------------------------------------------------------------------->
+
+</apex:form>
+<apex:relatedList list="ProcessSteps"  />
+<apex:relatedList list="Purchase_BNF_s__r" id="RelatedBnfList"/>
+<apex:relatedList list="NotesAndAttachments" />
+</apex:page>

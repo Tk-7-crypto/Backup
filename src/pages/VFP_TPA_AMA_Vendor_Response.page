@@ -1,0 +1,673 @@
+<apex:page Controller="CNT_TPA_AMA_Vendor_Response" cache="false" sideBar="false" showHeader="false" standardstylesheets="false" lightningStylesheets="true">
+    <apex:slds />
+	<!-- Added for site to community logic submission start -->
+<script type="text/javascript">
+    console.log('currentLoggedInUserProfile0::::'+'{!currentUserProfileName}');
+    function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+    console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+    if('{!currentUserProfileName}' == 'tpa Profile') {
+        var qryString = '';
+        var urlParams = getUrlVars();
+        for(var key in urlParams) {
+            if(urlParams.hasOwnProperty(key)) {
+                var val = urlParams[key];
+                qryString += key + '=' + val + '&';
+            }
+        }
+        console.log('quryString-1:::'+JSON.stringify(urlParams));
+        console.log('quryString:::'+qryString);
+        qryString = qryString.slice(0, -1);
+        console.log('quryString0:::'+qryString);
+        console.log('quryString1:::'+'{!tpaCommunityUrl}');
+        window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_AMA_Vendor_Response&' + qryString;
+    }
+    if( ((Number('{!amaAgreementDetailObj.Current_Year_Fees__c}') == 0 && Number('{!amaAgreementDetailObj.Next_Year_Fees__c}') == 0) || ('{!amaAgreementDetailObj.Current_Year_Fees__c}' == 'null' && '{!amaAgreementDetailObj.Next_Year_Fees__c}' == 'null')) || (('{!amaAgreementDetailObj.TPA_Request__r.Request_Status__c}' != 'Pending Vendor AMA Fee Acknowledgement') && ('{!amaAgreementDetailObj.TPA_Request__r.Request_Status__c}' != 'In Review By IQVIA') && ('{!amaAgreementDetailObj.TPA_Request__r.Request_Status__c}' != 'Pending - Vendor Declined AMA Fees')) ){          window.location.href = 'VFP_TPA_Page_Status?type=InvalidVenResLink'; 
+    }
+</script>
+<apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+<!-- Added for site to community logic submission end-->
+    <html>
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/> 
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+            <!-- *** Library reference to fill controlling and dependent picklist from api by making client side call *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** -->  
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script><!-- Added by C.P.Pandey under CR-7565 -->
+            
+            <!-- *** JQuery UI Library reference *** -->
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+                        
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+            <!-- *** Multi Select Control Javascript Library reference *** -->
+            
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" type="text/css" />
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript" />
+    
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            width: 100%;
+        }
+        
+        td, th {
+            text-align: left;
+            padding: 8px;
+        }
+        
+        .indent { 
+            padding-left: 1.8em 
+        }
+        
+        .labelText {
+            color:#4a4a56;
+            font-weight:bold;
+        }
+        .headingText {
+            color: #000;
+            font-size: 1.3em;
+        }
+        /**** Error Message Style Start ****/
+        .message .messageText h4
+        {
+            font-size:13px;
+            margin-left: 30px;
+            margin-top: 0px;
+        }
+        
+        .message ul li
+        {
+            list-style:disc;
+        }
+        
+       .textbox { 
+            background: white; 
+            border: 1px solid #DDD; 
+            border-radius: 5px; 
+            box-shadow: 0 0 5px #DDD inset; 
+            color: #666; 
+            outline: none; 
+            height:25px; 
+            width: 275px; 
+        } 
+        
+        .vertical-line { 
+            border-left:medium #CC0000 solid;
+            margin-right:1px;
+        }
+        
+        #menu { 
+            padding:0; 
+            margin-Left:0;
+            margin-Top:20px; 
+        }
+        
+        #menu li { 
+            margin-Top:5px;
+            margin-left:100px;
+        } 
+        
+        div {
+            text-align: justify;
+        }
+        /**** Error Message Style End ****/
+    </style>       
+    <script type="text/javascript">
+        
+        <!-- Angular JS Application Name -->
+        var myapp = angular.module('AMAVendorResponseProcess', ['ui.bootstrap']);
+        
+        <!-- Page Controller Start -->
+        var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$log', '$window', function ($scope, $filter, $log, $window) 
+        {
+            <!-- Initialize Services -->
+            $scope.$log = $log;
+            <!-- Initialize Services -->
+            $scope.$log.info('Vendor Response form');
+            $scope.rootObject = {};
+            $scope.rootObject.vendorFeeResponse = '';
+            $scope.rootObject.type = '';
+            
+            $scope.rootObject.MsgShow = 'false';
+            $scope.rootObject.errorMessage = '';
+            $scope.rootObject.successMessage = '';
+            $scope.rootObject.isProcessing = false;
+            $scope.rootObject.isAcknowledgedByVendor = false;
+            $scope.rootObject.amaAgreementDetailObject = {};
+            $scope.rootObject.amaAgreementDetailObject.Vendor_AMA_Fee_Response__c = '';
+            $scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c = '';
+            $scope.rootObject.amaAgreementDetailObject.Invoice_Contact__c = '';
+            $scope.rootObject.amaAgreementDetailObject.Invoice_Contact_Email__c = '';
+            $scope.rootObject.optionsForSendInvoice = ["Yes","No"];
+            $scope.rootObject.optionsForSendInvoice.splice(0,0, "--None--");
+            $scope.rootObject.TPA_Request_number = ''; // tpa Request id
+            $scope.rootObject.vendor_Legal_Name = '';
+            $scope.rootObject.vendor_Country = '';
+            $scope.rootObject.vendor_AMA_SAP_Code = '';
+            $scope.rootObject.isTaxNumberRequired = false;
+            
+            
+            $scope.rootObject.amaAgreementObject = JSON.parse("{!JSENCODE(amaAgreementDetailAsString)}");
+            $scope.rootObject.usCountrySet = '{!countryCodes}';
+            if($scope.rootObject.amaAgreementObject.TPA_Request__r.Service_Provider_Address__c != null){
+                $scope.rootObject.vendor_Legal_Name = $scope.rootObject.amaAgreementObject.TPA_Request__r.Service_Provider_Address__r.Name;
+            	$scope.rootObject.vendor_Country = $scope.rootObject.amaAgreementObject.TPA_Request__r.Vendor_Billing_Mailing_Country__c;
+            	$scope.rootObject.vendor_AMA_SAP_Code = $scope.rootObject.amaAgreementObject.TPA_Request__r.Service_Provider_Address__r.AMA_SAP_Code__c;
+            }
+            if($scope.rootObject.vendor_Legal_Name != '' && $scope.rootObject.vendor_Country != '' && $scope.rootObject.usCountrySet.indexOf($scope.rootObject.vendor_Country.toLowerCase()) == -1 && ($scope.rootObject.vendor_AMA_SAP_Code == '' || $scope.rootObject.vendor_AMA_SAP_Code == null && $scope.rootObject.vendor_AMA_SAP_Code == undefined)){
+               $scope.rootObject.isTaxNumberRequired = true; 
+            }
+            else{
+                $scope.rootObject.isTaxNumberRequired = false; 
+            }
+            
+            
+            $scope.isValidInput = function(Name)
+            {
+                var filter = /^[a-zA-Z0-9'-\s]+$/;
+                if (filter.test(Name)) {
+                    return true;
+                }
+                else
+                    return false;
+            }
+            
+            //*** function triggers and applies all angular scope changes explicitly ***//
+            $scope.applyChanges = function()
+            {
+                if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                    $scope.$apply();
+            }
+            //****** Angular Apply All Changes Event End ******//
+			//Added for site to community logic submission start
+            function logoutSession() {
+                console.log('BeforeAjaxCall:::');
+                $.ajax('{!$Site.Prefix}/secur/logout.jsp',{
+                    type:'POST',
+                    beforeSend: function(xhr) {
+                        // Set the OAuth header from the session ID
+                        xhr.setRequestHeader('Authorization', 'Bearer {!$Api.Session_ID}');            
+                        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+                        console.log('BeforeSend:::');
+                    },
+                    success: function(response) {
+                        // Sit the result to HTML div          
+                        console.log('Success:::'+JSON.stringify(response));
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        // Error
+                        console.log('Error:::'+jqXHR.status + ': ' + errorThrown);
+                    }
+                });
+            }
+            //Added for site to community logic submission end
+            
+            
+            $scope.rootObject.onLoadForm = function() {
+				//Shut down popup code start
+				var isPermanentDown = {!isTPAPermanentDown};
+				var isRestrictedUser = {!isRestrictedUser};
+				var portalDownMessage = '{!Message}';
+				$(document).ready(function(){
+					if(isPermanentDown)
+					{
+						popupAlert(portalDownMessage);
+							$('.customPopupFooter .aButtons').css("display","none");
+							$('#backWhiteOverlay').css("display", "");
+							$('#pageBody').keydown(function(objEvent) {
+								if (objEvent.keyCode == 9) {  //tab pressed
+									objEvent.preventDefault(); // stops its action
+								}
+								if (objEvent.keyCode == 13) {  //enter pressed
+									objEvent.preventDefault(); // stops its action
+								}
+							});
+					}
+				});
+					if(isPermanentDown)
+					{
+					return false;
+                    }
+				//shut down popup code end
+                
+                if(getParameterByName('vendorResponse').trim().length > 0 ) {
+                
+                    $scope.rootObject.vendorFeeResponse = getParameterByName('vendorResponse').trim();
+                }
+                $scope.$log.info('Object old detail:'+JSON.stringify($scope.rootObject.amaAgreementObject));
+                $scope.$log.info('Object old detail:Vendor_AMA_Fee_Response__c '+$scope.rootObject.amaAgreementObject.Vendor_AMA_Fee_Response__c);
+                if($scope.rootObject.vendorFeeResponse  != null && $scope.rootObject.vendorFeeResponse == 'resendAMAFeeNotification' && $scope.rootObject.amaAgreementObject.Vendor_AMA_Fee_Response__c != null && $scope.rootObject.amaAgreementObject.Vendor_AMA_Fee_Response__c != '') {
+                    $scope.rootObject.amaAgreementDetailObject.id = $scope.rootObject.amaAgreementObject.Id;
+                    $scope.rootObject.resendAMAFeeNotification();
+                
+                } else {
+                    if($scope.rootObject.amaAgreementObject.Vendor_AMA_Fee_Response__c != null && $scope.rootObject.amaAgreementObject.Vendor_AMA_Fee_Response__c != ''  &&  $scope.rootObject.amaAgreementObject.TPA_Request__r.Request_Status__c != 'Pending Vendor AMA Fee Acknowledgement' ) {
+                        $scope.rootObject.errorMessage = 'Sorry, Your response has been already submitted.'; 
+                    }
+                    else if($scope.rootObject.vendorFeeResponse  != null &&  $scope.rootObject.vendorFeeResponse == 'acknowledged') {
+                        
+                        $scope.rootObject.amaAgreementDetailObject.Vendor_AMA_Fee_Response__c =  $scope.rootObject.vendorFeeResponse;
+                        $scope.rootObject.amaAgreementDetailObject.id = $scope.rootObject.amaAgreementObject.Id;
+                        $scope.rootObject.amaAgreementDetailObject.Client__c = $scope.rootObject.amaAgreementObject.Client__c;
+                        $scope.rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c = $scope.rootObject.amaAgreementObject.Vendor_Legal_Name__c;
+                        $scope.rootObject.amaAgreementDetailObject.Contract_Type__c  = $scope.rootObject.amaAgreementObject.Contract_Type__c;
+                        
+                        $scope.rootObject.amaAgreementDetailObject.Current_Year__c  = $scope.rootObject.amaAgreementObject.Current_Year__c;
+                        $scope.rootObject.amaAgreementDetailObject.Next_Year__c  = $scope.rootObject.amaAgreementObject.Next_Year__c;
+                        $scope.rootObject.amaAgreementDetailObject.Current_Year_Fees__c  = $scope.rootObject.amaAgreementObject.Current_Year_Fees__c;
+                        $scope.rootObject.amaAgreementDetailObject.Next_Year_Fees__c  = $scope.rootObject.amaAgreementObject.Next_Year_Fees__c;
+                        $scope.rootObject.TPA_Request_number = $scope.rootObject.amaAgreementObject.TPA_Request__r.Name;
+                       
+                    } else if($scope.rootObject.vendorFeeResponse  != null && $scope.rootObject.vendorFeeResponse == 'declined') {
+                    
+                        $scope.rootObject.amaAgreementDetailObject.Vendor_AMA_Fee_Response__c =  $scope.rootObject.vendorFeeResponse;
+                        $scope.rootObject.amaAgreementDetailObject.id = $scope.rootObject.amaAgreementObject.Id;
+                        $scope.rootObject.saveVendorResponse();
+                    
+                    }
+                    else {
+                    
+                        $scope.rootObject.errorMessage = 'Sorry, you are not authorised person to submit the vendor response.';
+                    }
+                }
+            }
+            
+            $scope.rootObject.saveVendorResponse = function() {
+                
+                if($scope.rootObject.vendorFeeResponse == 'acknowledged') {
+                     if($scope.rootObject.isAcknowledgedByVendor == false ) {
+                         $scope.popupAlert('Kindly Acknowledge.' , function(){});
+                         return false;
+                     }
+                     
+                     if($scope.rootObject.isTaxNumberRequired == true && ($scope.rootObject.amaAgreementDetailObject.Tax_Identification_Number__c == '' || $scope.rootObject.amaAgreementDetailObject.Tax_Identification_Number__c == null) ) {
+                         $scope.popupAlert('Kindly provide the Tax Identification Number.' , function(){});
+                         return false;
+                     }
+                     else if($scope.rootObject.isTaxNumberRequired == true && $scope.rootObject.amaAgreementDetailObject.Tax_Identification_Number__c != '' && !$scope.isValidInput($scope.rootObject.amaAgreementDetailObject.Tax_Identification_Number__c)){
+                         $scope.popupAlert('Kindly provide the Valid Tax Identification Number.' , function(){});
+                         return false;
+                     }
+                     
+                     if($scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == '' || $scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == null || $scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == '--None--' ) {
+                         $scope.popupAlert('Kindly select Yes/No to send a copy of Invoice to anyone.' , function(){});
+                         return false;
+                     }
+                     
+                     if($scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == 'Yes' && ($scope.rootObject.amaAgreementDetailObject.Invoice_Contact__c == null || $scope.rootObject.amaAgreementDetailObject.Invoice_Contact__c == '')) {
+                         $scope.popupAlert('Kindly provide the Invoice Contact.' , function(){});
+                         return false;
+                     }
+                     
+                     if($scope.rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == 'Yes' && ($scope.rootObject.amaAgreementDetailObject.Invoice_Contact_Email__c  == null || $scope.rootObject.amaAgreementDetailObject.Invoice_Contact_Email__c  == '')) {
+                         $scope.popupAlert('Kindly provide the valid Invoice Contact Email.' , function(){});
+                         return false;
+                     }
+                }
+                showLoading();
+                $scope.$log.info('Object detail:'+JSON.stringify($scope.rootObject.amaAgreementDetailObject));
+                CNT_TPA_AMA_Vendor_Response.saveVendorFeeResponse(JSON.stringify($scope.rootObject.amaAgreementDetailObject), function(result, event)
+                {
+                    if(event.type == 'exception'){
+                        $scope.$log.info('Exception: ' + event.message);
+                                                            
+                    }
+                    else if(result != null && result == 'AlreadySubmitted'){
+                        $scope.rootObject.errorMessage = 'Sorry, Your response has been already submitted.';
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                        
+                    }
+                    else if(result != null && result == 'error'){
+                        $scope.rootObject.errorMessage = 'Sorry, could not perform the action';
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                       
+                    }
+                    else if(result != null && result == 'success' ){
+                        $scope.rootObject.successMessage = 'Thank you, your response has been submitted.';
+						if('{!currentUserProfileName}' == 'TPA Vendor Community User') {
+                            logoutSession();
+                        }
+                    }
+                    else {
+                        $scope.rootObject.errorMessage = 'Sorry, you are not authorised to perform the action.';  
+                        $scope.$log.info('Vendor Response: ' + result); 
+                        $scope.$log.info('Vendor Response: ' + $scope.rootObject.vendorFeeResponse); 
+                        $scope.$log.info('error messgae: ' + $scope.rootObject.errorMessage);               
+                        $scope.$log.info('Event Type: ' + event.type);
+                        
+                    }
+                    hideLoading();
+                    $scope.applyChanges();
+                },
+                {escape: false}
+                );
+                    
+            }
+            
+            $scope.rootObject.resendAMAFeeNotification = function() {
+                showLoading();
+                CNT_TPA_AMA_Vendor_Response.tpUsReqResendAMAFeeNoti($scope.rootObject.amaAgreementDetailObject.id, function(result, event)
+                {
+                    if(event.type == 'exception'){
+                        $scope.$log.info('Exception: ' + event.message);
+                                                            
+                    }
+                    else if(result != null && result == 'AlreadySubmitted'){
+                        $scope.rootObject.errorMessage = 'Sorry, Your response has been already submitted.';  
+                        
+                    }
+                    else if(result != null && result == 'error'){
+                        $scope.rootObject.errorMessage = 'Sorry, could not perform the action';
+                       
+                    }
+                    else if(result != null && result == 'success' ){
+                        $scope.popupAlert('Thank you, your response has been submitted.', function(){
+                            window.location.href = '/' + $scope.rootObject.amaAgreementDetailObject.id;
+                        });
+                    }
+                    else {
+                        $scope.rootObject.errorMessage = 'Sorry, you are not authorised to perform the action.';  
+                        $scope.$log.info('Vendor Response: ' + result); 
+                        $scope.$log.info('Vendor Response: ' + $scope.rootObject.vendorFeeResponse); 
+                        $scope.$log.info('error messgae: ' + $scope.rootObject.errorMessage);               
+                        $scope.$log.info('Event Type: ' + event.type);
+                        
+                    }
+                    hideLoading();
+                    $scope.applyChanges();
+                    
+                    
+                },
+                {escape: false}
+                );
+                    
+            }
+            $scope.rootObject.onLoadForm();
+            $scope.popupAlert = function(msg, truePart)
+            {
+                popup(msg, {'animate':true}, 
+                function(r)
+                {
+                    if(r && truePart != null)
+                        truePart();
+                });
+            }
+            
+            //****** Angular Apply All Changes Event Start ******//
+            
+            
+            //*** function to read Query strings Start ***//
+            function getParameterByName(name) 
+            {
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            //*** function to read Query strings End ***//
+            
+    }]);
+    
+        $(document).ready(function(){
+            $("h5").click(function(){
+                $("#rulesPanelDivID").removeAttr('style');
+                var currentText = $(this).text();
+                var showText = 'Show Existing AMA Rules:';
+                var hideText = 'Hide Existing AMA Rules:';
+                if(currentText == showText) {
+                    $(this).text(hideText);
+                    $("#rulesPanelDivID").show();
+                } else if(currentText == hideText) {
+                    $(this).text(showText);
+                    $("#rulesPanelDivID").hide();
+                }
+            });
+        });
+        
+        //*** directive to show confirm box ***//
+        myapp.directive('ngConfirmClick', [
+            function(){
+                return {
+                    link: function (scope, element, attr) {
+                        var msg = attr.ngConfirmClick || "Are you sure?";
+                        var clickAction = attr.confirmedClick;
+                        element.bind('click',function (event) {
+                        popup(msg, {'verify':true, 'animate':true}, function(r)
+                            {
+                                if(r) {
+                                    scope.$eval(clickAction);
+                                }
+                            });
+                        });
+                    }
+                };
+            }]);
+			
+			//Shut down popup code
+            var popupAlert = function(msg, truePart)
+			{
+            popup(msg, {'animate':true}, 
+            function(r)
+            {
+                if(r && truePart != null)
+                    truePart();                    
+            });
+            //  $(".aButtons button").html('{!$Label.TPA_OK}');
+			}
+        
+    </script>
+    </head>
+    <body id="pageBody" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+    <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+	<apex:form id="theForm">
+        <c:VFC_TPA_LoadingImage />
+        <div id="ng-app" ng-app="AMAVendorResponseProcess">
+            <div id="controllerPage" ng-controller="controllerPage" ng-cloak="ng-cloak">
+                <!-- Success Block for Success Message -->
+                <div ng-show="rootObject.errorMessage =='' && rootObject.successMessage != '' " style="margin:40px;display:none;" id="block3" >
+                     <apex:outputPanel >
+                         <apex:pageBlock >
+                             <!-- Success Message Box Start -->
+                             <div ng-if="rootObject.successMessage !='' " class="slds-theme_success slds-p-around_medium slds-m-bottom_x-small">
+                                 <div class="messageText" style = "text-align: center;">
+                                    <h2 id= 'msg' style="font-size:18px;">{{rootObject.successMessage}}</h2>
+                                 </div><br/>
+                             </div>
+                         </apex:pageBlock>  
+                     </apex:outputPanel>
+                </div>
+                <!-- Message Block for Success Process -->  
+                 
+                <!-- Message Block  for error Process -->
+                <div ng-show="rootObject.errorMessage !=''" class="slds-theme_error" style="margin:20px;">
+                   <apex:outputPanel styleclass="slds-notify_container slds-is-relative ">
+                       <apex:pageBlock >
+                           <!-- Error Message Box Start -->
+                           <div class="message errorM3 slds-notify__content " role="alert">
+                               <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                   <div class="slds-col">
+                                       <div class="slds-grid">
+                                           <div class="slds-col slds-size_1-of-3"></div>
+                                           <div class="slds-col slds-size_1-of-3">
+                                               <h2 class="slds-text-heading_small">
+                                                   <div class="messageText">
+                                                       <span><h4>Errors</h4></span>
+                                                   </div>
+                                               </h2>
+                                           </div>
+                                           <div class="slds-col slds-size_1-of-3"></div>
+                                       </div>
+                                   </div>
+                                   <div class="slds-col">
+                                       <div class="slds-grid">
+                                           <div class="slds-col slds-size_1-of-5"></div>
+                                           <div class="slds-col slds-size_1-of-5"></div>
+                                           <div class="slds-col slds-size_1-of-5">
+                                               <ul>
+                                                   <li>{{rootObject.errorMessage}}</li>
+                                               </ul>
+                                           </div>
+                                           <div class="slds-col slds-size_1-of-5"></div>
+                                           <div class="slds-col slds-size_1-of-5"></div>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       </apex:pageBlock>
+                   </apex:outputPanel>
+               </div>
+                <!-- Message Block  for error Process -->
+                <!-- Vendor Response Template Starts -->
+                <div style="margin:40px;background-color: white;border-radius: 5px;border: black 1px solid;" id="block1" ng-if="(rootObject.amaAgreementDetailObject.Vendor_AMA_Fee_Response__c  == 'acknowledged' && (rootObject.successMessage == '' || rootObject.successMessage == null) && (rootObject.errorMessage == '' || rootObject.errorMessage == null))">
+                    <apex:outputPanel >
+                        <apex:pageBlock >
+                            <apex:pageblocksection collapsible="false" columns="1" >
+                                <div style="margin:40px;">
+                                    <div> 
+                                        <p>Based on the submitted requirements of {{rootObject.TPA_Request_number}} on behalf of {{rootObject.amaAgreementDetailObject.Client__c}}, {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} will require an IQVIA Third Party Limited License (“TLLA”); as well as, an American Medical Association (“AMA”) {{rootObject.amaAgreementDetailObject.Contract_Type__c}} Agreement.  The AMA {{rootObject.amaAgreementDetailObject.Contract_Type__c}} Agreement has an associated per calendar year fee that will be payable by {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} [the liable party].</p> <br/>
+                                        <p>We must receive your acknowledgement that you are aware the following fees will be liable and payable by {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} per terms of invoice. </p><br/>
+                                    </div><br/>
+                                   
+                                    <div>
+                                        <b>VENDOR: {{rootObject.amaAgreementDetailObject.Current_Year__c}} AMA FEES: </b><br/>    
+                                        <table class="slds-table slds-table--bordered slds-border_left slds-border_right slds-table_col-bordered slds-no-row-hover">
+                                          <tr>
+                                            <td><b>AMA Contract Type</b></td>
+                                            <td><b>{{rootObject.amaAgreementDetailObject.Current_Year__c}} Estimated Fees Owed by Vendor</b></td>
+                                            </tr>
+                                          <tr>
+                                            <td>{{rootObject.amaAgreementDetailObject.Contract_Type__c}}</td>
+                                            <td>{{rootObject.amaAgreementDetailObject.Current_Year_Fees__c | currency}}</td>
+                                          </tr>
+                                        </table>
+                                        <br/><br/>
+                                        <div ng-if="rootObject.amaAgreementDetailObject.Next_Year_Fees__c > 0"> 
+                                            <b>VENDOR: {{rootObject.amaAgreementDetailObject.Next_Year__c}} AMA FEES: </b><br/>    
+                                            <table class="slds-table slds-table--bordered slds-border_left slds-border_right slds-table_col-bordered slds-no-row-hover">
+                                              <tr>
+                                                <td><b>AMA Contract Type</b></td>
+                                                <td><b>{{rootObject.amaAgreementDetailObject.Next_Year__c}} Estimated Fees Owed by Vendor</b></td>
+                                              </tr>
+                                              <tr>
+                                                <td>{{rootObject.amaAgreementDetailObject.Contract_Type__c}}</td>
+                                                <td>{{rootObject.amaAgreementDetailObject.Next_Year_Fees__c | currency}} </td>
+                                              </tr>
+                                            </table><br/><br/>
+                                        
+                                                
+                                            <p class="indent"> *AMA fees are due for the following calendar year due to the project term crossing over into the next year, the next year fees are noted as ‘estimates’ in the AMA Agreement and will be invoiced towards the end of the current calendar year unless canceled prior to 60-days of current year end. </p><br/>
+                                        </div>
+                                        
+                                        <div><b> 
+                                            <span ng-if="rootObject.isTaxNumberRequired == true">
+                                            <p >
+                                                    <div class="slds-grid ">
+                                                        <div class="indent slds-p-top_xx-small"> IQVIA requires {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} Tax Identification Number (TIN, GSTIN, or VAT number) to process the invoice:  </div>
+                                                        
+                                                        <div class="indent">
+                                                            <input class="slds-input " type="text" maxlength="25" ng-model="rootObject.amaAgreementDetailObject.Tax_Identification_Number__c" size="{{rootObject.amaAgreementDetailObject.Tax_Identification_Number__c.length}}"/>
+                                                        </div>
+                                                    </div>
+                                                <br/>
+                                                </p>
+                                            </span> 
+                                            <p>
+                                                <div class="slds-grid">
+                                                    <div class="indent slds-p-top_xx-small">Do you wish for another in your company, like Accounts Payable, to receive a copy of the invoice as well?</div>
+                                                    <div style="padding-left:1.2em">
+                                                        <select class="slds-select slds-size_4-of-7" ng-init="rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c='--None--'" ng-model="rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c" style = "width: fit-content;">
+                                                            <option ng-repeat="x in rootObject.optionsForSendInvoice">{{x}}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <br/>
+                                            </p>
+                                            <span ng-if="rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == 'Yes'">
+                                                <p style="padding-left: 1.8em;" >If Yes, please provide name and {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} email address*; you will still be copied on the email: </p>
+                                                <p style="padding-left: 1.8em;">
+                                                    <div class="slds-grid indent slds-p-top_xx-small">
+                                                        <div class="slds-col slds-size_3-of-12 indent slds-p-top_xx-small" style="text-align: right;"> Name/Department Name:  </div>
+                                                        <div class="slds-col slds-p-top_xx-small" style="padding-left: 0.5em;">
+                                                            <input class="slds-input slds-size_4-of-12"  type="text"  ng-model="rootObject.amaAgreementDetailObject.Invoice_Contact__c " size="{{rootObject.amaAgreementDetailObject.Invoice_Contact__c.length}}"/>
+                                                        </div>
+                                                    </div>
+                                                </p>
+                                                <p style="padding-left: 1.8em;">
+                                                    <div class="slds-grid indent slds-p-top_xx-small">
+                                                        <div class="slds-col slds-size_3-of-12 indent slds-p-top_xx-small" style="text-align: right;"> {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}} Email Address:  </div>
+                                                        <div class="slds-col slds-p-top_xx-small" style="padding-left: 0.5em;">
+                                                            <input class="slds-input slds-size_4-of-12"  type="email"  ng-model="rootObject.amaAgreementDetailObject.Invoice_Contact_Email__c" size="{{rootObject.amaAgreementDetailObject.Invoice_Contact_Email__c.length}}"/>
+                                                        </div>
+                                                    </div>
+                                                </p>
+                                            
+                                            </span>   
+                                			<span ng-if="rootObject.amaAgreementDetailObject.Send_copy_of_the_invoice__c == 'Yes'" class="slds-grid">
+                                                <p class="slds-col slds-size_3-of-12 indent"></p>
+                                                <p class="indent slds-col slds-p-top_xx-small indent" style="padding-left: 2em;padding-bottom: 1em;"><span style = "font-size:12px;">*Note: Your client is not liable for the above AMA fees; Do not add their name/email for invoicing. </span></p> 
+                                            </span>
+                                            
+                                            
+                                                
+                                            <p>
+                                                <div class="slds-checkbox">
+                                                    <input id="I ACKNOWLEDGE fees will be due, please release Agreements for signature." type="checkbox" ng-model="rootObject.isAcknowledgedByVendor"/>
+                                                    <label class="slds-checkbox__label" for="I ACKNOWLEDGE fees will be due, please release Agreements for signature.">
+                                                        <span class="slds-checkbox_faux"></span>
+                                                        <span class="slds-form-element__label" ng-if="rootObject.isTaxNumberRequired == true" style="padding-left: 3px"> I ACKNOWLEDGE fees will be due and above Tax ID Number is correct.  Please release Agreements for signature when approved by IQVIA.</span>
+                                                        <span class="slds-form-element__label" ng-if="rootObject.isTaxNumberRequired == false" style="padding-left: 3px"> I ACKNOWLEDGE fees will be due, please release Agreements for signature.</span>
+                                                    </label>
+                                            </div>
+                                            </p>
+                                            <br/></b>
+                                        </div>
+                                        
+                                        <p class="indent"> After your acknowledgement has been received by IQVIA we will continue our review for approval of this request for release of agreements to be signed by {{rootObject.amaAgreementDetailObject.Vendor_Legal_Name__c}}. </p><br/>
+                                        <br/>
+                                    </div>
+                                    
+                                    <div style = "text-align:center;">
+                                        <button class="btn btn-default slds-button slds-button_success" onclick="return false;" ng-click="rootObject.saveVendorResponse();" ng-disabled="rootObject.isProcessing">Submit</button>
+                                    </div><br/><br/>
+                                </div>
+                            </apex:pageBlockSection>
+                        </apex:pageBlock>
+                    </apex:outputPanel>
+                </div>
+                <!-- Vendor Response Template ends -->
+                  
+            </div>
+        </div>
+    </apex:form>
+    </body>
+    </html>
+ </apex:outputPanel> <!-- Added for site to community logic submission-->   
+</apex:page>

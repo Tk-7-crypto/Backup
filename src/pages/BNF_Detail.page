@@ -1,0 +1,276 @@
+<apex:page standardController="BNF2__c" id="pg" extensions="BNF_MDM_Extension" action="{!ShowInfoMessages}">
+  
+   <head>
+
+      <script>  
+        
+        String.prototype.startsWith = function(str) 
+            {return (this.match("^"+str)==str);};
+        
+        function hideLink() {
+            var isOwnerQueue = {!isOwnerQueue};
+            console.log('isOwnerQueue'+isOwnerQueue);
+            //var APPROVAL_HISTORY_DIV_ID = '{!id}_RelatedProcessHistoryList';
+            var APPROVAL_HISTORY_DIV_ID = '{!id}_RelatedProcessHistoryList_body';
+            var historyElem = document.getElementById(APPROVAL_HISTORY_DIV_ID); 
+            var aryClassElements = getElementsByClassName( 'actionLink', historyElem );
+            //console.log('aryClassElements  -- '+aryClassElements);
+            if(aryClassElements) {
+                for ( var i = 0; i < aryClassElements.length; i++ ) {
+                    //var elemHref = aryClassElements[i].getAttribute('href') ;
+                    //console.log('aryClassElements  -- '+aryClassElements[i]);
+                    var elemHref = aryClassElements[i]['href'] ;
+                    if(elemHref && elemHref != '' && (elemHref.indexOf('ProcessInstanceWorkitemWizardStageManager') != -1) ){
+                        
+                        aryClassElements[i].href='/apex/BNF_Approval?id=' + '{!BNF2__c.id}';
+                    }
+                    // updated by dheeraj kumar Issue-09972
+                    else if(elemHref && elemHref != '' && (elemHref.indexOf('REASSIGN') != -1) ){
+                        if(isOwnerQueue) {
+                            aryClassElements[i].style.display = 'none';
+                            aryClassElements[i].parentElement.childNodes[1].textContent = '';
+                        } else {
+                            aryClassElements[i].href='/apex/BNF_Reassign?id=' + '{!BNF2__c.id}';
+                        }    
+                    }
+                }
+            }
+        }
+      
+        //Method to add custom VF page on Recall Approval Process Button
+        function modifyApprovalHistory(approvalElem){
+            var APPROVAL_HISTORY_DIV_ID = '{!id}_RelatedProcessHistoryList';  
+            
+            if(!approvalElem)
+                var approvalElem =  document.getElementById(APPROVAL_HISTORY_DIV_ID);
+            
+            var aryClassElements = getElementsByClassName( 'btn', approvalElem );
+            if(aryClassElements.length >=1){
+                if(aryClassElements &&  aryClassElements[0].attributes[2].nodeValue == 'piRemove'){
+                    var x = function(){                                                  
+                        window.location.href = '/apex/VFP_CRM_Recall_Approval_Request?id=' + '{!BNF2__c.id}';
+                    };
+                    if (aryClassElements[0].addEventListener)
+                        aryClassElements[0].addEventListener ('click',x,false);                
+                    aryClassElements[0].setAttribute('onclick',  x);
+                }
+            }
+        }
+       
+       function modifyAttachmentLink(notesElem){
+           var uiTheme = '{!$User.UIThemeDisplayed }';
+           var NOTES_DIV_ID = '{!id}_RelatedNoteList';
+           if(!notesElem)
+               notesElem = document.getElementById(NOTES_DIV_ID); 
+           var anchorElements = notesElem.getElementsByTagName('a');    
+           var aryClassActionElements = getElementsByClassName( 'actionLink', notesElem ); 
+           var aryClassElements = getElementsByClassName( 'btn', notesElem ); 
+           if(aryClassElements) {
+               for ( var i = 0; i < aryClassElements.length; i++ ) {
+                   var elemOnclick = aryClassElements[i].getAttribute('onclick').toString();
+                   if(elemOnclick && elemOnclick != '' && (elemOnclick.indexOf('NoteAttach') != -1) && (elemOnclick.indexOf('navigateToUrl') != -1) ){
+                       var x = function(){                                                  
+                           window.location.href = '/apex/BNF_Attachment?id=' + '{!BNF2__c.id}';
+                       };
+                       if (aryClassElements[i].addEventListener)
+                           aryClassElements[i].addEventListener ('click',x,false);
+                       else if (aryClassElements[i].attachEvent)
+                           aryClassElements[i].attachEvent ('onclick',x); 
+                       
+                       aryClassElements[i].setAttribute('onclick',  x);
+                   }
+                   else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('BNF_Attachment') != -1){
+                      var x = function(){                                                  
+                          window.location.href = '/apex/BNF_Attachment?id=' + '{!BNF2__c.id}';
+                      };
+                      if (aryClassElements[i].addEventListener)
+                          aryClassElements[i].addEventListener ('click',x,false);
+                      else if (aryClassElements[i].attachEvent)
+                          aryClassElements[i].attachEvent ('onclick',x);                     
+                      aryClassElements[i].setAttribute('onclick',  x);
+                  }
+                   else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('GinaRLNewFile') != -1){
+                      var x = function(){                                                  
+                          window.location.href = '/apex/BNF_Attachment?id=' + '{!BNF2__c.id}';
+                      };
+                      if (aryClassElements[i].addEventListener)
+                          aryClassElements[i].addEventListener ('click',x,false);
+                      else if (aryClassElements[i].attachEvent)
+                          aryClassElements[i].attachEvent ('onclick',x);                     
+                      aryClassElements[i].setAttribute('onclick',  x);
+                  }
+                   else if(elemOnclick && elemOnclick != '' && elemOnclick.indexOf('ViewAllNotesPage') != -1) {
+                       aryClassElements[i].style.display = 'none';
+                   }
+               } 
+           }
+           if(aryClassActionElements) {
+               for ( var i = 0; i < aryClassActionElements.length; i++ ) {
+                   if(aryClassActionElements[i].innerHTML == 'Edit') {
+                       aryClassActionElements[i].style.display = 'none';
+                       aryClassActionElements[i].parentNode.removeChild(aryClassActionElements[i].nextSibling);
+                   }
+               }
+           }
+           if(uiTheme =='Theme4d') {
+               for ( var i = 0; i < anchorElements.length; i++) {
+                   if(anchorElements[i].text && anchorElements[i].text.includes('Show more')) {
+                       anchorElements[i].style.display = 'none';
+                       anchorElements[i].parentNode.removeChild(anchorElements[i].nextSibling);
+                   }
+                   if(anchorElements[i].text && anchorElements[i].text.includes('Go to list')) {
+                       anchorElements[i].href = 'javascript:void(0)';
+                       var x = function(){ 
+                           window.location.href = '/apex/VFP_CRM_Attachment?parentId=' + '{!id}';
+                       }
+                       if (anchorElements[i].addEventListener)
+                           anchorElements[i].addEventListener ('click',x,false);
+                       else if (anchorElements[i].attachEvent)
+                           anchorElements[i].attachEvent ('onclick',x);
+                       anchorElements[i].setAttribute('onclick',  x);
+                       break;
+                   };
+               }
+           }
+           return false;
+       }
+        
+        
+        
+        /*
+         * function to suppress 'Show More' link on related list hovers.
+         */
+        function hideShowMoreLink(){
+            var arrPShowMore = getElementsByClassName('pShowMore', document.getElementById('RLPanelFrame').contentWindow.document);
+            for ( var i = 0; i < arrPShowMore.length; i++ ){
+                arrPShowMore[i].style.display = 'none';
+            }
+        }
+    
+        function getElementsByClassName( strClassName, obj ) {            
+            var ar = arguments[2] || new Array();
+            var re = new RegExp("\\b" + strClassName + "\\b", "g");
+        
+            if ( re.test(obj.className) ) {
+                ar.push( obj );
+            }
+            for ( var i = 0; i < obj.childNodes.length; i++ ) 
+                getElementsByClassName( strClassName, obj.childNodes[i], ar );
+                
+            
+            return ar;
+        }
+        
+       function hideRecallButton() {
+           //alert('hide button');
+           var showButton = {!recallbuttonview};
+           var showUnlockButton = {!unlockbuttonview};
+           var showlockbutton = {!showlockbuttonview};
+           var showreassignbutton = {!showReassignbuttonview};
+           //var showButton = false;
+           //alert(showButton);
+           let recallbutton = document.getElementsByName("recall_approval_request");
+           let unlockbutton = document.getElementsByName("unlock_record");
+           let lockbutton = document.getElementsByName("lock_record");
+           let approvebutton = document.getElementsByName("approve_reject");
+           let reassignbutton = document.getElementsByName("reassign");
+           if(showButton == false) {
+               for ( var i = 0; i < recallbutton.length; i++ ){
+                   recallbutton[i].style.display = 'none'; 
+               }
+               for ( var i = 0; i < approvebutton.length; i++ ){
+                   approvebutton[i].style.display = 'none'; 
+               }
+           }
+           if(showUnlockButton == false) {
+               for ( var i = 0; i < unlockbutton.length; i++ ){
+                   unlockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showlockbutton == false)  {
+               for ( var i = 0; i < lockbutton.length; i++ ){
+                   lockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showUnlockButton == false) {
+               for ( var i = 0; i < unlockbutton.length; i++ ){
+                   unlockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showlockbutton == false)  {
+               for ( var i = 0; i < lockbutton.length; i++ ){
+                   lockbutton[i].style.display = 'none'; 
+               }
+           }
+           if(showreassignbutton == false){
+               for ( var i = 0; i < reassignbutton.length; i++ ){
+                   reassignbutton[i].style.display = 'none'; 
+               }
+           }
+       }
+      
+        function hideUploadSignedContractButton(){
+           var showUploadContractBUtton = {!showUploadSignedContractButton};
+           let uploadContractBUtton = document.getElementsByName("upload_signed_contract");
+           if(showUploadContractBUtton == false) {
+               for ( var i = 0; i < uploadContractBUtton.length; i++ ){
+                   uploadContractBUtton[i].style.display = 'none'; 
+               }
+           }
+       }
+       
+      </script> 
+    </head>
+  <apex:pageMessages ></apex:pageMessages>
+  <apex:detail relatedList="true" relatedListHover="true"/>
+   
+    <script>
+      hideLink();
+      modifyAttachmentLink();
+      modifyApprovalHistory();
+      hideRecallButton();
+      hideUploadSignedContractButton();
+      
+      /* hide show more link on related list hover display so that it does 
+       * not reset the approval link.
+       */             
+      var frmDiv = document.getElementById('RLPanel') ;
+      frmDiv.onmouseover = function() { 
+                               sfdcPage.getRelatedListPanel('RLPanel').showRL();
+                               hideShowMoreLink();
+                               //modifyAttachmentLink(this.contentWindow.document);
+                               modifyAttachmentLink(this.document);
+                           }; //*/
+                           
+      // to override the 'Attach file' button in hover link's display  
+      var hvrFrm = document.getElementById('RLPanelFrame');      
+      hvrFrm.onmouseover = function(){
+                            var notesElem = this.contentWindow.document.getElementById('{!id}_RelatedNoteList'); 
+                            modifyAttachmentLink(this.contentWindow.document);
+                            
+                            var approvalElem = this.contentWindow.document.getElementById('{!id}_RelatedProcessHistoryList'); 
+                            modifyApprovalHistory(approvalElem);
+                            hideShowMoreLink();
+                      };//*/
+                      
+       
+      /*override the behaviour of show more link on the related list block       
+       *to change the approval link by calling hidelink() alongwith showMore.
+      */
+      
+           
+      var proxied = showMoreList;
+      
+      //alert(showMoreList);
+      showMoreList = function() {
+                           var x = proxied.apply(this, arguments);
+                           setTimeout(hideLink,2000);   
+                           setTimeout(hideLink,5000); 
+                           setTimeout(modifyAttachmentLink,2000); 
+                           setTimeout(modifyApprovalHistory,3000); 
+                           setTimeout(modifyApprovalHistory,6000); 
+                           return x;   
+                   };  //*/  
+  </script> 
+  
+</apex:page>

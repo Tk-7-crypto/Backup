@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Mail_On_IQVIA_Manager_Update</name>
+        <label>Send Mail On IQVIA Manager Update</label>
+        <locationX>50</locationX>
+        <locationY>278</locationY>
+        <actionName>Apttus__APTS_Agreement__c.AGR_WEA16_CLM_MC_SendMailOnIQVIAManagerUpdate</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>varR_NewAgreement.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Apttus__APTS_Agreement__c.AGR_WEA16_CLM_MC_SendMailOnIQVIAManagerUpdate</nameSegment>
+    </actionCalls>
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <name>Conditions_Meeting</name>
+        <label>Conditions Meeting?</label>
+        <locationX>182</locationX>
+        <locationY>158</locationY>
+        <defaultConnectorLabel>Not Meeting</defaultConnectorLabel>
+        <rules>
+            <name>Meeting</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.IQVIA_Contract_Manager__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>varR_NewAgreement.IQVIA_Contract_Manager__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>varR_OldAgreement.IQVIA_Contract_Manager__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Mail_On_IQVIA_Manager_Update</targetReference>
+            </connector>
+            <label>Meeting</label>
+        </rules>
+    </decisions>
+    <description>CLM-MC-CLMCMA-13291 - This flow is used to send email notification when IQVIA Contract Manager is updated.</description>
+    <environments>Default</environments>
+    <interviewLabel>CLM Subflow : IQVIA Contract Manager Update Notification {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CLM Subflow : IQVIA Contract Manager Update Notification</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Conditions_Meeting</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>varR_NewAgreement</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+    <variables>
+        <name>varR_OldAgreement</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Apttus__APTS_Agreement__c</objectType>
+    </variables>
+</Flow>

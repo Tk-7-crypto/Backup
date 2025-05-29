@@ -1,0 +1,179 @@
+<aura:component controller="CNT_CSM_Feedback" implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:hasSObjectName" access="global">
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="feedbackCSH" type="Object" />
+    <aura:attribute name="feedbackInternal" type="Object" />
+    <aura:attribute name="counterDislike" type="String" />
+    <aura:attribute name="counterLike" type="String" />
+    <aura:attribute name="isModalOpen" type="boolean" default="false" />
+    <aura:attribute name="liked" default="false" type="Boolean" />
+    <aura:attribute name="disliked" default="false" type="Boolean" />
+    <aura:attribute name="showError" type="boolean" default="false" />
+    <lightning:navigation aura:id="navService" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <article class="slds-card">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__body">
+                    <h2>
+                        <span class="slds-text-heading_small">Was this article helpful?</span>
+                    </h2>
+                </div>
+                <div class="slds-no-flex">
+                    <lightning:buttonIconStateful iconName="utility:like" selected="{! v.liked }" onclick="{! c.like }" alternativeText="Like" />
+                    <lightning:buttonIconStateful class="slds-m-left_small" iconName="utility:dislike" selected="{! v.disliked }" onclick="{! c.dislike }" alternativeText="Disliked" />
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <aura:if isTrue="{!v.showError}">
+                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                    <h2>Please, enter a feedback.</h2>
+                </div>
+            </aura:if>
+            <div class="row">
+                <lightning:textarea aura:id="feedback" name="input_feedback" label="" placeholder="Please, leave us some feedback" maxlength="2000" />
+            </div>
+            <div class="slds-align_absolute-center">
+                <lightning:button variant="brand" label="Submit" title="Submit" onclick="{! c.sendFeedback }" />
+            </div>
+
+        </div>
+    </article>
+
+    <article class="slds-card">
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning:icon size="small" iconName="standard:endorsement" />
+                </div>
+                <div class="slds-media__body">
+                    <h2>
+                        <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" title="Community Feedback">
+                            <span class="slds-text-heading_small">Feedback</span>
+                        </a>
+                    </h2>
+                </div>
+                <div class="slds-no-flex">
+                    <lightning:icon size="x-small" iconName="utility:like" alternativeText="Like" title="Like" /> ({! v.counterLike })
+                    <lightning:icon size="x-small" iconName="utility:dislike" alternativeText="dislike" title="dislike" /> ({! v.counterDislike })
+                </div>
+            </header>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div>
+                <aura:if isTrue="{! (v.feedbackCSH.length + v.feedbackInternal.length) > 0}">
+                    <lightning:button label="{! 'See feedback (' + (v.feedbackCSH.length + v.feedbackInternal.length)  +')'}" iconName="utility:comments" iconPosition="left" onclick="{! c.openModal }" />
+                    <aura:set attribute="else">
+                        No feedback yet
+                    </aura:set>
+                </aura:if>
+            </div>
+        </div>
+    </article>
+
+    <aura:if isTrue="{!v.isModalOpen}">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" style="z-index: 9050">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close" onclick="{! c.closeModal }" alternativeText="close" variant="bare-inverse" class="slds-modal__close" />
+                    <h3 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Feedback</h3>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:tabset>
+                        <lightning:tab label="Portal">
+                            <div class="slds-feed">
+                                <ul class="slds-feed__list">
+                                    <aura:iteration items="{!v.feedbackCSH}" var="f" indexVar="index">
+                                        <li class="slds-feed__item supportCompactFeedItem">
+                                            <article class="slds-post">
+                                                <header class="slds-post__header slds-media">
+                                                    <div class="slds-media__body">
+                                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                                            <p>
+                                                                <a href="#" data-type="Contact" data-id='{!f.Contact__c}' onclick="{! c.openRecord}" title="{! f.Contact__r.Name }">{! f.Contact__r.Name }</a>
+                                                            </p>
+                                                            <p class="slds-text-body_small">
+                                                                <a href="#" class="slds-text-link_reset">
+                                                                    <lightning:formattedDateTime value="{! f.LastModifiedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit" timeZone="{! $Locale.timezone}" />
+                                                                </a>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </header>
+                                                <div class="slds-post__content slds-text-longform">
+                                                    <aura:if isTrue="{!f.Like_or_Dislike__c == 'Dislike'}">
+                                                        <lightning:icon size="x-small" iconName="utility:dislike" alternativeText="dislike" title="dislike" />
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!f.Like_or_Dislike__c == 'Like'}">
+                                                        <lightning:icon size="x-small" iconName="utility:like" alternativeText="like" title="like" />
+                                                    </aura:if>
+      
+                                                    <p>{!f.Body__c}</p>
+                                                </div>
+                                            </article>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </lightning:tab>
+                        <lightning:tab label="Internal">
+                            <div class="slds-feed">
+                                <ul class="slds-feed__list">
+                                    <aura:iteration items="{!v.feedbackInternal}" var="f" indexVar="index">
+                                        <li class="slds-feed__item supportCompactFeedItem">
+                                            <article class="slds-post">
+                                                <header class="slds-post__header slds-media">
+                                                    <div class="slds-media__body">
+                                                        <div class="slds-grid slds-grid_align-spread slds-has-flexi-truncate">
+                                                            <p>
+                                                                <a href="#" data-type="User" data-id='{!f.PRM_User__c}' onclick="{! c.openRecord}" title="{! f.PRM_User__r.Name }">{! f.PRM_User__r.Name }</a>
+                                                            </p>
+                                                            <p class="slds-text-body_small">
+                                                                <a href="#" class="slds-text-link_reset">
+                                                                    <lightning:formattedDateTime value="{! f.LastModifiedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit" minute="2-digit" timeZone="{! $Locale.timezone}" />
+                                                                </a>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </header>
+                                                <div class="slds-post__content slds-text-longform">
+                                                    <aura:if isTrue="{!f.Like_or_Dislike__c == 'Dislike'}">
+                                                        <lightning:icon size="x-small" iconName="utility:dislike" alternativeText="dislike" title="dislike" />
+                                                    </aura:if>
+                                                    <aura:if isTrue="{!f.Like_or_Dislike__c == 'Like'}">
+                                                        <lightning:icon size="x-small" iconName="utility:like" alternativeText="like" title="like" />
+                                                    </aura:if>
+                                                    <p>{!f.Body__c}</p>
+                                                </div>
+                                            </article>
+                                        </li>
+                                    </aura:iteration>
+                                </ul>
+                            </div>
+                        </lightning:tab>
+                    </lightning:tabset>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

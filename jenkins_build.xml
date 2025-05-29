@@ -1,0 +1,2480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:sf="antlib:com.salesforce" name="projectFFA" default="validateOnlyFull">
+
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="./build/jar/ant-contrib-1.0.jar"/>
+        </classpath>
+    </taskdef>
+
+    <taskdef resource="com/salesforce/antlib.xml" uri="antlib:com.salesforce">
+        <classpath>
+            <pathelement location="./build/jar/ant-salesforce.jar"/>
+        </classpath>
+    </taskdef>
+	
+	<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask">
+		<classpath>
+			<fileset dir="./build/jar/">
+				<include name="*.jar"/>
+			</fileset>
+		</classpath>
+	</taskdef>
+
+    <target name="fetchChanges">
+        <local name="commandOutput" />
+        <exec executable="C:\Program Files\Git\bin\git.exe" failonerror="true" outputproperty="commandOutput">
+            <arg line="diff --name-only --diff-filter=d @~..@" />
+        </exec>
+
+        <var name="testClasses" value="" />
+        <local name="changesToDeploy" />
+        <property name="changesToDeploy" value="changesToDeploy" />
+        <delete dir="${changesToDeploy}" />
+        <mkdir dir="${changesToDeploy}" />
+        <for list="${commandOutput}" param="detls" delimiter="${line.separator}">
+            <sequential>
+                <if>
+                    <and>
+                        <contains string="@{detls}" substring="staticresources"/>
+                        <not>
+                            <contains string="@{detls}" substring=".resource"/>
+                        </not>
+                    </and>
+                    <then>
+                        <propertyregex property="resourceFolderName" input="@{detls}" regexp="src\\staticresources\\([^\\]*)" select="\1" casesensitive="false" />
+                        <copy todir="${changesToDeploy}/staticresources">
+                            <fileset dir="src/staticresources">
+                                <include name="${resourceFolderName}/**" />
+                                <include name="${resourceFolderName}.resource-meta.xml" />
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <local name="filename" />
+                        <propertyregex property="filename" override="yes" input="@{detls}" regexp=".*/(.*)" select="\1" />
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <not>
+                                    <contains string="@{detls}" substring="meta.xml" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="aura" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="lwc" />
+                                </not>
+                            </and>
+                            <then>
+                                <copy todir="${changesToDeploy}">
+                                    <fileset dir="src">
+                                        <include name="**/${filename}" />
+                                        <include name="**/${filename}-meta.xml" />
+                                    </fileset>
+                                </copy>
+                            </then>
+                            <else>
+                                <local name="filenameWithoutMetaExt" />
+                                <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                <if>
+                                    <isset property="filenameWithoutMetaExt" />
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}">
+                                            <fileset dir="src">
+                                                <include name="**/${filenameWithoutMetaExt}" />
+                                                <include name="**/${filenameWithoutMetaExt}-meta.xml" />
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </else>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/aura/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToAura" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToAuraFolder" input="${pathUpToAura}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="auraFolderName" input="${pathUpToAuraFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/aura/${auraFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/aura/${auraFolderName}">
+                                            <fileset dir="src/aura/${auraFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/lwc/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToLWC" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToLWCFolder" input="${pathUpToLWC}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="LWCFolderName" input="${pathUpToLWCFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/lwc/${LWCFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/lwc/${LWCFolderName}">
+                                            <fileset dir="src/lwc/${LWCFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <or>
+                                    <contains string="@{detls}" substring="/classes/"/>
+                                    <contains string="@{detls}" substring="/triggers/"/>
+                                </or>
+                            </and>
+                            <then>
+                                <if>
+                                    <not>
+                                        <contains string="${filename}" substring="meta.xml" />
+                                    </not>
+                                    <then>
+                                        <if>
+                                            <contains string="${filename}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filename}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <contains string="${filename}" substring="fflib_" />
+                                                                </not>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filename}"/>
+                                                            </then>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <contains string="${filename}" substring="fflib_" />
+                                                        <contains string="${filename}" substring="Test" />
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <equals arg1="${testClasses}" arg2="" />
+                                                                <contains string="${filename}" substring="fflib_" />
+                                                                <not>
+                                                                    <contains string="${filename}" substring="Test" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <local name="filenameWithoutClsExten" />
+                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                <if>
+                                                                    <isset property="filenameWithoutClsExten" />
+                                                                    <then>
+                                                                        <var name="testClasses" value="${filenameWithoutClsExten}Test.cls"/>
+                                                                    </then>
+                                                                </if>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <not>
+                                                                            <equals arg1="${testClasses}" arg2="" />
+                                                                        </not>
+                                                                        <contains string="${filename}" substring="fflib_" />
+                                                                        <contains string="${filename}" substring="Test" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                                <contains string="${filename}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <contains string="${filename}" substring="Test" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutClsExten" />
+                                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <if>
+                                                                                    <isset property="filenameWithoutClsExten" />
+                                                                                    <then>
+                                                                                        <var name="testClasses" value="${testClasses},${filenameWithoutClsExten}Test.cls"/>
+                                                                                    </then>
+                                                                                </if>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </then>
+                                    <else>
+                                        <local name="filenameWithoutMetaExt" />
+                                        <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                        <if>
+                                            <contains string="${filenameWithoutMetaExt}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filenameWithoutMetaExt}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                                <not>
+                                                                    <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filenameWithoutMetaExt}"/>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                        <equals arg1="${testClasses}" arg2="" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                        <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                        <var name="testClasses" value="${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                                <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <var name="testClasses" value="${testClasses},${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </else>
+                                </if>
+                            </then>
+                        </if>
+                    </else>
+                </if>
+            </sequential>
+        </for>
+        <antcall target="generatePackageXML" />
+    </target>
+
+    <target name="fetchChangesFromMaster">
+        <local name="commandOutput" />
+        <exec executable="C:\Program Files\Git\bin\git.exe" failonerror="true" outputproperty="commandOutput">
+            <arg line="diff --name-only --diff-filter=d origin/master...@" />
+        </exec>
+
+        <var name="testClasses" value="" />
+        <local name="changesToDeploy" />
+        <property name="changesToDeploy" value="changesToDeploy" />
+        <delete dir="${changesToDeploy}" />
+        <mkdir dir="${changesToDeploy}" />
+        <for list="${commandOutput}" param="detls" delimiter="${line.separator}">
+            <sequential>
+                <if>
+                    <and>
+                        <contains string="@{detls}" substring="staticresources"/>
+                        <not>
+                            <contains string="@{detls}" substring=".resource"/>
+                        </not>
+                    </and>
+                    <then>
+                        <propertyregex property="resourceFolderName" input="@{detls}" regexp="src\\staticresources\\([^\\]*)" select="\1" casesensitive="false" />
+                        <copy todir="${changesToDeploy}/staticresources">
+                            <fileset dir="src/staticresources">
+                                <include name="${resourceFolderName}/**" />
+                                <include name="${resourceFolderName}.resource-meta.xml" />
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <local name="filename" />
+                        <propertyregex property="filename" override="yes" input="@{detls}" regexp=".*/(.*)" select="\1" />
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <not>
+                                    <contains string="@{detls}" substring="meta.xml" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="aura" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="lwc" />
+                                </not>
+                            </and>
+                            <then>
+                                <copy todir="${changesToDeploy}">
+                                    <fileset dir="src">
+                                        <include name="**/${filename}" />
+                                        <include name="**/${filename}-meta.xml" />
+                                    </fileset>
+                                </copy>
+                            </then>
+                            <else>
+                                <local name="filenameWithoutMetaExt" />
+                                <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                <if>
+                                    <isset property="filenameWithoutMetaExt" />
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}">
+                                            <fileset dir="src">
+                                                <include name="**/${filenameWithoutMetaExt}" />
+                                                <include name="**/${filenameWithoutMetaExt}-meta.xml" />
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </else>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/aura/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToAura" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToAuraFolder" input="${pathUpToAura}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="auraFolderName" input="${pathUpToAuraFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/aura/${auraFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/aura/${auraFolderName}">
+                                            <fileset dir="src/aura/${auraFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/lwc/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToLWC" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToLWCFolder" input="${pathUpToLWC}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="LWCFolderName" input="${pathUpToLWCFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/lwc/${LWCFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/lwc/${LWCFolderName}">
+                                            <fileset dir="src/lwc/${LWCFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <or>
+                                    <contains string="@{detls}" substring="/classes/"/>
+                                    <contains string="@{detls}" substring="/triggers/"/>
+                                </or>
+                            </and>
+                            <then>
+                                <if>
+                                    <not>
+                                        <contains string="${filename}" substring="meta.xml" />
+                                    </not>
+                                    <then>
+                                        <if>
+                                            <contains string="${filename}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filename}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                                <not>
+                                                                    <contains string="${filename}" substring="fflib_" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filename}"/>
+                                                            </then>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <contains string="${filename}" substring="fflib_" />
+                                                        <contains string="${filename}" substring="Test" />
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <equals arg1="${testClasses}" arg2="" />
+                                                                <contains string="${filename}" substring="fflib_" />
+                                                                <not>
+                                                                    <contains string="${filename}" substring="Test" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <local name="filenameWithoutClsExten" />
+                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                <if>
+                                                                    <isset property="filenameWithoutClsExten" />
+                                                                    <then>
+                                                                        <var name="testClasses" value="${filenameWithoutClsExten}Test.cls"/>
+                                                                    </then>
+                                                                </if>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <not>
+                                                                            <equals arg1="${testClasses}" arg2="" />
+                                                                        </not>
+                                                                        <contains string="${filename}" substring="fflib_" />
+                                                                        <contains string="${filename}" substring="Test" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                                <contains string="${filename}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <contains string="${filename}" substring="Test" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutClsExten" />
+                                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <if>
+                                                                                    <isset property="filenameWithoutClsExten" />
+                                                                                    <then>
+                                                                                        <var name="testClasses" value="${testClasses},${filenameWithoutClsExten}Test.cls"/>
+                                                                                    </then>
+                                                                                </if>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </then>
+                                    <else>
+                                        <local name="filenameWithoutMetaExt" />
+                                        <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                        <if>
+                                            <contains string="${filenameWithoutMetaExt}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filenameWithoutMetaExt}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                                <not>
+                                                                    <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filenameWithoutMetaExt}"/>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                        <equals arg1="${testClasses}" arg2="" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                        <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                        <var name="testClasses" value="${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                                <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <var name="testClasses" value="${testClasses},${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </else>
+                                </if>
+                            </then>
+                        </if>
+                    </else>
+                </if>
+            </sequential>
+        </for>
+        <antcall target="generatePackageXML" />
+    </target>
+
+    <target name="fetchChangesFromPROD">
+        <local name="commandOutput" />
+        <exec executable="C:\Program Files\Git\bin\git.exe" failonerror="true" outputproperty="commandOutput">
+            <arg line="diff --name-only --diff-filter=d sfdc_qi_prod/Sprint_Deployment...@" />
+        </exec>
+
+        <var name="testClasses" value="" />
+        <local name="changesToDeploy" />
+        <property name="changesToDeploy" value="changesToDeploy" />
+        <delete dir="${changesToDeploy}" />
+        <mkdir dir="${changesToDeploy}" />
+        <for list="${commandOutput}" param="detls" delimiter="${line.separator}">
+            <sequential>
+                <if>
+                    <and>
+                        <contains string="@{detls}" substring="staticresources"/>
+                        <not>
+                            <contains string="@{detls}" substring=".resource"/>
+                        </not>
+                    </and>
+                    <then>
+                        <propertyregex property="resourceFolderName" input="@{detls}" regexp="src\\staticresources\\([^\\]*)" select="\1" casesensitive="false" />
+                        <copy todir="${changesToDeploy}/staticresources">
+                            <fileset dir="src/staticresources">
+                                <include name="${resourceFolderName}/**" />
+                                <include name="${resourceFolderName}.resource-meta.xml" />
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <local name="filename" />
+                        <propertyregex property="filename" override="yes" input="@{detls}" regexp=".*/(.*)" select="\1" />
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <not>
+                                    <contains string="@{detls}" substring="meta.xml" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="aura" />
+                                </not>
+                                <not>
+                                    <contains string="@{detls}" substring="lwc" />
+                                </not>
+                            </and>
+                            <then>
+                                <copy todir="${changesToDeploy}">
+                                    <fileset dir="src">
+                                        <include name="**/${filename}" />
+                                        <include name="**/${filename}-meta.xml" />
+                                    </fileset>
+                                </copy>
+                            </then>
+                            <else>
+                                <local name="filenameWithoutMetaExt" />
+                                <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                <if>
+                                    <isset property="filenameWithoutMetaExt" />
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}">
+                                            <fileset dir="src">
+                                                <include name="**/${filenameWithoutMetaExt}" />
+                                                <include name="**/${filenameWithoutMetaExt}-meta.xml" />
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </else>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/aura/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToAura" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToAuraFolder" input="${pathUpToAura}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="auraFolderName" input="${pathUpToAuraFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/aura/${auraFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/aura/${auraFolderName}">
+                                            <fileset dir="src/aura/${auraFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <contains string="@{detls}" substring="/lwc/"/>
+                            </and>
+                            <then>
+                                <propertyregex override="yes" property="pathUpToLWC" input="@{detls}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="pathUpToLWCFolder" input="${pathUpToLWC}" regexp="/(.*)$" select="\1" />
+                                <propertyregex override="yes" property="LWCFolderName" input="${pathUpToLWCFolder}" regexp="^(.+?)/" select="\1" />
+                                <if>
+                                    <available file="src/lwc/${LWCFolderName}" type="dir"/>
+                                    <then>
+                                        <copy overwrite="true" todir="${changesToDeploy}/lwc/${LWCFolderName}">
+                                            <fileset dir="src/lwc/${LWCFolderName}">
+                                            </fileset>
+                                        </copy>
+                                    </then>
+                                </if>
+                            </then>
+                        </if>
+                        <if>
+                            <and>
+                                <isset property="filename" />
+                                <or>
+                                    <contains string="@{detls}" substring="/classes/"/>
+                                    <contains string="@{detls}" substring="/triggers/"/>
+                                </or>
+                            </and>
+                            <then>
+                                <if>
+                                    <not>
+                                        <contains string="${filename}" substring="meta.xml" />
+                                    </not>
+                                    <then>
+                                        <if>
+                                            <contains string="${filename}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filename}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                                <not>
+                                                                    <contains string="${filename}" substring="fflib_" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filename}"/>
+                                                            </then>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <contains string="${filename}" substring="fflib_" />
+                                                        <contains string="${filename}" substring="Test" />
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="${filename}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <equals arg1="${testClasses}" arg2="" />
+                                                                <contains string="${filename}" substring="fflib_" />
+                                                                <not>
+                                                                    <contains string="${filename}" substring="Test" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <local name="filenameWithoutClsExten" />
+                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                <if>
+                                                                    <isset property="filenameWithoutClsExten" />
+                                                                    <then>
+                                                                        <var name="testClasses" value="${filenameWithoutClsExten}Test.cls"/>
+                                                                    </then>
+                                                                </if>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <not>
+                                                                            <equals arg1="${testClasses}" arg2="" />
+                                                                        </not>
+                                                                        <contains string="${filename}" substring="fflib_" />
+                                                                        <contains string="${filename}" substring="Test" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <var name="testClasses" value="${testClasses},${filename}"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                                <contains string="${filename}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <contains string="${filename}" substring="Test" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutClsExten" />
+                                                                                <propertyregex property="filenameWithoutClsExten" input="${filename}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <if>
+                                                                                    <isset property="filenameWithoutClsExten" />
+                                                                                    <then>
+                                                                                        <var name="testClasses" value="${testClasses},${filenameWithoutClsExten}Test.cls"/>
+                                                                                    </then>
+                                                                                </if>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </then>
+                                    <else>
+                                        <local name="filenameWithoutMetaExt" />
+                                        <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                                        <if>
+                                            <contains string="${filenameWithoutMetaExt}" substring="TST_" />
+                                            <then>
+                                                <if>
+                                                    <equals arg1="${testClasses}" arg2="" />
+                                                    <then>
+                                                        <var name="testClasses" value="${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <var name="testClasses" value="${testClasses},${filenameWithoutMetaExt}"/>
+                                                    </else>
+                                                </if>
+                                            </then>
+                                            <else>
+                                                <if>
+                                                    <and>
+                                                        <equals arg1="${testClasses}" arg2="" />
+                                                        <not>
+                                                            <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                        </not>
+                                                    </and>
+                                                    <then>
+                                                        <var name="testClasses" value="TST_${filenameWithoutMetaExt}"/>
+                                                    </then>
+                                                    <else>
+                                                        <if>
+                                                            <and>
+                                                                <not>
+                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                </not>
+                                                                <not>
+                                                                    <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                </not>
+                                                            </and>
+                                                            <then>
+                                                                <var name="testClasses" value="${testClasses},TST_${filenameWithoutMetaExt}"/>
+                                                            </then>
+                                                            <else>
+                                                                <if>
+                                                                    <and>
+                                                                        <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                        <equals arg1="${testClasses}" arg2="" />
+                                                                    </and>
+                                                                    <then>
+                                                                        <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                        <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                        <var name="testClasses" value="${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                    </then>
+                                                                    <else>
+                                                                        <if>
+                                                                            <and>
+                                                                                <contains string="${filenameWithoutMetaExt}" substring="fflib_" />
+                                                                                <not>
+                                                                                    <equals arg1="${testClasses}" arg2="" />
+                                                                                </not>
+                                                                            </and>
+                                                                            <then>
+                                                                                <local name="filenameWithoutMetaExtWithoutCls" />
+                                                                                <propertyregex property="filenameWithoutMetaExtWithoutCls" input="${filenameWithoutMetaExt}" regexp="(.*).cls" select="\1" casesensitive="false" />
+                                                                                <var name="testClasses" value="${testClasses},${filenameWithoutMetaExtWithoutCls}Test.cls"/>
+                                                                            </then>
+                                                                        </if>
+                                                                    </else>
+                                                                </if>
+                                                            </else>
+                                                        </if>
+                                                    </else>
+                                                </if>
+                                            </else>
+                                        </if>
+                                    </else>
+                                </if>
+                            </then>
+                        </if>
+                    </else>
+                </if>
+            </sequential>
+        </for>
+        <antcall target="generatePackageXML" />
+    </target>
+
+    <target name="fetchChangesFull">
+        <copy todir="changesToDeploy/appMenus">
+            <fileset dir="src/appMenus"/>
+        </copy>
+        <copy todir="changesToDeploy/approvalProcesses">
+            <fileset dir="src/approvalProcesses"/>
+        </copy>
+        <copy todir="changesToDeploy/connectedApps">
+            <fileset dir="src/connectedApps"/>
+        </copy>
+        <copy todir="changesToDeploy/customPermissions">
+            <fileset dir="src/customPermissions"/>
+        </copy>
+        <copy todir="changesToDeploy/duplicateRules">
+            <fileset dir="src/duplicateRules"/>
+        </copy>
+        <copy todir="changesToDeploy/email">
+            <fileset dir="src/email"/>
+        </copy>
+        <copy todir="changesToDeploy/flexipages">
+            <fileset dir="src/flexipages"/>
+        </copy>
+        <copy todir="changesToDeploy/flows">
+            <fileset dir="src/flows"/>
+        </copy>
+        <copy todir="changesToDeploy/globalValueSets">
+            <fileset dir="src/globalValueSets"/>
+        </copy>
+        <copy todir="changesToDeploy/labels">
+            <fileset dir="src/labels"/>
+        </copy>
+        <copy todir="changesToDeploy/layouts">
+            <fileset dir="src/layouts"/>
+        </copy>
+        <copy todir="changesToDeploy/LeadConvertSettings">
+            <fileset dir="src/LeadConvertSettings"/>
+        </copy>
+        <copy todir="changesToDeploy/lwc">
+            <fileset dir="src/lwc"/>
+        </copy>
+        <copy todir="changesToDeploy/matchingRules">
+            <fileset dir="src/matchingRules"/>
+        </copy>
+        <copy todir="changesToDeploy/objects">
+            <fileset dir="src/objects"/>
+        </copy>
+        <copy todir="changesToDeploy/objectTranslations">
+            <fileset dir="src/objectTranslations"/>
+        </copy>
+        <copy todir="changesToDeploy/pathAssistants">
+            <fileset dir="src/pathAssistants"/>
+        </copy>
+        <copy todir="changesToDeploy/quickActions">
+            <fileset dir="src/quickActions"/>
+        </copy>
+        <copy todir="changesToDeploy/remoteSiteSettings">
+            <fileset dir="src/remoteSiteSettings"/>
+        </copy>
+        <copy todir="changesToDeploy/sites">
+            <fileset dir="src/sites"/>
+        </copy>
+        <copy todir="changesToDeploy/standardValueSets">
+            <fileset dir="src/standardValueSets"/>
+        </copy>
+        <copy todir="changesToDeploy/translations">
+            <fileset dir="src/translations"/>
+        </copy>
+        <copy todir="changesToDeploy/workflows">
+            <fileset dir="src/workflows"/>
+        </copy>
+        <copy file="src/destructiveChangesPre.xml" todir="changesToDeploy"/>
+        <copy todir="changesToDeploy2/applications">
+            <fileset dir="src/applications"/>
+        </copy>
+        <copy todir="changesToDeploy2/aura">
+            <fileset dir="src/aura"/>
+        </copy>
+        <copy todir="changesToDeploy1/classes">
+            <fileset dir="src/classes"/>
+        </copy>
+        <copy todir="changesToDeploy2/components">
+            <fileset dir="src/components"/>
+        </copy>
+        <copy todir="changesToDeploy2/homePageLayouts">
+            <fileset dir="src/homePageLayouts"/>
+        </copy>
+        <copy todir="changesToDeploy2/pages">
+            <fileset dir="src/pages"/>
+        </copy>
+        <copy todir="changesToDeploy2/permissionsets">
+            <fileset dir="src/permissionsets"/>
+        </copy>
+        <copy todir="changesToDeploy2/profiles">
+            <fileset dir="src/profiles"/>
+        </copy>
+        <copy todir="changesToDeploy2/tabs">
+            <fileset dir="src/tabs"/>
+        </copy>
+        <copy todir="changesToDeploy2/triggers">
+            <fileset dir="src/triggers"/>
+        </copy>
+        <copy todir="changesToDeploy2/permissionsetgroups">
+            <fileset dir="src/permissionsetgroups"/>
+        </copy>
+        <copy file="src/destructiveChangesPost.xml" todir="changesToDeploy2"/>
+        <antcall target="generatePackageXML" />
+        <antcall target="generatePackageXML1" />
+		<antcall target="generatePackageXML2" />
+    </target>
+
+    <target name="deploy" depends="fetchChanges">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" testLevel="RunLocalTests" ignoreWarnings="true" maxPoll="1800">
+        </sf:deploy>
+    </target>
+
+    <target name="deployWithoutTest" depends="fetchChanges">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="validateOnlyFull2" depends="fetchChangesFull">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" testLevel="NoTestRun" checkOnly="true" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+	
+	<target name="validateOnlyFull1" depends="validateOnlyFull2">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy1" testLevel="NoTestRun" checkOnly="true" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="validateOnlyFull" depends="validateOnlyFull1">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy2" checkOnly="true" testLevel="RunLocalTests" ignoreWarnings="true" maxPoll="1800">
+        </sf:deploy>
+    </target>
+
+    <target name="validateOnlyWithoutTestV1" depends="fetchChangesFull">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" checkOnly="true" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="validateOnlyWithoutTest" depends="validateOnlyWithoutTestV1">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy1" checkOnly="true" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="deployFullV2" depends="fetchChangesFull">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" checkOnly="false" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+	
+	<target name="deployFullV1" depends="deployFullV2">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy1" checkOnly="false" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="deployFull" depends="deployFullV1">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy2" checkOnly="false" testLevel="RunLocalTests" ignoreWarnings="true" maxPoll="1800">
+        </sf:deploy>
+    </target>
+
+    <target name="deployFullWithoutTestV2" depends="fetchChangesFull">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" checkOnly="false" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+	
+	<target name="deployFullWithoutTestV1" depends="deployFullWithoutTestV2">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy1" checkOnly="false" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="deployFullWithoutTest" depends="deployFullWithoutTestV1">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy2" checkOnly="false" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+
+    <target name="validateWithSpecifiedTests" depends="fetchChanges">
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setCheckonly(true);
+                deployTask.setMaxPoll("1800");
+                deployTask.setPollWaitMillis("40000");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="prValidateWithSpecifiedTests" depends="fetchChangesFromMaster">
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <echo message="currentWorkingBranch :${bb.sourceBranch}"/>
+		<if>
+			<available file="./changesToDeploy/classes" type="dir"/>
+			<then>
+				<pmd shortFilenames="true" cacheLocation="build/pmd.cache">
+					<ruleset>Ruleset.xml</ruleset>
+					<formatter type="xml" toFile="pmd.xml">
+                        <param name="linkPrefix" value="https://bitbucket.org/qiesp/${bb.repoName}/branch/${bb.sourceBranch}#chg-src/classes/"/>
+                        <param name="linePrefix" value="L"/>
+                    </formatter>
+                    <formatter type="html" toFile="pmd_report.html">
+                        <param name="linkPrefix" value="https://bitbucket.org/qiesp/${bb.repoName}/branch/${bb.sourceBranch}#chg-src/classes/"/>
+                        <param name="linePrefix" value="L"/>
+                    </formatter>
+					<fileset dir="./changesToDeploy/classes">
+						<include name="*.cls"/>
+					</fileset>
+				</pmd>
+			</then>
+			<else>
+				<echo>classes not found</echo>
+			</else>
+		</if>
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setCheckonly(true);
+                deployTask.setMaxPoll("1600");
+                deployTask.setPollWaitMillis("10000");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="sprintValidateWithSpecifiedTests" depends="fetchChangesFromPROD">
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setMaxPoll("1600");
+                deployTask.setCheckonly(true);
+                deployTask.setPollWaitMillis("10000");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="sprintDeployWithSpecifiedTests" depends="fetchChangesFromPROD">
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setMaxPoll("1600");
+                deployTask.setPollWaitMillis("10000");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="sprintDeployWithoutTest" depends="fetchChangesFromPROD">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" maxPoll="1600" checkOnly="false" pollWaitMillis="40000" deployRoot="changesToDeploy" testLevel="NoTestRun" ignoreWarnings="true">
+        </sf:deploy>
+    </target>
+
+    <target name="deployWithSpecifiedTests" depends="fetchChanges">
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setMaxPoll("1600");
+                deployTask.setPollWaitMillis("10000");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="deployWithSpecifiedTestsForRockITDataTeam" depends="fetchChanges">
+        <var name="testClasses" value="${testClasses},fflib_AnswerTest,fflib_AnyOrderTest,fflib_ApexMocksTest,fflib_ApexMocksUtilsTest,fflib_ArgumentCaptorTest,fflib_IDGeneratorTest,fflib_InOrderTest,fflib_InheritorTest,fflib_MatchTest,fflib_MatcherDefinitionsTest,fflib_MethodArgValuesTest,fflib_QualifiedMethodTest,flib_SObjectDescribeTest,fflib_SObjectDomainTest,fflib_SObjectSelectorTest,f
+,fflib_SObjectDescribeTest,fflib_SecurityUtilsTest,fflib_StringBuilderTest,fflib_SystemTest,fflib_ApplicationTest,fflib_SObjectUnitOfWorkTest"/>
+        <echo message="Specified Test Classes: ${testClasses}" />
+        <script language="javascript">
+            <![CDATA[
+                var deployTask = project.createTask('antlib:com.salesforce:deploy');
+                deployTask.setUsername(project.getProperty("sf.username"));
+                deployTask.setPassword(project.getProperty("sf.password"));
+                deployTask.setServerURL(project.getProperty("sf.server"));
+                deployTask.setDeployRoot("changesToDeploy");
+                deployTask.setIgnoreWarnings(true);
+                deployTask.setMaxPoll("300");
+                var tests = project.getProperty('testClasses');
+                if (tests) {
+                    deployTask.setTestLevel('RunSpecifiedTests');
+                    tests = tests.split(',');
+                    for (var i = 0; i < tests.length; i++) {
+                        var runTest = java.lang.Class.forName("com.salesforce.ant.DeployTask$CodeNameElement").newInstance();
+                        runTest.addText(tests[i].split('.')[0]);
+                        deployTask.addRunTest(runTest);
+                    }
+                }
+                deployTask.perform();
+            ]]>
+        </script>
+    </target>
+
+    <target name="applications">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/application.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="approvalProcesses">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/approvalProcesses.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="aura">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/aura.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="authProvider">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/authProvider.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="classes">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/classes.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="components">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/components.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="customLabels">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/customLabels.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="customMetadata">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/customMetadata.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="emailTemplate">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/emailTemplate.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="flexipages">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/flexipages.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="flow">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/flow.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="globalValueSet">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/globalValueSet.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="layouts">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/layouts.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="leadConvertSettings">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/leadConvertSettings.xml">
+        </sf:retrieve>
+    </target>
+
+
+    <target name="lwc">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/lwc.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="matchingRule">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/matchingRule.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="objects">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/objects.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="pages">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/pages.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="permissionset">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/permissionset.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="permissionsetgroup">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/permissionsetgroup.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="profile">
+        <mkdir dir="temp"/>
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="temp" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/profile.xml">
+        </sf:retrieve>
+        <copy todir="src/profiles">
+            <fileset dir="temp/profiles"/>
+        </copy>
+        <delete dir="temp"/>
+    </target>
+
+    <target name="profilePasswordPolicies">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/profilePasswordPolicies.xml">
+        </sf:retrieve>
+    </target>
+    
+    <target name="quickActions">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/quickActions.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="settings">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/settings.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="tabs">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/tabs.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="trigger">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/trigger.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="workflows">
+        <sf:retrieve username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" retrieveTarget="src" pollWaitMillis="10000" maxPoll="2000" unpackaged="./build/workflows.xml">
+        </sf:retrieve>
+    </target>
+
+    <target name="retrieveCodeDifferenceInRepoAndOrg">
+        <local name="TODAY_DATE" />
+        <tstamp>
+            <format property="TODAY_DATE" pattern="dd-MM-yyyy" locale="en,IN"/>
+        </tstamp>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout master" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="fetch origin" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="pull" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout -B OrgDiscripencies-${TODAY_DATE}" />
+        </exec>
+
+        <antcall target="applications"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/applications/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in applications'" />
+        </exec>
+
+        <antcall target="approvalProcesses"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/approvalProcesses/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in approvalProcesses'" />
+        </exec>
+
+        <antcall target="aura"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/aura/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in aura'" />
+        </exec>
+
+        <antcall target="authProvider"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/authproviders/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in authProvider'" />
+        </exec>
+
+        <antcall target="classes"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/classes/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in classes'" />
+        </exec>
+
+        <antcall target="components"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/components/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in components'" />
+        </exec>
+
+        <antcall target="customLabels"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/labels/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in customLabels'" />
+        </exec>
+
+        <antcall target="emailTemplate"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add -u src/email/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in emailTemplate'" />
+        </exec>
+
+        <antcall target="flexipages"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/flexipages/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in flexipages'" />
+        </exec>
+
+        <antcall target="flow"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/flows/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in flow'" />
+        </exec>
+
+        <antcall target="globalValueSet"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/globalValueSets/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in globalValueSet'" />
+        </exec>
+
+        <antcall target="layouts"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/layouts/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in layouts'" />
+        </exec>
+
+        <antcall target="leadConvertSettings"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/LeadConvertSettings/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in leadConvertSettings'" />
+        </exec>
+
+        <antcall target="lwc"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/lwc/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in lwc'" />
+        </exec>
+
+        <antcall target="matchingRule"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/matchingRules/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in matchingRule'" />
+        </exec>
+
+        <antcall target="objects"/>
+        <antcall target="xslTransformCustomObject"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/objects/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in objects'" />
+        </exec>
+
+        <antcall target="pages"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/pages/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in pages'" />
+        </exec>
+
+        <antcall target="permissionset"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/permissionsets/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in permissionset'" />
+        </exec>
+
+        <antcall target="permissionsetgroup"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/permissionsetgroups/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in permissionsetgroup'" />
+        </exec>
+
+        <antcall target="profile"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/profiles/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in profile'" />
+        </exec>
+
+        <antcall target="quickActions"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/quickActions/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in quickActions'" />
+        </exec>
+
+        <antcall target="settings"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/settings/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in settings'" />
+        </exec>
+
+        <antcall target="tabs"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/tabs/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in tabs'" />
+        </exec>
+
+        <antcall target="trigger"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/triggers/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in trigger'" />
+        </exec>
+
+        <antcall target="workflows"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add src/workflows/*" />
+        </exec>
+        <exec executable="git.exe" failonerror="false">
+            <arg line="commit -m 'Changes in workflows'" />
+        </exec>
+
+        <exec executable="git.exe" failonerror="true">
+            <arg line="clean -df" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout -- ." />
+        </exec>
+        <exec executable="git.exe" failonerror="true" output="./build/DiscripenciesList/OrgDiscripencies-${TODAY_DATE}.txt">
+            <arg line="diff --name-only --diff-filter=d origin/master...@" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="add ." />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="commit -m 'org diff list'" />
+        </exec>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="push --set-upstream origin OrgDiscripencies-${TODAY_DATE}" />
+        </exec>
+    </target>
+
+    <target name="fetchOrigin">
+        <local name="bb.currentWorkingBranch"/>
+        <exec executable="git.exe" failonerror="true" outputproperty="bb.currentWorkingBranch">
+            <arg line="rev-parse --abbrev-ref HEAD" />
+        </exec>
+        <var name="currentWorkingBranch" value="${bb.currentWorkingBranch}"/>
+        <echo message="currentWorkingBranch :${currentWorkingBranch}"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="fetch origin" />
+        </exec>
+    </target>
+
+    <target name="checkoutMasterBranch" depends="fetchOrigin">
+        <echo message="git checkout master"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout master" />
+        </exec>
+    </target>
+
+    <target name="fetchChangesofOriginMasterBranch" depends="checkoutMasterBranch">
+        <echo message="git pull"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="pull" />
+        </exec>
+    </target>
+
+    <target name="mergeMasterinCurrentBranch">
+        <echo message="${currentWorkingBranch}"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="merge master" />
+        </exec>
+    </target>
+
+    <target name="checkoutCurrentWorkingBranch">
+        <echo message="git checkout ${currentWorkingBranch}"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout ${currentWorkingBranch}" />
+        </exec>
+    </target>
+
+    <target name="pushChangesOfCurrentBranch">
+        <if>
+            <and>
+                <not>
+                    <equals arg1="${currentWorkingBranch}" arg2="${bb.nameBranch}"/>
+                </not>
+                <not>
+                    <equals arg1="${currentWorkingBranch}" arg2="master"/>
+                </not>
+            </and>
+            <then>
+                <exec executable="git.exe" failonerror="true" resultproperty="bb.CurrentBranchPush">
+                    <arg line="push" />
+                </exec>
+            </then>
+        </if>
+    </target>
+
+    <target name="fetchChangesFromDevDeployBranch">
+        <local name="commandOutput" />
+        <echo message="origin/${bb.nameBranch}"/>
+        <exec executable="git.exe" failonerror="true" outputproperty="commandOutput">
+            <arg line="diff --name-only --diff-filter=d origin/${bb.nameBranch}..@" />
+        </exec>
+
+        <local name="changesToDeploy" />
+        <property name="changesToDeploy" value="changesToDeploy" />
+        <delete dir="${changesToDeploy}" />
+        <mkdir dir="${changesToDeploy}" />
+        <for list="${commandOutput}" param="detls" delimiter="${line.separator}">
+            <sequential>
+                <local name="filename" />
+                <propertyregex property="filename" override="yes" input="@{detls}" regexp=".*/(.*)" select="\1" />
+                <if>
+                    <and>
+                        <isset property="filename" />
+                        <not>
+                            <contains string="@{detls}" substring="meta.xml" />
+                        </not>
+                    </and>
+                    <then>
+                        <copy todir="${changesToDeploy}">
+                            <fileset dir="src">
+                                <include name="**/${filename}" />
+                                <include name="**/${filename}-meta.xml" />
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <propertyregex property="filenameWithoutMetaExt" input="@{detls}" regexp=".*/(.*)-meta.xml" select="\1" casesensitive="false" />
+                        <if>
+                            <isset property="filenameWithoutMetaExt" />
+                            <then>
+                                <copy overwrite="true" todir="${changesToDeploy}">
+                                    <fileset dir="src">
+                                        <include name="**/${filenameWithoutMetaExt}" />
+                                        <include name="**/${filenameWithoutMetaExt}-meta.xml" />
+                                    </fileset>
+                                </copy>
+                            </then>
+                        </if>
+                    </else>
+                </if>
+                <if>
+                    <and>
+                        <isset property="filename" />
+                        <contains string="@{detls}" substring="/aura/"/>
+                    </and>
+                    <then>
+                        <propertyregex override="yes" property="pathUpToAura" input="@{detls}" regexp="/(.*)$" select="\1" />
+                        <propertyregex override="yes" property="pathUpToAuraFolder" input="${pathUpToAura}" regexp="/(.*)$" select="\1" />
+                        <propertyregex override="yes" property="auraFolderName" input="${pathUpToAuraFolder}" regexp="^(.+?)/" select="\1" />
+                        <if>
+                            <available file="src/aura/${auraFolderName}" type="dir"/>
+                            <then>
+                                <copy overwrite="true" todir="${changesToDeploy}/aura/${auraFolderName}">
+                                    <fileset dir="src/aura/${auraFolderName}">
+                                    </fileset>
+                                </copy>
+                            </then>
+                        </if>
+                    </then>
+                </if>
+                <if>
+                    <and>
+                        <isset property="filename" />
+                        <contains string="@{detls}" substring="/lwc/"/>
+                    </and>
+                    <then>
+                        <propertyregex override="yes" property="pathUpToLWC" input="@{detls}" regexp="/(.*)$" select="\1" />
+                        <propertyregex override="yes" property="pathUpToLWCFolder" input="${pathUpToLWC}" regexp="/(.*)$" select="\1" />
+                        <propertyregex override="yes" property="LWCFolderName" input="${pathUpToLWCFolder}" regexp="^(.+?)/" select="\1" />
+                        <if>
+                            <available file="src/lwc/${LWCFolderName}" type="dir"/>
+                            <then>
+                                <copy overwrite="true" todir="${changesToDeploy}/lwc/${LWCFolderName}">
+                                    <fileset dir="src/lwc/${LWCFolderName}">
+                                    </fileset>
+                                </copy>
+                            </then>
+                        </if>
+                    </then>
+                </if>
+            </sequential>
+        </for>
+        <antcall target="generatePackageXML" />
+    </target>
+
+    <target name="deployCode">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="changesToDeploy" ignoreWarnings="true"></sf:deploy>
+    </target>
+
+    <target name="checkoutNameBranch">
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout ${bb.nameBranch}" />
+        </exec>
+    </target>
+
+    <target name="mergeMasterinNameBranch">
+        <exec executable="git.exe" failonerror="true">
+            <arg line="merge master" />
+        </exec>
+    </target>
+
+    <target name="pushChangesOfNameBranch">
+        <exec executable="git.exe" failonerror="true">
+            <arg line="push" />
+        </exec>
+    </target>
+
+    <target name="checkoutCurrentWorkingBranchAgain">
+        <echo message="${currentWorkingBranch}"/>
+        <exec executable="git.exe" failonerror="true">
+            <arg line="checkout ${currentWorkingBranch}" />
+        </exec>
+    </target>
+
+    <target name="deleteChangesToDeploy">
+        <delete dir="changesToDeploy" />
+    </target>
+
+    <target name="SyncCodeWithMasterBranch" depends="fetchChangesofOriginMasterBranch, 
+            checkoutCurrentWorkingBranch,
+            mergeMasterinCurrentBranch,
+            pushChangesOfCurrentBranch,
+            fetchChangesFromDevDeployBranch, 
+            deployCode, deleteChangesToDeploy,
+            checkoutNameBranch,
+            mergeMasterinNameBranch,
+            pushChangesOfNameBranch,
+            checkoutCurrentWorkingBranchAgain">
+    </target>
+
+    <target name="deployBranch" depends="fetchChangesFromDevDeployBranch">
+        <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.server}" pollWaitMillis="40000" deployRoot="CLMCMAchangesToDeploy" ignoreWarnings="true"></sf:deploy>
+        <delete dir="changesToDeploy"/>
+    </target>
+
+    <target name="xslTransformProfile">
+        <xslt basedir="./src/profiles" destdir="./src/profilesTemp" extension=".profile" style="./build/XSL Transformations/Profile.xsl"/>
+        <delete dir="./src/profiles"/>
+        <move file="./src/profilesTemp" tofile="./src/profiles"/>
+    </target>
+	
+	<target name="xslTransformCustomObject">
+        <xslt basedir="./src/objects" destdir="./src/objectsTemp" extension=".object" style="./build/XSL Transformations/CustomObject.xsl"/>
+        <delete dir="./src/objects"/>
+        <move file="./src/objectsTemp" tofile="./src/objects"/>
+    </target>
+
+    <target name="xslTransformLeadConvertSetting">
+        <xslt basedir="./src/LeadConvertSettings" destdir="./src/LeadConvertSettingsTemp" extension=".LeadConvertSetting" style="./build/XSL Transformations/leadConvertSettings.xsl"/>
+        <delete dir="./src/LeadConvertSettings"/>
+        <move file="./src/LeadConvertSettingsTemp" tofile="./src/LeadConvertSettings"/>
+    </target>
+
+    <target name="xslTransformAll">
+        <antcall target="xslTransformProfile"/>
+        <antcall target="xslTransformLeadConvertSetting"/>
+        <antcall target="xslTransformCustomObject"/>
+    </target>
+	
+	<target name="pmdApex">
+		<pmd shortFilenames="true">
+			<formatter type="html" toFile="pmd_report.html" toConsole="true"/>
+			<ruleset>rulesets/apex/ruleset.xml</ruleset>
+			<fileset dir="./src/classes">
+				<include name="*.cls"/>
+			</fileset>
+		</pmd>
+	</target>
+
+
+    <target name="generatePackageXML">
+        <echo file="changesToDeploy/package.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+            <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+                <types>
+                    <members>*</members>
+                    <name>ApexClass</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTestSuite</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTrigger</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApprovalProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuraDefinitionBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuthProvider</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AutoResponseRule</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplication</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplicationComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomLabels</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomObject</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPageWebLink</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPermission</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomTab</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>DuplicateRule</name>
+                </types> 
+                <types>
+                    <members>*</members>
+                    <name>EmailTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>EntitlementProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlexiPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Flow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlowDefinition</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>GlobalValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageLayout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Layout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LeadConvertSettings</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LightningComponentBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>MatchingRules</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PathAssistant</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSetGroup</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PostTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Profile</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>QuickAction</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Scontrol</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Skill</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>StandardValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Queue</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Workflow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Settings</name>
+                </types>
+                <version>60.0</version>
+            </Package>]]>
+        </echo>
+    </target>
+    <target name="generatePackageXML1">
+        <echo file="changesToDeploy1/package.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+            <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+                <types>
+                    <members>*</members>
+                    <name>ApexClass</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTestSuite</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTrigger</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApprovalProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuraDefinitionBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuthProvider</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AutoResponseRule</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplication</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplicationComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomLabels</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomObject</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPageWebLink</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPermission</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomTab</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>DuplicateRule</name>
+                </types> 
+                <types>
+                    <members>*</members>
+                    <name>EmailTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>EntitlementProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlexiPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Flow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlowDefinition</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>GlobalValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageLayout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Layout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LeadConvertSettings</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LightningComponentBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>MatchingRules</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PathAssistant</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSetGroup</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PostTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Profile</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>QuickAction</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Scontrol</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Skill</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>StandardValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Workflow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Queue</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Settings</name>
+                </types>
+                <version>60.0</version>
+            </Package>]]>
+        </echo>
+    </target>
+	<target name="generatePackageXML2">
+        <echo file="changesToDeploy2/package.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+            <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+                <types>
+                    <members>*</members>
+                    <name>ApexClass</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTestSuite</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApexTrigger</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>ApprovalProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuraDefinitionBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AuthProvider</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>AutoResponseRule</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplication</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomApplicationComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomLabels</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomObject</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPageWebLink</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomPermission</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>CustomTab</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>DuplicateRule</name>
+                </types> 
+                <types>
+                    <members>*</members>
+                    <name>EmailTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>EntitlementProcess</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlexiPage</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Flow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>FlowDefinition</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>GlobalValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageComponent</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>HomePageLayout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Layout</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LeadConvertSettings</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>LightningComponentBundle</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>MatchingRules</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PathAssistant</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PermissionSetGroup</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>PostTemplate</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Profile</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>QuickAction</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Scontrol</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Skill</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>StandardValueSet</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Workflow</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Queue</name>
+                </types>
+                <types>
+                    <members>*</members>
+                    <name>Settings</name>
+                </types>
+                <version>60.0</version>
+            </Package>]]>
+        </echo>
+    </target>
+</project> 

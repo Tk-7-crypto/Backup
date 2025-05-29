@@ -1,0 +1,128 @@
+<template>
+    <article class="slds-card">
+        <div>
+            <div class="slds-page-header">
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-title">
+                        <div class="slds-media">
+                            <div class="slds-media__figure">
+                                <lightning-icon icon-name="standard:approval" title="Approved"></lightning-icon>
+                            </div>
+                            <div class="slds-media__body">
+                                <div class="slds-page-header__name">
+                                    <div class="slds-page-header__name-title">
+                                        <h1>
+                                            <span>Approval Items</span>
+                                            <span class="slds-page-header__title slds-truncate" title="My Open Approval Item">My Open Approval Items</span>
+                                        </h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-meta">
+                        <p class="slds-page-header__meta-text slds-text-body--small slds-m-vertical_small"> {data.length} items • Sorted by Created Date • Filtered by Pending Approval Items </p>
+                    </div>
+                    <div class="slds-page-header__col-controls">
+                        <div class="slds-page-header__controls">
+                            <div class="slds-page-header__control slds-m-vertical_small slds-m-horizontal_small">
+                                <button class="slds-button slds-button_icon slds-button_icon-border-filled" title="Refresh List" onclick={refreshData}>
+                                    <lightning-icon icon-name="utility:refresh" title="Refresh List" size="x-small"></lightning-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <article class="slds-card" style="background-color: #f3f3f3;">
+                    <div class="slds-border_top slds-p-bottom_small">
+                        <div style="max-height: 300px; overflow-y:auto">
+                            <lightning-datatable 
+                            key-field="id" 
+                            resize-column-disabled="auto"
+                            hide-checkbox-column="true" 
+                            data={data} 
+                            columns={columns}
+                            onrowaction={handleRowAction} 
+                            onrowselection={onRowSelection}>
+                            </lightning-datatable>
+                            <template if:false={isDataPresent}>
+                                <h2 class="slds-align_absolute-center zeroRecord slds-m-vertical_xx-large">No records to display</h2>
+                            </template>
+                        </div>
+                    </div>
+                    <template if:true={showSpinner}>
+                        <lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+                    </template>
+                </article>
+            </div>
+            <article class="slds-card">
+                <template if:true={handleApproveComment}>
+                    <div class="slds-modal slds-fade-in-open slds-backdrop">
+                        <div class="slds-modal__container">
+                            <div class="slds-modal__header">
+                                <h2>Approve Quote/Proposal</h2>
+                            </div>
+                            <div class="slds-modal__content slds-p-around_medium">
+                                <lightning-textarea label="Comments" value={commentVar} onchange={handleChange}></lightning-textarea>
+                            </div>
+                            <div class="slds-modal__footer">
+                                <lightning-button class="slds-p-horizontal_x-small" variant="neutral" label="Cancel" title="Cancel" onclick={handleCancelConfirmation}></lightning-button>
+                                <lightning-button class="slds-p-horizontal_x-small" variant="brand" label="Save" title="Save" onclick={handleApproveRequest}></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={handleRejectComment}>
+                    <div class="slds-modal slds-fade-in-open slds-backdrop">
+                        <div class="slds-modal__container">
+                            <div class="slds-modal__header">
+                                <h2>Reject Quote/Proposal</h2>
+                            </div>
+                            <div class="slds-modal__content slds-p-around_medium">
+                                <lightning-textarea label="Comments" value={commentVar} onchange={handleChange}></lightning-textarea>
+                            </div>
+                            <div class="slds-modal__footer">
+                                <lightning-button class="slds-p-horizontal_x-small" variant="neutral" label="Cancel" title="Cancel" onclick={handleCancelConfirmation}></lightning-button>
+                                <lightning-button class="slds-p-horizontal_x-small" variant="brand" label="Save" title="Save" onclick={handleRejectRequest}></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </article>
+            <c-l-w-c_-c-p-q_-dynamic-approval-process
+                record-id={recordId}
+                with-priority={withPriority}  
+                object-label={objectLabel}
+                onappoval_process = {onApprovalProcess}  
+            ></c-l-w-c_-c-p-q_-dynamic-approval-process>
+            <div if:true={isReassign} class='slds-size_small'>
+                <div role="dialog" class="slds-modal slds-fade-in-open ">
+                    <template if:true={showSpinnerForReassign}>
+                        <lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+                    </template>
+                    <div class="slds-modal__container">
+                        <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={handleCancelConfirmation}>
+                            <lightning-icon icon-name="utility:close" size="small" alternative-text="Indicates close"></lightning-icon>
+                        </button>
+                        <header class="slds-modal__header">
+                            <h1 class="slds-text-heading--medium">Reassign</h1>
+                        </header>
+                        <div class="slds-modal__content slds-p-around--medium">
+                            <lightning-record-edit-form object-api-name={objectApiName} onload={disableSpinnerForReassign}>
+                                <div class="slds-m-around_medium">
+                                    <lightning-input-field field-name={approverField} value={currentApprover} onchange={handleApproverChange}></lightning-input-field>
+                                    <div class="slds-m-top_medium">
+                                        <lightning-button class="slds-m-right_small" variant="brand" type="submit" name="save" label="Update" onclick={updateApproversOnQuote}></lightning-button>
+                                    </div>
+                                </div>
+                            </lightning-record-edit-form>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-backdrop slds-backdrop--open"></div>
+            </div>
+        </div>
+    </article>
+</template>

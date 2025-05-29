@@ -1,0 +1,105 @@
+<template>
+    <div class="slds-text-heading_medium slds-text-align_center">Create User</div>
+    <template if:true={showModal}>
+        <br/>
+        <template if:true={isUserAlreadyCreated}>
+            <div class="slds-text-align_center slds-text-color_destructive">Salesforce user already exist for this contact,<a target="_blank" href={userLink}> Link to user.</a></div>
+        </template>
+        <template if:true={duplicateEmplyeenumberFound}>
+            <div class="slds-text-align_center slds-text-color_destructive">User is already exist with this employee number,<a target="_blank" href={userLink}>  Link to user.</a></div>
+        </template>
+        <template if:false={isUserAlreadyCreated}>
+            <template if:true={currentContact}>
+                <template if:false={currentContact.EmployeeNumber__c.value}>
+                    <br/>
+                    <div class="slds-text-align_center slds-text-color_destructive">Employee Number is required in order to create user. Please contact your administrator</div>
+                </template>
+            </template>  
+        </template>  
+        <!-- <template if:true={erroStr}>
+            <br/>
+            <div class="slds-text-align_center">{erroStr}</div>
+        </template> -->
+        
+        <template if:true={isuserManageMethodFinished}>
+            <template if:false={isUserHasManageUserAccess}>
+                <br/>
+                <div class="slds-text-align_center slds-text-color_destructive">You don't have permission to create users. Please contact to system administrator.</div>
+                <br/>
+            </template>
+        </template>
+        <template if:true={isUserHasManageUserAccess}>
+            <div class="slds-text-align_center slds-align_absolute-center" style="height: 130px;width: 297px;font-size: 10px;">
+                <lightning-datatable
+                    key-field="Name"
+                    hide-checkbox-column = true	
+                    data={licenseTblData}
+                    columns={licenseTblColumn}>
+                </lightning-datatable>
+            </div>
+            <template if:true={showSpinner}> 
+                <lightning-spinner></lightning-spinner>
+            </template>
+            <template if:false={isUserAlreadyCreated}>
+                <template if:false={exisitingUserRec}>
+                    <div class="slds-grid">
+                        <div class="slds-col slds-p-horizontal_medium">
+                            <lightning-input label="First Name" name="firstName" disabled="" type="text" value={currentContact.FirstName.value}></lightning-input>
+                            <lightning-input required="" label="Last Name" disabled="" name="lastName" type="text" value={currentContact.LastName.value}></lightning-input>
+                            <lightning-input required="" label="Alias" name="alias" type="text" value={alias} onchange={handleInput} max-length="8" ></lightning-input>
+                            <lightning-input required="" label="Email" name="email" type="email"  value={userEmail} onchange={handleInput}></lightning-input>
+                            <lightning-input required="" label="User Name" name="userName" type="text"  value={userName} onchange={handleInput}></lightning-input>
+                            <lightning-input required="" label="Nick Name" name="nickName" type="text"  value={nickName} onchange={handleInput}></lightning-input>
+                            <template if:true={loadLocalePicklist}>
+                                <c-lwc_crm_fetch-picklist object-name="User" set-default-value={localeKeyVal} is-required = "true" api-field-name="User.LocaleSidKey" field-name="LocaleSidKey" field-label="Locale"></c-lwc_crm_fetch-picklist>
+                                <c-lwc_crm_fetch-picklist object-name="User" set-default-value={timezoneKeyVal} is-required = "true" api-field-name="User.TimeZoneSidKey" field-name="TimeZoneSidKey" field-label="Time Zone"></c-lwc_crm_fetch-picklist>
+                                <c-lwc_crm_fetch-picklist object-name="User" set-default-value={languageKeyVal} is-required = "true" api-field-name="User.LanguageLocaleKey" field-name="LanguageLocaleKey" field-label="Language"></c-lwc_crm_fetch-picklist>
+                                <c-lwc_crm_fetch-picklist object-name="User" set-default-value={emailEncodingKeyVal} is-required = "true" api-field-name="User.EmailEncodingKey" field-name="EmailEncodingKey" field-label="Email Encoding"></c-lwc_crm_fetch-picklist>
+                            </template>
+                            <lightning-input label="SN Ticket" name="snTicket" type="text" value={snTicket} onchange={handleInput}></lightning-input>
+                            <lightning-input label="SN Ticket Description" name="snTicketDescription" type="text" value={snTicketDescription} onchange={handleInput}></lightning-input>
+                        </div>
+                        <div class="slds-col slds-p-horizontal_medium">
+                            <template if:true={showProfileBlock}>
+                                <c-lwc_crm_profile-section onhandlesavebtn={handleSaveBtn} is-role-required-input-box= "true" object-name="UserLicense" license-details={licenseTblData} field-name="Name"></c-lwc_crm_profile-section>
+                            </template>
+                                <br/>
+                            <lightning-input label="Marketing User" name="marketingUser" type="checkbox" value={marketingUser} onchange={handleInput}></lightning-input>
+                            <div style=" margin-top: 7%; ">    
+                                <lightning-input label="Federation ID" name="federationIdentifier" value={federationIdentifier} onchange={handleInput}></lightning-input>
+                                <lightning-input required="" label="User Country" disabled="" name="userCountry" type="text" value={currentCountryVal}></lightning-input>
+                                <lightning-input required="" label="Employee Number" disabled="" name="employeeNumber" value={currentContact.EmployeeNumber__c.value} ></lightning-input>
+                                <lightning-input label="WD EMPL STATUS" disabled="" name="wdEmplStatus" type="text" value={currentContact.pse__Employment_Status__c.value}></lightning-input>
+                                <lightning-input label="WD Location code" disabled="" name="wdLocationCode" type="text" value={currentContact.Location__c.value} ></lightning-input>
+                                <lightning-input label="Wd Grade" disabled="" name="wdGrade" type="text" value={currentContact.Job_Grade__c.value} ></lightning-input>
+                                <lightning-input label="License Expiry Date" disabled="" name="LicenseExpiryDate" type="date" value={currentContact.pse__Last_Date__c.value} ></lightning-input>
+                                <lightning-input label="WD PER ORG" disabled="" name="wdPerOrg" type="text" value={wdPerOrgVal} ></lightning-input>
+                            </div>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="slds-text-align_center">
+                        <button type="button" class="slds-button slds-button_neutral" onclick={closeModal}>Cancel</button>
+                        <button type="button" class="slds-button slds-button_brand" title={saveBtnTitle} disabled={isBtnDisbaled} onclick={saveUser}>Save</button>
+                        <template if:true={showSaveBtn}>
+                        </template>
+                    </div>
+                </template>
+            </template>     
+        </template>
+        <template if:true={showCloseBtn}>
+            <div class="slds-text-align_center">
+                <button type="button" class="slds-button slds-button_neutral" onclick={closeModal}>Close</button>
+            </div>
+        </template>
+        <template if:false={showCloseBtn}>
+            <template if:true={currentContact}>
+                <template if:false={currentContact.EmployeeNumber__c.value}>
+                    <div class="slds-text-align_center">
+                        <button type="button" class="slds-button slds-button_neutral" onclick={closeModal}>Close</button>
+                    </div>
+                </template>  
+            </template>  
+        </template>  
+    </template>
+</template>

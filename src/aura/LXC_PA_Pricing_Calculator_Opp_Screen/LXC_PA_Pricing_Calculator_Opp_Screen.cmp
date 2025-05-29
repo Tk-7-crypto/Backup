@@ -1,0 +1,76 @@
+<!--
+   Name      :     LXC_PA_Pricing_Calculator_Opp_Screen 
+   Date      :     8-April-2019
+   Usage     :     Validate Opportunity for Pricing assistant before redirecting to LI org 
+   Author    :     Jyoti Vijayvargiya
+-->
+
+<aura:component controller="CNT_PA_Pricing_Calculator_Opp_Screen" implements="force:lightningQuickActionWithoutHeader,force:hasRecordId">
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>	
+    <aura:attribute name="opportunityId" type="String"/>
+    <aura:attribute name="retString" type="String"/>
+    <aura:attribute name="arrayOfErrorMessage" type = "String[]"/>
+    <aura:attribute name="spinner" type="boolean" default="false"/>  
+    <aura:attribute name="isLoading" type="Boolean" default="true"/>
+    <aura:attribute name="showError" type="Boolean" default="false"/>  
+    <aura:attribute name="showQuoteWarning" type="Boolean" default="false"/>
+    <aura:attribute name="showQuoteCancelError" type="Boolean" default="false"/>
+    <aura:attribute name="quoteCancelErrorMsg" type="String"/>
+    
+    <aura:if isTrue="{! v.isLoading }">
+        <lightning:spinner alternativeText="{!$Label.c.Loading}"/>
+    </aura:if> 
+    <aura:if isTrue="{!v.showError}">
+        <div class="demo-only" style="height: 840px;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create/Edit Pricing Validation</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <!-- Show the message to ui -->
+                        <div class="slds-notify__content errorMessage">
+                            <aura:iteration var="error" items="{!v.arrayOfErrorMessage}" indexVar="indx">
+                                {!indx + 1}. {!error} <br/><br/>
+                            </aura:iteration>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning:button variant="brand" label="Back to opportunity" title="Back to opportunity" onclick="{!c.backToOpportunity}"/>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>    
+    </aura:if>
+    <aura:if isTrue="{!v.showQuoteWarning}">
+        <div class="demo-only" style="height: 840px;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true" aria-describedby="modal-content-id-2" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{!c.handleCancelQuoteDialogBox}">
+                            <lightning:icon iconName="utility:close" size="x-small" alternativeText="Close" />
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                    <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Create Pricing Assistant</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                        <p>All of your Quote records will be cancelled if you want to proceed with Pricing Assistant.</p>
+                        <aura:if isTrue="{!v.showQuoteCancelError}">
+                        	<p style="color: #f00;">{!v.quoteCancelErrorMsg}</p>
+                        </aura:if>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning:button variant="brand" label="OK" title="OK" onclick="{!c.handleCancelActiveQuotes}" />
+                        <lightning:button variant="neutral" label="Cancel" title="Cancel" onclick="{!c.handleCancelQuoteDialogBox}" />
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </aura:if>
+</aura:component>

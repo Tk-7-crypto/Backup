@@ -1,0 +1,117 @@
+<apex:page controller="CNT_TPA_OffNotificationsGenerator" title="{!title}" cache="true" standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false" sidebar="false" showHeader="false" renderAs="{!if(openmode != 'pdf', null, 'pdf')}" language="{!vendorLanguage}" ><!-- Updated by Babita Dadarwal under ER-1940 on 3 Aug 2016 -->
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+        <style>
+            *{
+                margin: 0;
+                padding: 0;
+             }
+
+            @page {
+                size: letter;
+                margin: 30mm 20mm;
+                @top-center {
+                    content: element(header);
+                }
+                @bottom-center {
+                    content: element(footer);
+                }
+            }
+
+            div.header {
+                padding: 10px;
+                position: running(header);
+            }
+
+            div.footer
+            {
+                padding: 0px;
+                display:block;
+                position: running(footer);
+            }
+
+            .pagenumber:before {
+                content: counter(page);
+            }
+
+            .pagecount:before {
+                content: counter(pages);
+            }
+
+            .page-break
+            {
+                display:block;
+                page-break-after:always;
+            }
+
+            body
+            {
+                font-family: Arial Unicode MS;font-size:75%; /*Updated by Babita Dadarwal under ER-1940 on 2 Aug 2016*/
+
+            }
+
+            .headings
+            {
+                font-weight:bolder;
+                font-size:13px;
+            }
+
+            .content
+            {
+                font-size:11px;
+            }
+            .pbSubsection{padding:10px;background-color:#D3F0FF;}
+            body .bPageBlock .pbBody .blueHeader .pbSubheader{
+                background-color:#25B4FF;
+                padding:5px;
+            }
+            body .bPageBlock .pbBody .blueHeader .pbSubheader h3{
+                font-weight:normal;
+            }
+            <!-- added by neha under ER-3031 starts -->
+            s, strike, del {
+            text-decoration:none !important;
+            } <!-- added by neha under ER-3031 ends -->
+        </style>
+    </head>
+    <div class="main">
+        <!-- Header and Footer for PDF Document Start -->
+        <apex:outputLabel rendered="{!openMode != 'word'}">
+            <div class="header" style="text-align:right;margin-right:-50px;margin-top:26px;">
+                <apex:image height="54" width="172" url="{!$Resource.IMS_Logo}"/>
+            </div>
+            <div class="footer" style="margin-bottom:40px;margin-left:-40px; margin-right:-40px;">
+                <div style="border-top:1px solid black;font-size:9px;">
+                    <table width="100%">
+                        <tr>
+                            <td width="23%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!requestName}</span></td>
+                            <td width="60%" style="text-align:center;padding-top:1px;">?2015 {!$Label.TPA_IQVIA_Keyword} Incorporated or its affiliates. All rights reserved.</td> <!-- Updated by Babita Dadarwl under CR-11410 -->
+                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                        </tr>
+                    </table>
+                    <!--Page <span class="pagenumber"/> xxx of <span class="pagecount"/>-->
+                </div>
+            </div>
+        </apex:outputLabel>
+        <!-- Header and Footer for PDF Document End -->
+        <apex:pageBlock >
+            <!-- Updated by Babita Dadarwal under ER-1940 on 3 Aug 2016 Start-->
+            <apex:outputPanel style="border:solid 1px #000;" styleClass="blueHeader" layout="block">
+                <apex:pageBlockSection title="{!$Label.TPA_Client_Vendor_Off_Notification}" columns="1">
+                    <apex:outputText escape="false" value="{!clientVendorNote}" />
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="{!$Label.TPA_Offering_Notifications}" columns="1">
+                    <apex:repeat value="{!offeringsNotificationList}" var="offNotObj">
+                        <!--<b><u>{!offNotObj.Page_Name__c}</u>:</b>--><apex:outputText label="" escape="false" value="{!offNotObj.Content__c}" /><br />
+                    </apex:repeat>
+                    <!-- added by neha under ER-3031 starts -->
+                    <apex:repeat value="{!dynamicOfferingsNotificationList}" var="offNotObj">
+                        <apex:outputText label="" escape="false" value="{!offNotObj.Content__c}" /><br />
+                    </apex:repeat>
+                    <!-- added by neha under ER-3031 Ends-->
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            <!-- Updated by Babita Dadarwal under ER-1940 on 3 Aug 2016 ENd-->
+        </apex:pageBlock>
+    </div>
+</apex:page>

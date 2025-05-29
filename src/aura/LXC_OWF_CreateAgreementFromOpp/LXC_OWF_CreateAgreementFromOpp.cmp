@@ -1,0 +1,76 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickActionWithoutHeader,lightning:actionOverride" controller="CNT_OWF_CreateAgreementFromOpp" access="global" >
+    <aura:html tag="style">.toastMessage.forceActionsText{white-space : pre-line !important;}</aura:html>
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="accountId" type="Id"/>
+    <aura:attribute name="oppFields" type="List" default="Id,Name,StageName,Account.id"/>
+    <aura:attribute name="bidTypes" type="CNT_OWF_CreateAgreementFromOpp.BidTypeWrapper[]"/>
+    <aura:attribute name="selectedBidType" type="String"/>
+    <aura:attribute name="selectedBidTypeName" type="String"/>
+    <aura:attribute name="selectedBidTypeOnRadio" type="String"/>
+    <aura:attribute name="selectedBidTypeNameOnRadio" type="String"/>
+    <aura:attribute name="isBidSelected" type="Boolean" default="false"/>
+    <aura:attribute name="optionsList" type="List" /> 
+    <aura:attribute name="value" type="String" />
+    <aura:attribute name="isError" type="Boolean" default="false"/>
+    <aura:attribute name="errorMessage" type="String"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="defaultValues" type="Object"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <!--******** Launch Agreement************-->
+    <aura:attribute name="isSpinner" type="boolean" default="false" access="global"/>
+    <aura:attribute name="isByPassClinicalBid" type="boolean" default="false" access="global"/>
+    
+    <aura:attribute name="recordTypeTypeName" type="String"/>
+    <aura:attribute name="recordTypeId" type="String"/>
+    
+    <aura:if isTrue="{!!v.isByPassClinicalBid}">
+    <div id="maincontainer" style="height:45vh;">
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Create New Bid</h2>
+        </header>
+        <div class="slds-m-around_small">
+            <aura:if isTrue="{!v.isError}">
+                <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                    <ul>                            
+                        <li>{!v.errorMessage}</li>
+                    </ul>
+                </div>
+            </aura:if>
+        </div>
+        <aura:if isTrue="{!v.Spinner}">
+            <div aura:id="spinnerId" class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <aura:iteration items="{!v.bidTypes}" var="bidType">
+            <div class="slds-page-header data-row slds-p-right_small">
+                <div>
+                    <!--<ui:inputRadio text="{!bidType.typeId}" class="slds-m-top_medium" 
+                               label="{!bidType.bidHeader}"  aura:id="recdTypeId" name="R1"
+                               change="{!c.onRadioSelect}"/>-->
+                    <lightning:input type="radio" label="{!bidType.bidHeader}" name="options" value="{!bidType.typeId}" onchange="{!c.onRadioSelect}"/>
+                    <aura:if isTrue="{!not(empty(bidType.bidDescription))}">
+                    <div>
+                        {!bidType.bidDescription}
+                    </div>
+                    </aura:if>
+                    
+                </div>
+                <br/>
+            </div>        
+        </aura:iteration>
+        <footer class="slds-modal__footer slds-align_absolute-center ">
+            <button class="slds-button slds-button_brand " onclick="{!c.createRecord}">Next</button>
+            <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.closeQuickAction}">Cancel</button>
+        </footer>
+    </div>
+    </aura:if>
+
+</aura:component>

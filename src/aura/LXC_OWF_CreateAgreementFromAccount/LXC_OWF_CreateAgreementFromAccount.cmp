@@ -1,0 +1,54 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickActionWithoutHeader,lightning:actionOverride" controller="CNT_OWF_CreateAgreementFromAccount" access="global" >
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="bidTypes" type="CNT_OWF_CreateAgreementFromAccount.BidTypeWrapper[]"/>
+    <aura:attribute name="selectedBidType" type="String"/>
+    <aura:attribute name="selectedBidTypeName" type="String"/>
+    <aura:attribute name="selectedBidTypeOnRadio" type="String"/>
+    <aura:attribute name="selectedBidTypeNameOnRadio" type="String"/>
+    <aura:attribute name="isBidSelected" type="Boolean" default="false"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+	
+	<div id="maincontainer" style="height:45vh;">
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Create New Bid</h2>
+        </header>
+    <div class="slds-m-around_small">
+        <aura:if isTrue="{!v.errors.length > 0}">
+            <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                <ul>
+                    <aura:iteration items="{!v.errors}" var="error">
+                        <li>{!error}</li>
+                    </aura:iteration>
+                </ul>
+            </div>
+        </aura:if>
+    </div>
+    <aura:if isTrue="{!v.Spinner}">
+            <div aura:id="spinnerId" class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+    </aura:if>
+    <aura:iteration items="{!v.bidTypes}" var="bidType">
+        <div class="slds-page-header data-row slds-p-right_small">
+            <div>
+                <lightning:input type="radio" aura:id="recdTypeId" label="{!bidType.bidHeader}" name="options" value="{!bidType.typeId}" checked="true"/>
+                <div>
+                	{!bidType.bidDescription}
+                </div>
+            </div>
+            <br/>
+        </div>        
+    </aura:iteration>
+         <footer class="slds-modal__footer slds-align_absolute-center ">
+        <button class="slds-button slds-button_brand " onclick="{!c.createRecord}">Next</button>
+        <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.closeQuickAction}">Cancel</button>
+    </footer>
+    </div>
+</aura:component>

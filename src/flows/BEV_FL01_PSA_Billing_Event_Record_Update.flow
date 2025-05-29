@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <decisions>
+        <description>IQVIAPSA-6709</description>
+        <name>Is_Project_Updated</name>
+        <label>Is Project Updated</label>
+        <locationX>182</locationX>
+        <locationY>431</locationY>
+        <defaultConnectorLabel>No Project Not Updated</defaultConnectorLabel>
+        <rules>
+            <name>Yes_Project_Updated</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.pse__Project__c</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>IsCreated</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Project_Code</targetReference>
+            </connector>
+            <label>Yes Project Updated</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>IQVIAPSA-6709</description>
+        <name>Mulesoft_Custom_Setting_Condition</name>
+        <label>Mulesoft Custom Setting Condition</label>
+        <locationX>380</locationX>
+        <locationY>323</locationY>
+        <defaultConnectorLabel>False</defaultConnectorLabel>
+        <rules>
+            <name>Is_True</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>$Setup.Mulesoft_Integration_Control__c.By_Pass_Flow_Process__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Setup.Mulesoft_Integration_Control__c.Is_Mulesoft_User__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Is_Project_Updated</targetReference>
+            </connector>
+            <label>Is True</label>
+        </rules>
+    </decisions>
+    <description>IQVIAPSA-6709</description>
+    <formulas>
+        <name>IsCreated</name>
+        <dataType>Boolean</dataType>
+        <expression>ISNEW()</expression>
+    </formulas>
+    <interviewLabel>BEV FL01 PSA Billing Event Record Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>BEV FL01 PSA Billing Event Record Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <description>IQVIAPSA-6709</description>
+        <name>Update_Project_Code</name>
+        <label>Update Project Code</label>
+        <locationX>50</locationX>
+        <locationY>539</locationY>
+        <inputAssignments>
+            <field>Project_Code__c</field>
+            <value>
+                <elementReference>$Record.pse__Project__r.Project_Code__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>254</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Mulesoft_Custom_Setting_Condition</targetReference>
+        </connector>
+        <object>pse__Billing_Event__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

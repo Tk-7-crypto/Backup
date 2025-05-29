@@ -1,0 +1,117 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner alternative-text="Loading......" size="large" variant="brand"></lightning-spinner>
+    </template>
+
+    <lightning-card if:true={showSearchOptions} variant="Narrow" title="Search Opportunity">
+        <div class="slds-p-horizontal_small slds-form_horizontal slds-form slds-grid slds-wrap">
+            <lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" type="text" onkeypress={handleKeyPress}
+                label="Opportunity Number" data-id="sOppNumber"> </lightning-input>
+            <lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" type="text" onkeypress={handleKeyPress}
+                label="Opportunity Name" data-id="sOppName"> </lightning-input>
+            <lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" type="text" onkeypress={handleKeyPress}
+                label="Account Name" data-id="sAccName"> </lightning-input>
+            <lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" type="text" onkeypress={handleKeyPress}
+                label="Parent Opportunity Name" data-id="sPOppName"> </lightning-input>
+            <lightning-input class="slds-size_1-of-3 slds-p-horizontal_small" type="text" onkeypress={handleKeyPress}
+                label="Parent Opportunity Number" data-id="sPOppNumber"></lightning-input>
+            <lightning-button class="slds-size_1-of-3 slds-p-horizontal_small" label="Search"
+                onclick={handleSearchRenwalTasks}> </lightning-button>
+        </div>
+    </lightning-card>
+
+    </br>
+
+    <lightning-card variant="Narrow" title="My Renewals">
+        <div slot="actions">
+            <lightning-button class="buttonCss" label="Reassign" onclick={handleReassign}> </lightning-button>
+            <lightning-button class="buttonCss" label="Add Opp" onclick={handleAddOpp}> </lightning-button>
+            <lightning-button class="buttonCss" label="Remove Opp" onclick={handleRemoveOpp}> </lightning-button>
+            <lightning-button class="buttonCss" label="Search Opp" onclick={handleSearchOpp}> </lightning-button>
+        </div>
+
+        <div class="slds-p-horizontal_small">
+            <lightning-datatable data-id="rt-dataTable" class="rt-dataTable" key-field="id"
+                data={renewalTaskWrapperList} columns={outerColumns} onrowaction={callRowAction} onsort={onHandleSort}
+                default-sort-direction={defaultSortDirection} sorted-direction={sortDirection} sorted-by={sortedBy}
+                selected-rows={selectedRecordsNew} onrowselection={handleRowSelection}> </lightning-datatable>
+            <template if:true={isRenewalTaskNotExist}>
+                <h2 class="slds-align_absolute-center zeroRecord">No items to display.</h2>
+            </template>
+        </div>
+
+        <lightning-layout slot="footer" horizontal-align="spread">
+            <lightning-layout-item padding="around-small">
+                <lightning-button label="First" icon-name="utility:left" icon-position="left" onclick={onFirst}
+                    disabled={disbleFirstPageButton}> </lightning-button>
+                <lightning-button icon-name="utility:chevronleft" icon-position="left" onclick={onPrev}
+                    disabled={disbleFirstPageButton}> </lightning-button>
+
+                <span class="slds-p-horizontal_x-small">
+                    <a  name={currentPageNumber} style="color:orange">{currentPageNumber}</a>
+                </span>
+
+                <lightning-button icon-name="utility:chevronright" icon-position="right" onclick={onNext}
+                    disabled={disbleLastPageButton}> </lightning-button>
+                <lightning-button label="Last" icon-name="utility:right" icon-position="right" onclick={onLast}
+                    disabled={disbleLastPageButton}> </lightning-button>
+                &nbsp;
+                <lightning-button icon-name="utility:refresh" icon-position="right" onclick={refreshData}>
+                </lightning-button>
+            </lightning-layout-item>
+
+            <lightning-layout-item padding="around-small" class="slds-float_right slds-text-heading_small">
+                Displaying Renewal Tasks {startIndex} - {endIndex} of {allData.length} </lightning-layout-item>
+        </lightning-layout>
+    </lightning-card>
+
+    <template if:true={showPopup}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <div class="slds-clearfix">
+                    <lightning-button-icon icon-name="utility:close" size="large" variant="bare-inverse" title="Close"
+                        alternative-text="Close window" onclick={closePopup} class="slds-float_right">
+                    </lightning-button-icon>
+                </div>
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{popupHeader}</h2>
+                </header>
+                <template if:true={showSpinner}>
+                    <lightning-spinner></lightning-spinner>
+                </template>
+                <div class="slds-modal__content slds-modal_small" id="modal-content-id-1">
+                    <lightning-card variant="Narrow">
+                        <div class="slds-p-horizontal_small">
+                            <template if:true={showTaskDetailOnPopup}>
+                                <lightning-datatable key-field="id" data={renewalTaskDetailWrapperList}
+                                    columns={innerColumns} hide-checkbox-column='true'> </lightning-datatable>
+                                <template if:true={isRenewalTaskDetailNotExist}>
+                                    <h2 class="slds-align_absolute-center zeroRecord">No Data.</h2>
+                                </template>
+                                </br>
+                                <div class="slds-modal__footer" slot="footer">
+                                    <lightning-button class="buttonCss" label="Cancel" type="button"
+                                        onclick={closePopup}> </lightning-button>
+                                </div>
+                            </template>
+                            <template if:true={showReassignOnPopup}>
+                                <c-lwc_lookup onsearch={handleResourceSearch} placeholder="Search for a User..."
+                                    label="" onselectionchange={handleResourceLookupChange}> </c-lwc_lookup>
+                                </br>
+                                <div class="slds-modal__footer" slot="footer">
+                                    <lightning-button class="buttonCss" label="Cancel" onclick={closePopup}>
+                                    </lightning-button>
+                                    <lightning-button class="buttonCss" label="Reassign" onclick={reassignRenewalTask}
+                                        variant="brand"> </lightning-button>
+                                </div>
+                            </template>
+                        </div>
+                    </lightning-card>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+</template>

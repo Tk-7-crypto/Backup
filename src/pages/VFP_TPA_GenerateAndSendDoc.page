@@ -1,0 +1,90 @@
+<apex:page standardController="TPA_Request__c" extensions="EXT_TPA_GenerateAndSendDoc" showHeader="false" sidebar="false"> 
+    <head>
+        
+
+        <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+        <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+
+        <apex:stylesheet value="{!URLFOR($Resource.IMSBranding, '/web/css/styles.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.IMSBranding, '/web/css/vendor/tooltipster/tooltipster.css')}" />
+
+        <script type="text/javascript">
+        
+        function getParameterByName(name) { 
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : results[1].replace(/\+/g, " ");
+        }
+        
+        </script>
+        
+    </head>
+    <body style="width:100%">
+        <div id="header">
+            <apex:image width="" style="width: 172px;height:49px;" value="{!$Resource.IMS_Logo}" alt="{!$Label.TPA_IQVIA_Keyword} logo"/> <!-- Updated by Babita Dadarwl under CR-11410 -->
+        </div>
+        <div id="content" style="height:60%;width;100%">
+            <apex:form style="width:100%">
+
+                    <div class="title" style="background-color:#0fa5ef"></div>
+
+                        <div id="divMain" class="form-section">
+                            <h1>Please wait...</h1>
+                        </div>
+
+                    <apex:actionFunction name="getAPIParams" action="{!generateAndSendForSignDoc}" id="getAPIParams"  reRender="theForm">
+                        <apex:param name="sessionId" assignTo="{!sessionId}" value="{!$Api.Session_ID}" />
+                        <apex:param name="serverUrl" assignTo="{!serverUrl}" value="{!$Api.Partner_Server_URL_140}" />
+                    </apex:actionFunction>
+                     
+                     <script language="JavaScript">      
+                             window.onload = function()
+                             {
+                                 var url = location.href;
+                                 if(url.indexOf("amp;") > 0){
+                                     var div = document.createElement('div');
+                                     div.innerHTML = url;
+                                     var decoded = div.firstChild.nodeValue;
+                                     document.location = decoded;
+                                     return false;
+                                 }
+
+                                if($.cookie("tpaDisableBack") != null && getParameterByName('action') != 'acc') //Updated by Vikram Singh under Issue-10059
+                                { 
+                                        TPA_Controller_Agrmnt_GenerateAndSendDoc.getRequestNo(function(result, event)
+                                        {
+                                            if(event.type == 'exception') {
+                                                return false;                                    
+                                            }
+                                            else {
+                                                window.location.href = 'VFP_TPA_Page_Status?type=vendorSubmitSuccess&reqNo='+result; 
+                                            }
+                                        });
+                                        
+                                    } 
+                                else {
+                                    getAPIParams();
+                                }
+                                showMsgProgress('Please do not cancel – It takes a max of 30 seconds to submit the TPA Request');
+                             }
+                     </script>
+
+            </apex:form>
+        </div>
+        <div id="footer">
+
+            <div class="copyright_wrapper">
+                <div class="copyright">
+                    &nbsp;
+
+
+                    <div class="copy" style="float: right">
+
+                        Copyright &copy;2014 {!$Label.TPA_IQVIA_Keyword} Incorporated. All rights reserved. <!-- Updated by Babita Dadarwl under CR-11410 -->
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-bg"></div>
+        </div>
+    </body>
+</apex:page>

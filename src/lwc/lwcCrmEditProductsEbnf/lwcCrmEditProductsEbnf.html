@@ -1,0 +1,217 @@
+<template>
+	<lightning-card if:true={bnf} variant="Narrow">
+		<h2 slot="title" class="slds-text-title_bold slds-text-heading_large">BNF {bnf.Name} Opportunity Product</h2>
+		<a class="slds-p-horizontal_small" href={glossaryDocumentUrl} target="_blank">
+			For further explanation, click here for glossary</a>
+	</lightning-card>
+
+	<div if:true={showError} class="slds-notify slds-notify_alert slds-alert_error" style="justify-content:flex-start">
+		<ul style="text-align: left;" class="slds-list_dotted">
+			<lightning-icon icon-name="utility:error" alternative-text="Error!" variant="inverse" title="errors">
+			</lightning-icon> Errors:
+
+			<template for:each={errorMsg} for:item="err">
+				<li key={err}> {err} </li>
+			</template>
+		</ul>
+	</div>
+
+	<lightning-layout multiple-rows>
+
+		<lightning-layout-item padding="around-small" size="12">
+			<div class="slds-align_absolute-center">
+				<lightning-button variant="brand" label="Final Save" onclick={handleValidateAndSave}></lightning-button>
+				<lightning-button variant="brand" label="Save Draft" onclick={handleSaveOnly}
+					class="slds-p-horizontal_small"></lightning-button>
+				<lightning-button variant="brand" label="cancel" onclick={handleCancel}></lightning-button>
+			</div>
+		</lightning-layout-item>
+
+		<template if:true={showSpinner}>
+			<lightning-spinner variant="brand" size="large" alternative-text="Loading..."></lightning-spinner>
+		</template>
+
+		<div id="containerDiv" onmousemove={handlemousemove} onmouseup={handlemouseup}
+			style="overflow: auto; min-height: 500px;"
+			class="slds-table_header-fixed_container slds-border_right slds-border_left slds-border_top">
+			<table
+				class="slds-table slds-table_bordered slds-table_header-fixed slds-table_resizable-cols slds-table_fixed-layout slds-table_striped">
+				<thead class="slds-line-height_reset" style="font-weight:bold">
+					<template for:each={headerCol} for:item="header" for:index="index">
+						<th class="slds-is-resizable dv-dynamic-width" key={header.label} scope="col"
+							style={header.iniStyle} title={header.label} ondblclick={handledblclickresizable}>
+							<div class="slds-cell-fixed" style={header.iniStyle}>
+								<a class="slds-th__action slds-text-link--reset">
+									<span class="slds-truncate slds-grid"> {header.label} &nbsp;
+										<template if:true={header.showCheckBox}>
+											<lightning-input onchange={handleReplicateValue} variant="label-hidden"
+												data-id={header.fieldName} type="checkbox" data-type="clonebox"></lightning-input>
+										</template>
+									</span>
+								</a>
+								<div class="slds-resizable">
+									<span class="slds-resizable__handle" onmousedown={handlemousedown}>
+										<span class="slds-resizable__divider"></span>
+									</span>
+								</div>
+							</div>
+						</th>
+					</template>
+				</thead>
+				<tbody if:true={showTable}>
+					<template for:each={productSelected} for:item="opptyLineItem" for:index="index">
+						<tr class="slds-hint-parent" key={opptyLineItem.id} style="vertical-align: top;">
+							<td data-label="Name" class="slds-truncate break-word"
+								title={opptyLineItem.PricebookEntry.Name}> {opptyLineItem.PricebookEntry.Name}
+							</td>
+							<td data-label="Sales Price" class="slds-truncate is-num" title={opptyLineItem.TotalPrice}>
+								<lightning-formatted-number value={opptyLineItem.TotalPrice} minimum-fraction-digits="2"
+									class="slds-p-right_medium slds-truncate"></lightning-formatted-number>
+							</td>
+							<td data-label="Product Code" class="slds-truncate" title={opptyLineItem.ProductCode}>
+								{opptyLineItem.ProductCode}
+							</td>
+							<td data-label="Delivery Country" class="slds-truncate"
+								title={opptyLineItem.Delivery_Country__c}>
+								{opptyLineItem.Delivery_Country__c}
+							</td>
+							<td data-label="WBS Code" class="slds-truncate" title={opptyLineItem.WBS_R_Element__c}>
+								{opptyLineItem.WBS_R_Element__c}
+							</td>
+							<td data-label="Data Period Start">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="Product_Start_Date__c" value={opptyLineItem.Product_Start_Date__c}
+									class="slds-truncate" type="date" data-type="date"
+									required={opptyLineItem.helpingVar.isProductZPUB}></lightning-input>
+							</td>
+							<td data-label="Data Period End">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="Product_End_Date__c" value={opptyLineItem.Product_End_Date__c}
+									class="slds-truncate" type="date" data-type="date"
+									required={opptyLineItem.helpingVar.isProductZPUB}></lightning-input>
+							</td>
+							<td data-label="Delivery Media">
+								<lightning-combobox data-index={index} onchange={handleChange}
+									data-id="Delivery_Media__c" value={opptyLineItem.Delivery_Media__c}
+									options={opptyLineItem.helpingVar.picDeliveryMedia}></lightning-combobox>
+							</td>
+							<td data-label="Delivery/Rpt Frequency">
+								<lightning-combobox data-index={index} onchange={handleChange}
+									data-id="Proj_Rpt_Frequency__c" value={opptyLineItem.Proj_Rpt_Frequency__c}
+									options={opptyLineItem.helpingVar.picDeliveryFrequency}></lightning-combobox>
+							</td>
+							<td data-label="Billing Frequency">
+								<lightning-combobox data-index={index} onchange={handleChange}
+									data-id="Billing_Frequency__c" value={opptyLineItem.Billing_Frequency__c}
+									options={pic.BillingFrequency}></lightning-combobox>
+							</td>
+							<td data-label="Product Invoice Text">
+								<lightning-textarea data-index={index} onchange={handleChange}
+									data-id="Product_Invoice_Text__c" value={opptyLineItem.Product_Invoice_Text__c}
+									class="slds-truncate"></lightning-textarea>
+							</td>
+							<td data-label="List Price" class="is-num">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="List_Price__c" value={opptyLineItem.List_Price__c} step=".01"
+									class="slds-truncate" type="number" data-type="currency">
+								</lightning-input>
+							</td>
+							<td data-label="Discount %" class="slds-truncate"
+								title={opptyLineItem.Discount_Percentage_Formula__c}>
+								{opptyLineItem.Discount_Percentage_Formula__c}
+							</td>
+							<td data-label="Discount Amt" class="slds-truncate"
+								title={opptyLineItem.Discount_Amount_Formula__c}>
+								{opptyLineItem.Discount_Amount_Formula__c}
+							</td>
+							<td data-label="Discount Reason">
+								<lightning-combobox data-index={index} onchange={handleChange}
+									data-id="Discount_Reason__c" value={opptyLineItem.Discount_Reason__c}
+									options={pic.DiscountReason}></lightning-combobox>
+							</td>
+							<td data-label="PO line item number">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="PO_line_item_number__c" value={opptyLineItem.PO_line_item_number__c}
+									step="0" class="slds-truncate" type="number" data-type="number" max-length="10"
+									message-when-step-mismatch="It should be filled Numbers only">
+								</lightning-input>
+							</td>
+							<td data-label="Number of Users" class="is-num">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="Nbr_of_Users__c" value={opptyLineItem.Nbr_of_Users__c} step="0"
+									class="slds-truncate" type="number" data-type="number" max-length="18"
+									message-when-step-mismatch="It should be filled Numbers only">
+								</lightning-input>
+							</td>
+							<td data-label="Other Ship To">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="Other_Ship_To__c" value={opptyLineItem.Other_Ship_To__c} step="0"
+									class="slds-truncate" type="number" data-type="number" max-length="10"
+									message-when-step-mismatch="It should be filled Numbers only">
+								</lightning-input>
+							</td>
+							<td data-label="Billing Date">
+								<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+									data-id="Billing_Date__c" value={opptyLineItem.Billing_Date__c}
+									class="slds-truncate" type="date" data-type="date"></lightning-input>
+							</td>
+							<td data-label="Sales Type">
+								<lightning-combobox data-index={index} onchange={handleChange} data-id="Sale_Type__c"
+									value={opptyLineItem.Sale_Type__c} options={pic.SaleType}></lightning-combobox>
+							</td>
+							<td data-label="Revenue Type">
+								<lightning-combobox data-index={index} onchange={handleChange} data-id="Revenue_Type__c"
+									value={opptyLineItem.Revenue_Type__c} options={pic.RevenueType}>
+								</lightning-combobox>
+							</td>
+							<td data-label="Invoice Lag to Data Period">
+								<lightning-combobox data-index={index} onchange={handleChange}
+									data-id="Invoice_Lag_to_Data_Period__c"
+									value={opptyLineItem.Invoice_Lag_to_Data_Period__c}
+									options={pic.InvoiceLagToDataPeriod}></lightning-combobox>
+							</td>
+							<td data-label="Therapy Area">
+								<lightning-combobox data-index={index} onchange={handleChange} data-id="Therapy_Area__c"
+									value={opptyLineItem.Therapy_Area__c}
+									options={opptyLineItem.helpingVar.picTherapyArea}></lightning-combobox>
+							</td>
+							<td data-label="Audit Subscription Status" class="slds-truncate"
+								title={opptyLineItem.Audit_Subscription_Status__c}>
+								{opptyLineItem.Audit_Subscription_Status__c}
+							</td>
+							<td data-label="Profit Center">
+								<lightning-combobox data-index={index} onchange={handleChange} data-id="ProfitCenter__c"
+									value={opptyLineItem.ProfitCenter__c} options={pic.ProfitCenter}
+									disabled={opptyLineItem.helpingVar.isMaterialGroupNotMAN}></lightning-combobox>
+							</td>
+							<template if:true={isRevisedBnf}>
+								<td data-label="Revised Price">
+									<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+										data-id="Revised_Price__c" value={opptyLineItem.Revised_Price__c} step=".01"
+										class="slds-truncate" type="number" data-type="currency" formatter="currency">
+									</lightning-input>
+								</td>
+								<td data-label="Cancel">
+									<lightning-input data-index={index} onchange={handleChange} variant="label-hidden"
+										data-id="Cancel__c" checked={opptyLineItem.Cancel__c} class="slds-truncate"
+										type="checkbox" data-type="checkbox"></lightning-input>
+								</td>
+							</template>
+						</tr>
+					</template>
+				</tbody>
+			</table>
+			<br/><br/><br/><br/><br/><br/>
+		</div>
+
+		<lightning-layout-item padding="around-small" size="12">
+			<div class="slds-align_absolute-center">
+				<lightning-button variant="brand" label="Final Save" onclick={handleValidateAndSave}></lightning-button>
+				<lightning-button variant="brand" label="Save Draft" onclick={handleSaveOnly}
+					class="slds-p-horizontal_small"></lightning-button>
+				<lightning-button variant="brand" label="cancel" onclick={handleCancel}></lightning-button>
+			</div>
+		</lightning-layout-item>
+
+	</lightning-layout>
+</template>

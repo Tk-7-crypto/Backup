@@ -1,0 +1,247 @@
+<aura:component controller="CNT_CSM_CloneChildCasesFromParent" implements="lightning:isUrlAddressable,force:appHostable,force:hasRecordId,flexipage:availableForAllPageTypes" access="global" >
+    <aura:attribute name="selectedRecord" type="sObject" default="{}" description="Use,for store SELECTED sObject Record"/>
+    <aura:attribute name="caseNum" type="String" description="Its used to store the list of integers"/>
+    <aura:attribute name="caseId" type="String" description="Its used to store the list of integers"/>
+    <aura:attribute name="childNoList" type="List" default="[1,2,3,4,5,6,7,8,9,10]"  description="Its used to store the list of integers"/>
+    <aura:attribute name="sltChildNo" type="Integer" default="1"/>
+    <aura:attribute name="dataTblCount" type="Integer" />
+    <aura:attribute name="childContact" type="Object[]" />
+    <aura:attribute name="parentCase" type="Case" />
+    <aura:attribute name="sltContactId" type="String" />
+    <aura:attribute name="sltContactName" type="String" />
+    <aura:attribute name="sltOnBeOfId" type="String" />
+    <aura:attribute name="sltOnBeOfName" type="String" />
+    <aura:attribute name="sltSSCId" type="String" />
+    <aura:attribute name="sltStudyId" type="String" />
+    <aura:attribute name="sltSSCName" type="String" />
+    <aura:attribute name="appAccess" type="Boolean" default="true"/>
+    <aura:attribute name="data" type="Object"/>
+    <aura:attribute name="dummyData" type="Object"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="enableInfiniteLoading" type="Boolean" default="false"/>
+    <aura:attribute name="currentCount" type="Integer" default="10"/>
+    <aura:attribute name="initialRows" type="Integer" default="10"/>
+    <aura:attribute name="rowsToLoad" type="Integer" default="10"/>
+    <aura:attribute name="totalNumberOfRows" type="Integer" default="300"/>
+    <aura:attribute name="loadMoreStatus" type="String" default=""/>
+    <aura:attribute name="buttonSDisable" type="boolean" default="false"/>
+    <aura:attribute name="caseSearchDisable" type="boolean" default="false"/>
+    <aura:attribute name="sltLos" type="String" />
+    <aura:attribute name="losList" type="List" />
+    <aura:attribute name="sltST1" type="String" />
+    <aura:attribute name="sType1List" type="List" />
+    <aura:attribute name="sltST2" type="String" />
+    <aura:attribute name="sType2List" type="List" />
+    <aura:attribute name="sltST3" type="String" />
+    <aura:attribute name="sType3List" type="List" />
+    <aura:attribute name="sltTemplate" type="String" />
+    <aura:attribute name="templateList" type="String" />
+    <aura:attribute name="conUserRole" type="String" />
+    <aura:attribute name="subjectId" type="String" />
+    <aura:attribute name="dependentFieldMap" type="map" description="store controller(key)--> dependent(values) picklist value as a map." />
+    <aura:attribute name="spinner" type="boolean" default="false" />
+    <aura:attribute name="siteAssignmentList" type="List" default="[]" description="Site Assignment Picklist Values"/>
+    <aura:attribute name="selectedSiteAssignmentList" type="List" default="[]" description="Selected Site Assignment Picklist Values"/>
+    <aura:attribute name="sltSiteAssignment" type="String" />
+    <aura:attribute name="isModalOpen" type="boolean" default="false"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:handler event="c:LXE_CSM_OverlayLibraryModalEvent" action="{!c.handleApplicationEvent}"/>    
+    
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <lightning:workspaceAPI aura:id="workspace" />
+    <aura:if isTrue="{!v.appAccess}">
+        <lightning:card variant="narrow">
+            <aura:set attribute="title">
+                <lightning:icon iconName="standard:case" variant="warning"/>  RandD Bulk Child Case
+            </aura:set>
+            <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="5" mediumDeviceSize="6" smallDeviceSize="6"> 
+                    <div class="slds-box slds-box_small">
+                        <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <div class="">
+                                    <c:LXC_CRM_lookup disabled ="{!v.caseSearchDisable}" label="Parent Case Number" value="{!v.caseId}" valueLabel = "{!v.caseNum}" filter="{!'RecordTypeName__c in (\'ActivityPlan\',\'RandDCase\',\'VirtualTrialsCase\')'}" object="Case" searchField="CaseNumber"  placeholder="Select Case" iconName="standard:case" limit="5" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="caseNumberLookup" />
+                                </div>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <lightning:select aura:id="selectChildCaseNo" name="selectChildCaseNo" label="No of Child" required="true" value="{!v.sltChildNo}">
+                                    <option value="">Please Specify</option>
+                                    <aura:iteration items="{!v.childNoList}" var="item">
+                                        <option value="{!item}" text="{!item}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <c:LXC_CRM_lookup label="Contact Name" value="{!v.sltContactId}" valueLabel = "{!v.sltContactName}" object="Contact" searchField="Name"  placeholder="Select Contact" iconName="standard:contact" limit="5" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="contactLookup" />
+                            </lightning:layoutItem>
+                            <aura:if isTrue="{! v.parentCase.RecordTypeName__c != 'VirtualTrialsCase'}">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                    <c:LXC_CRM_lookup label="On Behalf Of" value="{!v.sltOnBeOfId}" valueLabel = "{!v.sltOnBeOfName}" object="Contact" searchField="Name"  placeholder="Select On Behalf Of" iconName="standard:contact" limit="5" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="onBeHalfLookup" />
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <c:LXC_CRM_lookup label="StudySiteContact Name" value="{!v.sltSSCId}" valueLabel = "{!v.sltSSCName}" object="StudySiteContactRelationship__c" searchField="Name" subtitleField = "StudySiteContactStr__c" filter="{!v.sltStudyId}" placeholder="Select StudySiteContact" iconName="standard:pricebook" limit="15" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="siteLookup" />
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <lightning:select aura:id="selectLos" name="selectLos" label="LOS" value="{!v.sltLos}" onchange="{!c.onLOSChange}">
+                                    <aura:iteration items="{!v.losList}" var="item">
+                                        <option value="{!item.value}" text="{!item.label}" selected="{!item.value==v.sltLos}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <lightning:select aura:id="selectSubType1" name="selectSubType1" label="Sub-Type1" value="{!v.sltST1}" onchange="{!c.onSubType1Change}">
+                                    <aura:iteration items="{!v.sType1List}" var="item">
+                                        <option value="{!item.value}" text="{!item.label}" selected="{!item.value==v.sltST1}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            <aura:if isTrue="{! v.parentCase.RecordTypeName__c == 'ActivityPlan'}">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                    <lightning:select aura:id="selectTemplate" name="selectTemplate" label="Template" value="{!v.sltTemplate}">
+                                        <aura:iteration items="{!v.templateList}" var="item">
+                                            <option value="{!item.value}" text="{!item.label}" selected="{!item.value==v.sltTemplate}"></option>
+                                        </aura:iteration>
+                                    </lightning:select>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <aura:if isTrue="{! v.parentCase.RecordTypeName__c == 'VirtualTrialsCase'}">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                    <lightning:input aura:id="txtsubjectId" name="SubjectId" label="Subject ID" value="{!v.subjectId}"/>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <lightning:select aura:id="selectSubType2" name="selectSubType2" label="Sub-Type2" value="{!v.sltST2}" onchange="{!c.onSubType2Change}">
+                                    <aura:iteration items="{!v.sType2List}" var="item">
+                                        <option value="{!item.value}" text="{!item.label}" selected="{!item.value==v.sltST2}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            <aura:if isTrue="{! v.parentCase.RecordTypeName__c == 'ActivityPlan'}">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                    <lightning:input aura:id="txtContactUserRole" name="ContactUserRole" label="Contact User Role" value="{!v.conUserRole}"/>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                <lightning:select aura:id="selectSubType3" name="selectSubType3" label="Sub-Type3" value="{!v.sltST3}">
+                                    <aura:iteration items="{!v.sType3List}" var="item">
+                                        <option value="{!item.value}" text="{!item.label}" selected="{!item.value==v.sltST3}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </lightning:layoutItem>
+                            <aura:if isTrue="{! v.parentCase.RecordTypeName__c == 'ActivityPlan'}">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"> 
+                                    <lightning:dualListbox aura:id="selectSiteAssignment" name="siteAssignment" label="Site Assignment" sourceLabel="Available Assignment" selectedLabel="Selected Assignment" options="{!v.siteAssignmentList }" value="{!v.selectedSiteAssignmentList}" onchange="{!c.handleSiteAssignmentChange}"/>
+                                </lightning:layoutItem>
+                            </aura:if>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12"/> 
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="10" mediumDeviceSize="12" smallDeviceSize="12"/>
+                            <lightning:layoutItem flexibility="auto" padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="12" smallDeviceSize="12"> 
+                                <lightning:buttonGroup>
+                                    <lightning:button label="Add" title="Add" onclick="{!c.addtoDataTable }" disabled="{!v.buttonSDisable}"/>    
+                                </lightning:buttonGroup>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </div>
+                </lightning:layoutItem>
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="7" mediumDeviceSize="6" smallDeviceSize="6"> 
+                    <aura:if isTrue="{! and( v.columns != null , v.data != null, v.data.length gt 0)}">
+                        <div class="slds-box slds-box_small height: 480px">
+                            <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="10" mediumDeviceSize="10" smallDeviceSize="10"> 
+                                    <lightning:card variant="narrow">
+                                        <aura:set attribute="title">
+                                            Selected Child Cases
+                                        </aura:set>
+                                    </lightning:card>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="2" smallDeviceSize="2"> 
+                                    <lightning:buttonGroup>
+                                        <lightning:button label="Edit" title="edit" onclick="{!c.editChildCases}" disabled="{!v.buttonSDisable}"/>
+                                        <lightning:button label="Save" title="save" onclick="{!c.saveChildCases}" disabled="{!v.buttonSDisable}"/> 
+                                    </lightning:buttonGroup>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="6" smallDeviceSize="6"> 
+                                    <div style="height: 370px">
+                                        <lightning:datatable id="datatable" columns="{! v.columns }" data="{! v.data }" keyField="Id" onrowaction="{! c.handleRowAction }" hideCheckboxColumn="true"/>            
+                                    </div>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </div>
+                    </aura:if>
+                </lightning:layoutItem>
+            </lightning:layout>
+            <lightning:layout aura:id="" horizontalAlign="space"  multipleRows="true">
+                <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12"> 
+                </lightning:layoutItem>
+            </lightning:layout>
+            <aura:set attribute="actions">
+                <lightning:button label="Reset" aura:id="btnResetForm" onclick="{!c.doInit}"/>
+            </aura:set>
+            <aura:set attribute="footer">
+            </aura:set>
+        </lightning:card>
+        <aura:set attribute="else">
+        </aura:set>
+    </aura:if>
+    <aura:if isTrue="{!v.isModalOpen}">
+        <!-- Modal/Popup Box starts here-->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Modal/PopUp Box</h2>
+                </header>
+                <!--Modal/Popup Box Body Starts here-->
+                <div class="slds-modal__content" id="modal-content-id-1">
+                    <lightning:layout aura:id="layColumn1" horizontalAlign="space"  multipleRows="true">
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="2" smallDeviceSize="2"> 
+                            <div class="slds-truncate" title="Row No">Row No</div>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="5" mediumDeviceSize="5" smallDeviceSize="5"> 
+                            <div class="slds-truncate" title="Contact Name">Contact Name</div>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="5" mediumDeviceSize="5" smallDeviceSize="5"> 
+                            <div class="slds-truncate" title="On Behalf Of">On Behalf Of</div>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <aura:iteration items="{!v.dummyData}" var="recData">
+                        <lightning:layout aura:id="lay{!recData.Id}" horizontalAlign="space"  multipleRows="true">
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="2" mediumDeviceSize="2" smallDeviceSize="2"> 
+                                <div class="slds-truncate" title="{!recData.Id}">{!recData.Id}</div>
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="5" mediumDeviceSize="5" smallDeviceSize="5"> 
+                                <c:LXC_CRM_lookup label="" value="{!recData.contactId}" valueLabel = "{!recData.contactName}" object="Contact" searchField="Name"  placeholder="Select Contact" iconName="standard:contact" limit="5" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="contactLookup{!recData.Id}" />
+                            </lightning:layoutItem>
+                            <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="5" mediumDeviceSize="5" smallDeviceSize="5"> 
+                                <c:LXC_CRM_lookup label="" value="{!recData.onBehalfOfId}" valueLabel = "{!recData.onBehalfOfName}" object="Contact" searchField="Name"  placeholder="Select On Behalf Of" iconName="standard:contact" limit="5" loadingMessage="{!$Label.c.Loading}" errorMessage="{!$Label.c.Invalid_input}" aura:id="onBeHalfLookup{!recData.Id}" />
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                        </aura:iteration>
+                    <lightning:layout aura:id="footAuto1" horizontalAlign="space"  multipleRows="true">
+                        <lightning:layoutItem flexibility="auto"  padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12"> 
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </div>
+                <!--Modal/Popup Box Footer Starts here-->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" label="Cancel" title="Cancel" onclick="{! c.closeModel }"/>
+                    <lightning:button variant="brand" label="OK" title="OK" onclick="{!c.submitDetails}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    <aura:if isTrue="{!v.spinner}">
+        <lightning:spinner variant="brand" aura:id="loadingSpinner" />
+    </aura:if>
+    <lightning:overlayLibrary aura:id="overlayLib"/>
+</aura:component>

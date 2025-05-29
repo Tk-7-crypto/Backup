@@ -1,0 +1,668 @@
+<apex:component controller="CNT_TPA_EditorController_Multi">
+    <apex:slds />
+    <meta http-equiv="X-UA-Compatible" content="IE=10; IE=9; IE=8; IE=7; IE=EDGE" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <script src="{!$Resource.TpaJQuery}" type="text/javascript"></script>
+    
+    <script src="{!$Resource.TPA_AngularJS}" type="text/javascript"></script><!-- Modified by C.P.Pandey under ER-1940 -->
+    <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+    
+    <script src="/soap/ajax/52.0/connection.js" type="text/javascript"></script>
+    <script src="/soap/ajax/52.0/apex.js" type="text/javascript"></script>
+        
+    <script src="{!URLFOR($Resource.ckeditor, 'ckeditor.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.ckeditor, 'samples/js/sample.js')}"></script>
+    <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+    <script src="{!$Resource.BootstrapJS}" type="text/javascript"></script>
+    <script src="{!$Resource.TPA_Fixed_Header}" type="text/javascript"></script>       
+    
+    <script type="text/javascript">
+    var myapp = angular.module('TpaEditor', ['ui.bootstrap']);
+    
+    var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$log', '$window', function ($scope, $filter, $log, $window) 
+                                                    {
+                                                        $scope.dataLoadedStatus = '{!TPA_EditorLoadData}';
+                                                        $scope.allData = {!AllData};
+                                                        $scope.isPageTypeFixed = {!isPageTypeFixed};
+                                                        $scope.pTypeName = '{!pTypeName}';
+                                                        $scope.existingList = $scope.allData.editorRecords;
+                                                        $scope.pageTypeAutoCompleteList;
+                                                        $scope.$log = $log;
+                                                        $scope.$log.info('$scope.existingList:::'+JSON.stringify($scope.existingList));
+                                                        //Added by C.P.Pandey under ER-1940 start
+                                                        $scope.globalSettings = {!GlobalSettings};
+                                                        $scope.mlObj = {};
+                                                        $scope.mlObj.languageFielApi = [];
+                                                        $.each($scope.globalSettings.Supported_Language_Field_Map__c.split(';'), function(k, v){
+                                                            $scope.mlObj.languageFielApi.push(v.split('~')[1]);
+                                                        });
+                                                        $scope.mlObj.languageFielApiMap = $scope.globalSettings.Supported_Language_Field_Map__c.split(';');
+                                                        //Added by C.P.Pandey under ER-1940 end
+                                                        $scope.recordToProcess = {};
+                                                        $scope.recordToProcess.Id = '';
+                                                        $scope.recordToProcess.Is_Active__c = false;
+                                                        $scope.recordToProcess.Content__c = '';
+                                                        //Added by Vikram Singh under ER-1940 Start
+                                                        $.each($scope.mlObj.languageFielApi, function(k, v){
+                                                            $scope.recordToProcess[v] = '';
+                                                            //$scope.recordToProcess.Japanese_Translation__c = '';
+                                                        });
+                                                        //Added by Vikram Singh under ER-1940 End
+                                                        $scope.recordToProcess.Page_Name__c = '';
+                                                        $scope.recordToProcess.Page_Title__c = '';
+                                                        $scope.recordToProcess.Page_Url__c = '';
+                                                        $scope.recordToProcess.Page_Type__c = '';
+                                                        $scope.editIndex = -1;
+                                                        $scope.isSortingAllowed = {!isSorteable};
+                                                        $scope.isSearchingAllowed = {!isSearchAllowed};//Added by C.P.Pandey under ER-1940
+                                                        $scope.columnSortBy = 'Page_Name__c';
+                                                        $scope.columnSearchBy = 'Default';//Added by C.P.Pandey under ER-1940
+                                                        $scope.isDescending = false;
+                                                        $scope.columnsToSort = [];
+                                                        $scope.columnsToSearch = [];//Added by C.P.Pandey under ER-1940
+                                                        $scope.sortOrder = 'ascPageName';//Added by C.P.Pandey under ER-1940
+                                                        $scope.searchTxt = '';//Added by C.P.Pandey under ER-1940
+                                                        
+                                                        //Added by C.P.Pandey under ER-1940 start
+                                                        $scope.descImage = '&nbsp;<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAD1BMVEX////////e3t6ZmZkzMzPjUSqdAAAABXRSTlMA/////xzQJlIAAAAJcEhZcwAACvAAAArwAUKsNJgAAAAldEVYdFNvZnR3YXJlAE1hY3JvbWVkaWEgRmlyZXdvcmtzIE1YIDIwMDSHdqzPAAAAKklEQVR4nGNgIA+wuACBA4hhJCioDGIwOCsKmUDkjCACQCETmHIHIs0FABo8BA7kFkjvAAAAAElFTkSuQmCC" alt="test Image" />';
+                                                        $scope.ascImage = '&nbsp;<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAPUExURf///////97e3pmZmTMzM+NRKp0AAAABdFJOUwBA5thmAAAACXBIWXMAAArwAAAK8AFCrDSYAAAAJXRFWHRTb2Z0d2FyZQBNYWNyb21lZGlhIEZpcmV3b3JrcyBNWCAyMDA0h3aszwAAAClJREFUGNNjIBKwOEAZziZQASNliJCzopAJREBQECzE4gIEDgzkAAYGACuRBA6ce+7fAAAAAElFTkSuQmCC" alt="test Image" />';
+                                                        $scope.filterImage = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAQAAAD8fJRsAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAHdElNRQffCw4NEDmlrEtyAAAA50lEQVQY0y3Fvy4EYRTG4d/55kMyu9koZGWTbSQStlO4AQrRSKjE3oe7cAMqhURCo5GoVOIKbKcwhWRUJP5l2DnnVfA0j63tcmmtsoEAMGHIi/5LbPpQ7iksLEwo3HRhI1jXtS1QUymbWFWPu7RjK0Xr6UBnPGhLlW3bFa+2oUkxr2xf9xS+F4vxqOPoa+y3RWHLNNajyT+n7FMz4HB6VKZu2BLQpM8oB7qxkc7LMXyoqySC2ZibmdZet/jkLd5zRyJXDGn5FpgBSUBDJsMT0AFwQQA8AxkApgAJMP6lvzwcP3G8dRyAX2CJbaooSuEmAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE1LTExLTE0VDEzOjE2OjU3LTA1OjAwUHeVLwAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNS0xMS0xNFQxMzoxNjo1Ny0wNTowMCEqLZMAAAAZdEVYdFNvZnR3YXJlAEFkb2JlIEltYWdlUmVhZHlxyWU8AAAAAElFTkSuQmCC"/>';
+                                                        //Added by C.P.Pandey under ER-1940 end
+                                                        
+                                                        $scope.selectedPageType = '--Select All--';
+                                                        if($scope.isPageTypeFixed)
+                                                        {
+                                                            $scope.selectedPageType = angular.copy($scope.pTypeName);
+                                                            $scope.recordToProcess.Page_Type__c = angular.copy($scope.pTypeName);
+                                                        }
+                                                        
+                                                        if($scope.isSortingAllowed)
+                                                        {
+                                                            $scope.columnsToSort.push('Page_Name__c~Page Name');
+                                                            $scope.columnsToSort.push('Page_Title__c~Page Title');
+                                                            $scope.columnsToSort.push('Is_Active__c~Page Is Active');
+                                                        }
+                                                        
+                                                        //Added by C.P.Pandey under ER-1940 start
+                                                        if($scope.isSearchingAllowed)            
+                                                        {
+                                                            $scope.columnsToSearch.push('Default~Default Search');
+                                                            $scope.columnsToSearch.push('Page_Name__c~Page Name');
+                                                            $scope.columnsToSearch.push('Page_Title__c~Page Title');
+                                                        }
+                                                        //Added by C.P.Pandey under ER-1940 end
+                                                        
+                                                        $scope.orderbyChange = function()
+                                                        {
+                                                            $scope.$log.info('$scope.columnSortBy::::'+$scope.columnSortBy);
+                                                        }
+                                                        
+                                                        $scope.existingListCopy;//Added by C.P.Pandey under ER-1940
+                                                        $scope.isNameEmpty = false;
+                                                        $scope.isTitleEmpty = false;
+                                                        $scope.isContentEmpty = false; 
+                                                        $scope.isPageTypeEmpty = false;               
+                                                        
+                                                        $scope.isNew = true;
+                                                        
+                                                        //Added by C.P.Pandey under ER-1940 start
+                                                        $scope.searchByText = function()
+                                                        {
+                                                            if($scope.searchTxt != null && $scope.searchTxt.length > 1)
+                                                            {    
+                                                                if($scope.existingListCopy == null)
+                                                                    $scope.existingListCopy = angular.copy($scope.existingList);
+                                                                $scope.existingList = [];
+                                                                angular.forEach($scope.existingListCopy, function(v, k){
+                                                                    if($scope.columnSearchBy == 'Default' && ((v['Page_Name__c'] != null && v['Page_Name__c'].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1) || (v['Page_Title__c'] != null && v['Page_Title__c'].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1)))
+                                                                        $scope.existingList.push(angular.copy(v));
+                                                                    else if(v[$scope.columnSearchBy] != null && v[$scope.columnSearchBy].toLowerCase().indexOf($scope.searchTxt.toLowerCase()) != -1)
+                                                                        $scope.existingList.push(angular.copy(v));
+                                                                });
+                                                            }
+                                                            else
+                                                            {
+                                                                if($scope.existingListCopy != null)
+                                                                    $scope.existingList = angular.copy($scope.existingListCopy);
+                                                            }
+                                                        }
+                                                        //Added by C.P.Pandey under ER-1940 end
+                                                        
+                                                        $scope.editRecord = function(obj, recIndex)
+                                                        {
+                                                            $scope.recordToProcess.Id = angular.copy(obj.Id);
+                                                            $scope.recordToProcess.Is_Active__c = angular.copy(obj.Is_Active__c);
+                                                            $scope.recordToProcess.Content__c = angular.copy(obj.Content__c);
+                                                            <!-- Added by Vikram Singh under ER-1940 Start -->
+                                                                $.each($scope.mlObj.languageFielApi, function(k, v){
+                                                                    $scope.recordToProcess[v] = angular.copy(obj[v]);
+                                                                    CKEDITOR.instances[v].setData(obj[v]);
+                                                                });
+                                                            //$scope.recordToProcess.English_Translation__c = angular.copy(obj.English_Translation__c);
+                                                            //$scope.recordToProcess.Japanese_Translation__c = angular.copy(obj.Japanese_Translation__c);      
+                                                            <!-- Added by Vikram Singh under ER-1940 End -->
+                                                                $scope.recordToProcess.Page_Name__c = angular.copy(obj.Page_Name__c);
+                                                            $scope.recordToProcess.Page_Title__c = angular.copy(obj.Page_Title__c);
+                                                            $scope.recordToProcess.Page_Url__c = angular.copy(obj.Page_Url__c);
+                                                            $scope.recordToProcess.Page_Type__c = angular.copy(obj.Page_Type__c);
+                                                            //$scope.$log.info('#### English_Translation: '+$scope.recordToProcess.English_Translation__c);
+                                                            //$scope.$log.info('#### Japanese_Translation: '+$scope.recordToProcess.Japanese_Translation__c);
+                                                            CKEDITOR.instances['editor'].setData(obj.Content__c);
+                                                            <!-- Added by Vikram Singh under ER-1940 Start -->
+                                                                //CKEDITOR.instances['editorEn'].setData(obj.English_Translation__c);
+                                                                //CKEDITOR.instances['editorJa'].setData(obj.Japanese_Translation__c);
+                                                                <!-- Added by Vikram Singh under ER-1940 End -->
+                                                                    $scope.isNew = false;
+                                                            $scope.resetErrors();
+                                                            $scope.editIndex = recIndex;
+                                                        }
+                                                        
+                                                        $scope.saveRecord = function(saveType)
+                                                        {
+                                                            if(!$scope.isFormValid(saveType))
+                                                                return false;
+                                                            if(saveType == 'New')
+                                                                delete $scope.recordToProcess["Id"];
+                                                            $scope.popupConfirm('Do you really want to create/update this information. Once you create/update this information, It will become live.', function(){ //updated by C.P.Pandey under ER-2106
+                                                                var ckContent = CKEDITOR.instances['editor'].getData();
+                                                                $scope.recordToProcess.Content__c = ckContent;
+                                                                
+                                                                <!-- Added by Vikram Singh under ER-1940 Start -->
+                                                                    $.each($scope.mlObj.languageFielApi, function(k, v){
+                                                                        $scope.recordToProcess[v] = CKEDITOR.instances[v].getData();
+                                                                    });
+                                                                //var enContent = CKEDITOR.instances['editorEn'].getData();
+                                                                //$scope.recordToProcess.English_Translation__c = enContent;
+                                                                
+                                                                //var jaContent = CKEDITOR.instances['editorJa'].getData();
+                                                                //$scope.recordToProcess.Japanese_Translation__c = jaContent;
+                                                                <!-- Added by Vikram Singh under ER-1940 End -->
+                                                                    
+                                                                    $scope.recordToProcess.Page_Type__c = $('.pageTypeAutoComplete').val();
+                                                                showLoading();
+                                                                CNT_TPA_EditorController_Multi.saveRecord(JSON.stringify($scope.recordToProcess), function(result, event){                        
+                                                                    if(event.type == 'exception')
+                                                                    {
+                                                                        hideLoading();                                
+                                                                        $scope.$log.info('Error: ' + event.message);
+                                                                        return false;                                    
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        hideLoading();
+                                                                        $scope.allData = result;
+                                                                        $scope.existingList = $scope.allData.editorRecords;
+                                                                        $scope.pageTypeAutoCompleteLoad();
+                                                                        var decoded, decodedEn, decodedJa;
+                                                                        $.each($scope.existingList, function(k, v){
+                                                                            decoded = $('<div/>').html(v.Content__c).text();
+                                                                            v.Content__c = decoded;
+                                                                            
+                                                                            <!-- Added by Vikram Singh under ER-1940 Start -->
+                                                                                decodedEn = $('<div/>').html(v.English_Translation__c).text();
+                                                                            v.English_Translation__c = decodedEn;
+                                                                            
+                                                                            decodedJa = $('<div/>').html(v.Japanese_Translation__c).text();
+                                                                            v.Japanese_Translation__c = decodedJa;
+                                                                            <!-- Added by Vikram Singh under ER-1940 End -->
+                                                                        });
+                                                                        $scope.$log.warn(JSON.stringify(result));
+                                                                        $scope.resetForm();
+                                                                        CKEDITOR.instances['editor'].resetUndo();
+                                                                        
+                                                                        <!-- Added by Vikram Singh under ER-1940 Start -->
+                                                                            $.each($scope.mlObj.languageFielApi, function(k, v){
+                                                                                CKEDITOR.instances[v].resetUndo();
+                                                                            });
+                                                                        //CKEDITOR.instances['editorEn'].resetUndo();
+                                                                        //CKEDITOR.instances['editorJa'].resetUndo();
+                                                                        <!-- Added by Vikram Singh under ER-1940 End -->
+                                                                            
+                                                                            if($scope.isPageTypeFixed)
+                                                                                $scope.recordToProcess.Page_Type__c = angular.copy($scope.pTypeName);
+                                                                    }
+                                                                    $scope.applyChanges();
+                                                            });}, function(){}, true);
+                                                        }
+                                                        
+                                                        $scope.filterRecordsByPageType = function(v)
+                                                        {
+                                                            return ($scope.selectedPageType.toLowerCase() == '--select all--' || v.Page_Type__c.toLowerCase() == $scope.selectedPageType.toLowerCase());
+                                                        }
+                                                        
+                                                        $scope.isFormValid = function(saveType)
+                                                        {
+                                                            $scope.resetErrors();
+                                                            var content = CKEDITOR.instances['editor'].getData();
+                                                            var pageTypeIfDuplicate = '';
+                                                            $.each($scope.existingList, function(k, v){
+                                                                if($scope.editIndex != v.Id && v.Page_Name__c.toLowerCase() == $scope.recordToProcess.Page_Name__c.toLowerCase() && v.Page_Type__c.toLowerCase() == $scope.recordToProcess.Page_Type__c.toLowerCase())
+                                                                    pageTypeIfDuplicate = v.Page_Type__c;
+                                                            });
+                                                            if($scope.recordToProcess.Page_Name__c == null || $scope.recordToProcess.Page_Name__c.length == 0)
+                                                            {
+                                                                $scope.popupAlert('Please provide Page Name');
+                                                                $scope.isNameEmpty = true;
+                                                                return false;
+                                                            }                    
+                                                            else if($scope.recordToProcess.Page_Type__c == null || $scope.recordToProcess.Page_Type__c.length == 0)
+                                                            {
+                                                                $scope.popupAlert('Please provide Page Type');
+                                                                $scope.isPageTypeEmpty = true;
+                                                                return false;
+                                                            }                    
+                                                                else if(content == null || content.trim().length == 0)
+                                                                {
+                                                                    $scope.popupAlert('Please provide Page Content');
+                                                                    $scope.isContentEmpty = true;
+                                                                    $('#cke_editor').addClass("errStyle");
+                                                                    return false;
+                                                                }
+                                                                    else if(pageTypeIfDuplicate.length > 0)
+                                                                    {
+                                                                        $scope.popupAlert('This Page Name is already exists under ' + '"<b>' + pageTypeIfDuplicate + '</b>"' + ' page type.');
+                                                                        $scope.isNameEmpty = true;
+                                                                        return false;
+                                                                    }
+                                                            return true;
+                                                        }
+                                                        
+                                                        $scope.resetErrors = function()
+                                                        {
+                                                            $scope.isNameEmpty = false;
+                                                            $scope.isTitleEmpty = false;
+                                                            $scope.isContentEmpty = false; 
+                                                            $scope.isPageTypeEmpty = false;
+                                                            $('#cke_editor').removeClass("errStyle");                    
+                                                        }
+                                                        
+                                                        $scope.resetForm = function()
+                                                        {                    
+                                                            $scope.recordToProcess.Id = '';
+                                                            $scope.recordToProcess.Is_Active__c = true;
+                                                            $scope.recordToProcess.Content__c = '';
+                                                            $scope.recordToProcess.Page_Name__c = '';
+                                                            $scope.recordToProcess.Page_Title__c = '';
+                                                            $scope.recordToProcess.Page_Url__c = '';
+                                                            CKEDITOR.instances['editor'].setData('');
+                                                            //Added by Vikram Singh under ER-1940 Start
+                                                            $.each($scope.mlObj.languageFielApi, function(k, v){
+                                                                CKEDITOR.instances[v].setData('');
+                                                            });
+                                                            //Added by Vikram Singh under ER-1940 End
+                                                            $scope.recordToProcess.Page_Type__c = '';
+                                                            $scope.recordToProcess.Is_Active__c = false;
+                                                            if($scope.isPageTypeFixed)
+                                                                $scope.recordToProcess.Page_Type__c = angular.copy($scope.pTypeName);
+                                                            $scope.isNew = true;
+                                                            $scope.editIndex = -1;
+                                                            $scope.resetErrors();
+                                                        }
+                                                        
+                                                        $scope.popupAlert = function(msg, truePart)
+                                                        {
+                                                            popup(msg, {'animate':true}, 
+                                                                  function(r)
+                                                                  {
+                                                                      if(r && truePart != null)
+                                                                          truePart();
+                                                                  });
+                                                        }
+                                                        
+                                                        $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                                                        {
+                                                            if(isYesNo)
+                                                                popup(msg, {'verify':true, 'animate':true}, function(r)
+                                                                      {
+                                                                          if(r)
+                                                                              truePart();
+                                                                          else
+                                                                              falsePart();
+                                                                          haltScreen = false;
+                                                                          $scope.applyChanges();
+                                                                      });                        
+                                                            else
+                                                                popup(msg, {'confirm':true, 'animate':true}, function(r)
+                                                                      {
+                                                                          if(r)
+                                                                              truePart();
+                                                                          else
+                                                                              falsePart();
+                                                                          haltScreen = false;
+                                                                          $scope.applyChanges();
+                                                                      });                        
+                                                        }
+                                                        
+                                                        $scope.applyChanges = function()
+                                                        {
+                                                            if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                                                                $scope.$apply();                    
+                                                        }
+                                                        
+                                                        $scope.pageTypeAutoCompleteLoad = function()
+                                                        {
+                                                            var isPageTypeExisted = false;
+                                                            $.each($scope.allData.autoCompletePageTypeList, function(k, v){
+                                                                if(v.toLowerCase() == $scope.selectedPageType.toLowerCase())
+                                                                    isPageTypeExisted = true;
+                                                            });
+                                                            $scope.pageTypeAutoCompleteList = angular.copy($scope.allData.autoCompletePageTypeList);
+                                                            $scope.pageTypeAutoCompleteList = jQuery.unique($scope.pageTypeAutoCompleteList);
+                                                            $scope.pageTypeAutoCompleteList = $scope.pageTypeAutoCompleteList.sort();
+                                                            $scope.pageTypeAutoCompleteList.splice(0, 0, '--Select All--');
+                                                            $(".pageTypeAutoComplete").autocomplete({
+                                                                source: $scope.allData.autoCompletePageTypeList, 
+                                                                open: function (event, ui) {
+                                                                    console.log($('[class^=ui-]'));
+                                                                    console.log($(".pageTypeAutoComplete")[0].clientWidth);
+                                                                    var elements = $('[class^=ui-]');
+                                                                    for(var i = 0; i < $('[class^=ui-]').length; i++){
+                                                                        if(elements[i].tagName === 'UL'){
+                                                                            elements[i].className += ' slds-has-dividers_bottom slds-has-block-links_space slds-size_1-of-1';
+                                                                            elements[i].style.background = 'white';
+                                                                            elements[i].style.width = $(".pageTypeAutoComplete")[0].clientWidth + 'px' ;
+                                                                            elements[i].style.border = '#0070d2 solid 1px' ;
+                                                                        }else if(elements[i].tagName === 'LI'){
+                                                                            elements[i].className += ' slds-item';
+                                                                        }else if(elements[i].tagName === 'SPAN'){
+                                                                            elements[i].style.display = 'none';
+                                                                        }
+                                                                    }
+                                                                }
+                                                            });
+                                                            if(!isPageTypeExisted)
+                                                                $scope.selectedPageType = '--Select All--';
+                                                        }
+                                                        
+                                                        //Added by C.P.Pandey under ER-1940 start
+                                                        $scope.sortOrderChange = function(columnToSort, sortOrder)
+                                                        {$scope.$log.info('####columnToSort: '+columnToSort+', sortOrder: '+sortOrder);
+                                                         if(columnToSort == $scope.columnSortBy)
+                                                         {
+                                                             if('asc' + sortOrder == $scope.sortOrder)
+                                                                 $scope.sortOrder = 'desc' + sortOrder;
+                                                             else
+                                                                 $scope.sortOrder = 'asc' + sortOrder;
+                                                             $scope.isDescending = !$scope.isDescending;
+                                                         }
+                                                         else
+                                                         {
+                                                             $scope.columnSortBy = columnToSort;
+                                                             $scope.sortOrder = ($scope.sortOrder.indexOf('desc') != -1 ? 'desc' : 'asc') + sortOrder;
+                                                         }
+                                                         //$compile($(this))($scope);
+                                                        }
+                                                        
+                                                        $scope.sortOrderChangeHeaderClick = function(columnToSort, sortOrder, sortOrderChange)
+                                                        {
+                                                            if(columnToSort != null)
+                                                                $scope.sortOrderChange(columnToSort, sortOrder);
+                                                            else if(sortOrderChange == 'true')
+                                                            {
+                                                                $scope.sortOrder = $scope.sortOrder.indexOf('desc') != -1 ? $scope.sortOrder.replace('desc', 'asc') : $scope.sortOrder.replace('asc', 'desc');
+                                                            }
+                                                                else if(sortOrderChange == 'false')
+                                                                {
+                                                                    $scope.sortOrder = ($scope.sortOrder.indexOf('desc') != -1 ? 'desc' : 'asc') + $("#ddSortData option:selected").text().replace(/ /g,'');
+                                                                }
+                                                            
+                                                            $scope.applyChanges();
+                                                        }
+                                                        //Added by C.P.Pandey under ER-1940 end
+                                                        
+                                                        $scope.pageTypeAutoCompleteLoad();
+                                                        $scope.applyChanges();
+                                                    }]);
+    
+    //Added by C.P.Pandey under ER-1940 start
+    myapp.filter('highlight', function($sce) {
+        return function(text, phrase, arg1, arg2) {
+            if (phrase && phrase.length > 1 && text != null && (arg2 == 'Default' || arg1 == arg2)) text = text.replace(new RegExp('('+phrase+')', 'gi'),
+                                                                                                                        '<span class="highlighted">$1</span>')
+            return $sce.trustAsHtml(text)
+        }
+    });
+    
+    myapp.filter('unsafe', function($sce) { return $sce.trustAsHtml; });
+    //Added by C.P.Pandey under ER-1940 end
+    
+    </script>
+    <style type="text/css">            
+        .errStyle
+        {
+        border: 2px solid #c00 !important;
+        }
+        .tableWrapper {
+        height: 200px;
+        overflow-x:auto;
+        }
+        
+    </style>
+    <!-- Head Section Ends -->
+    
+    <!-- Body Section Begins -->
+    <apex:attribute name="isFixedPageType" type="boolean" description="Page Type is fixed or not" assignTo="{!isPageTypeFixed}"/>
+    <apex:attribute name="pageTypeName" type="string" description="Page Type Name" assignTo="{!pTypeName}"/>
+    <apex:attribute name="dataSorteable" type="boolean" description="Display table is sorteable or not" assignTo="{!isSorteable}"/>
+    <apex:attribute name="allowSearch" type="boolean" description="Enable/Disable Record Search" assignTo="{!isSearchAllowed}"/><!-- Added by C.P.Pandey under ER-1940 -->
+    <div id="ng-app" class="slds-scope" ng-app="TpaEditor">      
+        <c:VFC_TPA_LoadingImage />          
+        <div id="controllerPage" ng-controller="controllerPage">
+            <apex:pageBlock >
+                <apex:pageBlockSection columns="1" title="Existing Records" collapsible="false" html-style="background-color:white;">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Page Category" />
+                        <apex:outputPanel >
+                            <select id="ddPageType" ng-model="selectedPageType" ng-disabled="isPageTypeFixed" ng-options="v for v in pageTypeAutoCompleteList">
+                            </select>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <div class="slds-m-around_x-small" style="float:left;">
+                            <label>Total Records: {{filteredExistingList.length}}</label>
+                            <label ng-show="isSortingAllowed">
+                                || Order By: 
+                                <select id="ddSortData" ng-model="columnSortBy" ng-change="orderbyChange()" ng-options="v.split('~')[0] as v.split('~')[1] for v in columnsToSort">
+                                </select>
+                                <input class="" ng-click="isDescending=!isDescending" type="checkbox"/>&nbsp;Desc
+                            </label>
+                        </div>
+                        
+                        <!-- Added by C.P.Pandey under ER-1940 start -->
+                        <div style="float:right;">
+                            <label>Search:&nbsp;
+                                <select id="ddSearchBy" ng-model="columnSearchBy" ng-change="searchByText();" ng-options="v.split('~')[0] as v.split('~')[1] for v in columnsToSearch">
+                                </select>
+                            </label>
+                            <input class="slds-m-around_x-small" placeholder="Enter Atleast Two Characters To Search..." ng-change="searchByText();" style="width:300px;" ng-model="searchTxt" type="text" />
+                        </div>
+                        <div ng-show="existingList.length == 0">
+                            <center><hr style="width:99%; border-top:5px double #c3c3c3;" /><label style="color:#c00;">-------------------- No Such Records Found. Please Edit Your Filter Criteria. --------------------</label></center>
+                        </div>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                    <div ng-show="existingList.length > 0">
+                        <!-- Modified by C.P.Pandey under ER-1940 start -->
+                        <div class="editorPageData" ng-show="existingList.length > 0">
+                            <div class="tableWrapper">
+                                <table class="demo slds-table slds-no-cell-focus slds-table_bordered slds-size_1-of-1" style="margin-bottom:10px;">
+                                    <thead>
+                                        <tr class="headerRow ">
+                                            <th class="slds-size_1-of-12 slds-text-title_caps slds-text-align_left">#</th>
+                                            <th class=" slds-text-title_caps slds-text-align_left" style="cursor:pointer;" ng-click="sortOrderChangeHeaderClick('Page_Name__c', 'PageName');"><span>Page Name<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascPageName'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descPageName'"></span></span></th>
+                                            <th class=" slds-text-title_caps slds-text-align_left" style="cursor:pointer;" ng-click="sortOrderChangeHeaderClick('Page_Title__c', 'PageTitle');"><span>Page Title<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascPageTitle'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descPageTitle'"></span></span></th>
+                                            <th class=" slds-text-title_caps slds-text-align_left"><span>Page Category</span></th> <!-- Added by C.P.Pandey under CR-11991 -->
+                                            <th class=" slds-text-title_caps slds-text-align_left"><span>Page Url</span></th>
+                                            <th class=" slds-text-title_caps slds-text-align_left" style="cursor:pointer;" ng-click="sortOrderChangeHeaderClick('Is_Active__c', 'PageIsActive');"><span>Is Active<span ng-bind-html="ascImage | unsafe" ng-show="sortOrder=='ascPageIsActive'"></span><span ng-bind-html="descImage | unsafe" ng-show="sortOrder=='descPageIsActive'"></span></span></th>
+                                            <th class="slds-size_1-of-12 slds-text-title_caps slds-text-align_left">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tr class="dataRow" ng-repeat="(k,v) in filteredExistingList = (existingList | filter: filterRecordsByPageType) | orderBy:columnSortBy:isDescending" onfocus="if (window.hiOn){hiOn(this);}" onblur="if (window.hiOff){hiOff(this);}" onmouseout="if (window.hiOff){hiOff(this);} " onmouseover="if (window.hiOn){hiOn(this);} ">
+                                        <td class="dataCell slds-truncate slds-text-align_left slds-size_1-of-18">
+                                            {{$index + 1}}
+                                        </td>
+                                        <td class="dataCell slds-text-align_left slds-size_3-of-12 slds-truncate" ng-class="{'sortingHighlighter':columnSortBy=='Page_Name__c','':columnSortBy!='Page_Name__c'}" style="overflow:hidden;">
+                                            <div ng-bind-html="v['Page_Name__c'] | highlight:searchTxt:'Page_Name__c':columnSearchBy"></div>
+                                        </td>
+                                        <td class="dataCell slds-text-align_left slds-size_2-of-12 slds-truncate" ng-class="{'sortingHighlighter':columnSortBy=='Page_Title__c','':columnSortBy!='Page_Title__c'}">
+                                            <div ng-bind-html="v['Page_Title__c'] | highlight:searchTxt:'Page_Title__c':columnSearchBy"></div>
+                                        </td>
+                                        <!-- Added by C.P.Pandey under CR-11991 start -->
+                                        <td class="dataCell slds-text-align_left slds-truncate">
+                                            <div>{{v.Page_Type__c}}</div>
+                                        </td>
+                                        <!-- Added by C.P.Pandey under CR-11991 end -->
+                                        <td class="dataCell slds-scrollable_none slds-text-align_left slds-truncate">
+                                            <a href="{{v.Page_Url__c}}" target="_blank">{{v.Page_Url__c}}</a>
+                                        </td>
+                                        <td class="dataCell slds-text-align_left" ng-class="{'sortingHighlighter':columnSortBy=='Is_Active__c','':columnSortBy!='Is_Active__c'}">
+                                            <img src="/img/checkbox_checked.gif" ng-if="v.Is_Active__c" alt="Checked" width="21" height="16" class="checkImg" title="Checked" />
+                                            <img src="/img/checkbox_unchecked.gif" ng-if="!v.Is_Active__c" alt="Not Checked" width="21" height="16" class="checkImg" title="Not Checked" />
+                                        </td>
+                                        <td><a href="javascript:void(0)" style="text-decoration:underline;" ng-click="editRecord(v, v.Id);">Edit</a></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Modified by C.P.Pandey under ER-1940 end -->
+                    </div>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection columns="1" title="Edit Record" collapsible="false" html-style="background-color:white;">
+                <div class="slds-form slds-form_stacked">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element slds-size_1-of-1">
+                                <label class="slds-form-element__label">Page Name<div class="requiredBlock"></div></label>
+                                <div class="slds-form-element__control">
+                                    <input class="slds-size_1-of-2" type="text" ng-model="recordToProcess.Page_Name__c" ng-class="{'errStyle':isNameEmpty,'':!isNameEmpty}" placeholder="PageName..."/>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element slds-size_1-of-1">
+                                <label class="slds-form-element__label">Page Title</label>
+                                <div class="slds-form-element__control">
+                                    <input class="slds-size_1-of-2" type="text" ng-model="recordToProcess.Page_Title__c" ng-class="{'errStyle':isTitleEmpty,'':!isTitleEmpty}" placeholder="PageTitle..."/>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element slds-size_1-of-1">
+                                <label class="slds-form-element__label">Page Category<div class="requiredBlock"></div></label>
+                                <div class="slds-form-element__control">
+                                    <input type="text" autocomplete="on" class="pageTypeAutoComplete slds-size_1-of-2 slds-combobox" ng-disabled="isPageTypeFixed" ng-model="recordToProcess.Page_Type__c" ng-class="{'errStyle':isPageTypeEmpty,'':!isPageTypeEmpty}" placeholder="PageCategory..."/>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element">
+                                <label class="slds-form-element__label">Page URL</label>
+                                <div class="slds-form-element__control">
+                                    <label ng-if="recordToProcess.Page_Url__c != null && recordToProcess.Page_Url__c.length > 0">{{recordToProcess.Page_Url__c}}</label>
+                                    <label ng-if="recordToProcess.Page_Url__c == null || recordToProcess.Page_Url__c.length == 0">N/A</label>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <div class="slds-checkbox">
+                                  <input type="checkbox" ng-model="recordToProcess.Is_Active__c" id="isActivechkbox"/>
+                                  <label class="slds-checkbox__label" for="isActivechkbox">
+                                    <span class="slds-checkbox_faux"></span>
+                                    <span class="slds-form-element__label">Active</span>
+                                  </label>
+                                </div>
+                              </div>
+                                
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element">
+                                <label class="slds-form-element__label">Content<div class="requiredBlock"></div></label>
+                                <div class="slds-form-element__control">
+                                    <div id="editor" ng-class="{'errStyle':isContentEmpty,'':!isContentEmpty}"></div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <!-- Added by Vikram Singh under ER-1940 Start -->
+                    <apex:pageBlockSectionItem html-ng-repeat="mlFieldApi in mlObj.languageFielApiMap">
+                        <apex:outputPanel >
+                            <div class="requiredInput slds-form-element">
+                                <label class="slds-form-element__label">{{mlFieldApi.split('~')[0]}} Content</label>
+                                <div class="slds-form-element__control">
+                                    <div id="{{mlFieldApi.split('~')[1]}}"></div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <!-- Added by Vikram Singh under ER-1940 End -->
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel styleclass="slds-float_right">
+                            <button class="slds-button slds-button_success" type="button" ng-show="isNew" value="Create" ng-click="saveRecord('New');">Create</button>
+                            <button class="slds-button slds-button_success" type="button" ng-show="!isNew" value="Update" ng-click="saveRecord('Update');">Update</button>
+                            <button class="slds-button slds-button_outline-brand" type="button" ng-show="!isNew" value="Cancel" ng-click="resetForm();">Cancel</button>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    </div>
+                </apex:pageBlockSection>   
+            </apex:pageBlock>
+        </div>
+    </div>            
+    
+    <script>
+    var TpaEditorGroup = [
+        { name: 'document',    groups: [ 'mode', 'document', 'doctools' ] },
+        { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },
+        { name: 'editing',     groups: [ 'find', 'selection', 'spellchecker' ] },
+        '/',
+        { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+        { name: 'paragraph',   groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ] },
+        { name: 'links' },
+        { name: 'insert' },
+        '/',
+        { name: 'styles' },
+        { name: 'colors' },
+        { name: 'tools' },
+        { name: 'others' }
+    ];
+    CKEDITOR.replace( 'editor',
+                     {
+                         height: '400px',
+                         toolbarCanCollapse: true,
+                         toolbarGroups: TpaEditorGroup
+                     });
+    //Added by Vikram Singh under ER-1940 Start
+    $(document).ready(function(){
+        var angularScope = angular.element($('#controllerPage')).scope();
+        $.each(angularScope.mlObj.languageFielApi, function(k, v){
+            CKEDITOR.replace(v,
+                             {
+                                 height: '400px',
+                                 toolbarCanCollapse: true,
+                                 toolbarGroups: TpaEditorGroup
+                             });
+        });
+    });
+    //Added by Vikram Singh under ER-1940 End
+    var $table = $('table.demo');
+    $table.floatThead({
+        scrollContainer: function($table){
+            return $table.closest('.tableWrapper');
+        }
+    });
+    </script>
+    <!-- Body Section Ends -->
+</apex:component>

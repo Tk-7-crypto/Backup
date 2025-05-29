@@ -1,0 +1,239 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" controller="CNT_CRM_OpportunityProductSearch">
+    <aura:attribute name="OpportunityId" type="Id" default="{!v.recordId}"/>
+    <aura:attribute name="clonedOppFields" type="List" default="['Id', 'Name', 'StageName', 'CloseDate', 'CurrencyIsoCode']"/>
+    <aura:attribute name="isCloneContactRole" type="Boolean" default="false"/>
+    <aura:attribute name="RequestedStage" type="String" />
+    <aura:attribute name="RequestedExpectedCloseDate" type="Date"/>
+    <aura:attribute name="RequestedOppName" type="String"/>
+    <aura:attribute name="RequestedPriceChangePercent" type="Integer"/>
+    <aura:attribute name="OpportunityName" type="String"/>
+    <aura:attribute name="CloseDate" type="Date"/>
+    <aura:attribute name="Stage" type="String"/>
+    <aura:attribute name="PriceChangePercent" type="Integer" default="0"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="pickListFieldsMap" type="Object"/>
+    <aura:attribute name="clonedOpp" type="Opportunity" default="{}"/>
+    <aura:attribute name="RevenueDateShift" type="Integer" default="0"/>
+    <aura:attribute name="selectedCloneOption" type="String" default="Clone without Products"/>
+    <aura:attribute name="selectedContactRoleOptions" type="String" default="Clone without Contact Roles"/>
+    <aura:attribute name="selectedDrugProductOptions" type="String" default="Clone without Drug Products"/>
+    <aura:attribute name="selectedIQVIAQuoteOptions" type="String" default="Clone without IQVIA Quotes"/>
+    <aura:attribute name="isRenewalOptions" type="Boolean" default="false"/>
+    <aura:attribute name="errors" type="List" />
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="CloneScreen" type="boolean" default="true"/>
+    <aura:attribute name="InactiveProductScreen" type="boolean" default="false"/>
+    <aura:attribute name="IsNonEmeaOpportunity" type="boolean" default="false"/>
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}"/>
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}"/>
+    <aura:attribute name="revenueShiftValues" type="List" default="[0,1,2,3,4,5,6,7,8,9,10,11,12,24,36,48,60,72]"/>
+    <aura:attribute name="cloneProductOptions" type="List" default="[
+                                                                    {'label': 'Clone with Products', 'value': 'Clone with Products'},
+                                                                    {'label': 'Clone without Products', 'value': 'Clone without Products'}]"/>
+    <aura:attribute name="contactRoleOptions" type="List" default="[
+                                                                    {'label': 'Clone with Contact Roles', 'value': 'Clone with Contact Roles'},
+                                                                    {'label': 'Clone without Contact Roles', 'value': 'Clone without Contact Roles'}]"/>
+    <aura:attribute name="drugProductOptions" type="List" default="[
+                                                                    {'label': 'Clone with Drug Products', 'value': 'Clone with Drug Products'},
+                                                                    {'label': 'Clone without Drug Products', 'value': 'Clone without Drug Products'}]"/>
+    <aura:attribute name="iqviaQuoteOptions" type="List" default="[
+                                                                    {'label': 'Clone with IQVIA Quotes', 'value': 'Clone with IQVIA Quotes'},
+                                                                    {'label': 'Clone without IQVIA Quotes', 'value': 'Clone without IQVIA Quotes'}]"/>
+    <aura:attribute name="recordList" type="List" />
+    <aura:attribute name="isRoundUp" type="Boolean" default="false"/>
+    <force:recordData recordId="{!v.recordId}" fields="{!v.clonedOppFields}" mode="EDIT" targetFields="{!v.clonedOpp}" recordUpdated="{!c.handleRecordUpdated}"/>
+    <aura:if isTrue="{!v.Spinner}">
+        <div aura:id="spinnerId" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>
+    
+    <aura:if isTrue="{!v.CloneScreen}">
+    <div id="maincontainer" style="height:45vh;">
+        
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Opportunity <span class="slds-truncate">{!v.OpportunityName}</span> Clone</h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_small slds-modal_large  slds-scrollable_y" id="modal-content-id-1">
+            <div class="slds-m-around_small">
+                <aura:if isTrue="{!v.errors.length > 0}">
+                    <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                        <ul>
+                            <aura:iteration items="{!v.errors}" var="error">
+                                <li>{!error}</li>
+                            </aura:iteration>
+                        </ul>
+                    </div>
+                </aura:if>
+            </div>
+            <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap slds-grid_pull-padded">
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2 ">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Opportunity Name</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <lightning:input aura:id="oppName" type="text" label="Opportunity Name" name="Opportunity Name" value="{!v.clonedOpp.Name}" variant="label-hidden" maxlength="120"/>
+                    </div>
+                </div>
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Stage</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <lightning:select name="selectStage" label="Select Stage" value="{!v.clonedOpp.StageName}" variant="label-hidden">
+                            <aura:iteration items="{!v.pickListFieldsMap.stagename}" var="stageValue">
+                                <option value="{!stageValue}" text="{!stageValue}" selected="{!stageValue == v.clonedOpp.StageName}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </div>
+                </div>
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Close Date</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <ui:inputDate aura:id="oppCloseDate" label="Close Date" value="{!v.clonedOpp.CloseDate}" displayDatePicker="true" labelClass="labelHidden" />
+                    </div>
+                </div>
+                <div class="slds-grid slds-grid_pull-padded-small slds-p-vertical_small slds-size_1-of-2">
+                    <div class="slds-col slds-text-align_right slds-size_2-of-6">Opportunity Currency</div>
+                    <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_4-of-6">
+                        <lightning:select name="selectCurrencyCode" label="Select Currency Code" value="{!v.clonedOpp.CurrencyIsoCode}" variant="label-hidden" aura:id="oppCurrencyCode">
+                            <aura:iteration items="{!v.pickListFieldsMap.currencyisocode}" var="currencyCode">
+                                <option value="{!currencyCode.value}" text="{!currencyCode.label}" selected="{!currencyCode.value == v.clonedOpp.CurrencyIsoCode}"/>
+                            </aura:iteration>
+                        </lightning:select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="slds-m-top_medium">
+                <h1 class="slds-m-bottom_x-small">Cloning Options</h1>
+                <table>
+                    <tr>
+                        <td>
+                            <lightning:radioGroup  aura:id="productOptions" name="CloneProductOptions" label="" options="{!v.cloneProductOptions}" value="{!v.selectedCloneOption}" onchange="{!c.handleChange}" />
+                        </td>
+                        <td style="padding-left: 40px;border-left: 2px solid #dddbda;">
+                            <lightning:radioGroup  aura:id="contactRoleOptions" name="contactRoleOptions" label="" options="{!v.contactRoleOptions}" value="{!v.selectedContactRoleOptions}"/>
+                        </td>
+                    </tr>
+                    <tr><td colspan="2"><h1></h1></td></tr>
+                    <tr>
+                        <td>
+                            <lightning:radioGroup  aura:id="drugProductOptions" name="drugProductOptions" label="" options="{!v.drugProductOptions}" value="{!v.selectedDrugProductOptions}"/>
+                        </td>
+                        <td style="padding-left: 40px;border-left: 2px solid #dddbda;">
+                            <lightning:radioGroup  aura:id="iqviaQuoteOptions" name="iqviaQuoteOptions" label="" options="{!v.iqviaQuoteOptions}" value="{!v.selectedIQVIAQuoteOptions}" disabled="{!v.IsNonEmeaOpportunity}"/>
+                        </td>
+                    </tr>
+                </table>
+                
+                
+                <!--<lightning:input type="checkbox" label="Clone Contact Roles" name="Clone Contact Roles" checked="{!v.isCloneContactRole}"/>-->
+            </div>
+            <div class="slds-m-top_large">
+                <h1 class="slds-m-bottom_x-small">Renewal Options</h1>
+                <aura:if isTrue="{!v.isRenewalOptions}">
+                    <div class="slds-card__body slds-card__body_inner slds-grid slds-wrap slds-grid_pull-padded">
+                        <div class="slds-grid slds-grid_pull-padded-small slds-size_1-of-2">
+                            <div class="slds-col slds-size_3-of-6 slds-text-align_right">Product &amp; Revenue Date Shift(months)</div>
+                            <div class="slds-col slds-p-horizontal_medium slds-size_3-of-6 slds-text-align_left">
+                                <!--<lightning:input aura:id="revenuedatashift" type="Number" label="Revenue Data Shift" name="RevenueDataShift" value="{!v.RevenueDataShift}" variant="label-hidden" step="any"/>-->
+                                <lightning:select name="SelectRevenueDateShift" label="Select Revenue Date Shift" value="{!v.RevenueDateShift}"  variant="label-hidden">
+                                    <aura:iteration items="{!v.revenueShiftValues}" var="shiftvalue">
+                                        <option value="{!shiftvalue}" text="{!shiftvalue}"></option>
+                                    </aura:iteration>
+                                </lightning:select>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-grid_pull-padded-small slds-size_1-of-2">
+                            <div class="slds-col  slds-size_3-of-6 slds-text-align_right">Price Change %</div>
+                            <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_3-of-6">
+                                <lightning:input aura:id="pricechangepercent" type="Number" label="Price Change Percent" name="PriceChangePercent" value="{!v.PriceChangePercent}" variant="label-hidden" step="any" onblur="{!c.setDecimalPlace}"/>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-grid_pull-padded-small slds-size_1-of-2">
+                            <div class="slds-col  slds-size_3-of-6 slds-text-align_right"></div>
+                            <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_3-of-6"></div>
+                        </div>
+                        <div class="slds-grid slds-grid_pull-padded-small slds-size_1-of-2">
+                            <div class="slds-col  slds-size_3-of-6 slds-text-align_right">
+                                <div style="float:right;display:flex;">
+                                    <div style="margin-top:3px;">Round Up </div>
+                                    <lightning:helptext content="{!$Label.c.CRM_CL0040_Round_Up_Help_Text}"/>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-p-horizontal_medium slds-text-align_left slds-size_3-of-6">
+                                <lightning:input type="checkbox" name="RoundUp" checked="{!v.isRoundUp}"/>
+                            </div>
+                        </div>
+                    </div>
+                    <aura:set attribute="else" >
+                        <p style="padding-bottom: 10px;" class="slds-align_absolute-center">
+                            Select "Clone with Products" to view Renewal Options</p>
+                    </aura:set>
+                </aura:if>
+            </div>
+        </div>
+        <footer class="slds-modal__footer slds-align_absolute-center ">
+            <button class="slds-button slds-button_brand " onclick="{!c.cloneOpportunity}">Clone</button>
+            <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.closeQuickAction}">Cancel</button>
+        </footer>
+        </div>
+        </aura:if>
+    
+    <aura:if isTrue="{!v.InactiveProductScreen}">
+        <div id="maincontainer2" style="height:45vh;">
+        <header class="slds-modal__header">
+            <h2 id="modal-heading-01" class="slds-text-heading_medium">Opportunity <span class="slds-truncate">{!v.OpportunityName}</span> Clone</h2>
+        </header>
+        <aura:if isTrue="{!v.errors.length > 0}">
+            <div class="slds-m-around_small">
+                <div aura:id="errorDiv" class="slds-box slds-theme_error">
+                    <ul>
+                        <aura:iteration items="{!v.errors}" var="error">
+                            <li>{!error}</li>
+                        </aura:iteration>
+                    </ul>
+                </div>
+            </div>
+        </aura:if>            
+        <div>
+            These product codes are inactive. Click Confirm to continue cloning Opportunity without these products.
+        </div>        
+        <div class="slds-modal__content slds-p-around_small slds-modal_large slds-scrollable_y">                
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered" style="min-height:300px !important;">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th class="" scope="col">
+                                <div class="slds-truncate" title="Product Code">Product Name</div>
+                            </th>
+                            <th class="" scope="col">
+                                <div class="slds-truncate" title="Product Code">Product Code</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody Style="text-align: center;vertical-align:top;">
+                        <aura:iteration items="{!v.recordList}" var="recordList">
+                            <tr class="slds-hint-parent">
+                                <th>
+                                    <div class="slds-truncate">
+                                        {!recordList.Product_Name__c}                                   
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="slds-truncate">
+                                        {!recordList.ProductCode}                                   
+                                    </div>
+                                </th>
+                            </tr>           
+                        </aura:iteration>                
+                    </tbody>
+                </table>                  
+        </div>
+        <footer class="slds-modal__footer slds-align_absolute-center">
+            <button class="slds-button slds-button_brand " onclick="{!c.confirmcloneOpportunity}">Confirm</button>
+            <button class="slds-button slds-button_brand setButtonPosition" onclick="{!c.closeQuickAction}">Cancel</button>
+        </footer>
+        </div>
+    </aura:if>
+</aura:component>

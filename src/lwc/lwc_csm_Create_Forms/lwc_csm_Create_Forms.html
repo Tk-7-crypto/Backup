@@ -1,0 +1,164 @@
+<template>
+    <article class="slds-card" >
+        <div class="slds-align_absolute-center ">   
+            <template if:true={showSpinner}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <div class="slds-card__header slds-grid" style="background:#f3f2f2; padding-bottom: .8rem;">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media">
+                    <div class="slds-media__body">
+                        <h2>
+                            <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" style="white-space:normal;" title="DI Detail Form"
+                            onclick={navigateToOfferingRelatedList}>
+                                <span class="slds-text-heading_small">Forms</span>
+                            </a>
+                        </h2>
+                    </div>
+                </div>
+            </header>
+            <div if:true={offeringCheckSize} class="slds-no-flex" >
+                <div if:false={isReportMaintenance} class="slds-no-flex" >
+                    <!-- <lightning-button label="New" icon-position="left" onclick={openInformationOfferingForm}></lightning-button>-->
+                    <lightning-button label="New" icon-position="left" onclick={openNewSubTabHandler}></lightning-button>
+                </div>
+                <div if:true={isReportMaintenance} class="slds-no-flex" >
+                    <lightning-button  label="New" icon-position="left" onclick={openNewSubTabHandler}></lightning-button>
+                </div>
+            </div>
+        </div>
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-grid slds-wrap slds-grid--pull-padded slds-var-p-left_medium">
+                <div if:true={offeringWrapper}> <!-- style="margin-left:auto; margin-right:auto;" -->
+                    <div if:true={offeringUnavailable} class="slds-has-flexi-truncate slds-text-color_error" style="font-size: 1rem; font-weight: 600;">
+                         {displayInfo}
+                    </div>
+                    <div if:true={offeringWrapper.isOfferingAvailable}>
+                        <div if:true={isReportMaintenance} class="slds-no-flex" >
+                            <div class="slds-table--header-fixed_container" style="height:250px;">
+                                <div class="slds-scrollable_y" style="height:100%;">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered" style="table-layout: auto;width: 95%;"> 
+                            <thead>
+                                <tr class="slds-line-height_reset slds-text-title_caps">
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Form Type">Form Type</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Action">Action</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI ClientNumber ReportNumber">ClientNumber-ReportNumber</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Count of Client Report Numbers"># Report</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Request ID">Request ID</div>
+                                    </th>
+                                </tr>
+                            </thead>   
+                            <tbody>
+                                <template for:each={offeringWrapper.offering} for:item="offer">							
+                                <tr key={offer.Id} class="slds-hint-parent">
+                                    <td class="slds-cell-wrap">
+                                        <a data-record-id={offer.Id} href="javascript:void(0);" class="slds-truncate" style="text-decoration: underline;" title={offer.Form_Request_Type__c}
+                                        onclick={openOffering} >
+                                            <span class="slds-text-heading_small">{offer.Form_Request_Type__c}</span>
+                                        </a>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.ReportAction__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.ClientNumber_ReportNumber__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Count_of_Client_Report_Numbers__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Request_ID__c}</span>
+                                    </td>
+                                </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        </div>
+                        </div>
+                    </div>
+                    <div if:false={isReportMaintenance} class="slds-no-flex" >
+                        <div class="slds-table--header-fixed_container" style="height:250px;">
+                            <div class="slds-scrollable_y" style="height:100%;">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered"  style="table-layout: auto;width: 100%;"> 
+                            <thead>
+                                <tr class="slds-text-title_caps">
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Form Type">Form Type</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Action">Action</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI AuditType">Audit Type</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI ClientNumber File Code">ClientNumber-File Code</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Request ID">Request ID</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI File Code/Market Description">File Code-Market Description</div>
+                                    </th>
+                                     <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI copy from?">What market do you want to copy from?</div>
+                                    </th>
+                                    <th scope="col" style="background-color: transparent;">
+                                        <div class="slds-truncate" title="DI Count of Client Report Numbers"># Report</div>
+                                    </th>
+                                </tr>
+                            </thead>   
+                            <tbody>
+                                <template for:each={offeringWrapper.offering} for:item="offer">							
+                                <tr key={offer.Id}>
+                                    <td class="slds-cell-wrap">
+                                        <a data-record-id={offer.Id} href="javascript:void(0);" class="slds-truncate" style="text-decoration: underline;" title={offer.Form_Request_Type__c}
+                                        onclick={openOffering} >
+                                            <span class="slds-text-heading_small">{offer.Form_Request_Type__c}</span>
+                                        </a>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Action__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Audit_Type__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.ClientNumber_ReportNumber__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Request_ID__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.File_Code_Market_Description__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.MarketToCopyFrom__c}</span>
+                                    </td>
+                                    <td class="slds-cell-wrap">
+                                        <span class="slds-text-heading_small">{offer.Count_of_Client_Report_Numbers__c}</span>
+                                    </td>
+                                </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </article> 
+</template>

@@ -1,0 +1,288 @@
+<apex:page controller="CNT_TPA_AgrmntSendForSignature" cache="false">
+   <apex:outputpanel rendered="false">
+         <c:VFC_TPA_Cancel ></c:VFC_TPA_Cancel>
+   </apex:outputpanel>
+   
+   <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">        
+        <head>
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <apex:slds />
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" /> 
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_LightningResource, 'css/generate-document.css')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_LightningResource, 'js/generate-document.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.TPA_JQuery112Library, 'jquery-1.12.3.js')}" />
+            
+            <!-- Library reference to fill controlling and dependent picklist from api by making client side call -->
+            <script src="/soap/ajax/52.0/connection.js" type="text/javascript" />
+            <script src="/soap/ajax/52.0/apex.js" type="text/javascript" />
+                
+            
+            
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            
+            <style type="text/css">
+                html body.sfdcBody {
+                    padding:0 0 0 0;
+                }
+                .downloadtable {
+                    font-family: arial, sans-serif;
+                    border-collapse: collapse;
+                    width: 50%;
+                }
+                .slds-table {
+                    border: 1px solid #d8dde6;
+                }
+            </style>       
+        </head>
+        
+        <body>
+            <apex:form id="sendDocusignForSignature" >
+                <div class="slds">
+                    <!-- Spinner Object to Show lightning spinning -->
+                    <div class="spinner">
+                        <img class="slds-spinner--medium spinnerImg " src="https://www.lightningdesignsystem.com/assets/images/spinners/slds_spinner_brand.gif" alt="..." />
+                    </div>
+                    
+                    <div class="slds-page-header" role="banner">
+                        <!-- LAYOUT GRID -->
+                        <div class="slds-grid">
+                            <!-- GRID COL -->
+                            <div class="slds-col">
+                                <!-- Page Heading  -->
+                                <p class="slds-text">{!usecase}</p>
+                                <h1 class="slds-text-heading--medium">{!tpaRequest.Name}</h1>
+                            </div>
+                        </div>
+                        <div class="myapp">
+                            <!-- Show Options to generate Document -->
+                            <apex:outputPanel id="generateoptionpanel" > 
+                                <div aria-labelledby="outputoptions">	
+                                    <!-- Display Recipients   -->                                      	
+                                    <fieldset class="slds-box slds-theme--default slds-container--large">	
+                                        <legend id="ouputRecipientoptions" class="slds-text-heading--medium slds-p-vertical--medium"> </legend>	
+                                        <b><p class="slds-text-heading_medium">Recipients</p></b>	
+                                        	
+                                        <div id="recipientList" class="slds-p-vertical--medium">	
+                                            <div class="slds-scrollable--x">	
+                                                <table class="slds-table slds-table--bordered slds-table--col-bordered">   	
+                                                    <thead>	
+                                                        <tr>	
+                                                            <th scope="col" style="padding: .25rem .5rem;">Recipient Name</th>	
+                                                            <th scope="col">Recipient Email</th>	
+                                                            <th scope="col">Action</th>	
+                                                            <th scope="col">Role</th>	
+                                                        </tr>	
+                                                    </thead>	
+                                                    	
+                                                    <tbody>	
+                                                        <apex:repeat value="{!listRecipientWrapper}" var="recipientInfo" rendered="{!hasRecipients}">	
+                                                            <tr id="{!recipientInfo.recipientRole}" style="cursor:pointer;">	
+                                                                <td style="padding:0px;vertical-align:inherit;">	
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label docName" for="cb{!recipientInfo.recipientRole}">{!recipientInfo.recipientName}</label>	
+                                                                </td>	
+                                                                <td style="padding:0px;vertical-align:inherit;">	
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label docName" for="cb{!recipientInfo.recipientRole}">{!recipientInfo.recipientEmail}</label>	
+                                                                </td>	
+                                                                <td style="padding:0px;vertical-align:inherit;">	
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label" for="cb{!recipientInfo.recipientRole}">{!recipientInfo.recipientAction}</label>	
+                                                                </td>	
+                                                                <td style="padding:0px;vertical-align:inherit;">	
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label docName" for="cb{!recipientInfo.recipientRole}">{!recipientInfo.recipientRole}</label>	
+                                                                </td>	
+                                                            </tr>	
+                                                        </apex:repeat>   	
+                                                    </tbody>	
+                                                </table>	
+                                                <apex:outputText value="No Recipients are available to send for signature" rendered="{!NOT(hasRecipients)}" />	
+                                            </div>	
+                                        </div>                                        	
+                                    </fieldset>	
+                                    
+                                    <!-- Display Templates   -->                                      
+                                    <fieldset class="slds-box slds-theme--default slds-container--large">
+                                        <legend id="ouputoptions" class="slds-text-heading--medium slds-p-vertical--medium"> </legend>
+                                        <b><p class="slds-text-heading_medium">Select Documents to send (*If applicable)</p></b>
+                                        
+                                        <div id="accountList" class="slds-p-vertical--medium">
+                                            <div class="slds-scrollable--x">
+                                                <table class="slds-table slds-table--bordered slds-table--col-bordered">   
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">Select</th>
+                                                            <th scope="col">Name</th>
+                                                            <th scope="col">Modified By</th>
+                                                            <th scope="col">Modified Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    
+                                                    <tbody>
+                                                        <apex:repeat value="{!listAttachments}" var="documentInfo" rendered="{!hasDocuments}">
+                                                            <tr id="{!documentInfo.id}" style="cursor:pointer;">
+                                                                <td style="padding:0px;vertical-align:inherit;">
+                                                                    <label style="padding:8px;padding-left:24px;display:block;" class="slds-checkbox slds-checkbox__label" for="cb{!documentInfo.Id}">
+                                                                        <input type="checkbox" id="cb{!documentInfo.Id}" exactId="{!documentInfo.Id}" name="options" class="selectedDocs" />
+                                                                        <span class="slds-checkbox_faux"></span>
+                                                                    </label>
+                                                                </td>
+                                                                <td style="padding:0px;vertical-align:inherit;">
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label docName" for="cb{!documentInfo.Id}">{!documentInfo.Name}</label>
+                                                                </td>
+                                                                <td style="padding:0px;vertical-align:inherit;">
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label" for="cb{!documentInfo.Id}">{!documentInfo.lastModifiedby.name}</label>
+                                                                </td>
+                                                                <td style="padding:0px;vertical-align:inherit;">
+                                                                    <label style="padding:8px;display:block;" class="slds-checkbox__label" for="cb{!documentInfo.Id}">
+                                                                        <apex:outputText value="{0, date,d MMMM yyyy HH:mm a}">
+                                                                            <apex:param value="{!documentInfo.lastmodifieddate}" />
+                                                                        </apex:outputText>
+                                                                    </label>
+                                                                </td>
+                                                            </tr>
+                                                        </apex:repeat>   
+                                                    </tbody>
+                                                </table>
+                                                <apex:outputText value="No Documents are available to send for signature" rendered="{!NOT(hasDocuments)}" />
+                                            </div>
+                                        </div>                                        
+                                    </fieldset>
+                                    
+                                    <!-- Action Buttons  -->
+                                    <apex:outputPanel id="btnPanel"> 
+                                        <div class="slds-scope">
+                                            <fieldset class="slds-box slds-theme--default slds-container--large">
+                                                <div class="slds-grid slds-grid_align-end">
+                                                    <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                    <div>
+                                                        &nbsp;
+                                                        <button id="btnSubmit" class="slds-button slds-button--brand slds-m-top--medium" onclick="showWaiting();submitDocusign();return false;"><b>Submit</b></button>
+                                                    </div>
+                                                    <div>    
+                                                        &nbsp;
+                                                        <button class="slds-button slds-button--neutral slds-m-top--medium" onclick="showWaiting();returnBack();return false;"><b>Return</b></button>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>
+                            </apex:outputpanel>
+                        </div>
+                        
+                    </div>     
+                </div>
+                                
+                <script>
+                    initTableSelector();
+                    initDocumentoutputFormats();
+                    var submitDocumentMethod = '{!$RemoteAction.CNT_TPA_AgrmntSendForSignature.submitDocusign}';;
+                    var isDocumentSelected = false;
+                    var selectedFormat = '';
+                    var recordId = '';
+                    var currTempId = '';
+                    var mandatoryIds = '';
+                    var mandatoryIdList = [];
+                    var tllaRow = null;
+                    var amaRow = null;
+                    var addendumRow = null;
+                    Visualforce.remoting.timeout = 120000;
+                    
+                    $(function(){                        
+                        recordId = getParameterByName('id');
+                        mandatoryIds = getParameterByName('mandatoryDocsId');                        
+                        if(mandatoryIds != null && mandatoryIds != '') {
+                            mandatoryIdList = mandatoryIds.split(':');
+                        }
+                        
+                        console.log('mandatoryIds::::'+mandatoryIds);
+                        var rowObj = null;
+                        $(".selectedDocs").each(function() {
+                            currTempId = $(this).attr('exactId');
+                            if(currTempId != null && currTempId != '' && mandatoryIds != null && mandatoryIds != '' && mandatoryIds.indexOf(currTempId.substring(0, 15)) != -1) {
+                                $(this).attr("checked", true);
+                                $(this).attr("disabled", true);
+                                $(this).closest("tr").css('background-color', '#ECEBEA');
+                                $(this).closest("tr").find("*").css("cursor", "not-allowed");
+                            }
+                            else {
+                                $(this).attr("checked", false);
+                                $(this).removeAttr("disabled");                                
+                                $(this).closest("tr").css('background-color', 'default');
+                                $(this).closest("tr").find("*").css("cursor", "pointer");
+                            }                            
+                        });
+                        
+                        $('input.selectedDocs').on('change', function() {
+                            resetButtons();
+                        });
+                        
+                        resetButtons();
+                    });
+                
+                    window.addEventListener( "pageshow", function ( event ) {
+                        var historyTraversal = event.persisted || ( typeof window.performance != "undefined" && window.performance.navigation.type === 2 );
+                        if ( historyTraversal ) {
+                            // Handle page restore.
+                            window.location.reload();
+                        }
+                    });
+                
+                    function resetButtons() {
+                        if($(".selectedDocs:checked").length > 0) {
+                            $('#btnSubmit').removeAttr("disabled");
+                        } else {
+                            $('#btnSubmit').attr("disabled", true);
+                        }
+                    }
+                
+                    function returnBack() {
+                        if(recordId != null && recordId.length > 0) {
+                            window.location.href = location.protocol + '//' + location.hostname + '/' + recordId;
+                            //window.location = '/' + recordId;
+                        }
+                    }
+                
+                    function submitDocusign() {
+                        var documentIds = '';
+                        $(".selectedDocs:checked").each(function() {
+                            documentIds += $(this).attr('exactId') + ':';
+                        });
+                        documentIds = documentIds.substring(0, documentIds.length - 1);
+                        Visualforce.remoting.Manager.invokeAction(submitDocumentMethod, recordId, documentIds, function(result, event) {
+                            console.warn(result);
+                            if(event.type == 'exception') {
+                                hideLoading();
+                                console.info('Error: ' + event.message);
+                                return false;
+                            } else {
+                                if(result == "DocuSign call has submitted") {
+                                    popupAlert('DocuSign signature request has been submitted successfully.', function() {
+                                        //window.location = '/' + recordId;
+                                        window.location.href = location.protocol + '//' + location.hostname + '/' + recordId;
+                                    });
+                                }
+                                endWaiting();
+                            }
+                        },
+                        { buffer: true, escape: true, timeout: 120000 });
+                    }
+                
+                    function getParameterByName(name) {
+                        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                        return results == null ? "" : results[1].replace(/\+/g, " ");
+                    }
+
+                    function popupAlert(msg, truePart) {
+                        popup(msg, {'animate':true}, 
+                        function(r) {
+                            if(r && truePart != null)
+                                truePart();
+                        });
+                    }
+                </script>
+            </apex:form>
+        </body>  
+    </html>
+</apex:page>

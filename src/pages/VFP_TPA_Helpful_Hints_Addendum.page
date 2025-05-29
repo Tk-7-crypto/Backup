@@ -1,0 +1,499 @@
+<apex:page controller="CNT_TPA_Helpful_Hints_Addendum" language="{!language}"  title="{!docTitle}" cache="true" contentType="{!if(openmode != 'word', null, 'application/msword#'+docTitle+'.doc')}" standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false"  sidebar="false" showHeader="false" renderAs="{!if(openmode != 'pdf', null, 'pdf')}">
+    <html xmlns:w="urn:schemas-microsoft-com:office:word">
+        <head>
+            <apex:outputText rendered="{!openmode == 'word'}" value="{!PrintView}" escape="false"/>
+            <style>
+                @page {
+                    size: letter;
+                    margin: 27.5mm 20mm;
+                    margin-left: 12mm;
+                    margin-right: 12mm;
+                    
+                    @top-center {
+                        content: element(header);
+                    }
+
+                    @bottom-center {
+                        content: element(footer);
+                    }
+                }
+                <apex:outputText rendered="{!isDisplayWatermark}">
+                @page{
+                    background-image: url("{!URLFOR($Resource.TPA_Draft_Image)}");
+                    background-repeat: no-repeat;
+                    background-position: center;
+                }
+				</apex:outputText>
+
+                div.header
+                {
+                padding: 10px;
+                position: running(header);
+                }
+
+                div.footer
+                {
+                padding: 0px;
+                display:block;
+                position: running(footer);
+                }
+
+                .pagenumber:before {
+                content: counter(page);
+                }
+
+                .pagecount:before {
+                content: counter(pages);
+                }
+
+                .page-break
+                {
+                display:block;
+                page-break-after:always;
+                }
+                .headings
+                {
+                font-weight:bolder;
+                /*font-size:13px;*/
+                }
+
+                .content
+                {
+                /*font-size:11px;*/
+                }
+                .pbSubsection{background-color:white;}
+                body .bPageBlock .pbBody .blueHeader .pbSubheader{
+                background-color:;
+                }
+                body .bPageBlock .pbBody .blueHeader .pbSubheader h3{
+                text-align: center;
+                }
+                body { 
+                	/*font-family: 'Arial Unicode MS'!important;
+                	font-family: 'Arial'!important;*/
+                    line-height:80% !important;
+                }
+                .commonPara{
+                	line-height:1.2 !important;
+                }
+                .bulletPoints{
+                	line-height:1 !important;
+                }
+				font { 
+                    /*font-family: Arial Unicode MS !important;
+                    font-family: 'Arial'!important;*/
+                 }
+
+                .pbSubheader h3{
+                /*font-size: 25px;*/
+                padding-bottom: 15px;
+                text-decoration: underline;
+                }
+                s, strike, del {
+                text-decoration:none !important;
+                }
+                .colStyle1 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle2 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle3 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle4 { width: 10%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle5 { width: 50%; padding-left:5px; padding-top:5px; border:1px solid gray; }
+                .colStyle6 { width: 10%; text-align:left; padding-left:5px; padding-top:5px; border:1px solid gray; color:White}
+                .title {  font-weight: bold; text-align: center; display: table; margin-left: auto; margin-right: auto;}
+                .addendumText { text-align: center; display: table; margin-left: auto; margin-right: auto;}
+                .documentTable  th, .documentTable{
+                border: 1px solid gray
+                }
+                .documentTable  th{
+                padding-left:5px;
+                }
+                .documentTable tr td{
+                vertical-align:Top;
+                text-align:left;
+                }
+                table {border-collapse:collapse;border-spacing:0;border:0 none;}
+                /* fix padding of TD to suit your needs */
+                table td {padding:0px;text-align:left;}
+                .headerStyle { /*font-family: Arial !important;font-size:10.0pt;*/}
+                .contentStyle { /*font-family: Arial !important;/*font-size:10.0pt;*/ }
+                .contentParagraph { /*font-family: Arial !important;/*font-size:10.0pt;*/text-align:justify; }
+                .marginT1Left { margin-left:80px; }
+                .marginT2Left { margin-left:20px; }
+                .marginT1Bottom { margin-bottom:10px; }
+                .marginDocOnly1 { margin-left: 30px; }
+                .marginDocOnly2 { margin-left: 10px; }
+                .margin1 { margin:0.05in; }
+                .boldEffect {font-weight:bold; !important}
+
+                .underlineEffect {
+                text-decoration:underline;
+                }
+                .italicEffect {font-style:italic;}
+
+            </style>
+        </head>
+
+        <body>
+            <!-- Header and Footer for PDF Document Start -->
+            <div class="header" style="margin-left:-12px !important;padding-left:0px !important; ">
+                <table width="101%" >
+                    <tr>
+                        <!-- <td width="50%" style="text-align:left;vertical-align:bottom;padding-bottom:26px;">
+                            <span style="margin-left:26px;vertical-align:bottom;padding-bottom:26px;">
+                                <apex:image Style="vertical-align:bottom;padding-bottom:26px;" height="54" width="450" url="{!$Resource.IQVIA_Header_Line1}"/>
+                            </span>
+                        </td> -->
+                        <td width="101%"><span ><apex:image style="width: 101%;" url="{!$Resource.TPA_IQVIA_Logo}"/></span></td>
+                        </tr>
+                    </table>
+            </div>
+            
+            <div class="main" >
+                
+
+                    <apex:pageBlock >
+                        
+                                
+                            
+                        <apex:repeat value="{!mapIdWithObjofwrapperClassOfLegalEntity}" var="key">
+                            
+							<apex:outputText escape="false" value="{!mapIdWithObjofwrapperClassOfLegalEntity[key].helpfulAddendumNote}" />
+                            <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                                <div style="border-top:1px solid black;">
+                                    <table width="100%">
+                                        <tr>
+                                            <td width="60%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer}</span></td>
+                                            <apex:outputText rendered="{!language == 'fr'}">
+                                            	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        	</apex:outputText>
+                                            <apex:outputText rendered="{!language == 'en_US'}">
+                                            	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">03-13-2019</span></td>
+                                            </apex:outputText>
+                                        </tr>
+                                        <tr>
+                                            <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                            <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                            <apex:outputText rendered="{!language == 'fr'}">
+                                                <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!language == 'en_US'}">
+                                            	<td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                            </apex:outputText>
+                                        </tr>
+                                        <tr>
+                                            <apex:outputText rendered="{!language == 'fr'}">
+                                            	<td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            	<!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            	<td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!language == 'en_US'}">
+                                            	<td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                            </apex:outputText>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        </apex:repeat>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote1}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">03-13-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote2}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="63%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_2}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote3}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_3}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote4}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_4}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote5}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_5}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote6}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_6}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2019</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote7}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_7}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">09-15-2020</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <apex:outputLabel rendered="{!openMode != 'word'}"><div style="page-break-after:always;"></div></apex:outputLabel>
+                        <apex:outputText escape="false" value="{!helpfulAddendumNote8}" style="{!contentStyle}"/>
+                        <div class="footer" style="font-family:arial,helvetica,sans-serif;font-size:10px !important;">
+                            <div style="border-top:1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="62.5%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.TPA_Program_Helpful_Hints_Footer_8}</span></td>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">04-15-2024</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                        	<td width="40%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">09-15-2020</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">{!$Label.Third_Party_Access_Footer}</span></td>
+                                        <!--<td align="center" colspan="3">{!tpaRequest.Name} </td>-->
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">Page <span class="pagenumber"/> de <span class="pagecount"/></span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="17%" style="text-align:right;padding-top:1px;"><span style="margin-right:5px;">- <span class="pagenumber"/> -</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                    <tr>
+                                        <apex:outputText rendered="{!language == 'fr'}">
+                                            <td style="text-align:left;padding-top:1px;"><span style="margin-left:5px;">Auteur ( s ) : Albert Peterlin</span></td>
+                                            <!--<td align="center" colspan="3">DOC Version:1.0</td>-->
+                                            <td  style="text-align:right;padding-top:1px;"><span >{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!language == 'en_US'}">
+                                            <td width="100%" style="text-align:right;padding-top:1px;"><span style="margin-right:-50px;">{!$Label.All_rights_reserved}</span></td>
+                                        </apex:outputText>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </apex:pageBlock>
+                    <!-- Header and Footer for PDF Document End -->
+                    
+        
+    </div>
+</body>
+</html>
+</apex:page>

@@ -1,0 +1,173 @@
+<template>
+    <article class="slds-card" >
+        <div class="slds-align_absolute-center">   
+            <template if:true={showSpinner}>
+                <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                </lightning-spinner>
+            </template>
+        </div>
+        <div class="slds-card__header slds-grid slds-m-bottom_none">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="standard:case_milestone" size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body" style="max-width:90%">
+                        <h2>
+                            <a href="javascript:void(0);" class="slds-card__header-link slds-truncate" style="white-space:normal;" title="Training Management" onclick={navigateToCatalogRelationshipRelatedList}>
+                                <span class="slds-text-heading_small">Training Management</span>
+                            </a>
+                        </h2>
+                    </div>
+                </div>
+            </header>
+            <div class="slds-no-flex" >
+                <lightning-button label="Add Training" icon-position="left" onclick={openTrainingModal}></lightning-button>
+            </div>
+        </div>
+        <lightning-card variant="Narrow">
+        <div class="slds-card__body slds-card__body_inner">
+            <div if:true={prodcatdata}>
+                <div if:true={relatedRecordsAvailable} class="slds-grid slds-wrap slds-grid--pull-padded slds-var-p-left_medium">
+                    <template for:each={prodcatdata} for:item="prod" for:index="index">
+                        <div class="slds-col--padded slds-size--1-of-1 slds-m-bottom_medium slds-text-heading_small" style="font-weight: bold;" key={prod}>
+                            {prod.key}
+                        </div>
+                    <div class="slds-col--padded slds-size--1-of-2 slds-m-bottom_medium slds-text-heading_small" key={prod.key}>
+                        Catalog
+                    </div>
+                    <div class="slds-col--padded slds-size--1-of-2 slds-m-bottom_medium slds-text-heading_small" key={prod.key}>
+                        # Licenses
+                    </div>
+                    <template for:each={prod.value} for:item="catalog" for:index="index">
+                            <div class="slds-col--padded slds-size_1-of-2 slds-m-bottom_small" key={catalog.Id}>
+                                <a href="javascript:void(0);" class="slds-truncate" style="white-space:normal;" 
+                                title={catalog.Catalog__r.Catalog__c} data-value={catalog.Id} onclick={navigateToCatalogRelationshipRecord}>
+                                    <span>{catalog.Catalog__r.Catalog__c}</span>
+                                </a>
+                            </div>
+                            <div class="slds-col--padded slds-size_1-of-2 slds-m-bottom_small" key={catalog.Id}>
+                                {catalog.Licenses__c}
+                            </div>
+                        
+                    </template>
+                    </template>
+                </div>
+                <div if:false={relatedRecordsAvailable}>
+                    No Records to Display
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+    </article>
+    <template if:true={isTrainingModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container" style="width: 65% !important; max-width: 80rem !important;">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" label="Close"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Training Management</h2>
+                </header>
+                <div class="slds-modal__content slds-p-left_medium slds-p-right_medium" id="modal-content-id-1" style="height: 80vh;">
+                    <div class="slds-align_absolute-center">   
+                        <template if:true={modalSpinner}>
+                            <lightning-spinner alternative-text="Loading" size="medium" variant="brand">
+                            </lightning-spinner>
+                        </template>
+                    </div>
+                    <div class="c-container" if:true={productRelatedBundlesList}>
+                        <lightning-layout vertical-align="stretch" multiple-rows="true" class="x-large">
+                            <lightning-layout-item flexibility="auto" padding="around-small" class="custom-box" if:true={elementVisibilty.showCatalogPage}>
+                                <div class="slds-grid slds-wrap slds-grid--pull-padded slds-p-left_medium">
+                                    <div class="slds-col--padded slds-size--1-of-1" if:true={elementVisibilty.showProductsElement}>
+                                        <lightning-combobox name="trainingProduct"
+                                            label="Training Product"
+                                            value={trainingManagementWrapper.selectedProduct}
+                                            options={trainingProducts}
+                                            onchange={selectTrainingProduct} >
+                                        </lightning-combobox>
+                                    </div>
+                                    <div class="slds-col--padded slds-size--1-of-1" if:true={elementVisibilty.showBundles}>
+                                        <lightning-combobox name="bundle"
+                                            label="Bundle"
+                                            value={trainingManagementWrapper.selectedBundle}
+                                            options={bundlesByTrainingProduct}
+                                            onchange={selectBundle} >
+                                        </lightning-combobox>
+                                    </div>
+                                    <div class="slds-col--padded slds-size--1-of-1" if:true={elementVisibilty.showFindCatalogButton}>
+                                        <div class="slds-no-flex slds-m-top_x-small" style="float: right;">
+                                            <lightning-button label="Find Catalog" icon-position="left" onclick={findCatalogs}></lightning-button>
+                                        </div>
+                                    </div>
+                                    <template if:true={account_type_flag}> 
+                                        <div style="font-size: medium;font-weight: bold;">
+                                            {account_type_flag_message}
+                                        </div>
+                                    </template>
+                                    <template if:false={account_type_flag}> 
+                                        <div style="width:100%;" if:true={elementVisibilty.showCatalogs}>
+                                            <lightning-dual-listbox id="selectOptions"
+                                                name="Catalogs"
+                                                label="Catalogs"
+                                                source-label="Available Catalogs"
+                                                selected-label="Selected Catalogs"
+                                                options={catalogs}
+                                                value={trainingManagementWrapper.selectedCatalogs1}
+                                                onchange={selectCatalogs} size="10">
+                                            </lightning-dual-listbox>
+                                        </div>
+                                    </template>
+                                </div>
+                            </lightning-layout-item>
+                            <lightning-layout-item flexibility="auto" padding="around-small" class="custom-box" if:true={elementVisibilty.showAddLicensePage}>
+                                <div class="slds-grid slds-wrap slds-grid--pull-padded slds-p-left_medium">
+                                    <div class="slds-col--padded slds-size--1-of-2">
+                                        Catalog
+                                    </div>
+                                    <div class="slds-col--padded slds-size--1-of-2">
+                                        # Licenses
+                                    </div>
+                                </div>
+                                <div class="slds-grid slds-wrap slds-grid--pull-padded slds-p-left_medium">
+                                    <template for:each={selectedCatalogs} for:item="catalog" for:index="index">
+                                        <div class="slds-col--padded slds-size--1-of-2 slds-m-bottom_small" key={catalog.value}>
+                                            <lightning-input name="catalog" type="text"
+                                                label="Catalog" value={catalog.label}
+                                                data-index={index} data-value={catalog.value}
+                                                disabled=true variant="label-hidden" class="label-hidden catalogForm"
+                                                >
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col--padded slds-size--1-of-2 slds-m-bottom_small" key={catalog.value}>
+                                            <lightning-input name="license" type="number"
+                                                label="License" required=true value={catalog.learningCatalogRelationship.Licenses__c}
+                                                onchange={selectNumberOfLicenses} data-index={index}
+                                                variant="label-hidden" class="label-hidden catalogForm"
+                                                pattern= "[0-9]+" message-when-pattern-mismatch="Not a number"
+                                                maxlength="5" message-when-too-long="Too Large"
+                                                >
+                                            </lightning-input>
+                                        </div>
+                                    </template>
+                                </div>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer slds-modal__footer_directional">
+                    <lightning-button if:true={elementVisibilty.showCloseModalButton}  label="Close"  onclick={closeModal} class="slds-m-right_medium"></lightning-button>
+                    <lightning-button if:true={elementVisibilty.showBackButton}  label="Back"  onclick={openCatalogPage}></lightning-button>    
+                    <lightning-button if:true={elementVisibilty.showAddLicenseButton} style="float:right;" variant="brand" label="Add License"  onclick={openAddLicensePage} class="slds-m-right_medium"></lightning-button>
+                    <lightning-button if:true={elementVisibilty.showSaveLearningButton} style="float:right;" variant="brand" label="Save Learning"  onclick={saveLearning}></lightning-button>    
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

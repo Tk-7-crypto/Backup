@@ -1,0 +1,145 @@
+<template>    
+    <p class="slds-m-bottom_xx-small slds-m-left_small">Product Code : {product.Product2.ProductCode}</p>
+    <p class="slds-m-bottom_xx-small slds-m-left_small">Sales Price : {product.CurrencyIsoCode} {product.UnitPrice}</p>
+    <p class="slds-m-bottom_xx-small slds-m-left_small">Name : {product.Product2.Name}</p>
+    <template if:true={showSpinner}> 
+        <lightning-spinner></lightning-spinner>
+    </template>
+    <template if:true={isErrorFound}>
+        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+            <span class="slds-assistive-text"></span>
+            <ol class="slds-list_ordered slds-text-align_left">
+                <template for:each={allErrorList} for:item="err">
+                    <li key={err}>{err}</li>
+                </template>
+            </ol>  
+            <div class="slds-notify__close">
+            </div>
+        </div>
+        <br/>
+    </template>
+    <template if:true={isNotPreventEdit}>
+        <lightning-record-edit-form record-id={product.Id} object-api-name="OpportunityLineItem"
+            onsubmit={handleSubmit}>
+            <p if:true={errorMsg} style="color:red;">{errorMsg}</p>
+            <lightning-input label="Data Period Start" type="date" data-id="Product_Start_Date__c" field-name="Product_Start_Date__c" value={product.Product_Start_Date__c} onchange={setInputValues} required={isProductStartDateRequired} disabled={isProductStartDateDisbaled}></lightning-input>
+            <lightning-input label="Data Period End" type="date" data-id="Product_End_Date__c" field-name="Product_End_Date__c" value={product.Product_End_Date__c} onchange={setInputValues}  required={isProductZPUB} disabled={isProductZREP}></lightning-input>
+            <lightning-combobox
+                name="Delivery_Media__c"
+                label="Delivery Media"
+                required={isDeliveryMediaRequired}
+                disabled={isProductZREP}
+                placeholder="Choose Delivery Media"
+                value={validateProduct.Delivery_Media__c}
+                onchange={handleChange}
+                options={allFetchDataLocal.deliveryMediaOptions}>
+            </lightning-combobox>
+            <template if:true={isSetByRevenueScheduleLink} >
+                <div class="slds-text-color_weak slds-text-align_left slds-m-top_small">Delivery/Rpt Frequency -Set By {setRevisedtext} Revenue Schedule.</div>
+                <template if:true={isSetByRevenueScheduleLinkTag} >
+                    <a href="javascript:void(0);" onclick={openRevisedSchPage}><span class="slds-text-link">{setRevisedLinktext}</span></a>
+                </template>
+            </template>
+            <template if:true={isDeliveryFreqVisible} >
+                <lightning-combobox
+                    name="Proj_Rpt_Frequency__c"
+                    label="Delivery/Rpt Frequency"
+                    required
+                    placeholder="Choose Delivery/Rpt Frequency"
+                    value={product.Proj_Rpt_Frequency__c}
+                    onchange={handleChange}
+                    options={allFetchDataLocal.deliveryFrequencyOptions}>
+                </lightning-combobox>
+            </template>
+            <template if:true={isSetByBillingSchLink} >
+                <div class="slds-text-color_weak slds-text-align_left slds-m-top_small">Billing Frequency- Set By Billing Schedule.</div>
+                <template if:true={isSetByBillingSchLinkTag} >
+                    <a href="javascript:void(0);" class="slds-m-bottom_small" onclick={editBillingSchedule}><span class="slds-text-link">Edit Billing Schedule</span></a>
+                </template>
+            </template>
+            <template if:true={isBillingFrequencyVisible} >
+                <lightning-input-field data-id="Billing_Frequency__c" field-name="Billing_Frequency__c" value={product.Billing_Frequency__c}  onchange={setInputValues} required></lightning-input-field>
+            </template>  
+            <lightning-input-field data-id="Sales_Text__c" field-name="Sales_Text__c" value={product.Sales_Text__c}  onchange={setInputValues} ></lightning-input-field>
+            <lightning-input-field data-id="PO_Number__c" field-name="PO_Number__c" value={product.PO_Number__c}  onchange={setInputValues} > </lightning-input-field>
+            <lightning-input-field data-id="List_Price__c" field-name="List_Price__c" value={product.List_Price__c}  onchange={setInputValues} onblur={handleListPrice} required={isListPriceRequired}> </lightning-input-field>
+            <div class="slds-text-color_weak slds-text-align_left slds-m-top_small slds-m-bottom_small">Discount % : &nbsp;&nbsp;{DiscountPercentage}</div>
+            <div class="slds-text-color_weak slds-text-align_left slds-m-top_small slds-m-bottom_small">Discount / Surcharge Amt : {product.CurrencyIsoCode}&nbsp;&nbsp;{discountAmount}</div>
+            <template if:true={showDiscountReason}>
+                <lightning-input-field data-id="Discount_Reason__c" field-name="Discount_Reason__c"
+                    value={product.Discount_Reason__c} onchange={setInputValues} required={isDiscountRequired}></lightning-input-field>
+            </template>
+            <template if:false={showDiscountReason}>
+                <lightning-input-field data-id="Surcharge_Text__c" field-name="Surcharge_Text__c"
+                    value={product.Surcharge_Text__c} onchange={setInputValues} required={isDiscountRequired}></lightning-input-field>
+            </template>
+            <label for="Nbr_of_Users__c">Number of Users</label>
+            <lightning-input-field data-id="Nbr_of_Users__c" field-name="Nbr_of_Users__c" value={product.Nbr_of_Users__c} onchange={setInputValues} required={isNbrOfUserRequired} disabled={isNbrOfUserDisabled} variant="label-hidden"></lightning-input-field>
+            <lightning-input-field data-id="Other_Ship_To_Address__c" field-name="Other_Ship_To_Address__c" value={product.Other_Ship_To_Address__c} onchange={setInputValues} ></lightning-input-field>
+            <template if:true={isSetByBillingSchLink} >
+                <div class="slds-text-color_weak slds-text-align_left slds-m-top_small">Billing Date- Set By Billing Schedule.</div>
+                <a href="javascript:void(0);" class="slds-m-bottom_small" onclick={editBillingSchedule}><span class="slds-text-link">Edit Billing Schedule</span></a>
+            </template>
+            <template if:true={isSecondBillingDateVisible} >
+                <lightning-input-field data-id="Billing_Date__c" field-name="Billing_Date__c" value={product.Billing_Date__c} onchange={setInputValues} required={isSecondBillingDateRequired}></lightning-input-field>
+            </template>
+            <template if:true={isSetByRevenueScheduleLink} >
+                <div class="slds-text-color_weak slds-text-align_left slds-m-top_small">Delivery Date -Set By {setRevisedtext} Revenue Schedule.</div>
+                <template if:true={isSetByRevenueScheduleLinkTag} >
+                    <a href="javascript:void(0);" class="slds-m-bottom_small" onclick={openRevisedSchPage}><span class="slds-text-link">{setRevisedLinktext}</span></a>
+                </template>
+            </template>
+            <template if:true={isDeliveryFreqVisible} >
+                <lightning-input-field data-id="Delivery_Date__c" field-name="Delivery_Date__c" value={product.Delivery_Date__c} onchange={setInputValues} ></lightning-input-field>
+            </template>
+            <lightning-input-field data-id="Sale_Type__c" field-name="Sale_Type__c" value={product.Sale_Type__c} onchange={setInputValues}  required></lightning-input-field>
+            <lightning-input-field data-id="Revenue_Type__c" field-name="Revenue_Type__c" value={product.Revenue_Type__c} onchange={setInputValues}  required></lightning-input-field>
+            <template if:true={isSetByRevenueScheduleLink} >
+                <lightning-input-field data-id="Invoice_Lag_to_Data_Period__c" field-name="Invoice_Lag_to_Data_Period__c" disabled value="Not Applicable" onchange={setInputValues} ></lightning-input-field>
+            </template>
+            <template if:true={isDeliveryFreqVisible} >
+                <lightning-input-field data-id="Invoice_Lag_to_Data_Period__c" field-name="Invoice_Lag_to_Data_Period__c" value={product.Invoice_Lag_to_Data_Period__c} onchange={setInputValues} ></lightning-input-field>
+            </template>
+            <lightning-combobox
+                name="Therapy_Area__c"
+                label="Therapy Area"
+                required={isDeliveryMediaRequired}
+                disabled={isProductZREP}
+                placeholder="Choose Therapy Area"
+                value={product.Therapy_Area__c}
+                onchange={handleChange}
+                options={allFetchDataLocal.therapyAreaOptions}>
+            </lightning-combobox>
+            <lightning-input-field data-id="Audit_Subscription_Status__c" field-name="Audit_Subscription_Status__c" value={product.Audit_Subscription_Status__c} required={isAuditSubscriptionStatusRequired} disabled={isAuditSubscriptionStatusDisabled} onchange={setInputValues} ></lightning-input-field>
+            <lightning-combobox
+                name="ProfitCenter__c"
+                label="Profit Center"
+                required={isProfitCenterVisible}
+                disabled={isProfitCenterDisable}
+                placeholder="Choose profit Center"
+                value={product.ProfitCenter__c}
+                onchange={handleChange}
+                options={allFetchDataLocal.profitCenterOptions}>
+            </lightning-combobox>
+            <template if:true={isRevisedBNF}>
+                <lightning-input-field field-name="Revised_Price__c" value={validateProduct.Revised_Price__c} onchange={setInputValues} disabled={isSetByBillingSchLinkTag}></lightning-input-field>
+                <lightning-input-field data-id="Cancel__c" field-name="Cancel__c" value={product.Cancel__c} onchange={setInputValues} ></lightning-input-field>
+            </template>
+            <lightning-button class="slds-m-top_small slds-align_absolute-center" variant="brand" type="submit" name="save" label="save"></lightning-button>
+        </lightning-record-edit-form>
+    </template>
+    <!--Popup for Apex page-->
+    <template if:true={openPopup}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <lightning-button-icon icon-name="utility:close" size="large" variant="bare-inverse" title="Close"
+                    alternative-text="Close window" onclick={closePopup}></lightning-button-icon>
+                <div class="slds-modal__content slds-modal_large" id="modal-content-id-1" style="height:500px;">
+                    <iframe src={apexPageLink} width="100%" height="500px"></iframe>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

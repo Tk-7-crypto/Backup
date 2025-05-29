@@ -1,0 +1,48 @@
+<template>
+	<lightning-card variant="Narrow" title={title} icon-name="standard:account">
+
+		<div if:true={showError} class="slds-notify slds-notify_alert slds-alert_error"
+			style="justify-content:flex-start">
+			<ul style="text-align: left;" class="slds-list_dotted">
+				<template for:each={errorMsg} for:item="err">
+					<li key={err}>
+						<lightning-formatted-rich-text value={err}></lightning-formatted-rich-text>
+					</li>
+				</template>
+			</ul>
+		</div>
+
+		<div if:true={requestSubmitted} class="slds-notify slds-notify_alert slds-alert_info"
+			style="justify-content:space-between">
+			<p>{successMsg}</p>
+			<lightning-button label="OK" onclick={closePopup}> </lightning-button>
+		</div>
+
+		<template if:true={showSpinner}>
+			<lightning-spinner variant="brand" size="large" alternative-text="Loading..."></lightning-spinner>
+		</template>
+
+		<div class="slds-p-around_small slds-form_horizontal slds-form slds-grid slds-grid_align-center">
+			<div class="slds-size_1-of-2" if:true={showForm}>
+				<lightning-combobox value="" label="Sales Org" data-id="Sales_Org__c" options={salesOrgOptions}
+					onchange={handleChange} required> </lightning-combobox>
+				<lightning-combobox value={invoiceRec.mailContact1} label="Mail Contact 1" data-id="SAP_Contact_1__c"
+					options={sapContactOptions} disabled={invoiceRec.disable1}> </lightning-combobox>
+				<lightning-combobox value={invoiceRec.mailContact2} label="Mail Contact 2" data-id="SAP_Contact_2__c"
+					options={sapContactOptions} disabled={invoiceRec.disable2}> </lightning-combobox>
+				<lightning-combobox value={invoiceRec.mailContact3} label="Mail Contact 3" data-id="SAP_Contact_3__c"
+					options={sapContactOptions} disabled={invoiceRec.disable3}> </lightning-combobox>
+				<lightning-input type="text" variant="standard" label="Customer Name" value={address.Name} disabled>
+				</lightning-input>
+				<lightning-input type="text" variant="standard" label="SAP Base Code" value={address.SAP_Reference__c}
+					disabled></lightning-input>
+			</div>
+		</div>
+		<div slot="footer" if:true={showForm}>
+			<lightning-button variant="brand" label="Submit Request" onclick={handleSubmit}
+				disabled={disableSubmitButton}> </lightning-button>
+			<lightning-button class="slds-m-left_x-small" label="cancel" onclick={closePopup}> </lightning-button>
+		</div>
+	</lightning-card>
+
+</template>

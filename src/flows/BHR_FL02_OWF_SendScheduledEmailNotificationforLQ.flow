@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Email is sent after 25 hours from Science Due Date</description>
+        <name>Q2LAB_scientific_review_level_1_escalation</name>
+        <label>Q2LAB scientific review level 1 escalation</label>
+        <locationX>176</locationX>
+        <locationY>276</locationY>
+        <actionName>Bid_History__c.Q2LAB_scientific_review_level_1_escalation</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Bid_History__c.Q2LAB_scientific_review_level_1_escalation</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <actionCalls>
+        <description>sends email to specific users when science due date is 5 days past</description>
+        <name>Q2LAB_scientific_review_level_2_escalation</name>
+        <label>Q2LAB scientific review level 2 escalation</label>
+        <locationX>440</locationX>
+        <locationY>276</locationY>
+        <actionName>Bid_History__c.Q2LAB_scientific_review_level_2_escalation</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Bid_History__c.Q2LAB_scientific_review_level_2_escalation</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <description>IQVIAPSA-7228</description>
+    <environments>Default</environments>
+    <interviewLabel>BHR FL02 OWF SendScheduledEmailNotificationforLQ {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>BHR FL02 OWF SendScheduledEmailNotificationforLQ</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterFormula>AND(({!$Setup.Mulesoft_Integration_Control__c.Is_Mulesoft_User__c} || NOT({!$Setup.Mulesoft_Integration_Control__c.By_Pass_Flow_Process__c})),
+({!$Record.RecordType.DeveloperName} ==  &apos;Q2_Solutions&apos;),
+ISPICKVAL({!$Record.Scientific_Review__c}, &apos;Yes&apos;),
+ISNULL({!$Record.Scientific_Review_Completed__c}),
+OR((ISPICKVAL({!$Record.Scientific_Review_Received__c}, &apos;Null&apos;)),
+AND(NOT(ISPICKVAL({!$Record.Scientific_Review_Received__c}, &apos;Not requested&apos;)),NOT(ISPICKVAL({!$Record.Scientific_Review_Received__c}, &apos;Received&apos;))))
+)</filterFormula>
+        <object>Bid_History__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Q2_Scientific_review_level_1_escalation</name>
+            <connector>
+                <targetReference>Q2LAB_scientific_review_level_1_escalation</targetReference>
+            </connector>
+            <label>Q2 Scientific review level 1 escalation</label>
+            <offsetNumber>25</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>Science_Due_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <scheduledPaths>
+            <name>Q2_Scientific_review_level_2_escalation</name>
+            <connector>
+                <targetReference>Q2LAB_scientific_review_level_2_escalation</targetReference>
+            </connector>
+            <label>Q2 Scientific review level 2 escalation</label>
+            <offsetNumber>125</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>Science_Due_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

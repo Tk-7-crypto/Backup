@@ -1,0 +1,211 @@
+<apex:page id="pg" standardController="ATC__c" extensions="Contract_Chart_Excel" standardStylesheets="false" contentType="application/vnd.ms-excel#Agreement_Chart_{!TODAY()}.xls" readOnly="true">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+</head>
+<style>
+     .container {background:#667799; color:#fff;}
+     .rtop, .rbottom{
+        display:block;
+        background:#EEE; 
+        }
+         .rtop *, .rbottom *{
+        display: block;
+        height: 1px;
+        overflow: hidden;
+        background:#667799;
+        }
+         .r1{margin: 0 5px}
+         .r2{margin: 0 3px}
+         .r3{margin: 0 2px}
+         .r4{
+        margin: 0 1px;
+        height: 2px
+        }
+    .productcontainer {background:green; color:#fff;}
+    .prrtop, .prrbottom{
+        display:block;
+        background:#EEE;
+        }
+         .prrtop *, .prrbottom *{
+        display: block;
+        height: 1px;
+        overflow: hidden;
+        background:green;
+        }
+         .r1pr{margin: 0 5px}
+         .r2pr{margin: 0 3px}
+         .r3pr{margin: 0 2px}
+         .r4pr{
+        margin: 0 1px;
+        height: 2px
+        }
+ </style>
+<apex:form id="frm">
+
+<apex:pageBlock id="pb">
+    <apex:outputPanel >
+        <table>
+            <tr>
+                <td colspan="6">
+                    <b>{!$Label.Legends}</b>
+                </td>
+            </tr>
+            <tr>
+                <td style="background-color:{!contractColorSettings.Case1_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                </td>
+                <td colspan="5">
+                    {!$Label.Contract_Type} - {!$Label.Memorandum} / {!$Label.Agreement} / {!$Label.Order_Form}
+                </td>
+                
+            </tr>
+            <tr>
+                <td style="background-color:{!contractColorSettings.Case2_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                </td>
+                <td colspan="5">
+                     {!$Label.Contract_Type} - {!$Label.Third_party_access_agreement} / {!$Label.Co_promotion_Agreement} / {!$Label.Non_Disclosure_Agreement} / {!$Label.Personal_information_protection_agreement} / {!$Label.Other}
+                </td>
+            </tr>
+             <tr>
+                <td style="background-color:{!contractColorSettings.Case3_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                </td>
+                <td colspan="5">
+                    {!$Label.Contract_Type} - {!$Label.Information_Service_Agreement} / {!$Label.Master_Agreement_of_Consulting} / {!$Label.Master_Agreement_of_Services}
+                </td>
+            </tr>
+            <tr>
+                <td style="background-color:{!contractColorSettings.Default_Node_Color__c}">&nbsp;&nbsp;&nbsp;
+                </td>
+                <td colspan="5">
+                   {!$Label.Any_other_Contract_Type}
+                </td>
+            </tr>
+            <tr>
+                <td style="background-color:green">&nbsp;&nbsp;&nbsp;
+                </td>
+                <td colspan="5">
+                    {!$Label.Product_Nodes}
+                </td>
+            </tr>
+             <tr>
+                
+            </tr>
+        </table>
+    </apex:outputPanel>
+    <apex:outputPanel style="width:1200px;" layout="block" id="opDataHierarchy" rendered="{!showDataBlock}">
+        <table cellspacing="0" cellpadding="0" border="0">
+            <apex:repeat value="{!lstChartDataWrapper}" var="objDataWrapper">
+                <tr>
+                    <apex:outputLabel escape="false" value="{!objDataWrapper.tdStringData}" />
+                    <td valign="bottom" >
+                        <table>
+                           <tr>
+                                <td style="background:{!objDataWrapper.bgColor}">
+                                    <font color="#FFFFFF">
+                                       <b class="rtop">
+                                           <b class="r1"></b> 
+                                           <b class="r2"></b> 
+                                           <b class="r3"></b> 
+                                           <b class="r4"></b>
+                                       </b>
+                                       <table width="100%" border="0"><tr><td align="right"> <font color="{!IF(objDataWrapper.status = 'Active', 'Green','Red')}"><b><apex:outputLabel value="{!IF(objDataWrapper.status = 'Active', $Label.Active,$Label.InActive)}"></apex:outputLabel></b></font></td></tr></table>
+                                       <b>{!$Label.Agreement_Name}:</b> {!objDataWrapper.AgreementName}<br/>
+                                       <b>{!$Label.Contract_Type}:</b> {!objDataWrapper.ContractType}<br/>
+                                       <b>{!$Label.Agreement_Term}:</b> {!objDataWrapper.AgreementTerm}<br/>
+                                       <b>{!$Label.Agreement_Number}:</b> {!objDataWrapper.AgreementNumber}<br/>
+                                       <apex:outputPanel rendered="{!objDataWrapper.hasParent}">
+                                       &nbsp;<b>{!$label.Total_Agreement_Value}:</b> {!objDataWrapper.ISOCode}&nbsp; <apex:outputText value="{0, number, ###,##0}">
+                                            <apex:param value="{!objDataWrapper.objAgr.Total_Contract_Value__c}" /></apex:outputText> <br/>
+                                       </apex:outputPanel>
+                                       &nbsp;<b>{!$label.Agreement_Start_Date}:</b> <apex:outputText value="{0,date,yyyy/MM/dd}"><apex:param value="{!objDataWrapper.AgreementStartDate}" /></apex:outputText><br/>
+                                       <b class="rbottom">
+                                           <b class="r4"></b> 
+                                           <b class="r3"></b> 
+                                           <b class="r2"></b> 
+                                           <b class="r1"></b>
+                                       </b>
+                                    </font>
+                                </td>
+                           </tr>
+                        </table>
+                    </td> 
+                </tr>
+                <tr height="100%">
+                    <apex:outputLabel escape="false" value="{!objDataWrapper.tdProductString}" />
+                    <td style="{!if(objDataWrapper.hasChild,'border-left-width: 3px;border-left-style: solid;border-left-color: black','')}">
+                        <apex:repeat value="{!objDataWrapper.lstItems}" var="LineItemData">
+                            <table width="100%" height="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td style='border-style:none;width:30%;'>
+                                        <div width="30%" style="border-style:none;">&nbsp;</div>
+                                    </td>
+                                    <td style="{!if(LineItemData.IsLastNode==true,'border-top-width: 3px;border-top-style: solid;border-top-color: black;','border-top-width: 3px;border-top-style: solid;border-top-color: black;border-left-width: 3px;border-left-style: solid;border-left-color: black;')}"> 
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td rowspan="6" style="{!if(LineItemData.IsLastNode==true,'','border-right-width: 3px;border-right-style: solid;border-right-color: black;')}">  
+                                    </td>
+                                </tr>
+                            </table>
+                        </apex:repeat>
+                    </td>
+                    <td>
+                    	<apex:repeat value="{!objDataWrapper.lstItems}" var="LineItemData">
+                        <table width="100%" height="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td colspan="2" style="border-top-width: 3px;border-top-style: solid;border-top-color: black;width:30%;">
+                                    <div width="30%">&nbsp;</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td rowspan="6" >
+                                </td>
+                            </tr>
+                        </table>
+                    </apex:repeat>
+                    </td>
+                    <td>
+                        <table width="100%" cellspacing="0" cellpadding="0" style="display: block;height:100%">
+                        <apex:repeat value="{!objDataWrapper.lstItems}" var="LineItemData">
+                            <tr>
+                                <td nowrap="nowrap">
+                                    <table width="100%" border="1">
+                                        <tr>
+                                            <td style="background:green;">
+                                                <font color="#FFFFFF">
+                                                    <b class="prrtop">
+                                                        <b class="r1pr"></b> 
+                                                        <b class="r2pr"></b> 
+                                                        <b class="r3pr"></b> 
+                                                        <b class="r4pr"></b>
+                                                    </b>
+                                                    <table width="100%" border="0"><tr><td align="right"> <font color="{!IF(LineItemData.isActive, '#99FF00','Red')}"><b><apex:outputLabel value="{!IF(LineItemData.isActive = true, $Label.Active,$Label.InActive)}"></apex:outputLabel></b></font></td></tr></table>
+                                                    <b>{!$Label.Product_Name}:</b> {!LineItemData.ProductName}<br/>
+                                                    <b>{!$Label.Attach_Number}:</b> {!LineItemData.attachNumber}<br/>
+                                                    <b>{!$Label.Net_Price}:</b> {!LineItemData.ISOCode} <apex:outputText value="{0, number, ###,##0}">
+                                                    <apex:param value="{!LineItemData.objALI.Net_Price__c}" /></apex:outputText> <br/>
+                                                    <b>{!$Label.Contract_End_Date}:</b><apex:outputText value="{0,date,yyyy'/'MM'/'dd}"><apex:param value="{!LineItemData.ContractEndDate}" /></apex:outputText><br/>
+                                                    <b>{!$Label.Termination_Date_Pro}:</b><apex:outputText value="{0,date,yyyy'/'MM'/'dd}"><apex:param value="{!LineItemData.terminationDate}" /></apex:outputText><br/>
+                                                    <b class="prrbottom">
+                                                        <b class="r4pr"></b> 
+                                                        <b class="r3pr"></b> 
+                                                        <b class="r2pr"></b> 
+                                                        <b class="r1pr"></b>
+                                                    </b>
+                                                </font>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <br/>
+                                </td>
+                            </tr>
+                        </apex:repeat>
+                        </table>
+                    </td>
+                </tr>
+            </apex:repeat>
+        </table>
+    </apex:outputPanel>
+</apex:pageBlock>
+
+</apex:form>
+</apex:page>

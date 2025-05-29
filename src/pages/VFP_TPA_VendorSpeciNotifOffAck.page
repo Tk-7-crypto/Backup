@@ -1,0 +1,795 @@
+<apex:page controller="CNT_TPA_VendorSpeciNotifOffAck" action="{!requestValidateOnLoad}" showHeader="true" sidebar="false" cache="false" id="pg" lightningStylesheets="true" standardStylesheets="false">
+    <apex:slds />
+    <!-- Added for site to community logic submission Starts-->
+    <script type="text/javascript">
+        console.log('currentLoggedInUserProfile0::::'+'{!currentUserProfileName}');
+        function getUrlVars() {
+        var vars = {}, hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+		}
+        console.log('currentLoggedInUserProfile::::'+'{!currentUserProfileName}');
+        if('{!currentUserProfileName}' == 'tpa Profile') {
+            var qryString = '';
+            var urlParams = getUrlVars();
+            for(var key in urlParams) {
+                if(urlParams.hasOwnProperty(key)) {
+                    var val = urlParams[key];
+                    qryString += key + '=' + val + '&';
+                }
+            }
+            console.log('quryString-1:::'+JSON.stringify(urlParams));
+            console.log('quryString:::'+qryString);
+            qryString = qryString.slice(0, -1);
+            console.log('quryString0:::'+qryString);
+            console.log('quryString1:::'+'{!tpaCommunityUrl}');
+            window.location.href = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_VendorSpeciNotifOffAck&' + qryString;
+        }
+        var globalBar = document.getElementsByClassName("globalHeaderBar");
+        if(globalBar != null) {
+            globalBar[0].classList.add("hideGlobalHeader");
+        }
+    </script>
+    <apex:outputPanel rendered="{!IF(currentUserProfileName != 'tpa Profile',True, False)}">
+        <!-- Added for site to community logic submission end-->
+    <html>
+        
+        <head>        
+            <meta http-equiv="X-UA-Compatible" content="IE=9" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+            <script src="{!$Resource.AngularUiBootstrap}" type="text/javascript"></script>
+            <!-- *** Angular-JS Bootstrap Modal Pop Up Library reference ** -->
+                
+                <!-- *** Jquery library reference *** -->
+                    <script src="{!$Resource.TPAJquery}" type="text/javascript"></script>
+            <!-- *** Jquery library reference *** --> 
+            
+            <script src="{!$Resource.TpaJQueryCookie}" type="text/javascript"></script>
+            
+            <!-- *** JQuery UI Library reference *** -->
+                <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <!-- *** JQuery UI Library reference *** -->
+            
+            <!-- *** JQuery Custom Popup Library reference *** -->
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <!-- *** JQuery Custom Popup Library reference *** -->
+                
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery Custom Popup Stylesheet reference *** -->
+                            
+            <!-- *** Yahoo Javascript Library reference *** -->
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/container-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/dragdrop/dragdrop-min.js')}" />
+            <apex:includescript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/animation/animation-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/treeview-min.js')}" /> 
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/menu-min.js')}" />
+            <apex:includeScript value="{!URLFOR($Resource.YUILibrary2, '/yui/build/yahoo/yahoo-min.js')}" />
+            <!-- *** Yahoo Javascript Library reference *** -->
+            
+            <!-- *** Yahoo Css Library reference *** -->
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/assets/skins/sam/skin.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.YUILibrary2, '/yui/build/container/assets/skins/sam/container.css')}" />
+            <!-- *** Yahoo Css Library reference *** -->
+
+            <!-- ****** AngularJS script Start ****** -->
+            <script type="text/javascript">
+            var maxStringSize = 6000000;    //Maximum String size is 6,000,000 characters
+            var maxFileSize = 4350000;      //After Base64 Encoding, this is the max file size
+            var chunkSize = 950000;         //Maximum Javascript Remoting message size is 1,000,000 characters
+            var attachment;
+            var attachmentName;
+            var fileSize;
+            var positionIndex;
+            var doneUploading;
+            function readURL(input){
+                console.log('Change done');
+                var file = document.getElementById('attachmentFile').files[0];
+                var attachmentBodytext = "";
+                console.log(file);
+                if(file != undefined) {
+                    if(file.size <= maxFileSize) {
+                        attachmentName = file.name;
+                        var fileReader = new FileReader();
+                        fileReader.onloadend = function(e) {
+                            attachment = window.btoa(this.result);  //Base 64 encode the file before sending it
+                            positionIndex=0;
+                            fileSize = attachment.length;
+                            console.log("Total Attachment Length: " + fileSize);
+                            doneUploading = false;
+                            if(fileSize < maxStringSize) {
+                                uploadAttachment(null);
+                            } else {
+                                alert("Base 64 Encoded file is too large.  Maximum size is " + maxStringSize + " your file is " + fileSize + ".");
+                            }
+                            
+                        }
+                        fileReader.onerror = function(e) {
+                            alert("There was an error reading the file.  Please try again.");
+                        }
+                        fileReader.onabort = function(e) {
+                            alert("There was an error reading the file.  Please try again.");
+                        }
+                        
+                        fileReader.readAsBinaryString(file);  //Read the body of the file
+                        
+                    } else {
+                        alert("File must be under 4.3 MB in size.  Your file is too large.  Please try again.");
+                    }
+                }
+            }
+            var attachmentBody = "";
+            function uploadAttachment(fileId) {
+                
+                if(fileSize <= positionIndex + chunkSize) {
+                    attachmentBody = attachment.substring(positionIndex);
+                    doneUploading = true;
+                } else {
+                    attachmentBody = attachment.substring(positionIndex, positionIndex + chunkSize);
+                }
+                console.log("Uploading " + attachmentBody.length + " chars of " + fileSize);
+            }
+            
+            <!-- Angular JS Application Name -->
+                var myapp = angular.module('TpaAccessRequest', ['ui.bootstrap']);
+            
+            <!-- Page Controller Start -->
+                var contrl = myapp.controller('controllerPage',['$scope', '$filter', '$modal', '$log', '$window', function ($scope, $filter, $modal, $log, $window) 
+                                                                {
+                                                                    $scope.$log = $log;
+                                                                    $scope.useOfferingsLink = '{!tpaCommunityUrl}' + '/VFP_TPA_ExternalUserAction?actionType=tpasitelinkaccess&returlpage=VFP_TPA_SelectedUsesAndOffering&reqId={!tpaRequestId}';
+                                                                    
+                                                                    $scope.vendorSpecificNotificationObj = {};
+                                                                    $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName = '';
+                                                                    $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName = '';
+                                                                    $scope.vendorSpecificNotificationObj.ClientContactFirstName = '';
+                                                                    $scope.vendorSpecificNotificationObj.ClientContactLastName = '';
+                                                                    $scope.attMsg = 'You are acknowledging the communication with the client has taken place and the client has indicated they';
+                                                                    $scope.actionToPerform = '{!actionToPerform}';
+                                                                    if($scope.actionToPerform.trim().length > 0)
+                                                                    {
+                                                                        if($scope.actionToPerform.trim() == 'Acknowledge')
+                                                                            $scope.attMsg += ' Accept the notification and wish to continue with the third party agreement';
+                                                                        if($scope.actionToPerform.trim() == 'Modify')
+                                                                            $scope.attMsg += ' understand the notification and will go back into the portal and modify the initial third party access request';
+                                                                        if($scope.actionToPerform.trim() == 'Cancel')
+                                                                            $scope.attMsg += ' understand the notification and with to cancel the third party access request at this time';
+                                                                    }
+                                                                    $scope.processExecutionMode = '{!processExecutionMode}';
+                                                                    $scope.$log.info('$scope.attMsg: ' + $scope.attMsg); 
+                                                                    $scope.tpaRequest = [];
+                                                                    $scope.tpaReqId = '{!tpaRequestId}';
+                                                                    
+                                                                    $scope.objTpaRequestToEdit = {};
+                                                                    $scope.objTpaRequestAgreement = {};
+                                                                    $scope.allObjects = [];
+                                                                    
+                                                                    $scope.todayDate = new Date();
+                                                                    //*** Error Flags ***//                        
+                                                                    $scope.isError = false;
+                                                                    $scope.Acknowlegement1 = false;
+                                                                    $scope.Acknowlegement2 = false;
+                                                                    $scope.isVendorDestructionConfirmationFNameError = false;
+                                                                    $scope.isVendorDestructionConfirmationLNameError = false;
+                                                                    $scope.isClientContactFirstNameError = false;
+                                                                    $scope.isClientContactLastNameError = false;
+                                                                    $scope.validateForm = function()
+                                                                    {
+                                                                        $scope.errorMsg = '';
+                                                                        if($scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName == null || $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>{!$Label.TPA_IQVIA_Keyword} Account Team First Name must not be empty.</li>'; //Modified by Rajendra under Issue-11410
+                                                                            $scope.isQuintilesIMSAccountTeamFirstNameError = true;
+                                                                        }
+                                                                        else
+                                                                            $scope.isQuintilesIMSAccountTeamFirstNameError = false;
+                                                                        if($scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName == null || $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>{!$Label.TPA_IQVIA_Keyword} Account Team Last Name must not be empty.</li>'; //Modified by Rajendra under Issue-11410
+                                                                            $scope.isQuintilesIMSAccountTeamLastNameError = true;
+                                                                        }
+                                                                        else
+                                                                            $scope.isQuintilesIMSAccountTeamLastNameError = false;
+                                                                        if($scope.vendorSpecificNotificationObj.ClientContactFirstName == null || $scope.vendorSpecificNotificationObj.ClientContactFirstName.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>Client Contact First Name must not be empty.</li>';
+                                                                            $scope.isClientContactFirstNameError = true;
+                                                                        }
+                                                                        else
+                                                                            $scope.isClientContactFirstNameError = false;
+                                                                        if($scope.vendorSpecificNotificationObj.ClientContactLastName == null || $scope.vendorSpecificNotificationObj.ClientContactLastName.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>Client Contact Last Name must not be empty.</li>';
+                                                                            $scope.isClientContactLastNameError = true;
+                                                                        }
+                                                                        
+                                                                        if($scope.errorMsg.trim().length > 0)
+                                                                        {
+                                                                            $scope.isError = true;
+                                                                            $scope.errorMsg = '<ul>' + $scope.errorMsg + '</ul>';
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            $scope.errorMsg = '';
+                                                                            $scope.isError = false;
+                                                                        }
+                                                                        $scope.applyChanges();
+                                                                        return $scope.isError;
+                                                                    }
+
+                                                                    $scope.validateClientSubmission = function(){
+                                                                        $scope.errorMsg = '';
+                                                                        if(!$('#checkbox-unique-id-00').is(":checked")){
+                                                                            $scope.errorMsg += '<li>Please acknowledge the form</li>';
+                                                                            $scope.Acknowlegement1Error = true;
+                                                                        }else{
+                                                                            $scope.Acknowlegement1Error = false;
+                                                                        }
+                                                                        if(!$('#checkbox-unique-id-01').is(":checked")){
+                                                                            if(!$scope.errorMsg.includes('Please acknowledge the form')){
+                                                                                $scope.errorMsg += '<li>Please acknowledge the form</li>';
+                                                                            }
+                                                                            $scope.Acknowlegement2Error = true;
+                                                                        }else{
+                                                                            $scope.Acknowlegement2Error = false;
+                                                                        }
+                                                                        if($scope.vendorSpecificNotificationObj.clientContactFullName == null || $scope.vendorSpecificNotificationObj.clientContactFullName.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>Full Name must not be empty.</li>';
+                                                                            $scope.clientContactFullNameError = true;
+                                                                        }
+                                                                        else
+                                                                            $scope.clientContactFullNameError = false;
+
+                                                                        if($scope.vendorSpecificNotificationObj.clientContactTitle == null || $scope.vendorSpecificNotificationObj.clientContactTitle.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>Title must not be empty.</li>'; 
+                                                                            $scope.clientContactTitleError = true;
+                                                                        }
+                                                                        else
+                                                                            $scope.clientContactTitleError = false;
+
+                                                                        if($scope.vendorSpecificNotificationObj.clientContactEmail == null || $scope.vendorSpecificNotificationObj.clientContactEmail.trim().length == 0)
+                                                                        {
+                                                                            $scope.errorMsg += '<li>Email must not be empty.</li>';
+                                                                            $scope.clientContactEmailError = true;
+                                                                        }
+                                                                        else if(!$scope.isValidEmail($scope.vendorSpecificNotificationObj.clientContactEmail)){
+                                                                            $scope.errorMsg += '<li>Please enter a valid email.</li>';
+                                                                            $scope.clientContactEmailError = true;
+                                                                        }else
+                                                                            $scope.clientContactEmailError = false;
+                                                                       
+                                                                        if($scope.errorMsg.trim().length > 0)
+                                                                        {
+                                                                            $scope.isError = true;
+                                                                            $scope.errorMsg = '<ul>' + $scope.errorMsg + '</ul>';
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            $scope.errorMsg = '';
+                                                                            $scope.isError = false;
+                                                                        }
+                                                                        $scope.applyChanges();
+                                                                        return $scope.isError;
+                                                                    }
+                                                                    $scope.isValidEmail = function(sEmail)
+                                                                    {
+                                                                        var filter = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //Added by Babita Dadarwal under Issue-08272
+                                                                        var diacriticscharacterfilter = /([\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+/g;
+
+                                                                        if (filter.test(sEmail) && !diacriticscharacterfilter.test(sEmail)) { 
+                                                                            return true;
+                                                                        }
+                                                                        else
+                                                                            return false;
+                                                                    }
+                                                                    
+                                                                    //****** tpa request events start ******//
+                                                                    
+                                                                    //*** loadForm function invokes when page loads (As Constructor) start ***//
+                                                                    $scope.loadForm = function() {
+																	
+																		//Shut down popup code start
+                                                                        var isPermanentDown = {!isTPAPermanentDown};
+                                                                        var isRestrictedUser = {!isRestrictedUser};
+                                                                        var portalDownMessage = '{!Message}';
+                                                                        $(document).ready(function(){
+                                                                            if(isPermanentDown)
+                                                                            {
+                                                                                popupAlert(portalDownMessage);
+                                                                                    $('.customPopupFooter .aButtons').css("display","none");
+																					$('#backWhiteOverlay').css("display", "");
+                                                                                    $('#pageBody').keydown(function(objEvent) {
+                                                                                        if (objEvent.keyCode == 9) {  //tab pressed
+                                                                                            objEvent.preventDefault(); // stops its action
+                                                                                        }
+                                                                                        if (objEvent.keyCode == 13) {  //enter pressed
+                                                                                            objEvent.preventDefault(); // stops its action
+                                                                                        }
+                                                                                    });
+                                                                                
+                                                                               
+                                                                            }
+                                                                            if($scope.processExecutionMode == 'DirectToClient'){
+                                                                                 $('.zen-branding').css("display", 'none');
+                                                                            }
+                                                                        });
+                                                                        //shut down popup code end
+																		
+                                                                        if(getParameterByName('id').trim().length > 0)
+                                                                        {
+                                                                            $scope.objTpaRequestToEdit = {!ObjectTpaRequestToEdit};
+                                                                            $scope.objTpaRequestAgreement = {!ObjectTpaRequest};
+                                                                            $scope.objtpaAgreementAdditionalFieldData = {!tpaAgreementAdditionalFieldData};
+                                                                            
+                                         
+                                                                            if($scope.objTpaRequestToEdit == null)
+                                                                                return false;
+                                                                        }
+                                                                    }                        
+                                                                    
+                                                                    $scope.postSubmitActivity = function(redirectionURL)
+                                                                    {
+                                                                        var q = encodeURIComponent(redirectionURL);
+                                                                        var uri_dec = decodeURIComponent(redirectionURL);
+                                                                        $scope.$log.info('redirectionURL: ' + redirectionURL); 
+                                                                          window.location.href = uri_dec;
+                                                                    }
+                                                                    
+                                                                    //*** function to submit request ***//
+                                                                    $scope.submitForm = function()
+                                                                    {
+                                                                        $scope.applyChanges();
+                                                                        if($scope.validateForm())
+                                                                            return false;
+                                                                        $scope.AgreementAdditionalFieldObj = {};
+                                                                        $scope.AgreementAdditionalFieldObj.QuintilesIMS_Account_Team_First_Name__c = $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName;
+                                                                        $scope.AgreementAdditionalFieldObj.QuintilesIMS_Account_Team_Last_Name__c = $scope.vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName;
+                                                                        $scope.AgreementAdditionalFieldObj.Client_Contact_First_Name__c = $scope.vendorSpecificNotificationObj.ClientContactFirstName;
+                                                                        $scope.AgreementAdditionalFieldObj.Client_Contact_Last_Name__c = $scope.vendorSpecificNotificationObj.ClientContactLastName;
+                                                                        $scope.AgreementAdditionalFieldObj.Related_TPA_Request__c = $scope.tpaReqId;
+                                                                        $scope.AgreementAdditionalFieldObj.Id = $scope.objtpaAgreementAdditionalFieldData.Id;
+                                                                        
+                                                                        $scope.$log.info(JSON.stringify($scope.AgreementAdditionalFieldObj));
+                                                                        $scope.$log.info(JSON.stringify($scope.tpaReqId));
+                                                                        onActionClick();
+                                                                        CNT_TPA_VendorSpeciNotifOffAck.saveRequest(JSON.stringify($scope.AgreementAdditionalFieldObj).replace(/null/i, "\"\""),JSON.stringify($scope.tpaReqId), JSON.stringify($scope.actionToPerform), JSON.stringify($scope.processExecutionMode), ($window.attachmentBody === undefined) ? "" : $window.attachmentBody , ($window.attachmentName === undefined) ? "" : $window.attachmentName , function(result, event)
+                                                                                                                             {
+                                                                                                                                 $scope.$log.warn(result);
+                                                                                                                                 if(event.type == 'exception')
+                                                                                                                                 {    
+                                                                                                                                     onActionComplete(); 
+                                                                                                                                     $scope.$log.info('Error: ' + event.message);
+                                                                                                                                     $scope.submitStatus = 'error';
+                                                                                                                                     return false;                                    
+                                                                                                                                 }
+                                                                                                                                 if(result.indexOf('success') > -1)
+                                                                                                                                     $scope.postSubmitActivity(result.split('~')[1]);
+                                                                                                                                 else
+                                                                                                                                 {
+                                                                                                                                     onActionComplete(); 
+                                                                                                                                     $scope.$log.info('Error: ' + event.message);
+                                                                                                                                     $scope.submitStatus = 'error';
+                                                                                                                                     return false;
+                                                                                                                                 }
+                                                                                                                             });
+                                                                        
+                                                                        
+                                                                    }  
+                                                                    $scope.clientSubmit = function(){
+                                                                        $scope.applyChanges();
+                                                                        if($scope.validateClientSubmission())
+                                                                            return false;
+                                                                        $scope.AgreementAdditionalFieldObj = {};
+                                                                        $scope.AgreementAdditionalFieldObj.Client_Contact_First_Name__c = $scope.vendorSpecificNotificationObj.clientContactFullName;
+                                                                        $scope.AgreementAdditionalFieldObj.QuintilesIMS_Account_Team_First_Name__c = $scope.vendorSpecificNotificationObj.clientContactTitle;
+                                                                        $scope.AgreementAdditionalFieldObj.Offering_Notification_Ack_By_Email__c = $scope.vendorSpecificNotificationObj.clientContactEmail;
+                                                                        $scope.AgreementAdditionalFieldObj.Id = $scope.objtpaAgreementAdditionalFieldData.Id;
+                                                                        CNT_TPA_VendorSpeciNotifOffAck.onClientSubmission(JSON.stringify($scope.AgreementAdditionalFieldObj).replace(/null/i, "\"\""),JSON.stringify($scope.tpaReqId),function(result, event){
+                                                                            $scope.$log.warn(result);
+                                                                            if(event != 'exception')
+                                                                            {    
+                                                                                onActionComplete(); 
+                                                                                $scope.$log.info('Error: ' + event.message);
+                                                                                $scope.submitStatus = 'error';
+                                                                                return false;                                    
+                                                                            }else{
+                                                                                consoole.log('Success - ' + result)
+                                                                            }
+                                                                        })
+                                                                        console.dir($scope.AgreementAdditionalFieldObj)
+                                                                        hideLoading();
+                                                                        $scope.popupAlert('{!$Label.TPA_Client_Offering_Notification_Acknowlegement_Popup}', function(){ 
+                                                                            showLoading();
+                                                                            $scope.postSubmitActivity('/VFP_TPA_Page_Status?type=successccack');
+                                                                        })    
+                                                                    }
+                                                                    $scope.isError = false;
+                                                                    $scope.errorMsg = '';
+                                                                    
+                                                                    //*** function triggers and applies all angular scope changes explicitly ***//
+                                                                    $scope.applyChanges = function()
+                                                                    {
+                                                                        if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest')
+                                                                            $scope.$apply();
+                                                                    }
+                                                                    //****** Angular Apply All Changes Event End ******//
+                                                                    $scope.renderBootstrapTooltip = function()
+                                                                    {
+                                                                        applyBootstrapTooltip('right', '.rightTooltip');
+                                                                        applyBootstrapTooltip('left', '.leftTooltip');
+                                                                        applyBootstrapTooltip('bottom', '.bottomTooltip');
+                                                                        applyBootstrapTooltip('top', '.topTooltip');
+                                                                    }
+                                                                    
+                                                                    //****** Utility Events Start ******//
+                                                                                         
+                                                                    $scope.popupAlert = function(msg, truePart)
+                                                                    {
+                                                                        popup(msg, {'animate':true}, 
+                                                                              function(r)
+                                                                              {
+                                                                                  if(r && truePart != null)
+                                                                                      truePart();
+                                                                              });
+                                                                    }
+                                                                    
+                                                                    $scope.popupConfirm = function(msg, truePart, falsePart, isYesNo)
+                                                                    {
+                                                                        if(isYesNo)
+                                                                            popup(msg, {'verify':true, 'animate':true}, function(r)
+                                                                                  {
+                                                                                      if(r)
+                                                                                          truePart();
+                                                                                      else
+                                                                                          falsePart();
+                                                                                      haltScreen = false;
+                                                                                      $scope.applyChanges();
+                                                                                  });                        
+                                                                        else
+                                                                            popup(msg, {'confirm':true, 'animate':true}, function(r)
+                                                                                  {
+                                                                                      if(r)
+                                                                                          truePart();
+                                                                                      else
+                                                                                          falsePart();
+                                                                                      haltScreen = false;
+                                                                                      $scope.applyChanges();
+                                                                                  });
+                                                                        $('.aButtons button').each(function(){
+                                                                            if($(this).attr('value') == 'cancel')
+                                                                                $(this).html('Return');
+                                                                            if($(this).attr('value') == 'ok')
+                                                                                $(this).html('OK');
+                                                                        });
+                                                                    }
+                                                                    //****** Utility Events End ******//
+                                                                    $scope.loadForm();
+                                                                }]);
+																
+																//Shut down popup code
+																var popupAlert = function(msg, truePart)
+																{
+																popup(msg, {'animate':true}, 
+																function(r)
+																{
+																	if(r && truePart != null)
+																		truePart();                    
+																});
+																//  $(".aButtons button").html('{!$Label.TPA_OK}');
+																}
+		
+            <!-- Page Controller End -->
+            //*** function to read Query strings Start ***//
+            function getParameterByName(name) 
+            {
+                name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                return results == null ? "" : results[1].replace(/\+/g, " ");
+            }
+            //*** function to read Query strings End ***//
+            
+            //*** Wait Panel Start ***//
+            // Create a namespace for our custom functions
+            YAHOO.namespace("force.com");
+            YAHOO.force.com.buildWaitPanel = function() 
+            {
+                document.body.className = document.body.className + " yui-skin-sam";
+                YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                    "waitPanel",  // The id of our dialog container
+                    { 
+                        width           :   "300px", // You can play with this until it is right
+                        visible         :   false,   // Should be invisible when rendered
+                        draggable       :   false,   // Make the dialog draggable
+                        close           :   false,   // Do not include a close title button
+                        modal           :   true,    // Make it modal
+                        fixedCenter     :   true,    // Keep centered if window is scrolled
+                        zindex          :   40,      // Make sure it is on top of everything
+                        constraintoviewport: true,
+                        
+                        // This line adds the appear/disapper fade effect
+                        effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                    });
+                
+                // header
+                YAHOO.force.com.waitPanel.setHeader("Please wait...");
+                // set image
+                YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+                // Render the dialog to the document.body level of the DOM
+                YAHOO.force.com.waitPanel.render(document.body);
+            }
+            
+            /**
+                * Callback when the action button is clicked
+                */
+            function onActionClick() 
+            {
+                // show the modal panel
+                if(YAHOO.force.com.waitPanel != null)
+                    YAHOO.force.com.waitPanel.show();
+                // return false to allow the action to proceed
+                return false;
+            }
+            
+            /**
+                 * Callback when the action is completed
+                 */
+            function onActionComplete() 
+            {
+                if(YAHOO.force.com.waitPanel != null)
+                    YAHOO.force.com.waitPanel.hide();
+                window.scrollTo(0,0);
+            }
+            
+            YAHOO.force.com.onDOMReady = function() 
+            {
+                // add our custom skin css to the body tag
+                document.body.className = document.body.className + " yui-skin-sam";  
+                
+                // build the wait panel
+                YAHOO.force.com.buildWaitPanel();
+            }
+            
+            // build the tree as soon as the DOM is in a usable state
+            YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady); 
+            //*** Wait Panel End ***//
+                
+            </script>
+            <!-- ****** AngularJS script End ****** -->
+            <style type="text/css">
+                .hideGlobalHeader
+                {
+                    display: none !important;
+                }
+                .boxStyle{
+                    background-color:var(--slds-g-color-brand-base-50);
+                    color: var(--slds-g-color-neutral-base-100);
+                    padding: 0.5rem;
+                }
+                .errStyle{
+                    border: 2px solid #c00 !important;
+                }
+                .modal{
+                    display: none;
+                }
+                </style>
+        </head>
+        <body id="pageBody" oncontextmenu="return false;" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <div id="backWhiteOverlay" style="position:absolute;z-index:10000 !important;width:100%;height:100%;display:none;"></div>
+			<apex:form styleclass="slds-m-around_x-large">
+                <div id="ng-app" ng-app="TpaAccessRequest" class="slds-p-around_small"> 
+
+                    <div id="controllerPage" ng-controller="controllerPage">
+                        <c:VFC_TPA_LoadingImage />
+                        <!-- Error Message Box Start -->
+                        <div ng-show="isError" class="slds-theme_error" role="alert" style="display:none;">
+                            <div class="message errorM3 slds-notify__content " role="alert">
+                              <div class="slds-grid slds-grid_vertical slds-size_1-of-1 slds-p-around_small">
+                                  <div class="slds-col">
+                                      <div class="slds-grid">
+                                          <div class="slds-col slds-size_1-of-3"></div>
+                                          <div class="slds-col slds-size_1-of-3">
+                                              <h2 class="slds-text-heading_small">
+                                                  <div class="messageText">
+                                                      <span><h4>Error</h4></span>
+                                                  </div>
+                                              </h2>
+                                          </div>
+                                          <div class="slds-col slds-size_1-of-3"></div>
+                                      </div>
+                                  </div>
+                                  <div class="slds-col">
+                                      <div class="slds-grid">
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5">
+                                              <ul>
+                                                  <li><span ng-bind-html-unsafe="errorMsg"></span></li>
+                                              </ul>
+                                          </div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                          <div class="slds-col slds-size_1-of-5"></div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                         </div>
+                        <!-- Error Message Box End -->
+                        
+                        <div ng-if = 'processExecutionMode != "DirectToClient"'>
+                        <apex:pageBlock >
+                            <apex:pageBlockButtons location="bottom">
+                                <div>
+                                    <button class="slds-button slds-button_brand"  ng-show="vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName.length != 0 && 
+                                    														vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName.length != 0 && 
+                                    														vendorSpecificNotificationObj.ClientContactFirstName.length != 0 && 
+                                    														vendorSpecificNotificationObj.ClientContactLastName.length != 0 "
+                 							onclick="return false;" ng-click="submitForm();">Submit</button>
+                                </div>
+                            </apex:pageBlockButtons>
+                            <!-- Page Buttons End -->
+
+                                <apex:pageBlockSection columns="1">
+                                    <apex:pageBlockSectionItem >
+                                        <p class="panelText" style="color:#1414FF;border:1px solid black;padding: inherit;font-size:0.9em;padding: 0.2% 1%;text-align: justify;">{{attMsg}}</p>  
+                                    </apex:pageBlockSectionItem>    
+                            </apex:pageBlockSection>
+                            
+                            <apex:pageBlockSection title="Offering-Vendor Managed Attributes Notification Delivery / Action" columns="2" collapsible="false" html-class="imsheader" html-style="background-color:white;">
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="{!$Label.TPA_IQVIA_Keyword} Account Team First Name" />
+                                    <apex:outputPanel id="opPanel">
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.QuintilesIMSAccountTeamFirstName" ng-class="{'errStyle':isQuintilesIMSAccountTeamFirstNameError,'':!isQuintilesIMSAccountTeamFirstNameError}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="{!$Label.TPA_IQVIA_Keyword} Account Team Last Name"/>
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.QuintilesIMSAccountTeamLastName" ng-class="{'errStyle':isQuintilesIMSAccountTeamLastNameError,'':!isQuintilesIMSAccountTeamLastNameError}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Client Contact First Name"/> 
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.ClientContactFirstName" alphanumeric-Only="alphanumeric-Only" ng-class="{'errStyle':isClientContactFirstNameError,'':!isClientContactFirstNameError}" /> 
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Client Contact Last Name"/>   
+                                    <apex:outputPanel >
+                                        <div class="requiredInput">
+                                            <div class="requiredBlock"></div>
+                                            <input class="slds-input" type="text" maxlength="80" ng-model="vendorSpecificNotificationObj.ClientContactLastName" ng-class="{'errStyle':isClientContactLastNameError,'':!isClientContactLastNameError}" /> 
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="Attach the email regarding client’s acknowledgement (optional)" for="file"/>
+                                    <input class="slds-button slds-button_outline-brand"  type="file" id="attachmentFile" name = 'attachmentFile' onChange="readURL(this);" /> <br />
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                            
+                        </apex:pageBlock>       
+                        </div>
+                        <div ng-if = 'processExecutionMode == "DirectToClient"'> 
+                            <div class="slds-clearfix">
+                                <div class="slds-float_right" style = 'width:30%'>
+                                    <img src="{!IMSLogo}" />
+                                </div>
+                            </div>
+                            <div class = 'slds-box' style = 'padding:2px; background-color:var(--slds-g-color-brand-base-50)'></div>
+                                <strong>
+                                    ACKNOWLEDGEMENT REQUIRED 
+                                </strong> 
+                                <br/>
+                                <br/>
+                                <strong>{!tpaRequestToEdit.Name} Request Details</strong>
+                                <p class="slds-p-vertical_small">
+                                    Third Party Vendor Company: {! tpaRequestToEdit.Global_Brand_Company_Name__c}<br/>
+                                    Requested Uses and IQVIA Offering(s) by Country: <a href="{{useOfferingsLink}}" target = "_blank">Click Here</a> <br/>
+                                    Client Project Name: {!tpaRequestToEdit.Client_Project_Name__c}<br/>
+                                </p>
+
+                                <p class="slds-p-bottom_small">
+                                    This TPA Request has additional data sharing restrictions that will apply to the TPA Agreement. 
+                                </p>
+
+                                <div class="slds-box boxStyle" style = 'padding:0.5rem;' >Acknowledgement</div>
+
+                                <p>
+                                    <div class="slds-form-element slds-p-vertical_small">
+
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-checkbox">
+                                                <abbr class="slds-required" title="required">*</abbr>
+                                                <input type="checkbox" name="options" id="checkbox-unique-id-00" />
+                                                <label class="slds-checkbox__label" for="checkbox-unique-id-00">
+                                                    <span class="slds-checkbox_faux" ng-class="{'errStyle':Acknowlegement1Error,'':!Acknowlegement1Error}"></span>
+                                                    <span class="slds-form-element__label">I have reviewed the Offering Notification document, understand, and will comply to ensure the protection of IQVIA intellectual property.</span>
+                                                </label>
+                                            </div>
+                                            <div class="slds-checkbox">
+                                                <abbr class="slds-required" title="required">*</abbr>
+
+                                                <input type="checkbox" name="options" id="checkbox-unique-id-01"/>
+                                                <label class="slds-checkbox__label" for="checkbox-unique-id-01">
+                                                    <span class="slds-checkbox_faux" ng-class="{'errStyle':Acknowlegement2Error,'':!Acknowlegement2Error}"></span>
+                                                    <span class="slds-form-element__label">I will provide the Offering Notification document to my data provisioning person or department to ensure that proprietary attributes are not released to this Vendor.</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </p>
+                                <div class="slds-box boxStyle" style = 'padding:0.5rem;'>Acknowledged by</div>
+                                    <div class = 'slds-grid slds-gutter slds-p-vertical_small'>
+                                        <div class = 'slds-grid  slds-col slds-size_1-of-2'>
+                                            <div class = 'sld-col slds-size_1-of-4'>
+                                                <abbr class="slds-required" title="required">* </abbr>
+                                                <apex:outputLabel value="First and Last Name:"/>
+                                            </div>
+                                            <div class="slds-col slds-size_2-of-4">
+                                                <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.clientContactFullName" ng-class="{'errStyle':clientContactFullNameError,'':!clientContactFullNameError}" />
+                                            </div>
+                                        </div>
+                                        <div class = 'slds-grid slds-col slds-size_1-of-2'>
+                                            <div class = 'slds-col slds-size_1-of-6'>
+                                                <abbr class="slds-required" title="required">* </abbr>
+                                                <apex:outputLabel value="Title:"/>
+                                            </div>
+                                            <div class="slds-col slds-size_2-of-4">
+                                                <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.clientContactTitle" ng-class="{'errStyle':clientContactTitleError,'':!clientContactTitleError}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class= 'slds-grid slds-p-vertical_small'>
+                                        <div class = 'slds-col slds-size_1-of-8'>
+                                            <abbr class="slds-required" title="required">* </abbr>
+                                            <apex:outputLabel value="Email Address:"/>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-8">
+                                            <input class="slds-input" type="text" maxlength="255" ng-model="vendorSpecificNotificationObj.clientContactEmail" ng-class="{'errStyle':clientContactEmailError,'':!clientContactEmailError}" />
+                                        </div>
+                                    </div>
+                                <p class = 'slds-p-vertical_small'>
+                                    Upon submission of this form, we will resend the Offering Notification(s) document and a confirmation of your acknowledgement via email.
+                                </p>
+                                <p>                                   
+                                    <div class="slds-clearfix">
+                                        <div class="slds-float_right">
+                                            <button class="slds-button slds-button_brand"  ng-show="" onclick="return false;" ng-click="clientSubmit();">Submit</button>
+                                        </div>
+                                    </div>
+                                </p>
+                        </div>
+                    </div>
+                </div>
+            </apex:form>
+        </body>
+    </html>
+</apex:outputPanel>
+</apex:page>

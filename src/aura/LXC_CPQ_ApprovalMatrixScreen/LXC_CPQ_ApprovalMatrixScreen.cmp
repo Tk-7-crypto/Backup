@@ -1,0 +1,154 @@
+<aura:component implements="force:appHostable,flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="CNT_CPQ_ApprovalMatrixScreen">
+    <aura:attribute name="ApprovalMatrixWithKeyWrapper" type="Object" />
+    <aura:attribute name="openPopup" type="boolean" default="false"/>
+    <aura:attribute name="openPopupForApprovalMatrix" type="boolean" default="false"/>
+    <aura:attribute name="ApproverGroupId" type="String"/>
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:if isTrue="{!v.showSpinner}">
+        <lightning:spinner />
+    </aura:if> 
+	<lightning:tabset  aura:id="tabset">
+        <aura:iteration items="{!v.ApprovalMatrixWithKeyWrapper}" var="item" >
+             <lightning:tab id="{!item.key.Name}" label="{!item.key.Name}" aura:Id="currentKey">
+             
+                 <div class="slds-align_absolute-center" >
+                     <aura:if isTrue="{!not(empty(item.approvalMatrixWrapperObj))}">
+                         <lightning:button variant="brand" class="Button_Margin" label="Save" title="Save" onclick="{!c.saveMap}" />                 
+                     </aura:if>
+                     <lightning:button  class="slds-p-left_large" variant="brand" label="Add New" onclick="{!c.addAprovalMatrix}" name="{!item.key.Id}"/>
+             	 </div>
+                 <br/>
+                <table class="slds-table slds-table--bordered slds-table--striped">
+                    <thead>
+                        <tr>
+                            <th scope="col"><span class="slds-truncate">Opportunity Type</span></th>
+                            <th scope="col"><span class="slds-truncate">Region</span></th>
+                            <th scope="col"><span class="slds-truncate">X0_5M_USD__c</span></th>
+                            <th scope="col"><span class="slds-truncate">X5_10M_USD__c</span></th>
+                            <th scope="col"><span class="slds-truncate">X10_20M_USD__c</span></th>
+                            <th scope="col"><span class="slds-truncate">X20_50M_USD__c</span></th>
+                            <th scope="col"><span class="slds-truncate">X50M_USD__c</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!item.approvalMatrixWrapperObj}" var="mapValue" indexVar="index">
+                            <tr>
+                                <td>{!mapValue.approvalMatrix.Opportunity_Type__c}</td>
+                                <td>{!mapValue.approvalMatrix.Region__c}</td>
+                                <aura:if isTrue="{!mapValue.isEdit}">
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input1" value="{!mapValue.approvalMatrix.X0_5M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input2" value="{!mapValue.approvalMatrix.X5_10M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input3" value="{!mapValue.approvalMatrix.X10_20M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input4" value="{!mapValue.approvalMatrix.X20_50M_USD__c}"/></td>
+                                    <td><lightning:input type="String" name="{!mapValue.approvalMatrix.Name}" aura:id="input5" value="{!mapValue.approvalMatrix.X50M_USD__c}"/></td>
+                                <aura:set attribute="else">
+                                    <td>{!mapValue.approvalMatrix.X0_5M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X5_10M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X10_20M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X20_50M_USD__c}</td>
+                                    <td>{!mapValue.approvalMatrix.X50M_USD__c}</td>
+                                    </aura:set>
+                                </aura:if>
+                                    <td><lightning:input class="{!mapValue.approvalMatrix.Name + ' '}" type="checkbox" label="Edit Record" name="input1" checked="{!mapValue.isEdit}"/></td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+             </table>
+             <br/>    
+             <div class="slds-align_absolute-center">
+                 <aura:if isTrue="{!not(empty(item.approvalMatrixWrapperObj))}">
+                     <lightning:button variant="brand" class="Button_Margin" label="Save" title="Save" onclick="{!c.saveMap}" />
+                 </aura:if>
+                     <lightning:button variant="brand" label="Add New" onclick="{!c.addAprovalMatrix}" name="{!item.key.Id}"/>
+             </div>             
+             </lightning:tab>
+        </aura:iteration>
+        </lightning:tabset>
+        <aura:if isTrue="{!v.openPopup}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container" >
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header" >
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create New Approver Group</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                	<lightning:recordEditForm objectApiName="Approver_Group__c" onsuccess="{!c.handleSuccess}">
+                        <lightning:messages />
+                        <div class="slds-grid">
+                            <div class="slds-m-around_medium">
+                                <lightning:inputField fieldName="Name" />
+                            </div>
+                            <div class="slds-m-around_medium">
+                                <lightning:inputField fieldName="Type__c"/>
+                            </div>
+                        </div>
+                        
+                        <lightning:button class="slds-m-top_small" type="submit" label="Save" />
+                        
+                        <lightning:button class="slds-m-top_small"
+                                          label="Cancel"
+                                          title="Cancel"
+                                          onclick="{! c.closeModel }"/>
+                    </lightning:recordEditForm>
+                </div>
+                <!--Modal/Popup Box Body Starts here-->
+                
+            </div>
+        </section>
+    </aura:if>
+    <aura:if isTrue="{!v.openPopupForApprovalMatrix}">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container" >
+                <!-- Modal/Popup Box Header Starts here-->
+                <header class="slds-modal__header" >
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create New Approval Matrix</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                	<lightning:recordEditForm objectApiName="Approval_Matrix__c" onsuccess="{!c.handleSuccess}">
+                        <lightning:messages />
+                            <div>
+                                <lightning:inputField fieldName="Approver_Group__c" value="{!v.ApproverGroupId}"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="Opportunity_Type__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="Region__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="Therapy_Area__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="Sales__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="X0_5M_USD__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="X5_10M_USD__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="X10_20M_USD__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="X20_50M_USD__c"/>
+                            </div>
+                            <div>
+                                <lightning:inputField fieldName="X50M_USD__c"/>
+                            </div>
+                            <lightning:button class="slds-m-top_small" type="submit" label="Save" />
+                            
+                            <lightning:button class="slds-m-top_small"
+                                              label="Cancel"
+                                              title="Cancel"
+                                              onclick="{! c.closeModel }"/>
+                    </lightning:recordEditForm>
+                </div>
+                <!--Modal/Popup Box Body Starts here-->
+                
+            </div>
+        </section>
+    </aura:if>
+</aura:component>

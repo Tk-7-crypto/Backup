@@ -1,0 +1,261 @@
+<aura:component description="LXC_CSM_MassEditActivityContent" controller="CNT_CSM_MassEditActivity" implements="lightning:isUrlAddressable,force:appHostable,force:hasRecordId,forceCommunity:availableForAllPageTypes" access="global">
+    <aura:attribute name="SpinnerMassEditActivity" type="boolean" default="false"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="activityWrapperList" type="list"/>
+    <aura:attribute name="activityWrapperMapToSave" type="List"/>
+    <aura:attribute name="activityWrapperMapKeySet" type="List"/>
+    <aura:attribute name="picklistWrapper" type="Object" />
+    <aura:attribute name="PaginationList" type="list"/> 
+    <aura:attribute name="startPage" type="Integer" />
+    <aura:attribute name="endPage" type="Integer"/>
+    <aura:attribute name="totalRecordsCount" type="Integer"/>
+    <aura:attribute name="pageSize" type="Integer" default="50"
+                    description="number of records to be display on per page"/>
+    <aura:attribute name="currentPage" type="integer" default="1"/>
+    <aura:attribute name="totalPagesCount" type="integer"/>
+    <aura:attribute name="bNoRecordsFound" type="boolean"/>
+    <aura:attribute name="recordId" type="String"/>
+    <lightning:workspaceAPI aura:id="workspace"/>
+    
+    <aura:if isTrue="{!v.SpinnerMassEditActivity}">
+        <div aura:id="spinnerId" id="spinnerId_activity" class="slds-spinner_container">
+            <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                <span class="slds-assistive-text">Loading</span>
+                <div class="slds-spinner__dot-a"></div>
+                <div class="slds-spinner__dot-b"></div>
+            </div>
+        </div>
+    </aura:if>    
+    <lightning:card variant="narrow">
+        <aura:set attribute="title">
+            <div class="slds-align_absolute-center slds-text-heading_medium slds-text-color_weak">Mass Edit Activity</div>
+        </aura:set>
+        <aura:if isTrue="{!v.bNoRecordsFound}">
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_info" role="alert">
+                <span class="slds-assistive-text">error</span>
+                <h2>No record found.</h2>
+            </div>
+            <aura:set attribute="else">
+                <div class="slds-grid slds-wrap slds-m-around_large">
+                    <div class="slds-size--1-of-2">  
+                        <lightning:button label="Previous"
+                                          disabled="{!v.startPage == 0}"  
+                                          onclick="{!c.navigation}"
+                                          variant="brand"
+                                          iconName="utility:back"
+                                          name="previous"/>
+                        
+                        <span class="slds-badge slds-badge_lightest"
+                              style="margin-right: 10px;margin-left: 10px;">
+                            Page {!v.currentPage} out of {!v.totalPagesCount}
+                        </span>
+                        <lightning:button label="Next"
+                                          disabled="{!(v.endPage + 1) >= v.totalRecordsCount}" 
+                                          onclick="{!c.navigation}"
+                                          variant="brand"
+                                          iconName="utility:forward"
+                                          iconPosition="right"
+                                          name="next"/>
+                    </div>  
+                    <div class="slds-size--1-of-2 slds-clearfix">
+                        <div class="slds-float_right">
+                            <span class="slds-badge slds-badge_lightest" style="margin-right:10px;">
+                                Total Records : {!v.selectedCount > 0 ? v.selectedCount + '/' : ''} {!v.totalRecordsCount} 
+                            </span>
+                            <lightning:button label="Save Activities"
+                                              onclick="{!c.onSave}"
+                                              variant="brand"
+                                              name="save"/>
+                        </div>
+                    </div>
+                </div>
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                    <thead>
+                        <tr class="slds-line-height_reset slds-text-title_caps">
+                            <th scope="col" class="paddingLeft">
+                                <div class="slds-truncate">Case Number</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Activity Id</div>
+                            </th>
+                            <th scope="col" style="min-width:10vw;">
+                                <div class="slds-truncate">Status</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Description</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Pass/Fail</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">LOS</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Type</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Escalation Type</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" style="min-width:6vw;">Location</div>
+                            </th>
+                            <th scope="col" class="paddingRight">
+                                <div class="slds-truncate">Email Categorization</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.PaginationList}" var="activityWrapper" indexVar="index">
+                            <tr >
+                                <th scope="row" class="paddingLeft">
+                                    <div class="slds-truncate">
+                                        {!activityWrapper.activity.Case__r.CaseNumber}
+                                    </div>
+                                </th> 
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        {!activityWrapper.activity.Name}
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          value="{!activityWrapper.activity.Status__c}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!v.picklistWrapper.statusValues}" var="status">
+                                                <option value="{!status.value}" text="{!status.label}" selected= "{!status.value==activityWrapper.activity.Status__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:textarea variant="label-hidden" class="label-hidden"
+                                                            name="description" 
+                                                            value="{!activityWrapper.activity.Description__c}" 
+                                                            />
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="passFail" 
+                                                          value="{!activityWrapper.activity.PassFail__c}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!v.picklistWrapper.passFailValues}" var="passFail">
+                                                <option value="{!passFail.value}" text="{!passFail.label}" selected="{!passFail.value==activityWrapper.activity.PassFail__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate" >
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="{!index}"
+                                                          value="{!activityWrapper.activity.LOS__c}"
+                                                          onchange="{!c.onLOSChange}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!v.picklistWrapper.losValues}" var="los">
+                                                <option value="{!los.value}" text="{!los.label}" selected="{!los.value==activityWrapper.activity.LOS__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="{!index}" 
+                                                          value="{!activityWrapper.activity.Type__c}"
+                                                          onchange="{!c.onTypeChange}"
+                                                          disabled="{!or(activityWrapper.typeValues == undefined, activityWrapper.typeValues.length == 0)}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!activityWrapper.typeValues}" var="type">
+                                                <option value="{!type.value}" text="{!type.label}" selected="{!type.value==activityWrapper.activity.Type__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="escalationType" 
+                                                          value="{!activityWrapper.activity.EscalationType__c}"
+                                                          disabled="{!or(activityWrapper.escalationTypeValues == undefined, activityWrapper.escalationTypeValues.length == 0)}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!activityWrapper.escalationTypeValues}" var="escalationType">
+                                                <option value="{!escalationType.value}" text="{!escalationType.label}" selected="{!escalationType.value==activityWrapper.activity.EscalationType__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="location" 
+                                                          value="{!activityWrapper.activity.RandD_Location__c}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!v.picklistWrapper.locationValues}" var="location">
+                                                <option value="{!location.value}" text="{!location.label}" selected="{!location.value==activityWrapper.activity.RandD_Location__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                                <th scope="row" class="paddingRight">
+                                    <div class="slds-truncate">
+                                        <lightning:select aura:id="selectCmp" variant="label-hidden" class="label-hidden"
+                                                          name="emailCategorization"
+                                                          value="{!activityWrapper.activity.Email_Categorization__c}"
+                                                          >
+                                            <option value="Please Specify" text="Please Specify"></option>
+                                            <aura:iteration items="{!v.picklistWrapper.emailCategorizationValues}" var="emailCategorization">
+                                                <option value="{!emailCategorization.value}" text="{!emailCategorization.label}" selected="{!emailCategorization.value==activityWrapper.activity.Email_Categorization__c}"></option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </th>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+                <br/>
+                <div class="slds-grid slds-wrap slds-m-around_large">
+                    <div class="slds-size--1-of-2">         
+                        <lightning:button label="Previous"
+                                          disabled="{!v.startPage == 0}"  
+                                          onclick="{!c.navigation}"
+                                          variant="brand"
+                                          iconName="utility:back"
+                                          name="previous"/>
+                        
+                        <span class="slds-badge slds-badge_lightest"
+                              style="margin-right: 10px;margin-left: 10px;">
+                            Page {!v.currentPage} out of {!v.totalPagesCount}
+                        </span>
+                        
+                        <lightning:button label="Next"
+                                          disabled="{!(v.endPage + 1) >= v.totalRecordsCount}" 
+                                          onclick="{!c.navigation}"
+                                          variant="brand"
+                                          iconName="utility:forward"
+                                          iconPosition="right"
+                                          name="next"/>
+                    </div>  
+                    <div class="slds-size--1-of-2 slds-clearfix">
+                        <div class="slds-float_right">
+                            <lightning:button label="Save Activities"
+                                              onclick="{!c.onSave}"
+                                              variant="brand"
+                                              name="save"/>
+                        </div>
+                    </div>
+                </div>
+            </aura:set> 
+        </aura:if>
+    </lightning:card>
+</aura:component>

@@ -1,0 +1,494 @@
+<apex:page controller="CNT_TPA_AllReqTATReport" id="idPage" tabStyle="TPA_Request__c" title="All TPA Requests Turnaround Time Report" lightningStyleSheets="true">
+    <apex:slds />
+    <html ng-app="TpaTurnaroundReport">
+    <apex:sectionHeader title="TPA Request" subtitle="{!reportHeading}" />
+        <head>
+                
+            <link href="{!URLFOR($Resource.TpaCustomPopup, 'popup.css')}" rel="stylesheet" />
+            <!-- *** JQuery UI Stylesheet reference *** -->
+            <link href="{!URLFOR($Resource.TPAJqueryUICss)}" rel="stylesheet" />
+            <!-- *** JQuery UI Stylesheet reference *** -->
+            
+            <!-- *** Jquery library reference *** -->
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'scripts/jquery-2.0.2.min.js')}" />
+            <script src="{!$Resource.TPAJqueryUI}" type="text/javascript"></script>
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.base.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/styles/jqx.energyblue.css')}" />
+            <script src="{!URLFOR($Resource.TpaCustomPopup, 'popup.js')}" type="text/javascript"></script>
+            <apex:includeScript value="{!URLFOR($Resource.TPA_Jquery_Widgets, 'jqwidgets/jqx-all.js')}"/>    
+            
+            <!-- *** Multi Select Control CSS reference *** -->
+        <link href="{!URLFOR($Resource.TpaMultiSelect, 'select2.css')}" rel="stylesheet" />
+        <!-- *** Multi Select Control CSS reference *** -->
+
+        <!-- *** Multi Select Control Javascript Library reference *** -->
+        <script src="{!URLFOR($Resource.TpaMultiSelect, 'select2.js')}" type="text/javascript"></script>
+        <!-- *** Multi Select Control Javascript Library reference *** -->
+            
+            <!-- *** Angular-JS Library reference ** -->
+            <apex:includeScript value="{!$Resource.AngularJS}"/>
+            <!-- *** Angular-JS Library reference ** -->
+            <style>
+                .pbSubheader {        
+                    background-color: #5e68c4 !important;
+                    border-color: #5e68c4 !important;
+                }
+                select, input[type="text"] {
+                    background-color: #fff;
+                    border: 1px solid #a6a6a6;
+                    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15) inset;
+                    color: black;
+                    font-size: 12px;
+                    height: 18px;
+                    line-height: 14px;
+                    min-width: 165px;
+                }
+                label, .labelCol, .data2Col, .btn, .dataCol
+                {
+                    font-size: 12px !important;
+                    color: #4a4a56 !important;
+                }
+                input[type="text"]:disabled{background-color:grey;}
+                .clsMoreHeight {
+                    height: 60px !important;
+                }
+                .ui-datepicker-month {
+                    min-width: 78px !important;
+                    height: 20px !important;
+                }
+                .ui-datepicker-year {
+                    min-width: 82px !important;
+                    height: 20px !important;
+                }
+                .jqx-icon-close-energyblue{display:none !important;}
+                .ui-datepicker-trigger{vertical-align: text-bottom;}
+                .ui-datepicker, .appriseOverlay {z-index:300 !important;}
+            </style>
+            <script type="text/javascript">
+                $(document).ready(function(){
+                $(".datepicker").datepicker({showOn: "button", yearRange: "2013:c", maxDate: '0', buttonImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAALdQTFRFMzMyAAAAMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMyMzMy////j2KaIAAAADt0Uk5TAAAEgzuRhtCH6aaF09KLFnt66xoGAwLsBw8Mfnj3GDiBNGyCNW19d/YOHw118hlDmj8UAfAuEBuv9eqZZ685AAAAAWJLR0Q8p2phzwAAAAlwSFlzAAAASAAAAEgARslrPgAAALxJREFUGNM9jIcOgkAQBUcseLZDVzwrKtgL9nr//18qqC+ZvGSy+8Ahm+WHA7l8wXWLxZRCPocqlSvVWq36oVIuKZTGq0P9g4dWNISm33J832n5TaSB0bQ7bbrdpLTBCD3bZzCgb3vIWwQMR2PCkPFoSJCKaMJ0yiRKhTCzcxYL5naWvGiWqzUirFfL76hnN2y3bKyXXMTs9geiiMN+R2xQR06Zb04cFefLNb4FWkQHt/h6OXN/PM0/z8f9BT8gFJGascv+AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE0LTA4LTA1VDA1OjMwOjQ2LTA0OjAwb0yWxAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxNC0wOC0wNVQwNTozMDo0Ni0wNDowMB4RLngAAAAASUVORK5CYII=", buttonImageOnly: true});                    
+                $(".datepicker").datepicker( "option", "dateFormat", 'mm/dd/yy' );
+                $(".datepicker").datepicker("option","changeYear", true);
+                $(".datepicker").datepicker("option","changeMonth", true);
+                $(".datepicker").datepicker("option","buttonText","click here to open calendar");
+                
+                var countryToTPProcessorMap = {!CountryToTPProcessorMap};
+                var tempCategory = '{!category}';
+                var tpProcessorDatatoDisplay = '';
+                var category = tempCategory.toString().slice(1,-1).split(',');
+
+                $('#ddCountry').select2({placeholder: "Select Country (Leave blank for all Country)", width: '50%', closeOnSelect:false});
+                
+                $('#ddCountry').on('select2-selecting', function (e) {
+                    var changeHappened = new Boolean(false);
+                    var CountryVal=e.choice.text;
+                    var selections = $('#ddCountry').select2('data');
+                    var Values = new Array();
+
+                    if(CountryVal.trim() == 'ALL'){
+                        for (var i = 0; i < selections.length; i++) {
+                            if (selections[i].text.trim() == 'ALL') {
+                                Values.push(selections[i].id);
+                            }
+                        }
+                        $('#ddCountry').val(Values).trigger('change');
+
+                    }
+                    else if(CountryVal.trim() == 'ALL excluding US'){
+                        console.log("IN ALL excluding US ");
+                        
+                        for (var i = 0; i < selections.length; i++) {
+                            if (selections[i].text.trim() == 'ALL excluding US') {
+                                Values.push(selections[i].id);
+                            }
+                        }
+                        $('#ddCountry').val(Values).trigger('change');
+
+                    }
+                    else{
+                        for (var i = 0; i < selections.length; i++) {
+                            if (selections[i].text.trim() !== 'ALL' && selections[i].text.trim() !== 'ALL excluding US') {
+                                Values.push(selections[i].id);
+                            }
+                            else{
+                                changeHappened = true;
+                            }
+                        }
+                        if(changeHappened == true){
+                            $('#ddCountry').select2('data', Values, false);
+                        }
+                    }
+                    
+                });
+
+                $('#ddCountry').on('select2-close', function (e) {
+                    var selectedCountry = $('#ddCountry').select2('data');
+                    tpProcessorDatatoDisplay = '';
+                    
+                    var TPProcessorVal = document.getElementById("idPage:idForm:idPageBlock:idPageBlockSection:TPProcessorSection:ddTPProcessorEmail");
+                    var TPProcessorLabel = document.getElementById("idPage:idForm:idPageBlock:idPageBlockSection:TPProcessorSection:TPProcessorLabel");
+                    TPProcessorVal.innerHTML = '';
+
+                    $.each(selectedCountry,function(value,index) {
+                        var TPProcessorNames = countryToTPProcessorMap[index.text.trim()];
+                        if(TPProcessorNames != null && TPProcessorNames != undefined 
+                           && tpProcessorDatatoDisplay.indexOf(TPProcessorNames) == -1){
+                            tpProcessorDatatoDisplay = TPProcessorNames + ', ' + tpProcessorDatatoDisplay;
+                        }
+                        
+                    });
+
+
+                    if(tpProcessorDatatoDisplay != '' ){
+                        TPProcessorVal.style.display = 'inline';
+                        TPProcessorLabel.style.display = 'block';
+                        TPProcessorVal.innerHTML = tpProcessorDatatoDisplay.toString().slice(0,-2);
+
+                    }
+                    else{
+                        TPProcessorVal.style.display = 'none';
+                        TPProcessorLabel.style.display = 'none';
+                    }
+
+                    
+                } );
+
+                $('#ddCountry').on('select2-removed', function (e){
+                    tpProcessorDatatoDisplay = '';
+
+                    var TPProcessorVal = document.getElementById("idPage:idForm:idPageBlock:idPageBlockSection:TPProcessorSection:ddTPProcessorEmail");
+                    var TPProcessorLabel = document.getElementById("idPage:idForm:idPageBlock:idPageBlockSection:TPProcessorSection:TPProcessorLabel");
+                    TPProcessorVal.innerHTML = '';
+
+                    var selectedCountry = $('#ddCountry').select2('data');
+                    $.each(selectedCountry,function(value,index) {
+                        var TPProcessorNames = countryToTPProcessorMap[index.text.trim()];
+                        if(TPProcessorNames != null && TPProcessorNames != undefined 
+                           && tpProcessorDatatoDisplay.indexOf(TPProcessorNames) == -1){
+                            tpProcessorDatatoDisplay = TPProcessorNames + ', ' + tpProcessorDatatoDisplay;
+                        }
+                    });
+
+                    if(tpProcessorDatatoDisplay != '' ){
+                        TPProcessorVal.style.display = 'inline';
+                        TPProcessorLabel.style.display = 'block';
+                        TPProcessorVal.innerHTML = tpProcessorDatatoDisplay.toString().slice(0,-2);
+
+                    }
+                    else{
+                        TPProcessorVal.style.display = 'none';
+                        TPProcessorLabel.style.display = 'none';
+                    }
+                });
+                
+                
+                
+                $.each(category,function(k,v){
+                    if(k != null )
+                        $('#ddCountry').append($("<option></option>").attr("value",v.trim()).text(v.trim()));
+                    
+                });
+            });
+            
+            var TpaTurnaroundReport = angular.module('TpaTurnaroundReport',[]);
+            TpaTurnaroundReport.controller('TpaTurnaroundController',function($scope,$log) {
+                $scope.allConditions = {};
+                $scope.gridCounter = 0;
+                var RequestType = getParameterByName('RequestType');
+                
+                $scope.reportResults = [];
+                
+                $scope.popupAlert = function(msg, truePart) {
+                    popup(msg, {'animate':true}, 
+                          function(r) {
+                              if(r && truePart != null)
+                                  truePart();
+                          });
+                }
+                
+                    $scope.validateSelection = function() {
+                        if($('#fromDatePicker').datepicker('getDate') == null) {
+                            $scope.popupAlert('Please select the From Date');
+                            return false;
+                        }
+                        else if($('#toDatePicker').datepicker('getDate') == null) {
+                            $scope.popupAlert('Please select the to Date');
+                            return false;
+                        }
+                        else if($('#fromDatePicker').datepicker('getDate') > $('#toDatePicker').datepicker('getDate')) {
+                            $scope.popupAlert('From Date cannot be greater than To Date');
+                            return false;
+                        }
+                        return true;
+                    }
+                     
+                    $scope.applyChanges = function() {
+                        if($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
+                            $scope.$apply();
+                        }
+                    }
+                 
+                    $scope.showGrid = function() {  
+                        $scope.gridCounter += 1;
+                        if($scope.gridCounter > 1) {
+                            $("#gridContainer").html('');
+                            //$("#jqxgrid").jqxGrid('destroy');
+                            $('#gridContainer').prepend('<div id="jqxgrid"></div>');
+                        }
+                            
+                        var source = {
+                            localdata: $scope.reportResults,
+                            datatype: "array",
+                            datafields: [
+                                { name: 'rowHeading', type: 'string'},
+                                { name: 'avgTurnAroundTime', type: 'string' }
+                            ]
+                        };
+                         
+                        var dataAdapter = new $.jqx.dataAdapter(source);
+                        var cellsrenderer = function (row, column, value) {
+                            var valueFormat;
+                            if(value == 'true' || value == 'Yes') {
+                                valueFormat = 'Y';
+                            } else {
+                                valueFormat = 'N';
+                            }
+                            return '<div style="text-align: center;">' + valueFormat + '</div>';
+                        }
+                        
+                        var columnrenderer = function (value) {
+                            return '<div style="text-align: center; margin-top: 5px;">' + value + '</div>';       
+                        }
+                        
+                        var toThemeProperty = function (className) {
+                            return className;
+                        };
+
+                        function getSubItems(data) {
+                            var subItems = [];
+                            if (data.subItems.length > 0) {
+                                subItems = data.subItems;
+                            } else if (data.subGroups.length > 0) {
+                                for (var i = 0; i < data.subGroups.length; i++) {
+                                    if (data.subGroups[i].subItems.length > 0) {
+                                        subItems = subItems.concat(data.subGroups[i].subItems);
+                                    } else {
+                                        subItems = subItems.concat(getSubItems(data.subGroups[i]));
+                                    }
+                                }
+                            }
+                            return subItems;
+                        }
+                     
+                        var tableRowHeading;
+                        var reportHeading;
+                        if(RequestType == 'AMA') {
+                            tableRowHeading = 'TLLA with AMA Associated Requests Only';
+                        } else {
+                            tableRowHeading = 'All TLLA Agreements';
+                        }
+                        
+                        $("#jqxgrid").jqxGrid({
+                            width: '100%',
+                            source: dataAdapter,
+                            altrows: false,
+                            sortable: false,
+                            selectionmode: 'none',
+                            pageable: false,
+                            autoheight: true,
+                            autorowheight: true,
+                            groupable: false,
+                            enabletooltips: false,
+                            theme: 'energyblue',
+                            showgroupsheader: false,
+                            pagesizeoptions: ['10', '20', '30'],
+                            columns: [
+                                { text: tableRowHeading, datafield: 'rowHeading',width:'80%',groupable:false},
+                                { text: 'Count', datafield: 'avgTurnAroundTime',width:'20%',groupable:false}
+                            ]
+                        });
+                    }
+                 
+                    $scope.runReport = function() {
+                        //$scope.gridCounter = 0;
+                        $scope.reportResults = [];
+                        $scope.reportResultTemp = [];
+                        var selectedCountry = $('#ddCountry').select2('data');
+                        var finalRequestingCountry = '';
+                      
+                        if(selectedCountry != null && selectedCountry.length > 0){
+                            $.each(selectedCountry,function(value,index) {
+                                finalRequestingCountry+= ((index.text) + ';');
+                            });
+                        }
+                        
+
+                        var isValid = $scope.validateSelection();
+                        if(isValid) {
+                            $scope.allConditions.fromDate = $('#fromDatePicker').datepicker('getDate');
+                            $scope.allConditions.toDate = $('#toDatePicker').datepicker('getDate');
+                            $scope.allConditions.RequestType = RequestType;
+                            $scope.allConditions.requestingContry = finalRequestingCountry;
+                            $log.info('Everything is valid-------------> ' + JSON.stringify($scope.allConditions));
+                            showLoading();
+                            $scope.callServerMethod(JSON.stringify($scope.allConditions), null);
+                            
+                            /*CNT_TPA_AllReqTATReport.getfinalReport(JSON.stringify($scope.allConditions),function(result,event) {
+                                if(event.status) {
+                                    $log.info('worked fine...'+result);
+                                    $log.info('worked fine...'+JSON.stringify(result));
+                                    $scope.reportResults = result;
+                                    $scope.applyChanges();
+                                    if(result != null && result.length > 0) {
+                                        $scope.showGrid();
+                                    }
+                                    else {
+                                        $scope.popupAlert('There are no request for the matching criteria');
+                                    }
+                                }
+                                hideLoading();
+                            }, { escape: false, timeout: 120000 });*/
+
+
+                        }
+                    }
+                    var noOfReqToProcess = '{!$Setup.TPA_Settings__c.AllReqTATReport_Query_Size__c}';
+                    console.log('noOfReqToProcess...before'+noOfReqToProcess);
+                    if(noOfReqToProcess == '') {
+                        noOfReqToProcess = 5000; 
+                    }
+                    console.log('noOfReqToProcess...after'+noOfReqToProcess);
+                    $scope.callServerMethod = function(allConditions,  lastCalcData) {
+                        Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.CNT_TPA_AllReqTATReport.getfinalReport}',
+                        allConditions,
+                        noOfReqToProcess,  
+                        lastCalcData,
+                        function(result, event) {
+                            if(event.type == 'exception')
+                    		{
+                        		hideLoading();
+                        		$scope.popupAlert('<b>Report Timed Out</b> - Please adjust dates and add specific countries');
+                        		return false;                                    
+                    		}
+                            if(event.status) {
+                                if(result != null && result.noOfReqProcessed > 0) {
+                                    console.log('------------>result ' + JSON.stringify(result));
+                                    console.log('------------>result.noOfTPAReqProcessed ' + result.noOfReqProcessed);
+                                    console.log('------------>noOfReqToProcess ' + noOfReqToProcess);
+                                    if(result.noOfReqProcessed == noOfReqToProcess) {
+                                        $scope.callServerMethod(allConditions, JSON.stringify(result));
+                                        return false;
+                                    }                                 }                                            
+                                if(result == null ||( result != null && result.noOfReqProcessed == 0)) {
+                                    $scope.popupAlert('There are no request for the matching criteria');
+                                    hideLoading();
+                                }
+                                else {                                                
+                                    
+                                    $scope.reportResults.push({'rowHeading':'Sum of Related TPA Request: TPA Request Count', 'avgTurnAroundTime':result.totalNoOfReqProcessed});
+                                    if(result.venSubToInReviewCf != null && result.venSubToInReviewCf.totalNoOfRecords > 0 && result.venSubToInReviewCf.totalNoOfDays > 0) {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between Initiated And IQVIA REVIEW', 'avgTurnAroundTime':Math.floor(result.venSubToInReviewCf.totalNoOfDays/result.venSubToInReviewCf.totalNoOfRecords)});
+                                    }
+                                    else {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between Initiated And IQVIA REVIEW', 'avgTurnAroundTime':0});
+                                    }
+                                    
+                                    if(result.inReviewToAwiatSignCf != null && result.inReviewToAwiatSignCf.totalNoOfRecords > 0 && result.inReviewToAwiatSignCf.totalNoOfDays > 0) {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between IQVIA REVIEW And Awaiting Vendor Signature', 'avgTurnAroundTime':Math.floor(result.inReviewToAwiatSignCf.totalNoOfDays/result.inReviewToAwiatSignCf.totalNoOfRecords)});
+                                    }
+                                    else {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between IQVIA REVIEW And Awaiting Vendor Signature', 'avgTurnAroundTime':0});
+                                    }
+                                    
+                                    if(result.venSubToInEffectCf != null && result.venSubToInEffectCf.totalNoOfRecords > 0 && result.venSubToInEffectCf.totalNoOfDays > 0) {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between Client Initiated And In Effect', 'avgTurnAroundTime':Math.floor(result.venSubToInEffectCf.totalNoOfDays/result.venSubToInEffectCf.totalNoOfRecords)});
+                                    }
+                                    else {
+                                        $scope.reportResults.push({'rowHeading':'Average Days Between Client Initiated And In Effect', 'avgTurnAroundTime':0});
+                                    }
+                                    $scope.applyChanges();
+                                    hideLoading();
+                                    
+                                    $scope.showGrid();
+                                    console.log('$scope.reportResults------------> ' + JSON.stringify($scope.reportResults));
+                                }
+                            } else {
+                                console.log('Event.Message =========> ' + event.message);
+                                hideLoading();
+                            }
+                        }, 
+                        { escape: false, timeout: 120000 });
+                    }
+                });
+                
+                function isIE(userAgent) {
+                    var ua = window.navigator.userAgent;
+                    return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+                }
+                
+                function getParameterByName(name) {
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+                    return results == null ? "" : results[1].replace(/\+/g, " ");
+                }
+                
+            </script>
+        </head>
+        <body ng-controller="TpaTurnaroundController" style="background-image: url(/_slds/images/themes/lightning_blue/lightning_blue_background.png),linear-gradient(to top, rgba(160, 180, 206, 0.0) 0, rgba(160, 180, 206, 1.0)); background-repeat: no-repeat; min-height: 100vh">
+            <c:VFC_TPA_LoadingImage />
+            <apex:form id="idForm" styleclass="slds-m-around_small">
+                <apex:pageBlock id="idPageBlock">
+                    <apex:pageBlockSection collapsible="false" columns="1" id="idPageBlockSection">
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="From Date:" />
+                            <apex:outputPanel id="opPanel">
+                                <div class="requiredInput">
+                                    <div class="requiredBlock"></div>
+                                    <input type="text" ng-click="popupAlert('Click on the calendar icon next to the text box and select the Date.');" placeholder="Select From Date" readonly="readonly" class="datepicker" id="fromDatePicker"/> 
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="To Date:"/>   
+                            <apex:outputPanel >
+                                <div class="requiredInput">
+                                    <div class="requiredBlock"></div>
+                                    <input type="text" ng-click="popupAlert('Click on the calendar icon next to the text box and select the Date.');" placeholder="Select To Date" readonly="readonly" class="datepicker" id="toDatePicker"/>
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="Requesting Country:" />
+                            <apex:outputPanel >
+                                <select id="ddCountry" multiple="multiple">
+                                </select>
+                                <label style="font-weight:bold;">(Select Requesting Country)</label>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem id="TPProcessorSection">
+                            <apex:outputLabel style="display:none;" id="TPProcessorLabel" value="TP Processor Email:"/>   
+                            <apex:outputText style="display:none;" id="ddTPProcessorEmail" value="The unformatted time right now is: {! NOW() }" />
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="" />
+                            <button class="slds-button slds-button_neutral" onclick="return false;" ng-click="runReport()">Run Report</button>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+                
+                <apex:outputPanel id="tableSection" >
+                    <apex:pageBlock html-ng-show="reportResults != null && reportResults.length > 0" id="tableBlock" >
+                        <apex:pageBlockSection columns="1" >
+                            <apex:outputPanel >
+                                <div id="gridContainer">
+                                    <div id="jqxgrid"></div>
+                                </div>
+                            </apex:outputPanel>
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+                </apex:outputPanel>
+            </apex:form>
+        </body>
+    </html>
+</apex:page>

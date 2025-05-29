@@ -1,0 +1,45 @@
+<aura:component controller="CNT_CSM_Mikado" implements="flexipage:availableForAllPageTypes,lightning:isUrlAddressable" access="global">
+    <aura:attribute name="isLoading" type="boolean" />
+    <aura:attribute name="folders" type="Object" />
+    <aura:attribute name="filteredFolders" type="Object" />
+    <aura:attribute name="parentContentFolderId" type="String" />
+    <aura:attribute name="csmFolderId" type="String" />
+    <aura:attribute name="subTabLabel" type="String" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <div class="slds-card slds-has-cushion">
+        <div class="slds-grid slds-gutters slds-m-bottom_medium">
+            <div class="slds-col slds-size_2-of-3">
+                <ui:inputText class="slds-input" updateOn="keyup" keyup="{!c.filteredFolders}" placeholder="Search Mikado folder..." />
+            </div>
+        </div>
+        <span class="countSortedByFilteredBy">Displayed: {!v.filteredFolders.length} / {!v.folders.length} Mikado Folders </span>
+
+        <aura:if isTrue="{!v.isLoading}">
+            <div class="slds-spinner_container slds-spinner--brand " aura:id="spinner">
+                <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_1-of-3 slds-border_right">
+                <ul class="slds-m-top_medium">
+                    <aura:iteration items="{!v.filteredFolders}" var="folder" indexVar="index">
+                        <li>
+                            <div class="slds-truncate">
+                                <a href="javascript:void(0);" onclick="{! c.folderClick }" data-value="{!folder.Id}" data-title="{!folder.Name}">
+                                    <lightning:icon iconName="doctype:folder" size="medium" alternativeText="Folder" />
+                                    <span class="slds-p-left_large">{!folder.Name}</span>
+                                </a>
+                            </div>
+                        </li>
+                    </aura:iteration>
+                </ul>
+            </div>
+            <div class="slds-col slds-size_2-of-3">
+                <c:LXC_CSM_MikadoFiles aura:id="cMikadoFiles" parentContentFolderId="{! v.parentContentFolderId}" subTabLabel="{! v.subTabLabel}" csmFolderId="{! v.csmFolderId}" />
+            </div>
+        </div>
+    </div>
+</aura:component>

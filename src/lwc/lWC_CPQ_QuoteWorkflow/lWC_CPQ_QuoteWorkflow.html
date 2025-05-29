@@ -1,0 +1,612 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner variant="brand" alternative-text="Loading" style="z-index: 100;"></lightning-spinner>
+    </template>
+    <div class="backgroundcolor">
+        <div class="slds-page-header slds-page-header_joined slds-shrink-none test-headerRegion slds-is-relative">
+            <lightning-layout>
+                <h2 class="slds-card__header-title" style="line-height: revert;">
+                    <lightning-icon
+                        icon-name="standard:actions_and_buttons"
+                        size="small"
+                        label="Quick Actions"
+                        title="Quick Actions"
+                        alternative-text="Quick Actions">
+                    </lightning-icon>
+                    <span class="slds-card__header-link baseCard__header-title-container slds-truncate"
+                        style="padding-left: 10px;">Quick Actions</span>
+                </h2>
+            </lightning-layout>
+        </div>
+        <div class="slds-form--stacked slds-p-around_x-small" style="border: 1px solid lightgray;">
+            <div class="slds-card">
+                <lightning-layout>
+                    <div class="slds" style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                        <div class="slds-grid slds-grid--align-space">
+                            <div lwc:if={hasDPS} class='slds-col slds-size--1-of-4'>
+                                <template lwc:if={enableUpdateLanguage}>
+                                    <div>
+                                        <a onclick={handleLanguageUpdate} class="removeTextDecoration"
+                                            name='Update Language' title='Update Language'>
+                                            <lightning-icon icon-name="standard:person_language" alternative-text="Update Language"></lightning-icon><br />
+                                            <span class="outputText">Update Language</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:person_language" alternative-text="Update Language"></lightning-icon><br />
+                                            <span class="outputText">Update Language</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4" lwc:if={showLaunchIcon}>
+                                <template lwc:if={isLaunch}>
+                                    <div>
+                                        <a onclick={launchTool} class="removeTextDecoration" name='Launch' title='Launch'>
+                                            <lightning-icon icon-name="standard:relationship"
+                                                alternative-text="Launch"></lightning-icon><br />
+                                            <span class="outputText">Launch</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:relationship"
+                                                alternative-text="Launch"></lightning-icon><br />
+                                            <span class="outputText">Launch</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class='slds-col slds-size--1-of-4'>
+                                <template lwc:if={enableConfigButton}>
+                                    <div>
+                                        <a onclick={handleConfigureProducts} class="removeTextDecoration"
+                                            name='Configure Products' title='Configure Products'>
+                                            <lightning-icon icon-name="standard:webcart" alternative-text="Configure Products"></lightning-icon><br />
+                                            <span class="outputText">Configure Products</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:webcart" alternative-text="Configure Products"></lightning-icon><br />
+                                            <span class="outputText">Configure Products</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4" lwc:if={hasEMEA}>
+                                <template lwc:if={showUpdatePricingAndDiscount}>
+                                    <div>
+                                        <a onclick={handleUpdatePricingAndDiscount} class="removeTextDecoration" name='Update Pricing and Discount' title='Update Pricing and Discount'>
+                                            <lightning-icon icon-name="standard:record_update" alternative-text='Update Pricing and Discount'></lightning-icon><br />
+                                            <span class="outputText">Update Pricing and Discount</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                    <template lwc:else>
+                                        <div>
+                                            <a class="disabledIcons">
+                                                <lightning-icon icon-name="standard:record_update"
+                                                    alternative-text="Update Pricing and Discount"></lightning-icon><br />
+                                                <span class="outputText">Update Pricing and Discount</span>
+                                            </a>
+                                        </div>
+                                    </template>
+                            </div>    
+                            <div class="slds-col slds-size--1-of-4">
+                                <template if:false={isFinalized}>
+                                    <div>
+                                        <a onclick={finalizationQuote} class="removeTextDecoration" name='Finalize' title='Finalize'>
+                                            <lightning-icon icon-name="standard:checkout"
+                                                alternative-text="Finalize"></lightning-icon><br />
+                                            <span class="outputText">Finalize</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template if:true={isFinalized}>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:checkout"
+                                                alternative-text="Finalize"></lightning-icon><br />
+                                            <span class="outputText">Finalize</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4">
+                                <template lwc:if={isSubmittedAndisStageFinalized}>
+                                    <div>
+                                        <a onclick={submitApproval} class="removeTextDecoration" name='Submit for Approval' title='Submit for Approval'>
+                                            <lightning-icon icon-name="standard:buyer_group"
+                                                alternative-text="Submit for Approval"></lightning-icon><br />
+                                            <span class="outputText">Submit for Approval</span>
+                                        </a>
+                                    </div>
+                                    <template lwc:if={showMSAConfirmationBox}>
+                                        <div role="dialog" class="slds-modal slds-fade-in-open ">
+                                            <div class="slds-modal__container">
+                                                <button title="Close this window"
+                                                    class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                                    onclick={closeModal}>
+                                                    <lightning-icon icon-name="utility:close" size="small"
+                                                        alternative-text="Indicates close"></lightning-icon>
+                                                </button>
+                                                <header class="slds-modal__header">
+                                                    <h1 class="slds-text-heading--medium">Submit for Approval</h1>
+                                                </header>
+                                                <div class="slds-modal__content slds-p-around--medium">
+                                                    <div class="slds-text_small slds-text-align_left">Please click <strong>'Standard Approval'</strong> button for the normal approval process; Click <strong>'Historical or MSA Approval'</strong> button to attach the proof document and go through the Historical/MSA discount final approval process.</div>
+                                                </div>
+                                                <div class="slds-modal__footer">
+                                                    <footer>
+                                                        <lightning-button variant="brand" label="Standard Approval"
+                                                            onclick={submitForStandardApproval}
+                                                            name="Submit For Approval"
+                                                            class="slds-m-left_small"></lightning-button>
+                                                        <lightning-button variant="neutral" label="Historical or MSA Approval"
+                                                            onclick={onMsaOrHistoricalApprovalClick}
+                                                            name="submitForMsaApproval" class="slds-m-left_small"></lightning-button>
+                                                        <lightning-button variant="neutral" label="Cancel"
+                                                            onclick={closeModal}
+                                                            class="slds-m-left_small"></lightning-button>
+                                                    </footer>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-backdrop slds-backdrop--open"></div>
+                                    </template>
+                                    <template lwc:if={showLightningUploader}>
+                                        <div role="dialog" class="slds-modal slds-fade-in-open ">
+                                            <div class="slds-modal__container">
+                                                <button title="Close this window"
+                                                    class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                                    onclick={closeUploader}>
+                                                    <lightning-icon icon-name="utility:close" size="small"
+                                                        alternative-text="Indicates close"></lightning-icon>
+                                                </button>
+                                                <header class="slds-modal__header">
+                                                    <h1 class="slds-text-heading--medium">Submit for Approval</h1>
+                                                </header>
+                                                <div class="slds-modal__content slds-p-around--medium">
+                                                    <div class="slds-box slds-theme_alert-texture slds-m-top_medium">
+                                                        <lightning-file-upload label="Upload file" name="file Uploader"
+                                                            record-id={recordId} accept={acceptedFormats}
+                                                            onuploadfinished={handleUploadFinished}></lightning-file-upload>
+                                                        <template lwc:if={fileUploaded}>
+                                                            <div class="slds-top_mdeium">
+                                                                <h3 class="slds-text-heading_small slds-text-align_left slds-text-color_success slds-text-title_bold">
+                                                                    Uploaded files</h3>
+                                                                <template for:each={uploadedFiles} for:item="file">
+                                                                    <p key={file.documentId}
+                                                                        class="slds-text-heading_small slds-text-align_left">
+                                                                        {file.name}
+                                                                    </p>
+                                                                </template>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                    <div class="slds-text-align_right slds-m-top_small">
+                                                        <lightning-button variant="neutral" label="Cancel"
+                                                            onclick={closeUploader}></lightning-button>
+                                                        <lightning-button variant="brand" label="Submit" type="submit"
+                                                            onclick={submitForMsaOrHistoricalApprovals} class="slds-m-left_small"></lightning-button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-backdrop slds-backdrop--open"></div>
+                                    </template>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:buyer_group"
+                                                alternative-text="Submit for Approval"></lightning-icon><br />
+                                            <span class="outputText">Submit for Approval</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-layout>
+                <lightning-layout>
+                    <div class="slds" style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                        <div class="slds-grid slds-grid--align-space">
+                            <div class="slds-col slds-size--1-of-4" lwc:if={showGenerateDocument}>
+                                <template lwc:if={enableGenerate}>
+                                    <div>
+                                        <a onclick={handleGenerate} class="removeTextDecoration"
+                                            name='Generate Document' title='Generate Document'>
+                                            <lightning-icon icon-name="standard:drafts"
+                                                alternative-text="Generate Document"></lightning-icon><br />
+                                            <span class="outputText">Generate Document</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:drafts"
+                                                alternative-text="Generate Document"></lightning-icon><br />
+                                            <span class="outputText">Generate Document</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class='slds-col slds-size--1-of-4'>
+                                <template lwc:if={enableAcceptAndReject}>
+                                    <div>
+                                        <a onclick={handleAccept} class="removeTextDecoration" name='Accept' title='Accept'>
+                                            <lightning-icon icon-name="standard:task"
+                                                alternative-text="Accept"></lightning-icon><br />
+                                            <span class="outputText">Accept</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:task"
+                                                alternative-text="Accept"></lightning-icon><br />
+                                            <span class="outputText">Accept</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class='slds-col slds-size--1-of-4'>
+                                <template lwc:if={enableReject}>
+                                    <div>
+                                        <a onclick={handleRejectQuote} class="removeTextDecoration" name={rejectCancelButtonText} title={rejectCancelButtonText}>
+                                            <lightning-icon icon-name="standard:return_order_line_item"
+                                                alternative-text="Reject"></lightning-icon><br />
+                                            <span class="outputText">{rejectCancelButtonText}</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:return_order_line_item"
+                                                alternative-text="Reject"></lightning-icon><br />
+                                            <span class="outputText">{rejectCancelButtonText}</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4">
+                                <template if:true={isSyncEnabled}>
+                                    <div>
+                                        <a onclick={syncToOpp} class="removeTextDecoration" name='Sync To Opportunity' title='Sync To Opportunity'>
+                                            <lightning-icon icon-name="standard:product_transfer"
+                                                alternative-text="Sync To Opportunity"></lightning-icon><br />
+                                            <span class="outputText">Sync To Opportunity</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template if:false={isSyncEnabled}>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:product_transfer"
+                                                alternative-text="Sync To Opportunity"></lightning-icon><br />
+                                            <span class="outputText">Sync To Opportunity</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-layout>
+                <lightning-layout>
+                    <div class="slds" style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                        <div class="slds-grid slds-grid--align-space">
+                            <div lwc:if={isSpecial} class='slds-col slds-size--1-of-4'>
+                                <template lwc:if={isPrimary}>
+                                    <div>
+                                        <a onclick={markAsPrimary} class="removeTextDecoration" name='Mark as Primary' title='Mark as Primary'>
+                                            <lightning-icon icon-name="standard:task2"
+                                                alternative-text="Mark as Primary"></lightning-icon><br />
+                                            <span class="outputText">Mark as Primary</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:task2"
+                                                alternative-text="Mark as Primary"></lightning-icon><br />
+                                            <span class="outputText">Mark as Primary</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class='slds-col slds-size--1-of-4' lwc:if={enableRecall}>
+                                <div>
+                                    <a onclick={handleRecall} class="removeTextDecoration" name={recallButtonLabel} title={recallButtonLabel}>
+                                        <lightning-icon icon-name="standard:return_order"
+                                            alternative-text={recallButtonLabel}></lightning-icon><br />
+                                        <span class="outputText">{recallButtonLabel}</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4">
+                                <template lwc:if={showCloneIcon}>
+                                    <div>
+                                        <a onclick={showModalForClone} class="removeTextDecoration" name='Clone' title='Clone'>
+                                            <lightning-icon icon-name="standard:relationship"
+                                                alternative-text="Clone"></lightning-icon><br />
+                                            <span class="outputText">Clone</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:relationship"
+                                                alternative-text="Clone"></lightning-icon><br />
+                                            <span class="outputText">Clone</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4" lwc:if={isShowCreateEditPricingAssistanceIconVisible}>
+                                <template lwc:if={isShowCreateEditPricingAssistanceIconEnable}>
+                                    <div>
+                                        <a onclick={handleCreateEditPricingAssistence} class="removeTextDecoration" name='Create/Edit Pricing Assistant' title='Create/Edit Pricing Assistant'>
+                                            <lightning-icon icon-name="standard:record_create"
+                                                alternative-text='Create/Edit Pricing Assistant'></lightning-icon><br />
+                                            <span class="outputText">Create/Edit Pricing Assistant</span>
+                                        </a>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div>
+                                        <a class="disabledIcons">
+                                            <lightning-icon icon-name="standard:record_create"
+                                                alternative-text='Create/Edit Pricing Assistant'></lightning-icon><br />
+                                            <span class="outputText">Create/Edit Pricing Assistant</span>
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-layout>
+                <lightning-layout>
+                    <div class="slds" style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                        <div class="slds-grid slds-grid--align-space">
+                            <div class="slds-col slds-size_1-of-4" lwc:if={isApprover}>
+                                <div>
+                                    <a onclick={handleApprove} class="removeTextDecoration" name='Approve' title='Approve'>
+                                        <lightning-icon icon-name="standard:resource_preference"
+                                            alternative-text="Approve"></lightning-icon><br />
+                                        <span class="outputText">Approve</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4" lwc:if={isApprover}>
+                                <div>
+                                    <a onclick={handleReject} class="removeTextDecoration" name='Reject' title='Reject'>
+                                        <lightning-icon icon-name="standard:resource_absence"
+                                            alternative-text="Reject"></lightning-icon><br />
+                                        <span class="outputText">Reject</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size--1-of-4" lwc:if={showReassignButton}>
+                                <div>
+                                    <a onclick={handleReassign} class="removeTextDecoration" name='Reassign' title='Reassign'>
+                                        <lightning-icon icon-name="standard:assigned_resource"
+                                            alternative-text="Reassign"></lightning-icon><br />
+                                        <span class="outputText">Reassign</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-layout>
+                <div lwc:if={hasDPS}>
+                    <lightning-layout>
+                        <div class="slds" style="border-top: 1px solid lightgray;width: 100%;text-align: center;padding:10px;">
+                            <div class="slds-grid slds-grid--align-space" style="">
+                                <Span style="color: #54698D; ">To view <b>Guidance File</b>, please&nbsp;
+                                    <a onclick={generateFile} style="text-decoration: underline;" name='Guidance File' title='Guidance File'>
+                                        <span class="guidanceFile">click here.</span>
+                                    </a>
+                                </Span>
+                            </div>
+                        </div>
+                    </lightning-layout>
+                </div>
+            </div>
+        </div>
+    </div>
+    <template lwc:if={showUpdateQLI}>    
+        <c-l-w-c_-c-p-q_-update-q-l-i 
+            record-id = {recordId}>
+        </c-l-w-c_-c-p-q_-update-q-l-i>  
+    </template> 
+    <div if:true={generateProposal}>
+        <c-l-w-c_-c-p-q_-generate-document oncloseaction={handleGenerateClosure}></c-l-w-c_-c-p-q_-generate-document>
+    </div>
+    <div if:true={configProduct} class='slds-size_small'>
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container">
+                <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                    <lightning-icon
+                        icon-name="utility:close"
+                        size="small"
+                        alternative-text="Indicates close"
+                    >
+                    </lightning-icon>
+                </button>
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Select Pricing Tool</h1>
+                </header>
+                
+                <div class="slds-modal__content slds-p-around--medium">
+                    <lightning-radio-group name="radioGroup"
+                    label="Select Pricing Tool"
+                    options={IqviaQuotePricingTools}
+                    value={pricingToolSelected}
+                    class="slds-m-left_x-small"
+                    onchange={getSelectedPricingTool}
+                    type="radio"></lightning-radio-group>
+                </div>
+                    
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="brand" class="slds-m-left_x-small" onclick={handleConfigure} label="Configure" type="submit"></lightning-button>
+                </footer>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+    </div>
+    <div if:true={showModalClone} class='slds-size_small'>
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <template if:true={showSpinner}>
+                <lightning-spinner variant="brand" alternative-text="Loading" style="z-index: 100;"></lightning-spinner>
+            </template>
+            <div class="slds-modal__container">
+                <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                    <lightning-icon
+                        icon-name="utility:close"
+                        size="small"
+                        alternative-text="Indicates close">
+                    </lightning-icon>
+                </button>
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Quote {quoteRecord.Name} Clone</h1>
+                </header>
+                
+                <div if:false={hasTechSolutionGbu} class="slds-modal__content slds-p-around--medium">
+                    <lightning-input class="slds-p-left_xx-large" checked={isFrehsData} type="checkbox" data-id="checkbox" label="Create quote with updated bid history data" onchange={handleCheckboxForClonQuote}></lightning-input>
+                    <div class="slds-m-top_medium"></div>
+                    <div lwc:if={isFrehsData} class="slds-p-left_xx-large">
+                        <div lwc:if={hasDPS}>
+                            <lightning-radio-group name="radioGroup2"
+                            label={sectionLabel}
+                            options={options}
+                            value={bidScenarios}
+                            class=""
+                            onchange={getSelectedScenario}
+                            type="radio"></lightning-radio-group>
+                        </div>
+                    </div>
+                </div>
+                <div if:true={hasTechSolutionGbu} class="slds-modal__content slds-p-around--medium">
+                    <lightning-radio-group name="radioGroup3"
+                        label="Choose an option"
+                        options={quoteCloneOptionsTechSolution}
+                        onchange={handleTechSolutionSelection}
+                        type="radio">
+                    </lightning-radio-group>
+                </div>
+                    
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="brand" class="slds-m-left_x-small" onclick={handleClone} label="Ok" type="submit"></lightning-button>
+                </footer>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+    </div>
+    <template lwc:if={enableApprovalProcess}>
+        <c-l-w-c_-c-p-q_-dynamic-approval-process
+            record-id = {recordId}
+            object-api-name = {objectApiName}
+            onappoval_process = {onApprovalProcess}
+            quote-pricing-tool = {quotePricingTools}
+            object-label="Quote"
+            with-priority="true"></c-l-w-c_-c-p-q_-dynamic-approval-process>
+    </template>
+    <div if:true={isReassign} class='slds-size_small'>
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container">
+                <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                    <lightning-icon icon-name="utility:close" size="small" alternative-text="Indicates close"></lightning-icon>
+                </button>
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Reassign</h1>
+                </header>
+                <div class="slds-modal__content slds-p-around--medium">
+                    <div lwc:if={hasEMEA}>
+                        <c-l-w-c_-c-p-q_-dynamic-approval-process record-id={recordId} object-api-name={objectApiName}
+                            ongetapprovers={handleApprovers} is-manual-approver="true"
+                            with-priority="true"></c-l-w-c_-c-p-q_-dynamic-approval-process>
+                        <div lwc:if={highPriorityErrorMessage}>
+                            <div class="slds-text-heading_small slds-text-align_center slds-text-color_error">Currently the quote is
+                                submitted for approval on Top-Tier, you cannot reassign the quote to an alternate approver.</div>
+                        </div>
+                        <div lwc:else>
+                            <div class="slds-m-around_medium slds-text-align-left">
+                                <p> Currently the quote is submitted for approval on <mark>Tier {quoteTier}</mark>, please reassign the
+                                    approver if required:</p>
+                            </div>
+                            <div class="slds-m-around_medium">
+                                <template for:each={approverDetails} for:item="approver">
+                                    <lightning-combobox key={approver.approverField} name={approver.approverField}
+                                        label={approver.label} value={value} placeholder={approver.userName} options={userData}
+                                        onchange={handleApproverChange}>
+                                    </lightning-combobox>
+                                </template>
+                            </div>
+                            <div class="slds-text-align_right slds-m-top_small">
+                                <lightning-button class="slds-m-right_x-small" variant="brand" type="submit" name="save" label="Update"
+                                    onclick={updateApproversOnQuote}></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                    <div lwc:else>
+                        <lightning-record-edit-form object-api-name={objectApiName}>
+                            <div class="slds-m-around_medium">
+                                <template for:each={approverDetails} for:item="approver" for:index="index">
+                                    <lightning-input-field name={approver.approverField} key={approver.approverField}
+                                        field-name={approver.approverField} value={approver.currentAppprover}
+                                        onchange={handleApproverChange}></lightning-input-field>
+                                </template>
+                                <div class="slds-text-align_right slds-m-top_small">
+                                    <lightning-button class="slds-m-right_x-small" variant="brand" type="submit" name="save" label="Update"
+                                        onclick={updateApproversOnQuote}></lightning-button>
+                                </div>
+                            </div>
+                        </lightning-record-edit-form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+    </div>
+    <div if:true={isUpdateLanguage} class='slds-size_small'>
+        <div role="dialog" class="slds-modal slds-fade-in-open ">
+            <div class="slds-modal__container">
+                <button title = "Close this window" class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeModal}>
+                    <lightning-icon icon-name="utility:close" size="small" alternative-text="Indicates close"></lightning-icon>
+                </button>
+                <header class="slds-modal__header">
+                    <h1 class="slds-text-heading--medium">Language Selection</h1>
+                </header>
+                <div class="slds-modal__content slds-p-around--medium">
+                    <lightning-dual-listbox id="selectOptions" 
+                                        name="Select Languages" 
+                                        label="Select Languages"
+                                        source-label="Available Options" 
+                                        selected-label="Selected Options" 
+                                        options={Options}
+                                        value={selectedLanguagesTemp} 
+                                        onchange={handleLanguageChange}>
+                    </lightning-dual-listbox>
+                    <div class="slds-text-align_right slds-m-top_small">
+                        <lightning-button class="slds-m-right_xx-large" variant="brand" onclick={handleSaveLanguages} label="Save"></lightning-button>
+                    </div>
+                </div>
+                </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open"></div>
+    </div>
+</template>

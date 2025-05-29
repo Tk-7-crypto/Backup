@@ -1,0 +1,264 @@
+<aura:component implements="force:appHostable,lightning:isUrlAddressable" controller="CNT_CDA_CustomLandingComnt">
+    <aura:attribute name="cdaRequests" type="CDA_Request__c[]" />
+    <aura:attribute name="pageNumber" type="string" default="1" />
+    <aura:attribute name="CancelledRequestId" type="string" default="" />
+    <aura:attribute name="currentPagesCount" type="string" default="10" />
+	<aura:attribute name="sortField" type="string" default="Name" />
+	<aura:attribute name="sortDirection" type="string" default="DESC" />
+    <aura:attribute name="isNegotiatorTab" type="Boolean" default="false" />
+    <aura:attribute name="searchFieldsMap" type="Map" />
+    
+    <aura:attribute name="isPopupOpen" type="boolean" default="false" />
+    <aura:attribute name="popupType" type="String" />
+    <aura:attribute name="popupButtonMap" type="Map" />
+    <aura:attribute name="cdaTrainingDocURL" type="String" />
+    <aura:attribute name="cdaSetting" type="Object" />
+
+    <aura:attribute name="isOpenChatbot" type="Boolean" default="false"/>
+    <aura:attribute name="ChatIcon" type="String" default="/resource/ChatIcon" />
+    <aura:attribute name="closeIcon" type="String" default="/resource/closeicon" />
+
+    
+    <lightning:workspaceAPI aura:id="workspace" />
+    <ltng:require scripts="{!$Resource.CDA_ChatbotFile}"></ltng:require>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:handler event="c:LXE_CDA_PaginationPageTotalChange" action="{!c.recordCounterChange}" />
+    <aura:handler event="c:LXE_CDA_PaginationPageChangeEvt" action="{!c.pageChange}" />
+    <aura:handler event="c:LXE_CDA_LandingPageSearchEvt" action="{!c.searchRequests}" />
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.reInit}"/>
+
+    <lightning:spinner aura:id="mySpinner" alternativeText="Processing.." title="Processing.." variant="brand" size="large" class="slds-hide" />
+    
+    <div>
+        <button class="slds-button slds-button_success" onclick="{!c.createNewRequest}" >New CDA Request</button>
+        <button class="slds-button slds-button_outline-brand" onclick="{!c.doInit}" >Refresh</button>
+        <a href="{!v.cdaTrainingDocURL}" target="_blank" class="slds-button slds-button_brand">Training Schedule Doc</a>
+    </div>
+    
+    <c:LXC_CDA_DownTimeMessage isMessageDownType="true" isShowHeader="true" />
+    
+    <div class="slds-section" aura:id="searchSection">
+        <h3 class="slds-section__title">
+            <button class="slds-button slds-section__title-action" onclick="{!c.openSection}">
+                <lightning:icon aura:id="searchSectionIcon" class="slds-section__title-action-icon slds-button__icon slds-button__icon_left" iconName="utility:switch" size="x-small" alternativeText="Open Search Section"/>
+                <span class="slds-truncate slds-p-left_xx-small" title="Search CDA Requests">Search CDA Requests</span>
+            </button>  
+        </h3>
+        <div class="slds-section__content">
+            <!-- <c:LXC_CDA_LandingPageSearchSection searchFieldsMap="{!v.searchFieldsMap}"/> -->
+            <c:LXC_CDA_LandingPageSearchSection isNegotiatorTab="{!v.isNegotiatorTab}" />  			
+        </div>
+    </div>
+    
+    <div class="slds-section slds-is-open">
+        <h3 class="slds-section__title slds-theme_shade">
+            <span class="slds-truncate slds-p-horizontal_small" title="CDA Requests">CDA Requests</span>
+        </h3>
+        <div aria-hidden="false" class="slds-section__content">
+            
+            <table class="slds-table slds-table--bordered slds-table_col-bordered" role="grid">
+                <thead>
+                    <tr class="slds-text-heading slds-line-height_reset">
+                        <th scope="col">
+                            <div title="Action">Action</div>
+                        </th>
+                        <th scope="col">
+                            <div title="CDA Id #">
+                            	<button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Name">CDA Id #</button>
+                            </div>
+                        </th>
+                        <th class="slds-text-align_center" scope="col">
+                            <div title="CDA Type/Region">
+                                <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CDA_Type__c">CDA Type/Region</button>
+                            </div>
+                        </th>
+                        <th class="slds-text-align_center" scope="col">
+                            <div title="CDA Status">
+                                <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Status__c">CDA Status</button>
+                            </div>
+                        </th>
+                        <aura:if isTrue="{! v.isNegotiatorTab}" >
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Last Modified Date">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="LastModifiedDate">CDA Date Last Updated (MM/DD/YY)</button>
+                                </div>
+                            </th>
+                        </aura:if>
+                        <aura:if isTrue="{! !v.isNegotiatorTab}" >
+                            <th class="slds-cell-shrink slds-text-align_center" scope="col">
+                                <div title="CDA Effective Date">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CDA_Effective_Date__c">CDA Effective Date (MM/DD/YY)</button>
+                                </div>
+                            </th>
+                        </aura:if>
+                        <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                            <div title="Recipient Legal Entity Name">
+                                <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Recipient_Account_Name_Formula__c">Recipient Legal Entity Name</button>
+                            </div>
+                        </th>
+                        <aura:if isTrue="{! !v.isNegotiatorTab}" >
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Recipient Point of contact Name">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Recipient_Point_of_Contact_Name__c">Recipient Point of contact Name</button>
+                                </div>
+                            </th>
+                        </aura:if>
+                        <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                            <div title="CDA Negotiator Assigned">
+                                <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="Negotiator_Assigned_List__c">CDA Negotiator Assigned</button>
+                            </div>
+                        </th>
+                        <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                            <div title="Requestor Name">
+                                <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="CreatedBy.Name">Requestor Name</button>
+                            </div>
+                        </th>
+                        <aura:if isTrue="{! !v.isNegotiatorTab}" >
+                            <th class="slds-cell-wrap slds-text-align_center" scope="col">
+                                <div title="Last Modified Date">
+                                    <button class="slds-button slds-button_icon" title="Sort" onclick="{!c.sortList}" value="LastModifiedDate">Last Modified Date</button>
+                                </div>
+                            </th>
+                        </aura:if>
+                    </tr>
+                </thead>
+                <tbody>
+                    <aura:iteration items="{!v.cdaRequests}" var="request">
+                        <tr>
+                            <td>
+                                <div>
+                                	<a id="{!request.Id}" onclick="{!c.navigateToRecord}">View</a>
+                                    <aura:if isTrue="{! request.Status__c != 'Cancelled' &amp;&amp; request.Status__c != 'Contract Executed'}">
+                                        |<a id="{!request.Id}" onclick="{!c.navigateToRequestEditScreen}">
+                                            Edit
+                                        </a>
+                                    </aura:if>
+                                    <aura:if isTrue="{! request.Status__c != 'Cancelled' &amp;&amp; request.Status__c != 'Contract Executed'}">
+                                        |<a id="{!request.Id}" onclick="{!c.cancelCDARequest}">
+                                            Cancel
+                                        </a>
+                                    </aura:if>
+                                </div>
+                            </td>
+                            <td>
+                                <div title="{!request.Name}">{!request.Name}</div>
+                            </td>
+                            <td>
+                                <div class="slds-text-align_center" title="{!request.CDA_Type__c}">
+                                    <aura:if isTrue="{!request.QuintilesIMS_Business__c == 'Strategic Sites (Master CDA used with strategic sites about potential trials IF the sponsor has accepted their usage)'}">
+                                        Strategic Site - 
+                                    </aura:if>{!request.CDA_Type__c}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="slds-cell-wrap slds-text-align_center" title="{!request.Status__c}">{!request.Status__c}</div>
+                            </td>
+                            <aura:if isTrue="{! v.isNegotiatorTab}" >
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.LastModifiedDate}">
+                                        {!request.LastModifiedDate}
+                                        <!--<lightning:formattedDateTime value="{!request.LastModifiedDate}" month="2-digit" day="2-digit" year="2-digit" timeZone="{! $Locale.timezone}"/>-->
+                                    </div>
+                                </td>
+                            </aura:if>
+                            <aura:if isTrue="{! !v.isNegotiatorTab}" >
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.CDA_Effective_Date__c}">
+                                        {!request.CDA_Effective_Date__c}
+                                        <!--<lightning:formattedDateTime value="{!request.CDA_Effective_Date__c}" month="2-digit" day="2-digit" year="2-digit"/>-->
+                                    </div>
+                                </td>
+                            </aura:if>
+                            <td>
+                                <div class="slds-cell-wrap slds-text-align_center" title="{!request.Recipient_Account_Name_Formula__c}">{!request.Recipient_Account_Name_Formula__c}</div>
+                            </td>
+                            <aura:if isTrue="{! !v.isNegotiatorTab}" >
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.Recipient_Point_of_Contact_Name__c}">{!request.Recipient_Point_of_Contact_Name__c}</div>
+                                </td>
+                            </aura:if>
+                            <td>
+                                <div class="slds-cell-wrap slds-text-align_center" title="{!request.Negotiator_Assigned_List__c}">{!request.Negotiator_Assigned_List__c}</div>
+                            </td>
+                            <td>
+                                <div class="slds-cell-wrap slds-text-align_center" title="{!request.CreatedBy.Name}">{!request.CreatedBy.Name}</div>
+                            </td>
+                            <aura:if isTrue="{! !v.isNegotiatorTab}">
+                                <td>
+                                    <div class="slds-cell-wrap slds-text-align_center" title="{!request.LastModifiedDate}">
+                                        {!request.LastModifiedDate}
+                                        <!--<lightning:formattedDateTime value="{!request.LastModifiedDate}" month="2-digit" day="2-digit" year="2-digit" timeZone="{! $Locale.timezone}"/>-->
+                                    </div>
+                                </td>
+                            </aura:if>
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+            <!-- Footer with Pagination --> 
+            <c:LXC_CDA_Pagination isNegotiatorTab="{!v.isNegotiatorTab}" />	
+            
+        
+            <aura:if isTrue="{!v.isOpenChatbot}">
+                <div>    
+                    <iframe id="sn_va_web_client"  style="z-index: 10000000 !important;bottom: 10%;right: 0%; position:fixed;" title="VIA Chat" width="400" height="450" src="{!v.cdaSetting.IQVIASupportChatSrcURL__c}" onload="{!c.loadIframe}">
+                        {!v.cdaSetting.IQVIASupportURL__c}
+                    </iframe>
+                </div>
+            </aura:if>
+            <!-- / Footer with Pagination -->
+        </div>
+    </div>
+        
+    <aura:attribute name="isToggled" type="Boolean" default="false"/>
+
+    <div class="fixed-button" style="position: fixed;bottom: 0;right: 0;">
+        <aura:if isTrue="{! !v.isOpenChatbot &amp;&amp; v.cdaSetting.Is_Chatboat_Enabled__c}" >
+        	<button style="width: 50px;" class="slds-button" onclick="{! c.toggleChatbot }" title="CDA Query? Click here">
+        		<img src="{!v.ChatIcon}" alt="Button Image" />
+            </button>
+        </aura:if>
+        <aura:if isTrue="{! v.isOpenChatbot &amp;&amp; v.cdaSetting.Is_Chatboat_Enabled__c}" >
+        	<button style="width: 60px;" class="slds-button" onclick="{! c.toggleChatbot }" title="CDA Query? Click here">
+     			<img src="{!v.closeIcon}" alt="Button Image" />
+            </button>
+        </aura:if>
+    </div>
+    
+    <aura:if isTrue="{!v.isPopupOpen}" >
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.popupActionButton2 }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p>
+                        <b>
+                            <aura:if isTrue="{!v.popupType == 'cancelRequestPopup'}">
+                                <aura:unescapedHtml value="{!$Label.c.CDA_Are_you_sure_you_want_to_cancel_the_request}" />
+                            </aura:if>
+                        </b>
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button label="{!v.popupButtonMap.button1}"
+                                      title="{!v.popupButtonMap.button1}"
+                                      class="slds-button slds-button_outline-brand"
+                                      onclick="{!c.popupActionButton1}"/>
+                    <aura:if isTrue="{!v.popupButtonMap.button2 != null}">
+                        <lightning:button label="{!v.popupButtonMap.button2}"
+                                          title="{!v.popupButtonMap.button2}"
+                                          class="slds-button slds-button_outline-brand"
+                                          onclick="{!c.popupActionButton2}"/>
+                    </aura:if>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

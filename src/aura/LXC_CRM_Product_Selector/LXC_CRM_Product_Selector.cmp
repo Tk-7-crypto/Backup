@@ -1,0 +1,80 @@
+<aura:component controller="CNT_CRM_OpportunityProductSearch" implements="force:hasRecordId" access="global">
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <aura:handler event="c:LXE_CRM_SetActiveTabEvent" action="{!c.setTab}"/>
+    <aura:handler event="c:LXE_CRM_GotoButtomEvent" action="{!c.goToButtom}"/>
+    <aura:handler event="c:LXE_CRM_RenderLDSScreen" action="{!c.renderLDS}"/>
+    <aura:attribute name="productRecord" type="Product2"/>
+    <aura:attribute name="opportunityRecord" type="Opportunity"/>
+    <aura:attribute name="territory" type="String"/>
+    <aura:attribute name="oliId" type="Id" />
+    <aura:attribute name="activeTabId" type="String" default="search"/>
+    <aura:attribute name="disableOnLoadScroll" type="Boolean" default="true"/>
+    <aura:attribute name="decimalPlace" type="Decimal"/>
+    <aura:attribute name="source" type="String"/> 
+    <aura:attribute name="pricingtool" type="String"/> 
+    <aura:attribute name="decimalPlaceStep" type="Decimal"/>
+    <aura:attribute name="isLDSVisible" type="Boolean" default="false"/>
+    <aura:handler event="c:LXE_CRM_HideResolveTabEvent" action="{!c.hideResolveTab}"/>
+    <aura:if isTrue="{!v.recordId != null}">
+        <c:LXC_CRM_Spinner />
+        <ui:scrollerWrapper class="slds-scrollable_y">
+        <div class="slds-m-around_small ">
+            <div class="slds-p-bottom_small" id="OpportunityDetail">
+                <c:LXC_CRM_OpportunityDetail aura:id="oppDetail" recordId="{!v.recordId}" source="{!v.source}"/>
+            </div>
+            <div class="slds-size_1-of-1">
+                <article class="slds-card">
+                    <div class="slds-grid slds-wrap"  id="SearchProducts" >
+                        <div class="slds-p-horizontal_small slds-large-size_3-of-4 slds-max-small-hide" >
+                            <div id="ProductHierarchyVisual" Style="overflow-y:auto;max-height:630px;">
+                                <c:LXC_CRM_ProductHierarchyVisual recordId="{!v.recordId}"/>
+                            </div>
+                        </div>
+                        <div class="slds-p-horizontal_small slds-large-size_1-of-4 slds-size_1-of-1 slds-border_left slds-p-bottom_small">
+                            <c:LXC_CRM_SearchProducts aura:id="searchProduct" recordId="{!v.recordId}" source="{!v.source}"/>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <aura:if isTrue="{!$Browser.isPhone}">
+                <c:LXC_CRM_SearchResultMobile recordId="{!v.recordId}" isFavoriteProduct="false" source="{!v.source}"/>
+    		<aura:set attribute="else">
+            <div class="slds-p-bottom_small slds-size_1-of-1 slds-max-small-hide" id="tabSet">
+                <lightning:tabset variant="scoped" selectedTabId="{!v.activeTabId}">
+                    <aura:if isTrue= "{!v.source == 'Opportunity'}">
+                    <lightning:tab label="Added to Opportunity" id="viewOli" aura:id="viewOli" onactive="{!c.goToButtom}">
+                        <c:LXC_CRM_ViewOLI recordId="{!v.recordId}" />
+                    </lightning:tab>
+                        <aura:set attribute="else">
+                            <lightning:tab label="Added to Quote" id="viewOli" aura:id="viewOli" onactive="{!c.goToButtom}">
+                                <c:LXC_CRM_ViewOLI recordId="{!v.recordId}" source="{!v.source}"/>
+                            </lightning:tab>
+                        </aura:set>
+                    </aura:if>    
+                    <lightning:tab label="Favorites" id="favourite" aura:id="favourite" onactive="{!c.getFavoriteProducts}">
+                        <c:LXC_CRM_FavoriteProductComponent recordId="{!v.recordId}" isFavoriteProduct="true" source="{!v.source}"/>
+                    </lightning:tab>
+                    <lightning:tab label="Recently Used Products" id="recentProducts" aura:id="recentProducts" onactive="{!c.getRecentProducts}">
+                        <c:LXC_CRM_RecentProductComponent recordId="{!v.recordId}" source="{!v.source}"/>
+                    </lightning:tab>
+                    <lightning:tab label="Search" id="search" aura:id="searchProducts" onactive="{!c.goToButtom}">
+                        <c:LXC_CRM_SearchResultComponent recordId="{!v.recordId}" isFavoriteProduct="false" source="{!v.source}" pricingtool="{!v.pricingtool}"/>
+                    </lightning:tab>
+                    <aura:if isTrue= "{!v.source == 'Opportunity'}">
+                    <lightning:tab label="Resolve Products" id="resolveProducts" class="slds-hide" aura:id="resolveProducts">
+                        <c:LXC_CRM_ResolveProducts recordId="{!v.recordId}" source="{!v.source}"/>
+                    </lightning:tab>
+                    </aura:if>    
+                </lightning:tabset>
+            </div>
+            </aura:set>
+            </aura:if>
+            </div>
+        </ui:scrollerWrapper>
+        <aura:if isTrue="{!v.isLDSVisible}">
+            <c:lWC_CRM_License_Distribution_Screen showModal ="true" territory="{!v.territory}" aura:id="ldsScreen" productRecord="{!v.productRecord}" opportunityRecord="{!v.opportunityRecord}" oncloseLDSModal="{!c.unrenderLDS}" onsave="{!c.addProductRecord}"/>
+        </aura:if>
+        <c:LXC_CRM_AddOrEditOLI recordId="{!v.recordId}" decimalPlace="{!v.decimalPlace}" decimalPlaceStep="{!v.decimalPlaceStep}"/>
+        <c:LXC_CRM_AddRevenueSchedule recordId="{!v.recordId}" decimalPlace="{!v.decimalPlace}" decimalPlaceStep="{!v.decimalPlaceStep}"/>
+    </aura:if>
+</aura:component>
